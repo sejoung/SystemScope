@@ -137,3 +137,14 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+.idea
+
+# Electron
+out/
+dist-electron/
+release/
+playwright-report/
+test-results/
+test/fixtures/pdfs/
+.DS_Store
