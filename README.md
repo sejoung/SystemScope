@@ -9,7 +9,7 @@
 ## 화면 구성
 
 - `Overview`: 실시간 시스템 상태, 알림, Live Usage 차트, Home Storage, Storage Growth 요약
-- `Storage`: 폴더 스캔, Folder Map, File Insights, Recent Growth
+- `Storage`: 폴더 스캔, Home Storage, Storage Growth, Quick Cleanup, Folder Map, File Insights, Recent Growth
 - `Activity`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
 - `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터 경로 관리
 
@@ -95,6 +95,7 @@ Windows 예시:
 - 추정 크기
 - 카테고리
 - 정리 가능 여부
+- 선택 항목을 휴지통으로 이동하는 정리 액션
 
 ### 5. Growth View (폴더 성장 추세)
 
@@ -186,6 +187,7 @@ Windows 예시:
 - 폴더 선택 다이얼로그
 - Finder / Explorer에서 경로 열기
 - 앱 데이터 폴더 열기 (userData 하위만 허용)
+- 홈 디렉터리 하위 파일을 확인 후 휴지통으로 이동
 - 창 크기, 위치, 최대화 상태 저장
 
 ### 12. UI 패턴
@@ -296,7 +298,7 @@ npm test
 포함 범위:
 
 - `tests/unit`: 함수/모듈 단위 검증
-- `tests/integration`: 앱 부팅, 설정 저장, 디스크 스캔, 실시간 모니터링, 성장 분석 등 모듈 연결 흐름 검증
+- `tests/integration`: 앱 부팅, 설정 저장/검증, 디스크 스캔, 실시간 모니터링, 성장 분석 등 모듈 연결 흐름 검증
 
 감시 모드:
 
@@ -333,6 +335,7 @@ npm run test:watch
 - 최근 급성장 폴더 탐색 (스캔 결과 내)
 - 중복 파일 찾기 (3단계 해시: 크기 → 샘플 → 전체)
 - 오래된 파일 탐색 (File Insights > Old Files)
+- File Insights 항목 휴지통 이동 + 확인 다이얼로그
 - 전체 프로세스 목록 + 검색/필터/정렬 (Activity 페이지)
 - 프로세스 Top 5 요약 (Overview 대시보드)
 - App 레벨 글로벌 폴링 — 페이지 전환 시 끊김 없음
@@ -342,13 +345,14 @@ npm run test:watch
 - 아코디언 UI 전체 적용 + 헤더 액션 버튼
 - 스냅샷 주기 설정 (Settings)
 - 데이터 저장 경로 확인 + 열기 (Settings)
+- Electron 로그 기록 + Renderer 렌더 실패 로그 수집
 - 패키징 스크립트 (pack / dist / dist:mac / dist:win)
 
 아직 포함되지 않음:
 
 - 자동 업데이트 (구현 계획: `docs/auto-update-plan.md`)
-- 실제 파일 삭제/정리 실행
-- 로그 파일로 저장(일정기간 지나면 로그파일도 삭제처리)
+- 휴지통이 아닌 영구 삭제
+- 로그 보관 기간 관리 및 자동 정리
 
 ## 라이선스
 
