@@ -70,7 +70,7 @@ describe('settings flow integration', () => {
 
   it('should persist settings and update runtime thresholds through settings:set', async () => {
     const { registerSettingsIpc } = await import('../../src/main/ipc/settings.ipc')
-    const { getThresholds, resetAlertState } = await import('../../src/main/services/alertManager')
+    const { checkAlerts, resetAlertState } = await import('../../src/main/services/alertManager')
 
     resetAlertState()
     registerSettingsIpc()
@@ -100,7 +100,42 @@ describe('settings flow integration', () => {
     expect(setResult.ok).toBe(true)
     expect(getResult.ok).toBe(true)
     expect(getResult.data).toEqual(payload)
-    expect(getThresholds()).toEqual(payload.thresholds)
+    const alerts = checkAlerts({
+      cpu: { usage: 10, cores: [10], temperature: null, model: 'Test CPU', speed: 3.0 },
+      memory: {
+        total: 16_000_000_000,
+        used: 2_000_000_000,
+        active: 2_000_000_000,
+        available: 14_000_000_000,
+        cached: 0,
+        usage: 10,
+        swapTotal: 0,
+        swapUsed: 0
+      },
+      gpu: {
+        available: false,
+        model: 'Test GPU',
+        usage: null,
+        memoryTotal: null,
+        memoryUsed: null,
+        temperature: null
+      },
+      disk: {
+        drives: [{
+          fs: '/dev/disk1s1',
+          type: 'apfs',
+          size: 100,
+          used: 72,
+          available: 28,
+          usage: 72,
+          mount: '/',
+          purgeable: null,
+          realUsage: null
+        }]
+      },
+      timestamp: Date.now()
+    })
+    expect(alerts.some((alert) => alert.type === 'disk' && alert.severity === 'warning' && alert.threshold === payload.thresholds.diskWarning)).toBe(true)
     expect(schedulerCalls).toEqual([30 * 60 * 1000])
   })
 })

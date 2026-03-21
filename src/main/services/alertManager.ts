@@ -18,10 +18,6 @@ export function setThresholds(newThresholds: Partial<AlertThresholds>): void {
   thresholds = { ...thresholds, ...newThresholds }
 }
 
-export function getThresholds(): AlertThresholds {
-  return { ...thresholds }
-}
-
 export function getActiveAlerts(): Alert[] {
   return Array.from(activeAlerts.values())
 }

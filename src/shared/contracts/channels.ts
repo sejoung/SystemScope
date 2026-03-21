@@ -50,5 +50,3 @@ export const IPC_CHANNELS = {
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired'
 } as const
-
-export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

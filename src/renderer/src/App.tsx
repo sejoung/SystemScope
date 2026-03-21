@@ -24,7 +24,6 @@ function App() {
   const setMemoryProcesses = useProcessStore((s) => s.setMemoryProcesses)
   const setAllProcesses = useProcessStore((s) => s.setAllProcesses)
   const pushStats = useSystemStore((s) => s.pushStats)
-  const setSubscribed = useSystemStore((s) => s.setSubscribed)
   const addAlerts = useAlertStore((s) => s.addAlerts)
   const setAlerts = useAlertStore((s) => s.setAlerts)
 
@@ -51,13 +50,11 @@ function App() {
 
   useEffect(() => {
     window.systemScope.subscribeSystem()
-    setSubscribed(true)
 
     return () => {
       window.systemScope.unsubscribeSystem()
-      setSubscribed(false)
     }
-  }, [setSubscribed])
+  }, [])
 
   const handleSystemUpdate = useCallback(
     (data: unknown) => {

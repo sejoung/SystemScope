@@ -5,15 +5,12 @@ import { HISTORY_MAX_POINTS } from '@shared/constants/intervals'
 interface SystemState {
   current: SystemStats | null
   history: SystemStats[]
-  isSubscribed: boolean
   pushStats: (stats: SystemStats) => void
-  setSubscribed: (val: boolean) => void
 }
 
 export const useSystemStore = create<SystemState>((set) => ({
   current: null,
   history: [],
-  isSubscribed: false,
 
   pushStats: (stats) =>
     set((state) => {
@@ -22,7 +19,5 @@ export const useSystemStore = create<SystemState>((set) => ({
         history.shift()
       }
       return { current: stats, history }
-    }),
-
-  setSubscribed: (val) => set({ isSubscribed: val })
+    })
 }))
