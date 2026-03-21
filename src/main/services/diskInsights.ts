@@ -13,7 +13,7 @@ export async function findRecentGrowth(
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
   const results = new Map<string, RecentGrowthEntry>()
 
-  await walkForGrowth(folderPath, folderPath, cutoff, results, 0, 4, signal)
+  await walkForGrowth(folderPath, cutoff, results, 0, 4, signal)
 
   return Array.from(results.values())
     .filter((e) => e.recentSize > 0)
@@ -22,7 +22,6 @@ export async function findRecentGrowth(
 }
 
 async function walkForGrowth(
-  rootPath: string,
   dirPath: string,
   cutoff: number,
   results: Map<string, RecentGrowthEntry>,
@@ -58,7 +57,7 @@ async function walkForGrowth(
           recentFiles++
         }
       } else if (entry.isDirectory() && depth < maxDepth) {
-        const sub = await walkForGrowth(rootPath, fullPath, cutoff, results, depth + 1, maxDepth, signal)
+        const sub = await walkForGrowth(fullPath, cutoff, results, depth + 1, maxDepth, signal)
         totalSize += sub.totalSize
 
         // depth 1 기준으로 결과 집계 (홈 바로 아래 폴더별)
