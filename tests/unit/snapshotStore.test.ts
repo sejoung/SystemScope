@@ -1,7 +1,38 @@
-import { describe, expect, it } from 'vitest'
-import { areSnapshotsEquivalent, parseSnapshotData } from '../../src/main/services/snapshotStore'
+import * as fs from 'fs/promises'
+import * as os from 'os'
+import * as path from 'path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const state = vi.hoisted(() => ({
+  userDataPath: ''
+}))
+
+vi.mock('electron', () => ({
+  app: {
+    getPath: (name: string) => {
+      if (name !== 'userData') throw new Error(`Unexpected app path request: ${name}`)
+      return state.userDataPath
+    }
+  }
+}))
+
+const snapshotStore = await import('../../src/main/services/snapshotStore')
+const { areSnapshotsEquivalent, parseSnapshotData, saveSnapshot, loadSnapshots } = snapshotStore
 
 describe('snapshotStore', () => {
+  let tempRoot = ''
+
+  beforeEach(async () => {
+    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-snapshots-'))
+    state.userDataPath = tempRoot
+  })
+
+  afterEach(async () => {
+    if (tempRoot) {
+      await fs.rm(tempRoot, { recursive: true, force: true })
+    }
+  })
+
   it('should parse valid snapshot data', () => {
     const parsed = parseSnapshotData(JSON.stringify({
       version: 1,
@@ -64,5 +95,24 @@ describe('snapshotStore', () => {
     }
 
     expect(areSnapshotsEquivalent(a, b)).toBe(false)
+  })
+
+  it('should serialize concurrent saves without losing snapshots', async () => {
+    const first = {
+      timestamp: 1,
+      totalSize: 100,
+      folders: [{ name: 'Documents', path: '/Users/test/Documents', size: 100 }]
+    }
+    const second = {
+      timestamp: 2,
+      totalSize: 200,
+      folders: [{ name: 'Documents', path: '/Users/test/Documents', size: 200 }]
+    }
+
+    await Promise.all([saveSnapshot(first), saveSnapshot(second)])
+
+    const snapshots = loadSnapshots()
+    expect(snapshots).toHaveLength(2)
+    expect(snapshots.map((snapshot) => snapshot.timestamp)).toEqual([1, 2])
   })
 })

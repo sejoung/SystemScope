@@ -22,6 +22,7 @@ interface SnapshotData {
 }
 
 const MAX_SNAPSHOTS = 168 // 7일 x 24시간
+let saveQueue: Promise<void> = Promise.resolve()
 
 function getSnapshotDir(): string {
   return path.join(app.getPath('userData'), 'snapshots')
@@ -53,34 +54,40 @@ export function loadSnapshots(): Snapshot[] {
   }
 }
 
-export async function saveSnapshot(snapshot: Snapshot): Promise<void> {
-  const dir = getSnapshotDir()
-  const filePath = getSnapshotFile()
+export function saveSnapshot(snapshot: Snapshot): Promise<void> {
+  saveQueue = saveQueue.catch(() => undefined).then(async () => {
+    const dir = getSnapshotDir()
+    const filePath = getSnapshotFile()
+    const tempPath = getTempSnapshotFile(filePath)
 
-  // 매 저장 시 디렉토리 존재 보장
-  await fsp.mkdir(dir, { recursive: true })
+    // 동시에 여러 저장 요청이 와도 한 번에 하나씩 순서대로 처리한다.
+    await fsp.mkdir(dir, { recursive: true })
 
-  const existing = loadSnapshots()
-  const latest = existing[existing.length - 1]
-  if (latest && areSnapshotsEquivalent(latest, snapshot)) {
-    return
-  }
-  existing.push(snapshot)
+    const existing = loadSnapshots()
+    const latest = existing[existing.length - 1]
+    if (latest && areSnapshotsEquivalent(latest, snapshot)) {
+      return
+    }
+    existing.push(snapshot)
 
-  // 오래된 스냅샷 정리
-  while (existing.length > MAX_SNAPSHOTS) {
-    existing.shift()
-  }
+    while (existing.length > MAX_SNAPSHOTS) {
+      existing.shift()
+    }
 
-  const data: SnapshotData = { version: 1, snapshots: existing }
+    const data: SnapshotData = { version: 1, snapshots: existing }
 
-  try {
-    const tempPath = `${filePath}.tmp`
-    await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8')
-    await fsp.rename(tempPath, filePath)
-  } catch (err) {
-    log.error('Failed to save snapshot', err)
-  }
+    try {
+      await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8')
+      await fsp.rename(tempPath, filePath)
+    } catch (err) {
+      log.error('Failed to save snapshot', err)
+      throw err
+    } finally {
+      await fsp.rm(tempPath, { force: true }).catch(() => undefined)
+    }
+  })
+
+  return saveQueue
 }
 
 export function getSnapshotsInRange(since: number): Snapshot[] {
@@ -132,4 +139,8 @@ function backupCorruptSnapshotFile(filePath: string): void {
   } catch (backupErr) {
     log.warn('Failed to back up corrupt snapshot file', backupErr)
   }
+}
+
+function getTempSnapshotFile(filePath: string): string {
+  return `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`
 }

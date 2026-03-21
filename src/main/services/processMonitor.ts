@@ -17,6 +17,14 @@ export async function getTopMemoryProcesses(limit: number = 10): Promise<Process
     .map(toProcessInfo)
 }
 
+export async function getAllProcesses(): Promise<ProcessInfo[]> {
+  const data = await si.processes()
+  return data.list
+    .filter((p) => p.cpu > 0 || p.memRss > 0)
+    .sort((a, b) => b.cpu - a.cpu)
+    .map(toProcessInfo)
+}
+
 function toProcessInfo(p: si.Systeminformation.ProcessesProcessData): ProcessInfo {
   return {
     pid: p.pid,

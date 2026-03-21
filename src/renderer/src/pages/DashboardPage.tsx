@@ -4,7 +4,6 @@ import { useProcessStore } from '../stores/useProcessStore'
 import { useAlertStore } from '../stores/useAlertStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useIpcListener } from '../hooks/useIpc'
-import { useInterval } from '../hooks/useInterval'
 import { CpuWidget } from '../features/monitoring/CpuWidget'
 import { MemoryWidget } from '../features/monitoring/MemoryWidget'
 import { GpuWidget } from '../features/monitoring/GpuWidget'
@@ -14,15 +13,12 @@ import { GrowthView } from '../features/disk/GrowthView'
 import { TopProcesses } from '../features/process/TopProcesses'
 import { AlertBanner } from '../features/alerts/AlertBanner'
 import type { SystemStats, Alert } from '@shared/types'
-import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 
 export function DashboardPage() {
   const pushStats = useSystemStore((s) => s.pushStats)
   const setSubscribed = useSystemStore((s) => s.setSubscribed)
   const cpuProcesses = useProcessStore((s) => s.cpuProcesses)
   const memoryProcesses = useProcessStore((s) => s.memoryProcesses)
-  const setCpuProcesses = useProcessStore((s) => s.setCpuProcesses)
-  const setMemoryProcesses = useProcessStore((s) => s.setMemoryProcesses)
   const addAlerts = useAlertStore((s) => s.addAlerts)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
 
@@ -53,16 +49,6 @@ export function DashboardPage() {
     [addAlerts]
   )
   useIpcListener(window.systemScope.onAlertFired, handleAlertFired)
-
-  // Poll process data
-  useInterval(() => {
-    window.systemScope.getTopCpuProcesses(10).then((res) => {
-      if (res.ok && res.data) setCpuProcesses(res.data)
-    })
-    window.systemScope.getTopMemoryProcesses(10).then((res) => {
-      if (res.ok && res.data) setMemoryProcesses(res.data)
-    })
-  }, PROCESS_UPDATE_INTERVAL_MS)
 
   return (
     <div>

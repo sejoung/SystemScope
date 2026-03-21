@@ -17,6 +17,7 @@ export const IPC_CHANNELS = {
   // Process Monitoring
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',
   PROCESS_GET_TOP_MEMORY: 'process:getTopMemory',
+  PROCESS_GET_ALL: 'process:getAll',
 
   // Alerts
   ALERT_GET_ACTIVE: 'alert:getActive',
