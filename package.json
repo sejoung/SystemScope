@@ -1,0 +1,68 @@
+{
+  "name": "systemscope",
+  "version": "0.1.0",
+  "description": "Real-time system insights for developers",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "format": "prettier --write src/",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sejoung/SystemScope.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/sejoung/SystemScope/issues"
+  },
+  "homepage": "https://github.com/sejoung/SystemScope#readme",
+  "dependencies": {
+    "d3-hierarchy": "^3.1.2",
+    "electron-log": "^5.4.3",
+    "electron-store": "^11.0.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-is": "^19.2.4",
+    "recharts": "^3.8.0",
+    "systeminformation": "^5.31.5",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "eslint": "^10.1.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.0",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.systemscope.app",
+    "productName": "SystemScope",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

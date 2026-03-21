@@ -1,0 +1,96 @@
+import { ipcMain, BrowserWindow } from 'electron'
+import { IPC_CHANNELS } from '@shared/contracts/channels'
+import { SYSTEM_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
+import { getSystemStats } from '../services/systemMonitor'
+import { checkAlerts } from '../services/alertManager'
+import { success, failure } from '@shared/types'
+import log from 'electron-log'
+import {
+  addSystemSubscriber,
+  getSystemSubscriberIds,
+  removeSystemSubscriber,
+  hasSystemSubscribers,
+  retainSystemSubscribers,
+  resetSystemSubscribers
+} from './systemSubscriptions'
+
+let updateInterval: ReturnType<typeof setInterval> | null = null
+
+export function registerSystemIpc(): void {
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_STATS, async () => {
+    try {
+      const stats = await getSystemStats()
+      return success(stats)
+    } catch (err) {
+      log.error('Failed to get system stats', err)
+      return failure('UNKNOWN_ERROR', '시스템 정보를 가져올 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_SUBSCRIBE, (event) => {
+    addSystemSubscriber(event.sender.id)
+    startRealtimeUpdates()
+    return success(true)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE, (event) => {
+    removeSystemSubscriber(event.sender.id)
+    if (!hasSystemSubscribers()) {
+      stopRealtimeUpdates()
+    }
+    return success(true)
+  })
+}
+
+function startRealtimeUpdates(): void {
+  if (updateInterval) return
+
+  updateInterval = setInterval(async () => {
+    try {
+      const stats = await getSystemStats()
+      const wins = BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed())
+      retainSystemSubscribers(wins.map((win) => win.webContents.id))
+
+      if (!hasSystemSubscribers()) {
+        stopRealtimeUpdates()
+        return
+      }
+
+      const subscriberWins = wins.filter((win) => hasSubscribedWebContents(win.webContents.id))
+
+      for (const win of subscriberWins) {
+        win.webContents.send(IPC_CHANNELS.EVENT_SYSTEM_UPDATE, stats)
+      }
+
+      // Check alerts
+      const newAlerts = checkAlerts(stats)
+      if (newAlerts.length > 0) {
+        for (const win of subscriberWins) {
+          win.webContents.send(IPC_CHANNELS.EVENT_ALERT_FIRED, newAlerts)
+        }
+      }
+    } catch (err) {
+      log.error('Realtime update failed', err)
+    }
+  }, SYSTEM_UPDATE_INTERVAL_MS)
+}
+
+function stopRealtimeUpdates(): void {
+  if (updateInterval) {
+    clearInterval(updateInterval)
+    updateInterval = null
+  }
+}
+
+export function cleanupSystemIpc(): void {
+  stopRealtimeUpdates()
+  resetSystemSubscribers()
+}
+
+function hasSubscribedWebContents(webContentsId: number): boolean {
+  return hasSystemSubscribers() && getSubscriberIdSet().has(webContentsId)
+}
+
+function getSubscriberIdSet(): Set<number> {
+  return new Set(getSystemSubscriberIds())
+}
