@@ -159,13 +159,22 @@ Windows 예시:
 - 메모리 사용률 상위 프로세스 목록
 - 2초 간격 갱신
 
-### 10. 시스템 연동
+### 10. 트레이 아이콘
+
+- macOS 메뉴바 / Windows 시스템 트레이에 상주
+- 창을 닫아도 트레이에서 다시 열기 가능
+- macOS: Template Image로 다크/라이트 모드 자동 대응
+- Windows: 좌클릭으로 바로 창 열기
+- 트레이 메뉴: Show SystemScope / Quit
+
+### 11. 시스템 연동
 
 - 폴더 선택 다이얼로그
 - Finder / Explorer에서 경로 열기
+- 앱 데이터 폴더 열기 (userData 하위만 허용)
 - 창 크기, 위치, 최대화 상태 저장
 
-### 11. UI 패턴
+### 12. UI 패턴
 
 - 아코디언: 대시보드 위젯, Quick Scan, Large Files, Extensions, Growth View, Recently Grown, Duplicate Files 등 모든 섹션 접기/펼치기 지원
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
@@ -173,7 +182,7 @@ Windows 예시:
 - 사용자 공간 및 Growth View 분석 결과는 Zustand 스토어에 캐싱하여 페이지 이동 시 재호출 방지
 - 사용자가 Rescan / Refresh 버튼으로 원할 때만 갱신
 
-### 12. 설정
+### 13. 설정
 
 - 알림 임계치: Disk / Memory / GPU 각각 Warning / Critical 설정
 - 스냅샷 주기: 15분 / 30분 / 1시간 / 2시간 / 6시간 선택
@@ -274,6 +283,10 @@ npm run test:watch
 - `npm run dev`: 개발 모드 실행
 - `npm run build`: Electron main, preload, renderer 빌드
 - `npm run preview`: 빌드 결과 프리뷰
+- `npm run pack`: 빌드 + 패키징 (설치 파일 없이 앱 폴더만, 테스트용)
+- `npm run dist`: 빌드 + 패키징 + 설치 파일 생성 (.dmg / .exe)
+- `npm run dist:mac`: macOS만 빌드
+- `npm run dist:win`: Windows만 빌드
 - `npm test`: Vitest 실행
 - `npm run test:watch`: Vitest watch 모드
 - `npm run lint`: ESLint 실행
@@ -292,15 +305,17 @@ npm run test:watch
 - 최근 급성장 폴더 탐색 (스캔 결과 내)
 - 중복 파일 찾기 (3단계 해시: 크기 → 샘플 → 전체)
 - 프로세스 Top 목록 (CPU / Memory)
+- 트레이 아이콘 상주 + 창 숨기기/복원
+- 앱 아이콘 (macOS .icns / Windows .ico)
 - 아코디언 UI 전체 적용 + 헤더 액션 버튼
 - 스냅샷 주기 설정 (Settings)
 - 데이터 저장 경로 확인 + 열기 (Settings)
+- 패키징 스크립트 (pack / dist / dist:mac / dist:win)
 
 아직 포함되지 않음:
 
 - 자동 업데이트 (구현 계획: `docs/auto-update-plan.md`)
 - 실제 파일 삭제/정리 실행
-- 백그라운드 트레이 앱 동작
 - 원격 전송 또는 계정 연동
 
 ## 라이선스
