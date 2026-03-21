@@ -13,7 +13,7 @@ export function ProcessTable({ cpuProcesses, memoryProcesses }: ProcessTableProp
   const processes = sortBy === 'cpu' ? cpuProcesses : memoryProcesses
 
   return (
-    <Accordion title="Processes" defaultOpen>
+    <Accordion title="Process Explorer" defaultOpen>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <TabButton active={sortBy === 'cpu'} onClick={() => setSortBy('cpu')}>
           CPU
@@ -70,7 +70,7 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
         border: 'none',
         borderRadius: '6px',
         background: active ? 'var(--accent-blue)' : 'var(--bg-card-hover)',
-        color: active ? 'white' : 'var(--text-secondary)',
+        color: active ? 'var(--text-on-accent)' : 'var(--text-secondary)',
         cursor: 'pointer'
       }}
     >

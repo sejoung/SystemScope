@@ -88,8 +88,8 @@ export function DashboardPage() {
 
       {/* Bottom row 2: Process */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <TopProcesses processes={cpuProcesses} title="Top CPU Processes" metric="cpu" />
-        <TopProcesses processes={memoryProcesses} title="Top Memory Processes" metric="memory" />
+        <TopProcesses processes={cpuProcesses} title="CPU Hotspots" metric="cpu" />
+        <TopProcesses processes={memoryProcesses} title="Memory Hotspots" metric="memory" />
       </div>
     </div>
   )

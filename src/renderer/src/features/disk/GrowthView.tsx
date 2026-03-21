@@ -37,7 +37,7 @@ export function GrowthView() {
 
   return (
     <Accordion
-      title="Growth View"
+      title="Storage Growth"
       badge={loading ? 'Analyzing...' : hasData ? `+${formatBytes(result!.totalAdded)} in ${PERIOD_LABELS[result!.period]}` : undefined}
       badgeColor={loading ? 'var(--text-muted)' : 'var(--accent-yellow)'}
       defaultOpen
@@ -56,7 +56,7 @@ export function GrowthView() {
                   border: 'none',
                   borderRadius: '5px',
                   background: period === p ? 'var(--accent-yellow)' : 'transparent',
-                  color: period === p ? '#0f172a' : 'var(--text-muted)',
+                  color: period === p ? 'var(--text-on-accent-strong)' : 'var(--text-muted)',
                   cursor: 'pointer'
                 }}
               >
@@ -121,20 +121,26 @@ export function GrowthView() {
                 <BarChart data={top5} layout="vertical" margin={{ left: 70 }}>
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                    axisLine={{ stroke: 'var(--chart-grid)' }}
+                    tickLine={{ stroke: 'var(--chart-grid)' }}
+                    tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
                     tickFormatter={(v) => formatBytes(v)}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
                     width={65}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: 'var(--bg-secondary)',
+                      backgroundColor: 'var(--chart-tooltip-bg)',
                       border: '1px solid var(--border)',
                       borderRadius: '8px',
+                      boxShadow: 'var(--chart-tooltip-shadow)',
+                      color: 'var(--text-primary)',
                       fontSize: '12px'
                     }}
                     formatter={(val: number) => [`+${formatBytes(val)}`, 'Added']}
@@ -216,6 +222,6 @@ const btnStyle: React.CSSProperties = {
   border: 'none',
   borderRadius: '6px',
   background: 'var(--accent-yellow)',
-  color: '#0f172a',
+  color: 'var(--text-on-accent-strong)',
   cursor: 'pointer'
 }

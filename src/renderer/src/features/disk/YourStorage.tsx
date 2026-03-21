@@ -25,7 +25,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   if (!info && loading) {
     return (
-      <Accordion title="Your Storage" defaultOpen>
+      <Accordion title="Home Storage" defaultOpen>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0', justifyContent: 'center'
@@ -43,7 +43,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   const diskUsedPercent = ((info.diskTotal - info.diskAvailable) / info.diskTotal) * 100
 
   return (
-    <Accordion title="Your Storage" defaultOpen>
+    <Accordion title="Home Storage" defaultOpen>
       {/* Disk capacity summary */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '13px' }}>

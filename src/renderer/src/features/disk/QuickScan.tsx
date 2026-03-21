@@ -57,7 +57,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
 
   return (
     <Accordion
-      title="Quick Scan — common folders"
+      title="Quick Cleanup"
       badge={scanned ? formatBytes(cleanableSize) + ' cleanable' : undefined}
       badgeColor="var(--accent-green)"
       forceOpen={scanned}
@@ -165,7 +165,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                         fontSize: '10px',
                         padding: '1px 6px',
                         borderRadius: '4px',
-                        background: 'rgba(34,197,94,0.15)',
+                        background: 'var(--success-soft)',
                         color: 'var(--accent-green)',
                         fontWeight: 600
                       }}>
@@ -190,7 +190,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                   <button
                     onClick={(e) => { e.stopPropagation(); onFolderClick(folder.path) }}
                     title="Scan this folder"
-                    style={{ ...actionBtn, background: 'var(--accent-blue)', color: 'white' }}
+                    style={{ ...actionBtn, background: 'var(--accent-blue)', color: 'var(--text-on-accent)' }}
                   >
                     Scan
                   </button>
@@ -214,7 +214,7 @@ const btnStyle: React.CSSProperties = {
   border: 'none',
   borderRadius: 'var(--radius)',
   background: 'var(--accent-cyan)',
-  color: 'white',
+  color: 'var(--text-on-accent)',
   cursor: 'pointer'
 }
 

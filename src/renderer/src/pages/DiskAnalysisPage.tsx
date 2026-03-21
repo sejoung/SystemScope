@@ -109,79 +109,75 @@ export function DiskAnalysisPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Disk Analysis</h2>
+      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Storage</h2>
 
-      {/* Your Storage — home directory breakdown + disk capacity */}
+      {/* Scan status bar */}
       <div style={{ marginBottom: '16px' }}>
+        <Card>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button onClick={handleSelectFolder} disabled={isScanning} style={btnStyle}>
+              Browse Folder
+            </button>
+
+            {selectedFolder && (
+              <>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {selectedFolder}
+                </span>
+                <button
+                  onClick={() => window.systemScope.showInFolder(selectedFolder)}
+                  style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  Open
+                </button>
+              </>
+            )}
+
+            {isScanning && (
+              <button onClick={handleCancelScan} style={{ ...btnStyle, background: 'var(--accent-red)' }}>
+                Cancel
+              </button>
+            )}
+          </div>
+
+          {isScanning && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '14px', height: '14px',
+                  border: '2px solid var(--accent-blue)',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite'
+                }} />
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {scanProgress || '스캔 준비 중...'}
+                </span>
+              </div>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
+          {!isScanning && !selectedFolder && (
+            <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <YourStorage onFolderClick={(folderPath) => {
           if (!isScanning) startScan(folderPath)
         }} />
-      </div>
-
-      {/* Growth View — 추세 분석 */}
-      <div style={{ marginBottom: '16px' }}>
         <GrowthView />
       </div>
 
-      {/* Quick Scan — cleanable folders */}
       <div style={{ marginBottom: '16px' }}>
         <QuickScan onFolderClick={(folderPath) => {
           if (!isScanning) startScan(folderPath)
         }} />
       </div>
-
-      {/* Scan status bar */}
-      <Card style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button onClick={handleSelectFolder} disabled={isScanning} style={btnStyle}>
-            Browse Folder
-          </button>
-
-          {selectedFolder && (
-            <>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {selectedFolder}
-              </span>
-              <button
-                onClick={() => window.systemScope.showInFolder(selectedFolder)}
-                style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-              >
-                Open
-              </button>
-            </>
-          )}
-
-          {isScanning && (
-            <button onClick={handleCancelScan} style={{ ...btnStyle, background: 'var(--accent-red)' }}>
-              Cancel
-            </button>
-          )}
-        </div>
-
-        {isScanning && (
-          <div style={{ marginTop: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '14px', height: '14px',
-                border: '2px solid var(--accent-blue)',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite'
-              }} />
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {scanProgress || '스캔 준비 중...'}
-              </span>
-            </div>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
-
-        {!isScanning && !selectedFolder && (
-          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            위 폴더를 클릭하거나 Browse Folder로 스캔할 폴더를 선택하세요
-          </div>
-        )}
-      </Card>
 
       {/* Scan results */}
       {scanResult && (
@@ -200,7 +196,7 @@ export function DiskAnalysisPage() {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <Accordion title="Folder Treemap" defaultOpen>
+            <Accordion title="Folder Map" defaultOpen>
               <TreemapChart data={scanResult.tree} width={800} height={300} />
             </Accordion>
           </div>
@@ -236,6 +232,6 @@ const btnStyle: React.CSSProperties = {
   border: 'none',
   borderRadius: 'var(--radius)',
   background: 'var(--accent-blue)',
-  color: 'white',
+  color: 'var(--text-on-accent)',
   cursor: 'pointer'
 }

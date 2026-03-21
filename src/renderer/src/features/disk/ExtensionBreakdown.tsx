@@ -19,7 +19,7 @@ export function ExtensionBreakdown({ data }: ExtensionBreakdownProps) {
   }))
 
   return (
-    <Accordion title="Extensions" defaultOpen>
+    <Accordion title="File Types" defaultOpen>
       {top10.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터가 없습니다</div>
       ) : (
@@ -27,20 +27,26 @@ export function ExtensionBreakdown({ data }: ExtensionBreakdownProps) {
           <BarChart data={top10} layout="vertical" margin={{ left: 60 }}>
             <XAxis
               type="number"
-              tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+              axisLine={{ stroke: 'var(--chart-grid)' }}
+              tickLine={{ stroke: 'var(--chart-grid)' }}
+              tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
               tickFormatter={(val) => formatBytes(val * 1024 * 1024 * 1024)}
             />
             <YAxis
               type="category"
               dataKey="extension"
+              axisLine={false}
+              tickLine={false}
               tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
               width={55}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'var(--bg-secondary)',
+                backgroundColor: 'var(--chart-tooltip-bg)',
                 border: '1px solid var(--border)',
                 borderRadius: '8px',
+                boxShadow: 'var(--chart-tooltip-shadow)',
+                color: 'var(--text-primary)',
                 fontSize: '12px'
               }}
               formatter={(val: number) => formatBytes(val * 1024 * 1024 * 1024)}

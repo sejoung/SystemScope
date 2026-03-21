@@ -23,7 +23,7 @@ export function ProcessPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Processes</h2>
+      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Process Activity</h2>
       <ProcessTable cpuProcesses={cpuProcesses} memoryProcesses={memoryProcesses} />
     </div>
   )

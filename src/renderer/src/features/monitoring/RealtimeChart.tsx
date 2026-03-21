@@ -13,7 +13,7 @@ export function RealtimeChart() {
   }))
 
   return (
-    <Accordion title="Real-time Usage" defaultOpen>
+    <Accordion title="Live Usage" defaultOpen>
       <div style={{ minHeight: '280px' }}>
       {data.length < 2 ? (
         <div
@@ -31,28 +31,34 @@ export function RealtimeChart() {
       ) : (
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey="idx"
-              tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+              axisLine={{ stroke: 'var(--chart-grid)' }}
+              tickLine={{ stroke: 'var(--chart-grid)' }}
+              tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
               tickFormatter={(val) => `${val}s`}
             />
             <YAxis
               domain={[0, 100]}
-              tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+              axisLine={{ stroke: 'var(--chart-grid)' }}
+              tickLine={{ stroke: 'var(--chart-grid)' }}
+              tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
               tickFormatter={(val) => `${val}%`}
               width={40}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'var(--bg-secondary)',
+                backgroundColor: 'var(--chart-tooltip-bg)',
                 border: '1px solid var(--border)',
                 borderRadius: '8px',
+                boxShadow: 'var(--chart-tooltip-shadow)',
+                color: 'var(--text-primary)',
                 fontSize: '12px'
               }}
               formatter={(val: number) => `${val.toFixed(1)}%`}
             />
-            <Legend wrapperStyle={{ fontSize: '11px' }} />
+            <Legend wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)' }} />
             <Line type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name="CPU" />
             <Line type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name="Memory" />
             <Line type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name="GPU" />

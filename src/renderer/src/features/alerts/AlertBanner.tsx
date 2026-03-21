@@ -21,8 +21,8 @@ export function AlertBanner() {
             justifyContent: 'space-between',
             padding: '10px 16px',
             borderRadius: 'var(--radius)',
-            backgroundColor: alert.severity === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(234,179,8,0.15)',
-            border: `1px solid ${alert.severity === 'critical' ? 'rgba(239,68,68,0.3)' : 'rgba(234,179,8,0.3)'}`,
+            backgroundColor: alert.severity === 'critical' ? 'var(--alert-red-soft)' : 'var(--alert-yellow-soft)',
+            border: `1px solid ${alert.severity === 'critical' ? 'var(--alert-red-border)' : 'var(--alert-yellow-border)'}`,
             fontSize: '13px'
           }}
         >

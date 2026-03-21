@@ -83,7 +83,7 @@ export function DuplicateFinder({ folderPath }: DuplicateFinderProps) {
 
                   <span style={{
                     fontSize: '11px', fontWeight: 600, padding: '2px 8px',
-                    borderRadius: '4px', background: 'rgba(239,68,68,0.15)',
+                    borderRadius: '4px', background: 'var(--alert-red-soft)',
                     color: 'var(--accent-red)', flexShrink: 0
                   }}>
                     {group.files.length} copies
@@ -143,5 +143,5 @@ export function DuplicateFinder({ folderPath }: DuplicateFinderProps) {
 const btnStyle: React.CSSProperties = {
   padding: '5px 14px', fontSize: '12px', fontWeight: 600,
   border: 'none', borderRadius: '6px',
-  background: 'var(--accent-red)', color: 'white', cursor: 'pointer'
+  background: 'var(--accent-red)', color: 'var(--text-on-accent)', cursor: 'pointer'
 }

@@ -27,7 +27,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
 
   return (
     <Accordion
-      title="Recently Grown Folders"
+      title="Recent Growth"
       badge={scanned && totalRecent > 0 ? `+${formatBytes(totalRecent)} in ${days}d` : undefined}
       badgeColor="var(--accent-yellow)"
       forceOpen={scanned && results.length > 0}
@@ -106,7 +106,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
 const btnStyle: React.CSSProperties = {
   padding: '5px 14px', fontSize: '12px', fontWeight: 600,
   border: 'none', borderRadius: '6px',
-  background: 'var(--accent-yellow)', color: '#0f172a', cursor: 'pointer'
+  background: 'var(--accent-yellow)', color: 'var(--text-on-accent-strong)', cursor: 'pointer'
 }
 
 const selectStyle: React.CSSProperties = {

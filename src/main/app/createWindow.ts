@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron'
 import { join } from 'path'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
+import { getSettings } from '../store/settingsStore'
 
 let forceQuit = false
 
@@ -10,6 +11,7 @@ export function setForceQuit(value: boolean): void {
 
 export function createMainWindow(): BrowserWindow {
   const saved = restoreWindowState()
+  const { theme } = getSettings()
 
   const win = new BrowserWindow({
     width: saved?.width ?? 1440,
@@ -21,7 +23,7 @@ export function createMainWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: process.platform === 'win32',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    backgroundColor: '#0f172a',
+    backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

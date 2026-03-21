@@ -82,7 +82,7 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
               <text
                 x={r.x + 6}
                 y={r.y + 16}
-                fill="white"
+                fill="var(--text-on-accent)"
                 fontSize="11"
                 fontWeight="600"
               >
@@ -91,7 +91,7 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
               <text
                 x={r.x + 6}
                 y={r.y + 30}
-                fill="rgba(255,255,255,0.7)"
+                fill="rgba(255,255,255,0.78)"
                 fontSize="10"
               >
                 {formatBytes(r.node.size)}

@@ -8,7 +8,7 @@ interface LargeFileListProps {
 
 export function LargeFileList({ files }: LargeFileListProps) {
   return (
-    <Accordion title={`Large Files (${files.length})`} defaultOpen>
+    <Accordion title={`Largest Files (${files.length})`} defaultOpen>
       {files.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>대용량 파일이 없습니다</div>
       ) : (
