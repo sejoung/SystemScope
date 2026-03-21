@@ -62,6 +62,13 @@
       "output": "dist"
     },
     "icon": "resources/icon_1024.png",
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "resources",
+        "filter": ["trayTemplate.png", "trayTemplate@2x.png", "tray_win.png"]
+      }
+    ],
     "mac": {
       "target": "dmg",
       "category": "public.app-category.developer-tools",

@@ -2,6 +2,12 @@ import { BrowserWindow } from 'electron'
 import { join } from 'path'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
 
+let forceQuit = false
+
+export function setForceQuit(value: boolean): void {
+  forceQuit = value
+}
+
 export function createMainWindow(): BrowserWindow {
   const saved = restoreWindowState()
 
@@ -32,7 +38,15 @@ export function createMainWindow(): BrowserWindow {
     win.show()
   })
 
-  win.on('close', () => saveWindowState(win))
+  // 창 닫기 시: 상태 저장 + 숨기기 (destroy하지 않음)
+  // app.quit() 등 강제 종료 시에만 실제로 닫힘
+  win.on('close', (e) => {
+    saveWindowState(win)
+    if (!forceQuit) {
+      e.preventDefault()
+      win.hide()
+    }
+  })
 
   if (process.env.NODE_ENV === 'development' && process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
