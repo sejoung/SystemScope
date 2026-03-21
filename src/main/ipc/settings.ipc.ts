@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { getSettings, setSettings } from '../store/settingsStore'
+import { validatePartialSettings } from '../store/settingsSchema'
 import { success, failure } from '@shared/types'
 import log from 'electron-log'
 
@@ -12,7 +13,7 @@ export function registerSettingsIpc(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_SET, (_event, settings: Record<string, unknown>) => {
-    if (!settings || typeof settings !== 'object') {
+    if (!validatePartialSettings(settings)) {
       return failure('INVALID_INPUT', '유효하지 않은 설정 값입니다.')
     }
     setSettings(settings as Parameters<typeof setSettings>[0])

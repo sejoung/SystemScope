@@ -1,24 +1,15 @@
 import Store from 'electron-store'
-import type { AlertThresholds } from '@shared/types'
-import { DEFAULT_THRESHOLDS } from '@shared/types'
-
-interface AppSettings {
-  thresholds: AlertThresholds
-  theme: 'dark' | 'light'
-}
+import { DEFAULT_SETTINGS, type AppSettings, sanitizeAppSettings } from './settingsSchema'
 
 const store = new Store<AppSettings>({
-  defaults: {
-    thresholds: DEFAULT_THRESHOLDS,
-    theme: 'dark'
-  }
+  defaults: DEFAULT_SETTINGS
 })
 
 export function getSettings(): AppSettings {
-  return {
+  return sanitizeAppSettings({
     thresholds: store.get('thresholds'),
     theme: store.get('theme')
-  }
+  })
 }
 
 export function setSettings(settings: Partial<AppSettings>): void {

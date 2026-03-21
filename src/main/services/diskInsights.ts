@@ -1,7 +1,6 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as crypto from 'crypto'
-import * as fsSync from 'fs'
 
 // ─── 최근 급성장 폴더 ───
 
@@ -123,29 +122,49 @@ export async function findDuplicates(
 
   if (candidates.length === 0) return []
 
-  // 2단계: 해시 비교 (후보만)
-  const hashMap = new Map<string, { name: string; path: string; modified: number; size: number }[]>()
+  // 2단계: 샘플 해시로 추가 후보 축소
+  const sampleHashMap = new Map<string, { name: string; path: string; modified: number; size: number }[]>()
 
   for (const file of candidates) {
     if (signal?.aborted) throw new Error('Cancelled')
     try {
-      const hash = await hashFile(file.path, file.size)
+      const hash = await hashFileSample(file.path, file.size)
       const key = `${file.size}:${hash}`
-      const group = hashMap.get(key) ?? []
+      const group = sampleHashMap.get(key) ?? []
       group.push(file)
-      hashMap.set(key, group)
+      sampleHashMap.set(key, group)
     } catch {
       // skip unreadable
     }
   }
 
-  // 2개 이상인 그룹만 반환
+  // 3단계: 전체 해시로 최종 확정
+  const hashMap = new Map<string, { name: string; path: string; modified: number; size: number }[]>()
+  for (const [sizeAndSampleHash, files] of sampleHashMap) {
+    if (files.length < 2) continue
+
+    for (const file of files) {
+      if (signal?.aborted) throw new Error('Cancelled')
+      try {
+        const fullHash = await hashFileFull(file.path)
+        const key = `${sizeAndSampleHash}:${fullHash}`
+        const group = hashMap.get(key) ?? []
+        group.push(file)
+        hashMap.set(key, group)
+      } catch {
+        // skip unreadable
+      }
+    }
+  }
+
+  // 2개 이상인 최종 확정 그룹만 반환
   const results: DuplicateGroup[] = []
   for (const [key, files] of hashMap) {
     if (files.length >= 2) {
       const size = files[0].size
+      const parts = key.split(':')
       results.push({
-        hash: key.split(':')[1],
+        hash: parts[parts.length - 1],
         size,
         files: files.map((f) => ({ name: f.name, path: f.path, modified: f.modified })),
         totalWaste: (files.length - 1) * size
@@ -197,17 +216,14 @@ async function collectFilesBySize(
   }
 }
 
-// 파일 해시: 작은 파일은 전체, 큰 파일은 head+tail 샘플링
-async function hashFile(filePath: string, fileSize: number): Promise<string> {
+// 빠른 후보 축소용 샘플 해시
+async function hashFileSample(filePath: string, fileSize: number): Promise<string> {
   const SAMPLE_SIZE = 8192
 
   if (fileSize <= SAMPLE_SIZE * 2) {
-    // 작은 파일: 전체 해시
-    const data = await fs.readFile(filePath)
-    return crypto.createHash('md5').update(data).digest('hex')
+    return hashFileFull(filePath)
   }
 
-  // 큰 파일: head + tail 샘플 해시 (속도 최적화)
   const hash = crypto.createHash('md5')
   const fd = await fs.open(filePath, 'r')
   try {
@@ -226,4 +242,9 @@ async function hashFile(filePath: string, fileSize: number): Promise<string> {
   }
 
   return hash.digest('hex')
+}
+
+async function hashFileFull(filePath: string): Promise<string> {
+  const data = await fs.readFile(filePath)
+  return crypto.createHash('md5').update(data).digest('hex')
 }

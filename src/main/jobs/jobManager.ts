@@ -36,6 +36,7 @@ export function cancelJob(id: string): boolean {
   if (!job || job.status !== 'running') return false
   job.abortController.abort()
   job.status = 'cancelled'
+  jobs.delete(id)
   return true
 }
 
@@ -56,6 +57,7 @@ export function sendJobCompleted(win: BrowserWindow, job: Job, data: unknown): v
     id: job.id,
     data
   })
+  jobs.delete(job.id)
 }
 
 export function sendJobFailed(win: BrowserWindow, job: Job, error: string): void {
@@ -64,4 +66,14 @@ export function sendJobFailed(win: BrowserWindow, job: Job, error: string): void
     id: job.id,
     error
   })
+  jobs.delete(job.id)
+}
+
+export function getJobCount(): number {
+  return jobs.size
+}
+
+export function resetJobs(): void {
+  jobs.clear()
+  jobCounter = 0
 }
