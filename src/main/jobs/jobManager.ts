@@ -27,10 +27,6 @@ export function createJob(type: string): Job {
   return job
 }
 
-export function getJob(id: string): Job | undefined {
-  return jobs.get(id)
-}
-
 export function cancelJob(id: string): boolean {
   const job = jobs.get(id)
   if (!job || job.status !== 'running') return false
@@ -67,13 +63,4 @@ export function sendJobFailed(win: BrowserWindow, job: Job, error: string): void
     error
   })
   jobs.delete(job.id)
-}
-
-export function getJobCount(): number {
-  return jobs.size
-}
-
-export function resetJobs(): void {
-  jobs.clear()
-  jobCounter = 0
 }
