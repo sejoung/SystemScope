@@ -21,7 +21,6 @@ const api = {
   onSystemUpdate: createListener(IPC_CHANNELS.EVENT_SYSTEM_UPDATE),
 
   // Disk
-  getDrives: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_DRIVES),
   scanFolder: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.DISK_SCAN_FOLDER, folderPath),
   getLargeFiles: (folderPath: string, limit: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_LARGE_FILES, folderPath, limit),
@@ -29,6 +28,10 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_EXTENSIONS, folderPath),
   quickScan: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_QUICK_SCAN),
   getUserSpace: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_USER_SPACE),
+  findRecentGrowth: (folderPath: string, days: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DISK_RECENT_GROWTH, folderPath, days),
+  findDuplicates: (folderPath: string, minSizeKB: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_DUPLICATES, folderPath, minSizeKB),
 
   // Process
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),

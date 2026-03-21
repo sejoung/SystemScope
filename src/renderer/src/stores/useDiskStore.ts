@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { DriveInfo, DiskScanResult, LargeFile, ExtensionGroup } from '@shared/types'
+import type { DiskScanResult, LargeFile, ExtensionGroup } from '@shared/types'
 
 interface UserSpaceEntry {
   name: string
@@ -19,7 +19,6 @@ interface UserSpaceInfo {
 }
 
 interface DiskState {
-  drives: DriveInfo[]
   scanResult: DiskScanResult | null
   largeFiles: LargeFile[]
   extensions: ExtensionGroup[]
@@ -32,7 +31,6 @@ interface DiskState {
   userSpace: UserSpaceInfo | null
   userSpaceLoading: boolean
 
-  setDrives: (drives: DriveInfo[]) => void
   setScanResult: (result: DiskScanResult) => void
   setLargeFiles: (files: LargeFile[]) => void
   setExtensions: (groups: ExtensionGroup[]) => void
@@ -47,7 +45,6 @@ interface DiskState {
 }
 
 export const useDiskStore = create<DiskState>((set, get) => ({
-  drives: [],
   scanResult: null,
   largeFiles: [],
   extensions: [],
@@ -58,7 +55,6 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   userSpace: null,
   userSpaceLoading: false,
 
-  setDrives: (drives) => set({ drives }),
   setScanResult: (result) => set({ scanResult: result, isScanning: false }),
   setLargeFiles: (files) => set({ largeFiles: files }),
   setExtensions: (groups) => set({ extensions: groups }),
@@ -79,7 +75,6 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   setUserSpaceLoading: (val) => set({ userSpaceLoading: val }),
 
   fetchUserSpace: async () => {
-    // 이미 로딩 중이면 중복 호출 방지
     if (get().userSpaceLoading) return
     set({ userSpaceLoading: true })
     const res = await window.systemScope.getUserSpace()

@@ -6,16 +6,12 @@ import { LargeFileList } from '../features/disk/LargeFileList'
 import { ExtensionBreakdown } from '../features/disk/ExtensionBreakdown'
 import { QuickScan } from '../features/disk/QuickScan'
 import { YourStorage } from '../features/disk/YourStorage'
+import { RecentGrowth } from '../features/disk/RecentGrowth'
+import { DuplicateFinder } from '../features/disk/DuplicateFinder'
 import { Card } from '../components/Card'
+import { Accordion } from '../components/Accordion'
+import { formatBytes } from '../utils/format'
 import type { DiskScanResult } from '@shared/types'
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
 
 export function DiskAnalysisPage() {
   const {
@@ -198,14 +194,20 @@ export function DiskAnalysisPage() {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <Card title="Folder Treemap">
+            <Accordion title="Folder Treemap" defaultOpen>
               <TreemapChart data={scanResult.tree} width={800} height={300} />
-            </Card>
+            </Accordion>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <LargeFileList files={largeFiles} />
             <ExtensionBreakdown data={extensions} />
+          </div>
+
+          {/* Insights: Recent Growth + Duplicates */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <RecentGrowth folderPath={selectedFolder!} />
+            <DuplicateFinder folderPath={selectedFolder!} />
           </div>
         </>
       )}

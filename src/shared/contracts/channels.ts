@@ -5,12 +5,13 @@ export const IPC_CHANNELS = {
   SYSTEM_UNSUBSCRIBE: 'system:unsubscribe',
 
   // Disk Analysis
-  DISK_GET_DRIVES: 'disk:getDrives',
   DISK_SCAN_FOLDER: 'disk:scanFolder',
   DISK_GET_LARGE_FILES: 'disk:getLargeFiles',
   DISK_GET_EXTENSIONS: 'disk:getExtensions',
   DISK_QUICK_SCAN: 'disk:quickScan',
   DISK_USER_SPACE: 'disk:userSpace',
+  DISK_RECENT_GROWTH: 'disk:recentGrowth',
+  DISK_FIND_DUPLICATES: 'disk:findDuplicates',
 
   // Process Monitoring
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',
@@ -22,7 +23,6 @@ export const IPC_CHANNELS = {
   ALERT_DISMISS: 'alert:dismiss',
 
   // Jobs
-  JOB_START: 'job:start',
   JOB_CANCEL: 'job:cancel',
   JOB_PROGRESS: 'job:progress',
   JOB_COMPLETED: 'job:completed',

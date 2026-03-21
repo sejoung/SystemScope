@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
+import { formatBytes } from '../../utils/format'
 
 type ScanCategory = 'system' | 'homebrew' | 'devtools' | 'packages' | 'containers' | 'browsers'
 
@@ -23,14 +24,6 @@ const CATEGORY_LABELS: Record<ScanCategory, string> = {
 }
 
 const CATEGORY_ORDER: ScanCategory[] = ['system', 'homebrew', 'devtools', 'packages', 'containers', 'browsers']
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
 
 function sizeColor(size: number): string {
   if (size > 5 * 1024 * 1024 * 1024) return 'var(--accent-red)'
@@ -74,27 +67,24 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
   }, [results])
 
   return (
-    <Card title="Quick Scan — common folders">
+    <Accordion
+      title="Quick Scan — common folders"
+      badge={scanned ? formatBytes(cleanableSize) + ' cleanable' : undefined}
+      badgeColor="var(--accent-green)"
+      forceOpen={scanned}
+      actions={
+        <button
+          onClick={() => { handleScan() }}
+          disabled={scanning}
+          style={btnStyle}
+        >
+          {scanning ? 'Scanning...' : scanned ? 'Rescan' : 'Quick Scan'}
+        </button>
+      }
+    >
       {!scanned ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={handleScan} disabled={scanning} style={btnStyle}>
-            {scanning ? 'Scanning...' : 'Quick Scan'}
-          </button>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            캐시, 로그, 다운로드 등 주요 폴더의 용량을 빠르게 확인합니다
-          </span>
-          {scanning && (
-            <>
-              <div style={{
-                width: '14px', height: '14px',
-                border: '2px solid var(--accent-blue)',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite'
-              }} />
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </>
-          )}
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
+          캐시, 로그, 다운로드 등 주요 폴더의 용량을 빠르게 확인합니다
         </div>
       ) : (
         <div>
@@ -112,12 +102,6 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
             <span style={{ color: 'var(--text-muted)' }}>
               Cleanable: <strong style={{ color: 'var(--accent-green)' }}>{formatBytes(cleanableSize)}</strong>
             </span>
-            <button
-              onClick={handleScan}
-              style={{ ...btnSmall, marginLeft: 'auto' }}
-            >
-              Rescan
-            </button>
           </div>
 
           {/* Folder list grouped by category */}
@@ -230,7 +214,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
           </div>
         </div>
       )}
-    </Card>
+    </Accordion>
   )
 }
 
@@ -248,21 +232,21 @@ const btnStyle: React.CSSProperties = {
 const btnSmall: React.CSSProperties = {
   padding: '4px 12px',
   fontSize: '12px',
-  fontWeight: 500,
-  border: '1px solid var(--border)',
+  fontWeight: 600,
+  border: 'none',
   borderRadius: 'var(--radius)',
-  background: 'transparent',
-  color: 'var(--text-secondary)',
+  background: 'var(--bg-card-hover)',
+  color: 'var(--text-primary)',
   cursor: 'pointer'
 }
 
 const actionBtn: React.CSSProperties = {
   padding: '4px 10px',
   fontSize: '11px',
-  fontWeight: 500,
-  border: '1px solid var(--border)',
+  fontWeight: 600,
+  border: 'none',
   borderRadius: '6px',
-  background: 'transparent',
-  color: 'var(--text-secondary)',
+  background: 'var(--bg-card-hover)',
+  color: 'var(--text-primary)',
   cursor: 'pointer'
 }

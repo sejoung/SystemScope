@@ -2,9 +2,10 @@ import { ipcMain, BrowserWindow } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs/promises'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
-import { getDrives, scanFolder, findLargeFiles, getExtensionBreakdown } from '../services/diskAnalyzer'
+import { scanFolder, findLargeFiles, getExtensionBreakdown } from '../services/diskAnalyzer'
 import { runQuickScan } from '../services/quickScan'
 import { getUserSpaceInfo } from '../services/userSpace'
+import { findRecentGrowth, findDuplicates } from '../services/diskInsights'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
 import type { DiskScanResult } from '@shared/types'
@@ -14,16 +15,6 @@ import log from 'electron-log'
 let lastScanResult: DiskScanResult | null = null
 
 export function registerDiskIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.DISK_GET_DRIVES, async () => {
-    try {
-      const drives = await getDrives()
-      return success(drives)
-    } catch (err) {
-      log.error('Failed to get drives', err)
-      return failure('UNKNOWN_ERROR', '드라이브 정보를 가져올 수 없습니다.')
-    }
-  })
-
   ipcMain.handle(IPC_CHANNELS.DISK_SCAN_FOLDER, async (_event, folderPath: string) => {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
@@ -141,6 +132,44 @@ export function registerDiskIpc(): void {
     } catch (err) {
       log.error('User space scan failed', err)
       return failure('SCAN_FAILED', '사용자 공간 분석에 실패했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_RECENT_GROWTH, async (_event, folderPath: string, days: number = 7) => {
+    if (!folderPath || typeof folderPath !== 'string') {
+      return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+    const resolved = path.resolve(folderPath)
+    try {
+      await fs.access(resolved, fs.constants.R_OK)
+    } catch {
+      return failure('PERMISSION_DENIED', '폴더에 접근할 수 없습니다.')
+    }
+    try {
+      const results = await findRecentGrowth(resolved, days)
+      return success(results)
+    } catch (err) {
+      log.error('Recent growth scan failed', err)
+      return failure('SCAN_FAILED', '최근 변경 분석에 실패했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_FIND_DUPLICATES, async (_event, folderPath: string, minSizeKB: number = 100) => {
+    if (!folderPath || typeof folderPath !== 'string') {
+      return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+    const resolved = path.resolve(folderPath)
+    try {
+      await fs.access(resolved, fs.constants.R_OK)
+    } catch {
+      return failure('PERMISSION_DENIED', '폴더에 접근할 수 없습니다.')
+    }
+    try {
+      const results = await findDuplicates(resolved, minSizeKB * 1024)
+      return success(results)
+    } catch (err) {
+      log.error('Duplicate scan failed', err)
+      return failure('SCAN_FAILED', '중복 파일 탐색에 실패했습니다.')
     }
   })
 

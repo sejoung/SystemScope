@@ -1,23 +1,7 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import si from 'systeminformation'
-import type { FolderNode, LargeFile, ExtensionGroup, DiskScanResult, DriveInfo } from '@shared/types'
+import type { FolderNode, LargeFile, ExtensionGroup, DiskScanResult } from '@shared/types'
 import { SCAN_MAX_DEPTH, SCAN_CONCURRENCY, SCAN_LARGE_FILE_LIMIT } from '@shared/constants/thresholds'
-
-export async function getDrives(): Promise<DriveInfo[]> {
-  const disks = await si.fsSize()
-  return disks.map((d) => ({
-    fs: d.fs,
-    type: d.type,
-    size: d.size,
-    used: d.used,
-    available: d.available,
-    usage: Math.round(d.use * 100) / 100,
-    mount: d.mount,
-    purgeable: null,
-    realUsage: null
-  }))
-}
 
 export async function scanFolder(
   folderPath: string,

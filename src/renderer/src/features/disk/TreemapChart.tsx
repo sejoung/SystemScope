@@ -1,13 +1,6 @@
 import { useMemo } from 'react'
 import type { FolderNode } from '@shared/types'
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
+import { formatBytes } from '../../utils/format'
 
 const COLORS = [
   '#3b82f6', '#22c55e', '#eab308', '#ef4444', '#a855f7',

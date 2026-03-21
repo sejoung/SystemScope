@@ -21,9 +21,12 @@ describe('IPC_CHANNELS', () => {
   })
 
   it('should contain all required disk channels', () => {
-    expect(IPC_CHANNELS.DISK_GET_DRIVES).toBeDefined()
     expect(IPC_CHANNELS.DISK_SCAN_FOLDER).toBeDefined()
     expect(IPC_CHANNELS.DISK_GET_LARGE_FILES).toBeDefined()
     expect(IPC_CHANNELS.DISK_GET_EXTENSIONS).toBeDefined()
+    expect(IPC_CHANNELS.DISK_QUICK_SCAN).toBeDefined()
+    expect(IPC_CHANNELS.DISK_USER_SPACE).toBeDefined()
+    expect(IPC_CHANNELS.DISK_RECENT_GROWTH).toBeDefined()
+    expect(IPC_CHANNELS.DISK_FIND_DUPLICATES).toBeDefined()
   })
 })

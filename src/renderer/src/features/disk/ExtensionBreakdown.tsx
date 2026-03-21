@@ -1,19 +1,12 @@
 import type { ExtensionGroup } from '@shared/types'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { formatBytes } from '../../utils/format'
 
 const COLORS = [
   '#3b82f6', '#22c55e', '#eab308', '#ef4444', '#a855f7',
   '#06b6d4', '#f97316', '#ec4899', '#14b8a6', '#8b5cf6'
 ]
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
 
 interface ExtensionBreakdownProps {
   data: ExtensionGroup[]
@@ -26,7 +19,7 @@ export function ExtensionBreakdown({ data }: ExtensionBreakdownProps) {
   }))
 
   return (
-    <Card title="Extensions">
+    <Accordion title="Extensions" defaultOpen>
       {top10.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터가 없습니다</div>
       ) : (
@@ -60,6 +53,6 @@ export function ExtensionBreakdown({ data }: ExtensionBreakdownProps) {
           </BarChart>
         </ResponsiveContainer>
       )}
-    </Card>
+    </Accordion>
   )
 }

@@ -1,13 +1,6 @@
 import type { LargeFile } from '@shared/types'
-import { Card } from '../../components/Card'
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
+import { Accordion } from '../../components/Accordion'
+import { formatBytes } from '../../utils/format'
 
 interface LargeFileListProps {
   files: LargeFile[]
@@ -15,7 +8,7 @@ interface LargeFileListProps {
 
 export function LargeFileList({ files }: LargeFileListProps) {
   return (
-    <Card title="Large Files">
+    <Accordion title={`Large Files (${files.length})`} defaultOpen>
       {files.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>대용량 파일이 없습니다</div>
       ) : (
@@ -55,7 +48,7 @@ export function LargeFileList({ files }: LargeFileListProps) {
           </table>
         </div>
       )}
-    </Card>
+    </Accordion>
   )
 }
 
