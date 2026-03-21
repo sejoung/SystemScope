@@ -77,7 +77,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
         {/* Stacked bar */}
         <div style={{
           width: '100%', height: '28px',
-          backgroundColor: '#1a3a2a', borderRadius: '8px',
+          backgroundColor: 'var(--disk-bar-available)', borderRadius: '8px',
           overflow: 'hidden', display: 'flex'
         }}>
           {/* System */}
@@ -85,7 +85,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
             style={{
               width: `${(usedBySystem / info.diskTotal) * 100}%`,
               height: '100%',
-              backgroundColor: '#94a3b8',
+              backgroundColor: 'var(--disk-bar-system)',
               transition: 'width 0.5s'
             }}
             title={`System: ${formatBytes(usedBySystem)}`}
@@ -113,7 +113,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
         {/* Legend */}
         <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
-          <LegendItem color="#94a3b8" label="System" value={formatBytes(usedBySystem)} />
+          <LegendItem color="var(--disk-bar-system)" label="System" value={formatBytes(usedBySystem)} />
           <LegendItem color="#22c55e" label="Available" value={formatBytes(info.diskAvailable)} />
           <span style={{ color: 'var(--text-primary)', fontWeight: 600, marginLeft: 'auto' }}>
             {diskUsedPercent.toFixed(1)}% used

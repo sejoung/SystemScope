@@ -6,6 +6,13 @@
 
 <p align="center">개발자를 위한 Electron 기반 시스템 모니터링 데스크톱 앱입니다.<br/>CPU, 메모리, GPU, 디스크 사용량을 실시간으로 확인하고, 폴더 스캔과 빠른 정리 후보 탐색까지 한 앱에서 제공합니다.</p>
 
+## 화면 구성
+
+- `Overview`: 실시간 시스템 상태, 알림, Live Usage 차트, Home Storage, Storage Growth 요약
+- `Storage`: 폴더 스캔, Folder Map, Largest Files, File Types, Recent Growth, Duplicate Finder
+- `Activity`: CPU / 메모리 상위 프로세스 확인
+- `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터 경로 관리
+
 ## 주요 기능
 
 ### 1. 실시간 시스템 모니터링
@@ -106,6 +113,8 @@ Windows 예시:
 - 기본 주기: 60분 (Settings에서 15분/30분/1시간/2시간/6시간 변경 가능)
 - 최대 보관: 168개
 - 앱 시작 시 즉시 1회 + 이후 설정된 주기마다 자동 기록
+- 깨진 JSON 파일이 감지되면 백업 후 새 파일로 복구
+- 동일한 내용의 연속 스냅샷은 중복 저장하지 않음
 
 ### 6. 최근 급성장 폴더 (폴더 스캔 결과 내)
 
@@ -176,17 +185,21 @@ Windows 예시:
 
 ### 12. UI 패턴
 
-- 아코디언: 대시보드 위젯, Quick Scan, Large Files, Extensions, Growth View, Recently Grown, Duplicate Files 등 모든 섹션 접기/펼치기 지원
+- 아코디언: Live Usage, Home Storage, Storage Growth, Quick Cleanup, Largest Files, File Types, Recent Growth, Duplicate Finder 등 모든 섹션 접기/펼치기 지원
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
   - 실행 완료 시 자동으로 열리며 뱃지로 요약 표시
 - 사용자 공간 및 Growth View 분석 결과는 Zustand 스토어에 캐싱하여 페이지 이동 시 재호출 방지
 - 사용자가 Rescan / Refresh 버튼으로 원할 때만 갱신
+- 다크 / 라이트 테마 지원
+- 라이트 테마에서도 차트, 사이드바, 경고/성공 배지 대비를 별도로 조정
 
 ### 13. 설정
 
-- 알림 임계치: Disk / Memory / GPU 각각 Warning / Critical 설정
-- 스냅샷 주기: 15분 / 30분 / 1시간 / 2시간 / 6시간 선택
-- 데이터 저장 경로: 확인 및 Finder / Explorer에서 바로 열기
+- `Preferences > Appearance`: Dark / Light 테마 선택
+- `Preferences > Alerts`: Disk / Memory / GPU 각각 Warning / Critical 설정
+- `Preferences > Snapshots`: 15분 / 30분 / 1시간 / 2시간 / 6시간 선택
+- `Preferences > App Data`: 저장 경로 확인 및 Finder / Explorer에서 바로 열기
+- 상단 `Save All` 버튼으로 테마, 알림 임계치, 스냅샷 주기를 함께 저장
 
 ## macOS 동작 보정
 
@@ -298,10 +311,12 @@ npm run test:watch
 
 - 실시간 시스템 메트릭 수집 (CPU / Memory / GPU / Disk)
 - 알림 임계치 저장 및 적용
+- 테마 저장 및 재시작 후 복원 (Dark / Light)
 - 폴더 스캔 / 취소 / 결과 시각화 (Treemap, Large Files, Extensions)
 - 빠른 정리 후보 분석 (Quick Scan)
 - 사용자 공간 요약 (Your Storage, Zustand 캐싱)
 - Growth View — 스냅샷 기반 폴더 성장 추세 분석
+- 스냅샷 파일 손상 자동 복구 + 연속 중복 스냅샷 방지
 - 최근 급성장 폴더 탐색 (스캔 결과 내)
 - 중복 파일 찾기 (3단계 해시: 크기 → 샘플 → 전체)
 - 프로세스 Top 목록 (CPU / Memory)

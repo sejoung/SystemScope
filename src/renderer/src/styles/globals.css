@@ -33,8 +33,9 @@
   --chart-tooltip-shadow: 0 14px 32px rgba(2, 6, 23, 0.28);
   --nav-active-bg: rgba(59, 130, 246, 0.14);
   --nav-active-border: rgba(59, 130, 246, 0.32);
+  --disk-bar-available: #1a3a2a;
+  --disk-bar-system: #94a3b8;
   --sidebar-width: 220px;
-  --header-height: 48px;
   --radius: 8px;
   --radius-lg: 12px;
 }
@@ -66,6 +67,8 @@
   --chart-tooltip-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
   --nav-active-bg: rgba(37, 99, 235, 0.1);
   --nav-active-border: rgba(37, 99, 235, 0.22);
+  --disk-bar-available: #d1fae5;
+  --disk-bar-system: #64748b;
 }
 
 html,
