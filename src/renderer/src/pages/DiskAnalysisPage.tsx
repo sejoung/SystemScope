@@ -2,16 +2,15 @@ import { useCallback } from 'react'
 import { useDiskStore } from '../stores/useDiskStore'
 import { useIpcListener } from '../hooks/useIpc'
 import { TreemapChart } from '../features/disk/TreemapChart'
-import { LargeFileList } from '../features/disk/LargeFileList'
-import { ExtensionBreakdown } from '../features/disk/ExtensionBreakdown'
+import { FileInsights } from '../features/disk/FileInsights'
 import { QuickScan } from '../features/disk/QuickScan'
 import { YourStorage } from '../features/disk/YourStorage'
 import { GrowthView } from '../features/disk/GrowthView'
 import { RecentGrowth } from '../features/disk/RecentGrowth'
-import { DuplicateFinder } from '../features/disk/DuplicateFinder'
 import { Card } from '../components/Card'
 import { Accordion } from '../components/Accordion'
 import { formatBytes } from '../utils/format'
+import { useToast } from '../components/Toast'
 import type { DiskScanResult } from '@shared/types'
 
 export function DiskAnalysisPage() {
@@ -32,7 +31,8 @@ export function DiskAnalysisPage() {
     clearScan
   } = useDiskStore()
 
-  // --- scan helpers ---
+  const showToast = useToast((s) => s.show)
+
   const startScan = useCallback(
     async (folderPath: string) => {
       clearScan()
@@ -49,6 +49,17 @@ export function DiskAnalysisPage() {
     [clearScan, setSelectedFolder, setScanning, setScanProgress]
   )
 
+  const tryScan = useCallback(
+    (folderPath: string) => {
+      if (isScanning) {
+        showToast('스캔이 진행 중입니다. 완료 후 다시 시도해주세요.')
+        return
+      }
+      startScan(folderPath)
+    },
+    [isScanning, startScan, showToast]
+  )
+
   const handleCancelScan = useCallback(() => {
     if (scanJobId) {
       window.systemScope.cancelJob(scanJobId)
@@ -56,21 +67,21 @@ export function DiskAnalysisPage() {
     }
   }, [scanJobId, setScanning])
 
-  // --- manual folder select ---
   const handleSelectFolder = useCallback(async () => {
+    if (isScanning) {
+      showToast('스캔이 진행 중입니다. 완료 후 다시 시도해주세요.')
+      return
+    }
     const res = await window.systemScope.selectFolder()
     if (res.ok && res.data) {
       startScan(res.data as string)
     }
-  }, [startScan])
+  }, [isScanning, startScan, showToast])
 
-  // --- job event listeners ---
   const handleJobProgress = useCallback(
     (data: unknown) => {
       const d = data as { id: string; currentStep: string }
-      if (d.id === scanJobId) {
-        setScanProgress(d.currentStep)
-      }
+      if (d.id === scanJobId) setScanProgress(d.currentStep)
     },
     [scanJobId, setScanProgress]
   )
@@ -118,7 +129,6 @@ export function DiskAnalysisPage() {
             <button onClick={handleSelectFolder} disabled={isScanning} style={btnStyle}>
               Browse Folder
             </button>
-
             {selectedFolder && (
               <>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -132,14 +142,12 @@ export function DiskAnalysisPage() {
                 </button>
               </>
             )}
-
             {isScanning && (
               <button onClick={handleCancelScan} style={{ ...btnStyle, background: 'var(--accent-red)' }}>
                 Cancel
               </button>
             )}
           </div>
-
           {isScanning && (
             <div style={{ marginTop: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -157,7 +165,6 @@ export function DiskAnalysisPage() {
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           )}
-
           {!isScanning && !selectedFolder && (
             <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
               폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.
@@ -167,16 +174,12 @@ export function DiskAnalysisPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-        <YourStorage onFolderClick={(folderPath) => {
-          if (!isScanning) startScan(folderPath)
-        }} />
+        <YourStorage onFolderClick={tryScan} />
         <GrowthView />
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <QuickScan onFolderClick={(folderPath) => {
-          if (!isScanning) startScan(folderPath)
-        }} />
+        <QuickScan onFolderClick={tryScan} />
       </div>
 
       {/* Scan results */}
@@ -184,10 +187,8 @@ export function DiskAnalysisPage() {
         <>
           <div style={{
             display: 'flex', gap: '16px', marginBottom: '16px', fontSize: '13px',
-            padding: '10px 16px',
-            background: 'var(--bg-card)',
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--border)'
+            padding: '10px 16px', background: 'var(--bg-card)',
+            borderRadius: 'var(--radius)', border: '1px solid var(--border)'
           }}>
             <Stat label="Total" value={formatBytes(scanResult.totalSize)} />
             <Stat label="Files" value={scanResult.fileCount.toLocaleString()} />
@@ -201,15 +202,18 @@ export function DiskAnalysisPage() {
             </Accordion>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <LargeFileList files={largeFiles} />
-            <ExtensionBreakdown data={extensions} />
+          {/* File Insights — Types / Largest / Old Files / Duplicates 통합 */}
+          <div style={{ marginBottom: '16px' }}>
+            <FileInsights
+              extensions={extensions}
+              largeFiles={largeFiles}
+              folderPath={selectedFolder!}
+            />
           </div>
 
-          {/* Insights: Recent Growth + Duplicates */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          {/* Recent Growth */}
+          <div>
             <RecentGrowth folderPath={selectedFolder!} />
-            <DuplicateFinder folderPath={selectedFolder!} />
           </div>
         </>
       )}

@@ -7,6 +7,7 @@ import { runQuickScan } from '../services/quickScan'
 import { getUserSpaceInfo } from '../services/userSpace'
 import { findRecentGrowth, findDuplicates } from '../services/diskInsights'
 import { analyzeGrowth } from '../services/growthAnalyzer'
+import { findOldFiles } from '../services/oldFileFinder'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
 import type { DiskScanResult } from '@shared/types'
@@ -184,6 +185,25 @@ export function registerDiskIpc(): void {
     } catch (err) {
       log.error('Growth analysis failed', err)
       return failure('SCAN_FAILED', '성장 분석에 실패했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_FIND_OLD_FILES, async (_event, folderPath: string, olderThanDays: number = 365) => {
+    if (!folderPath || typeof folderPath !== 'string') {
+      return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+    const resolved = path.resolve(folderPath)
+    try {
+      await fs.access(resolved, fs.constants.R_OK)
+    } catch {
+      return failure('PERMISSION_DENIED', '폴더에 접근할 수 없습니다.')
+    }
+    try {
+      const results = await findOldFiles(resolved, olderThanDays)
+      return success(results)
+    } catch (err) {
+      log.error('Old file scan failed', err)
+      return failure('SCAN_FAILED', '오래된 파일 탐색에 실패했습니다.')
     }
   })
 

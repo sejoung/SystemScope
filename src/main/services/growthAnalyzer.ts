@@ -54,8 +54,12 @@ export async function analyzeGrowth(period: string = '7d'): Promise<GrowthViewRe
   const ms = PERIODS[period] ?? PERIODS['7d']
   const since = Date.now() - ms
 
-  // 현재 스냅샷 먼저 찍기
-  const current = await takeSnapshot()
+  // 최근 스냅샷이 5분 이내이면 재사용, 아니면 새로 찍기
+  const allSnapshots = getSnapshotsInRange(0)
+  const latest = allSnapshots[allSnapshots.length - 1]
+  const current = (latest && Date.now() - latest.timestamp < 5 * 60 * 1000)
+    ? latest
+    : await takeSnapshot()
 
   // 해당 기간 내 가장 오래된 스냅샷 찾기
   const history = getSnapshotsInRange(since)

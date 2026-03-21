@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { Layout } from './components/Layout'
+import { ToastContainer } from './components/Toast'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessStore } from './stores/useProcessStore'
 import { useSystemStore } from './stores/useSystemStore'
@@ -79,12 +80,15 @@ function App() {
   }, PROCESS_UPDATE_INTERVAL_MS)
 
   return (
-    <Layout>
-      {currentPage === 'dashboard' && <DashboardPage />}
-      {currentPage === 'disk' && <DiskAnalysisPage />}
-      {currentPage === 'process' && <ProcessPage />}
-      {currentPage === 'settings' && <SettingsPage />}
-    </Layout>
+    <>
+      <Layout>
+        {currentPage === 'dashboard' && <DashboardPage />}
+        {currentPage === 'disk' && <DiskAnalysisPage />}
+        {currentPage === 'process' && <ProcessPage />}
+        {currentPage === 'settings' && <SettingsPage />}
+      </Layout>
+      <ToastContainer />
+    </>
   )
 }
 

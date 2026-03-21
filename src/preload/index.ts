@@ -34,6 +34,8 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_DUPLICATES, folderPath, minSizeKB),
   getGrowthView: (period: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_GROWTH_VIEW, period),
+  findOldFiles: (folderPath: string, olderThanDays: number) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_OLD_FILES, folderPath, olderThanDays),
 
   // Process
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),

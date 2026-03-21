@@ -13,6 +13,7 @@ export const IPC_CHANNELS = {
   DISK_RECENT_GROWTH: 'disk:recentGrowth',
   DISK_FIND_DUPLICATES: 'disk:findDuplicates',
   DISK_GROWTH_VIEW: 'disk:growthView',
+  DISK_FIND_OLD_FILES: 'disk:findOldFiles',
 
   // Process Monitoring
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',
