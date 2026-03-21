@@ -53,8 +53,11 @@ export function loadSnapshots(): Snapshot[] {
 }
 
 export async function saveSnapshot(snapshot: Snapshot): Promise<void> {
-  ensureSnapshotDir()
+  const dir = getSnapshotDir()
   const filePath = getSnapshotFile()
+
+  // 매 저장 시 디렉토리 존재 보장
+  await fsp.mkdir(dir, { recursive: true })
 
   const existing = loadSnapshots()
   existing.push(snapshot)
@@ -66,15 +69,11 @@ export async function saveSnapshot(snapshot: Snapshot): Promise<void> {
 
   const data: SnapshotData = { version: 1, snapshots: existing }
 
-  // atomic write: 임시 파일에 쓰고 rename
-  const tmpPath = filePath + '.tmp'
+  // atomic write 대신 직접 쓰기 (같은 디렉토리 내 rename 실패 방지)
   try {
-    await fsp.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8')
-    await fsp.rename(tmpPath, filePath)
+    await fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
   } catch (err) {
     log.error('Failed to save snapshot', err)
-    // 임시 파일 정리
-    try { await fsp.unlink(tmpPath) } catch { /* ignore */ }
   }
 }
 
