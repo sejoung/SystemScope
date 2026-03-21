@@ -6,6 +6,7 @@ import { getSettings, setSettings } from '../store/settingsStore'
 import { validatePartialSettings } from '../store/settingsSchema'
 import { success, failure } from '@shared/types'
 import { restartSnapshotScheduler } from '../services/growthAnalyzer'
+import { didShellOpenPathFail, isPathInsideParent } from './settingsPathUtils'
 import log from 'electron-log'
 
 export function registerSettingsIpc(): void {
@@ -61,8 +62,7 @@ export function registerSettingsIpc(): void {
     const resolved = path.resolve(targetPath)
     const userData = app.getPath('userData')
 
-    // userData 하위 경로만 허용 (보안)
-    if (!resolved.startsWith(userData)) {
+    if (!isPathInsideParent(resolved, userData)) {
       return failure('PERMISSION_DENIED', '허용되지 않은 경로입니다.')
     }
 
@@ -71,7 +71,11 @@ export function registerSettingsIpc(): void {
     }
 
     try {
-      await shell.openPath(resolved)
+      const openResult = await shell.openPath(resolved)
+      if (didShellOpenPathFail(openResult)) {
+        log.error('Failed to open path', { path: resolved, error: openResult })
+        return failure('UNKNOWN_ERROR', '폴더를 열 수 없습니다.')
+      }
       return success(true)
     } catch (err) {
       log.error('Failed to open path', { path: resolved, error: err })
