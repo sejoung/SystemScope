@@ -45,7 +45,11 @@ export function loadSnapshots(): Snapshot[] {
     if (!fs.existsSync(filePath)) return []
     const raw = fs.readFileSync(filePath, 'utf-8')
     const data = parseSnapshotData(raw)
-    if (!data) return []
+    if (!data) {
+      log.warn('Invalid snapshot file detected, backing up and starting fresh')
+      backupCorruptSnapshotFile(filePath)
+      return []
+    }
     return data.snapshots
   } catch (err) {
     log.warn('Failed to load snapshots, starting fresh', err)

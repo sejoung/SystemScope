@@ -8,10 +8,9 @@ type SortDir = 'asc' | 'desc'
 
 interface ProcessTableProps {
   processes: ProcessInfo[]
-  loading?: boolean
 }
 
-export function ProcessTable({ processes, loading }: ProcessTableProps) {
+export function ProcessTable({ processes }: ProcessTableProps) {
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<SortField>('cpu')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -58,7 +57,7 @@ export function ProcessTable({ processes, loading }: ProcessTableProps) {
     <Accordion
       title={`All Processes (${filtered.length})`}
       defaultOpen
-      badge={loading ? 'Refreshing...' : undefined}
+      badge={processes.length > 0 ? `${processes.length}` : undefined}
       badgeColor="var(--text-muted)"
       actions={
         <input

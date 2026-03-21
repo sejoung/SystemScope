@@ -6,6 +6,7 @@ import { getSettings, setSettings } from '../store/settingsStore'
 import { validatePartialSettings } from '../store/settingsSchema'
 import { success, failure } from '@shared/types'
 import { restartSnapshotScheduler } from '../services/growthAnalyzer'
+import { setThresholds } from '../services/alertManager'
 import { didShellOpenPathFail, isPathInsideParent } from './settingsPathUtils'
 import log from 'electron-log'
 
@@ -21,6 +22,9 @@ export function registerSettingsIpc(): void {
     try {
       const parsed = settings as Parameters<typeof setSettings>[0]
       setSettings(parsed)
+      if (parsed.thresholds) {
+        setThresholds(parsed.thresholds)
+      }
 
       // 스냅샷 주기 변경 시 스케줄러 재시작
       if (parsed.snapshotIntervalMin) {

@@ -115,4 +115,17 @@ describe('snapshotStore', () => {
     expect(snapshots).toHaveLength(2)
     expect(snapshots.map((snapshot) => snapshot.timestamp)).toEqual([1, 2])
   })
+
+  it('should back up invalid snapshot files before starting fresh', async () => {
+    const snapshotDir = path.join(tempRoot, 'snapshots')
+    await fs.mkdir(snapshotDir, { recursive: true })
+    await fs.writeFile(path.join(snapshotDir, 'growth.json'), '{"version":1,"snapshots":[]} trailing', 'utf-8')
+
+    const snapshots = loadSnapshots()
+    const files = await fs.readdir(snapshotDir)
+
+    expect(snapshots).toEqual([])
+    expect(files.some((file) => file.startsWith('growth.json.corrupt-'))).toBe(true)
+    expect(files.includes('growth.json')).toBe(false)
+  })
 })

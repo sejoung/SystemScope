@@ -41,7 +41,6 @@ export function SettingsPage() {
     if (res.ok) {
       setThresholds(local)
       setTheme(localTheme)
-      await window.systemScope.updateThresholds(local as unknown as Record<string, number>)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     }

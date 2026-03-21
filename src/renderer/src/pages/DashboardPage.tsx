@@ -1,9 +1,5 @@
-import { useEffect, useCallback } from 'react'
-import { useSystemStore } from '../stores/useSystemStore'
-import { useProcessStore } from '../stores/useProcessStore'
-import { useAlertStore } from '../stores/useAlertStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
-import { useIpcListener } from '../hooks/useIpc'
+import { useProcessStore } from '../stores/useProcessStore'
 import { CpuWidget } from '../features/monitoring/CpuWidget'
 import { MemoryWidget } from '../features/monitoring/MemoryWidget'
 import { GpuWidget } from '../features/monitoring/GpuWidget'
@@ -12,43 +8,11 @@ import { YourStorage } from '../features/disk/YourStorage'
 import { GrowthView } from '../features/disk/GrowthView'
 import { TopProcesses } from '../features/process/TopProcesses'
 import { AlertBanner } from '../features/alerts/AlertBanner'
-import type { SystemStats, Alert } from '@shared/types'
 
 export function DashboardPage() {
-  const pushStats = useSystemStore((s) => s.pushStats)
-  const setSubscribed = useSystemStore((s) => s.setSubscribed)
   const cpuProcesses = useProcessStore((s) => s.cpuProcesses)
   const memoryProcesses = useProcessStore((s) => s.memoryProcesses)
-  const addAlerts = useAlertStore((s) => s.addAlerts)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
-
-  // Subscribe to realtime system updates
-  useEffect(() => {
-    window.systemScope.subscribeSystem()
-    setSubscribed(true)
-    return () => {
-      window.systemScope.unsubscribeSystem()
-      setSubscribed(false)
-    }
-  }, [setSubscribed])
-
-  // Listen for system update events
-  const handleSystemUpdate = useCallback(
-    (data: unknown) => {
-      pushStats(data as SystemStats)
-    },
-    [pushStats]
-  )
-  useIpcListener(window.systemScope.onSystemUpdate, handleSystemUpdate)
-
-  // Listen for alert events
-  const handleAlertFired = useCallback(
-    (data: unknown) => {
-      addAlerts(data as Alert[])
-    },
-    [addAlerts]
-  )
-  useIpcListener(window.systemScope.onAlertFired, handleAlertFired)
 
   return (
     <div>
