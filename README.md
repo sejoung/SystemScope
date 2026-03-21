@@ -1,6 +1,10 @@
-# SystemScope
+<p align="center">
+  <img src="resources/systemscope_icon.svg" width="128" height="128" alt="SystemScope Icon" />
+</p>
 
-개발자를 위한 Electron 기반 시스템 모니터링 데스크톱 앱입니다. CPU, 메모리, GPU, 디스크 사용량을 실시간으로 확인하고, 폴더 스캔과 빠른 정리 후보 탐색까지 한 앱에서 제공합니다.
+<h1 align="center">SystemScope</h1>
+
+<p align="center">개발자를 위한 Electron 기반 시스템 모니터링 데스크톱 앱입니다.<br/>CPU, 메모리, GPU, 디스크 사용량을 실시간으로 확인하고, 폴더 스캔과 빠른 정리 후보 탐색까지 한 앱에서 제공합니다.</p>
 
 ## 주요 기능
 
