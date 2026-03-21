@@ -227,17 +227,6 @@ const btnStyle: React.CSSProperties = {
   cursor: 'pointer'
 }
 
-const btnSmall: React.CSSProperties = {
-  padding: '4px 12px',
-  fontSize: '12px',
-  fontWeight: 600,
-  border: 'none',
-  borderRadius: 'var(--radius)',
-  background: 'var(--bg-card-hover)',
-  color: 'var(--text-primary)',
-  cursor: 'pointer'
-}
-
 const actionBtn: React.CSSProperties = {
   padding: '4px 10px',
   fontSize: '11px',
