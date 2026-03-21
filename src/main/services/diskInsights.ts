@@ -1,17 +1,9 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as crypto from 'crypto'
+import type { RecentGrowthEntry, DuplicateGroup } from '@shared/types'
 
-// ─── 최근 급성장 폴더 ───
-
-export interface RecentGrowthEntry {
-  name: string
-  path: string
-  recentSize: number    // 최근 N일 내 추가/수정된 파일 크기
-  totalSize: number     // 폴더 전체 크기
-  recentFiles: number   // 최근 추가/수정된 파일 수
-  oldestRecent: number  // 가장 오래된 최근 파일 mtime
-}
+export type { RecentGrowthEntry, DuplicateGroup }
 
 export async function findRecentGrowth(
   folderPath: string,
@@ -93,13 +85,6 @@ async function walkForGrowth(
 }
 
 // ─── 중복 파일 찾기 ───
-
-export interface DuplicateGroup {
-  hash: string
-  size: number
-  files: { name: string; path: string; modified: number }[]
-  totalWaste: number  // (count - 1) * size
-}
 
 export async function findDuplicates(
   folderPath: string,

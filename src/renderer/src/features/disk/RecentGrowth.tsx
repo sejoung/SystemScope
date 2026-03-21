@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
-
-interface RecentGrowthEntry {
-  name: string
-  path: string
-  recentSize: number
-  totalSize: number
-  recentFiles: number
-}
+import type { RecentGrowthEntry } from '@shared/types'
 
 interface RecentGrowthProps {
   folderPath: string

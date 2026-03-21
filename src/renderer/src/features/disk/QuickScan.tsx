@@ -1,18 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
-
-type ScanCategory = 'system' | 'homebrew' | 'devtools' | 'packages' | 'containers' | 'browsers'
-
-interface QuickScanFolder {
-  name: string
-  path: string
-  description: string
-  size: number
-  exists: boolean
-  cleanable: boolean
-  category: ScanCategory
-}
+import type { ScanCategory, QuickScanFolder } from '@shared/types'
 
 const CATEGORY_LABELS: Record<ScanCategory, string> = {
   system: 'System',

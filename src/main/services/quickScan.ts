@@ -2,18 +2,9 @@ import * as fs from 'fs/promises'
 import * as fsSync from 'fs'
 import * as path from 'path'
 import { homedir, tmpdir, platform } from 'os'
+import type { ScanCategory, QuickScanFolder } from '@shared/types'
 
-export type ScanCategory = 'system' | 'homebrew' | 'devtools' | 'packages' | 'containers' | 'browsers'
-
-export interface QuickScanFolder {
-  name: string
-  path: string
-  description: string
-  size: number
-  exists: boolean
-  cleanable: boolean
-  category: ScanCategory
-}
+export type { ScanCategory, QuickScanFolder }
 
 interface ScanTarget {
   name: string

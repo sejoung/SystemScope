@@ -16,8 +16,13 @@ export function registerSettingsIpc(): void {
     if (!validatePartialSettings(settings)) {
       return failure('INVALID_INPUT', '유효하지 않은 설정 값입니다.')
     }
-    setSettings(settings as Parameters<typeof setSettings>[0])
-    return success(getSettings())
+    try {
+      setSettings(settings as Parameters<typeof setSettings>[0])
+      return success(getSettings())
+    } catch (err) {
+      log.error('Failed to save settings', err)
+      return failure('UNKNOWN_ERROR', '설정 저장에 실패했습니다.')
+    }
   })
 
   ipcMain.handle(IPC_CHANNELS.DIALOG_SELECT_FOLDER, async () => {

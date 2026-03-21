@@ -1,19 +1,7 @@
 import { useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
-
-interface DuplicateFile {
-  name: string
-  path: string
-  modified: number
-}
-
-interface DuplicateGroup {
-  hash: string
-  size: number
-  files: DuplicateFile[]
-  totalWaste: number
-}
+import type { DuplicateGroup } from '@shared/types'
 
 interface DuplicateFinderProps {
   folderPath: string

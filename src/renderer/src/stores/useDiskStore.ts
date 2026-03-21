@@ -1,22 +1,5 @@
 import { create } from 'zustand'
-import type { DiskScanResult, LargeFile, ExtensionGroup } from '@shared/types'
-
-interface UserSpaceEntry {
-  name: string
-  path: string
-  size: number
-  icon: string
-}
-
-interface UserSpaceInfo {
-  homePath: string
-  homeSize: number
-  diskTotal: number
-  diskAvailable: number
-  diskUsage: number
-  purgeable: number | null
-  entries: UserSpaceEntry[]
-}
+import type { DiskScanResult, LargeFile, ExtensionGroup, UserSpaceInfo } from '@shared/types'
 
 interface DiskState {
   scanResult: DiskScanResult | null

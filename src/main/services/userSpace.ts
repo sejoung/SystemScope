@@ -3,25 +3,11 @@ import * as path from 'path'
 import { homedir, platform } from 'os'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
 
 const execFileAsync = promisify(execFile)
 
-export interface UserSpaceEntry {
-  name: string
-  path: string
-  size: number
-  icon: string
-}
-
-export interface UserSpaceInfo {
-  homePath: string
-  homeSize: number
-  diskTotal: number
-  diskAvailable: number
-  diskUsage: number
-  purgeable: number | null
-  entries: UserSpaceEntry[]
-}
+export type { UserSpaceEntry, UserSpaceInfo }
 
 function getHomeFolders(): { name: string; rel: string; icon: string }[] {
   if (platform() === 'darwin') {
