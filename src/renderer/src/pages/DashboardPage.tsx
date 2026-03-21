@@ -16,7 +16,7 @@ export function DashboardPage() {
       <AlertBanner />
 
       {/* Top: Gauges */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
         <CpuWidget />
         <MemoryWidget />
         <GpuWidget />
