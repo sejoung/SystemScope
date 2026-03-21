@@ -89,3 +89,10 @@ export interface DuplicateGroup {
   files: { name: string; path: string; modified: number }[]
   totalWaste: number
 }
+
+export interface TrashResult {
+  successCount: number
+  failCount: number
+  totalSize: number
+  errors: string[]
+}

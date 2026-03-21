@@ -1,9 +1,11 @@
 import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 
 export function RealtimeChart() {
   const history = useSystemStore((s) => s.history)
+  const [ref, width] = useContainerWidth(600)
 
   const data = history.map((h, i) => ({
     idx: i,
@@ -14,7 +16,7 @@ export function RealtimeChart() {
 
   return (
     <Accordion title="Live Usage" defaultOpen>
-      <div style={{ minHeight: '280px' }}>
+      <div ref={ref} style={{ minHeight: '260px' }}>
       {data.length < 2 ? (
         <div
           style={{
@@ -28,9 +30,8 @@ export function RealtimeChart() {
         >
           데이터 수집 중...
         </div>
-      ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={data}>
+      ) : width > 0 ? (
+          <LineChart data={data} width={width} height={220}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
             <XAxis
               dataKey="idx"
@@ -63,8 +64,7 @@ export function RealtimeChart() {
             <Line type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name="Memory" />
             <Line type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name="GPU" />
           </LineChart>
-        </ResponsiveContainer>
-      )}
+      ) : null}
       </div>
     </Accordion>
   )

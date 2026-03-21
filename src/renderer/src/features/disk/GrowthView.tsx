@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useDiskStore } from '../../stores/useDiskStore'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { GrowthFolder } from '@shared/types'
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -19,6 +20,7 @@ export function GrowthView() {
   const period = useDiskStore((s) => s.growthViewPeriod)
   const setPeriod = useDiskStore((s) => s.setGrowthViewPeriod)
   const fetchGrowthView = useDiskStore((s) => s.fetchGrowthView)
+  const [chartRef, chartWidth] = useContainerWidth(400)
 
   // 캐시 없으면 자동 fetch (YourStorage와 동일 패턴)
   useEffect(() => {
@@ -114,12 +116,12 @@ export function GrowthView() {
           {/* Top 5 Chart + List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Bar Chart */}
-            <div>
+            <div ref={chartRef}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                 Fastest Growing TOP {Math.min(top5.length, 5)}
               </div>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={top5} layout="vertical" margin={{ left: 60, right: 10 }}>
+              {chartWidth > 0 && (
+                <BarChart data={top5} layout="vertical" width={chartWidth} height={160} margin={{ left: 60, right: 10 }}>
                   <XAxis
                     type="number"
                     axisLine={{ stroke: 'var(--chart-grid)' }}
@@ -152,7 +154,7 @@ export function GrowthView() {
                     ))}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
+              )}
             </div>
 
             {/* Detail List */}

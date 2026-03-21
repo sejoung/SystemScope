@@ -67,7 +67,9 @@ const api = {
 
   // Shell — Finder / Explorer에서 열기
   showInFolder: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, targetPath),
-  openPath: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath)
+  openPath: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath),
+  trashItems: (filePaths: string[], description: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SHELL_TRASH_ITEMS, filePaths, description)
 }
 
 contextBridge.exposeInMainWorld('systemScope', api)

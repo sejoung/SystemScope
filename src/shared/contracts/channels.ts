@@ -45,6 +45,7 @@ export const IPC_CHANNELS = {
   // Shell (Finder / Explorer)
   SHELL_SHOW_IN_FOLDER: 'shell:showInFolder',
   SHELL_OPEN_PATH: 'shell:openPath',
+  SHELL_TRASH_ITEMS: 'shell:trashItems',
 
   // Real-time events (main → renderer)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import type { LargeFile, ExtensionGroup, DuplicateGroup } from '@shared/types'
+import { useToast } from '../../components/Toast'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
+import { useContainerWidth } from '../../hooks/useContainerWidth'
+import type { LargeFile, ExtensionGroup, DuplicateGroup, TrashResult } from '@shared/types'
 
 type Tab = 'types' | 'largest' | 'old' | 'duplicates'
 
@@ -18,6 +20,7 @@ interface FileInsightsProps {
 }
 
 export function FileInsights({ extensions, largeFiles, folderPath }: FileInsightsProps) {
+  const showToast = useToast((s) => s.show)
   const [tab, setTab] = useState<Tab>('types')
   const [oldFiles, setOldFiles] = useState<LargeFile[]>([])
   const [oldFilesLoading, setOldFilesLoading] = useState(false)
@@ -62,6 +65,23 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
   const totalWaste = duplicates.reduce((acc, r) => acc + r.totalWaste, 0)
   const oldTotalSize = oldFiles.reduce((acc, f) => acc + f.size, 0)
 
+  const handleTrash = async (paths: string[], description: string, onDone?: (trashedPaths: Set<string>) => void) => {
+    const res = await window.systemScope.trashItems(paths, description)
+    if (res.ok && res.data) {
+      const result = res.data as TrashResult
+      if (result.successCount > 0) {
+        showToast(`${result.successCount}개 항목 (${formatBytes(result.totalSize)})을 휴지통으로 이동했습니다`)
+        // 성공한 파일을 목록에서 제거하기 위해 trashedPaths 전달
+        const trashedSet = new Set(paths.slice(0, result.successCount))
+        onDone?.(trashedSet)
+      } else if (result.successCount === 0 && result.failCount === 0) {
+        // 사용자가 Cancel 클릭
+      } else {
+        showToast(`삭제 실패: ${result.errors[0] ?? '알 수 없는 오류'}`)
+      }
+    }
+  }
+
   // Badge summary
   let badge: string | undefined
   if (tab === 'types' && extensions.length > 0) badge = `${extensions.length} types`
@@ -77,7 +97,7 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
       badgeColor={tab === 'duplicates' && totalWaste > 0 ? 'var(--accent-red)' : tab === 'old' && oldTotalSize > 0 ? 'var(--accent-yellow)' : undefined}
     >
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', flexWrap: 'wrap' }}>
         <TabBtn active={tab === 'types'} onClick={() => setTab('types')}>File Types</TabBtn>
         <TabBtn active={tab === 'largest'} onClick={() => setTab('largest')}>Largest</TabBtn>
         <TabBtn active={tab === 'old'} onClick={() => setTab('old')}>Old Files</TabBtn>
@@ -86,7 +106,12 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
 
       {/* Tab content */}
       {tab === 'types' && <TypesTab data={extensions} />}
-      {tab === 'largest' && <LargestTab files={largeFiles} />}
+      {tab === 'largest' && (
+        <LargestTab
+          files={largeFiles}
+          onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제')}
+        />
+      )}
       {tab === 'old' && (
         <OldFilesTab
           files={oldFiles}
@@ -96,6 +121,9 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
           days={oldDays}
           onDaysChange={setOldDays}
           onScan={handleOldFileScan}
+          onTrash={(paths) => handleTrash(paths, '오래된 파일 삭제', (trashed) => {
+            setOldFiles((prev) => prev.filter((f) => !trashed.has(f.path)))
+          })}
         />
       )}
       {tab === 'duplicates' && (
@@ -114,6 +142,13 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
           }}
           onScan={handleDupScan}
           totalWaste={totalWaste}
+          onTrash={(paths) => handleTrash(paths, '중복 파일 삭제', (trashed) => {
+            setDuplicates((prev) => prev.map((g) => ({
+              ...g,
+              files: g.files.filter((f) => !trashed.has(f.path)),
+              totalWaste: (g.files.filter((f) => !trashed.has(f.path)).length - 1) * g.size
+            })).filter((g) => g.files.length >= 2))
+          })}
         />
       )}
     </Accordion>
@@ -123,27 +158,30 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
 // ─── Types Tab ───
 
 function TypesTab({ data }: { data: ExtensionGroup[] }) {
+  const [ref, width] = useContainerWidth(400)
   const top10 = data.slice(0, 10).map((d) => ({ ...d, sizeGB: d.totalSize / (1024 * 1024 * 1024) }))
 
   if (top10.length === 0) return <Empty>데이터가 없습니다</Empty>
 
   return (
-    <ResponsiveContainer width="100%" height={250}>
-      <BarChart data={top10} layout="vertical" margin={{ left: 60 }}>
-        <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => formatBytes(v * 1024 * 1024 * 1024)} />
-        <YAxis type="category" dataKey="extension" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} width={55} />
-        <Tooltip contentStyle={tooltipStyle} formatter={(val: number) => formatBytes(val * 1024 * 1024 * 1024)} />
-        <Bar dataKey="sizeGB" radius={[0, 4, 4, 0]}>
-          {top10.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div ref={ref}>
+      {width > 0 && (
+        <BarChart data={top10} layout="vertical" width={width} height={250} margin={{ left: 60 }}>
+          <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => formatBytes(v * 1024 * 1024 * 1024)} />
+          <YAxis type="category" dataKey="extension" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} width={55} />
+          <Tooltip contentStyle={tooltipStyle} formatter={(val: number) => formatBytes(val * 1024 * 1024 * 1024)} />
+          <Bar dataKey="sizeGB" radius={[0, 4, 4, 0]}>
+            {top10.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+          </Bar>
+        </BarChart>
+      )}
+    </div>
   )
 }
 
 // ─── Largest Tab ───
 
-function LargestTab({ files }: { files: LargeFile[] }) {
+function LargestTab({ files, onTrash }: { files: LargeFile[]; onTrash: (paths: string[]) => void }) {
   if (files.length === 0) return <Empty>대용량 파일이 없습니다</Empty>
 
   return (
@@ -166,8 +204,9 @@ function LargestTab({ files }: { files: LargeFile[] }) {
               <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--accent-yellow)' }}>
                 {formatBytes(f.size)}
               </td>
-              <td style={{ ...tdStyle, textAlign: 'center' }}>
+              <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>Open</button>
+                <button onClick={() => onTrash([f.path])} style={trashBtn}>Delete</button>
               </td>
             </tr>
           ))}
@@ -179,7 +218,7 @@ function LargestTab({ files }: { files: LargeFile[] }) {
 
 // ─── Old Files Tab ───
 
-function OldFilesTab({ files, loading, scanned, days, onDaysChange, onScan }: {
+function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onScan, onTrash }: {
   files: LargeFile[]
   loading: boolean
   scanned: boolean
@@ -187,6 +226,7 @@ function OldFilesTab({ files, loading, scanned, days, onDaysChange, onScan }: {
   days: number
   onDaysChange: (d: number) => void
   onScan: () => void
+  onTrash: (paths: string[]) => void
 }) {
   const totalSize = files.reduce((acc, f) => acc + f.size, 0)
 
@@ -240,8 +280,9 @@ function OldFilesTab({ files, loading, scanned, days, onDaysChange, onScan }: {
                   <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', color: 'var(--accent-yellow)' }}>
                     {new Date(f.modified).toLocaleDateString()}
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>
+                  <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                     <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>Open</button>
+                    <button onClick={() => onTrash([f.path])} style={trashBtn}>Delete</button>
                   </td>
                 </tr>
               ))}
@@ -255,7 +296,7 @@ function OldFilesTab({ files, loading, scanned, days, onDaysChange, onScan }: {
 
 // ─── Duplicates Tab ───
 
-function DuplicatesTab({ groups, loading, scanned, expanded, onToggle, onScan, totalWaste }: {
+function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, onScan, totalWaste, onTrash }: {
   groups: DuplicateGroup[]
   loading: boolean
   scanned: boolean
@@ -264,6 +305,7 @@ function DuplicatesTab({ groups, loading, scanned, expanded, onToggle, onScan, t
   onToggle: (hash: string) => void
   onScan: () => void
   totalWaste: number
+  onTrash: (paths: string[]) => void
 }) {
   return (
     <div>
@@ -319,12 +361,30 @@ function DuplicatesTab({ groups, loading, scanned, expanded, onToggle, onScan, t
                   <div style={{ marginLeft: '26px', marginBottom: '4px' }}>
                     {group.files.map((file, fi) => (
                       <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 10px', fontSize: '12px', borderLeft: '2px solid var(--border)' }}>
+                        {fi === 0 && (
+                          <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', background: 'var(--success-soft)', color: 'var(--accent-green)', fontWeight: 600, flexShrink: 0 }}>
+                            KEEP
+                          </span>
+                        )}
                         <span style={{ color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {file.path}
                         </span>
                         <button onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(file.path) }} style={openBtn}>Open</button>
+                        {fi > 0 && (
+                          <button onClick={(e) => { e.stopPropagation(); onTrash([file.path]) }} style={trashBtn}>Delete</button>
+                        )}
                       </div>
                     ))}
+                    {group.files.length > 2 && (
+                      <div style={{ padding: '6px 10px' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onTrash(group.files.slice(1).map((f) => f.path)) }}
+                          style={{ ...trashBtn, padding: '4px 12px' }}
+                        >
+                          Delete all copies (keep first)
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -358,7 +418,8 @@ function Empty({ children }: { children: React.ReactNode }) {
 
 const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 4px', color: 'var(--text-muted)', fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }
 const tdStyle: React.CSSProperties = { padding: '6px 4px', color: 'var(--text-secondary)' }
-const openBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer' }
+const openBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', marginRight: '4px' }
+const trashBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--accent-red)', color: 'var(--text-on-accent)', cursor: 'pointer' }
 const actionBtnStyle: React.CSSProperties = { padding: '5px 14px', fontSize: '12px', fontWeight: 600, border: 'none', borderRadius: '6px', background: 'var(--accent-yellow)', color: 'var(--text-on-accent-strong)', cursor: 'pointer' }
 const selectStyle: React.CSSProperties = { padding: '4px 8px', fontSize: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }
 const tooltipStyle: React.CSSProperties = { backgroundColor: 'var(--chart-tooltip-bg)', border: '1px solid var(--border)', borderRadius: '8px', boxShadow: 'var(--chart-tooltip-shadow)', color: 'var(--text-primary)', fontSize: '12px' }
