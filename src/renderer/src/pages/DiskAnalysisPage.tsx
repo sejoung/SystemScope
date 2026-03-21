@@ -1,17 +1,19 @@
-import { useCallback, useRef, useState, useEffect } from 'react'
+import { lazy, Suspense, useCallback, useRef, useState, useEffect } from 'react'
 import { useDiskStore } from '../stores/useDiskStore'
 import { useIpcListener } from '../hooks/useIpc'
-import { TreemapChart } from '../features/disk/TreemapChart'
-import { FileInsights } from '../features/disk/FileInsights'
-import { QuickScan } from '../features/disk/QuickScan'
-import { YourStorage } from '../features/disk/YourStorage'
-import { GrowthView } from '../features/disk/GrowthView'
-import { RecentGrowth } from '../features/disk/RecentGrowth'
 import { Card } from '../components/Card'
 import { Accordion } from '../components/Accordion'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { formatBytes } from '../utils/format'
 import { useToast } from '../components/Toast'
 import type { DiskScanResult } from '@shared/types'
+
+const TreemapChart = lazy(async () => import('../features/disk/TreemapChart').then((mod) => ({ default: mod.TreemapChart })))
+const FileInsights = lazy(async () => import('../features/disk/FileInsights').then((mod) => ({ default: mod.FileInsights })))
+const QuickScan = lazy(async () => import('../features/disk/QuickScan').then((mod) => ({ default: mod.QuickScan })))
+const YourStorage = lazy(async () => import('../features/disk/YourStorage').then((mod) => ({ default: mod.YourStorage })))
+const GrowthView = lazy(async () => import('../features/disk/GrowthView').then((mod) => ({ default: mod.GrowthView })))
+const RecentGrowth = lazy(async () => import('../features/disk/RecentGrowth').then((mod) => ({ default: mod.RecentGrowth })))
 
 export function DiskAnalysisPage() {
   const {
@@ -36,10 +38,17 @@ export function DiskAnalysisPage() {
   // Treemap 컨테이너 폭 측정
   const treemapRef = useRef<HTMLDivElement>(null)
   const [treemapWidth, setTreemapWidth] = useState(600)
+  const safeTreemapWidth = Math.max(treemapWidth - 40, 320)
   useEffect(() => {
     if (!treemapRef.current) return
+    if (typeof ResizeObserver === 'undefined') {
+      setTreemapWidth(Math.max(treemapRef.current.clientWidth, 600))
+      return
+    }
+
+    setTreemapWidth(Math.max(treemapRef.current.clientWidth, 600))
     const observer = new ResizeObserver(([entry]) => {
-      setTreemapWidth(Math.floor(entry.contentRect.width))
+      setTreemapWidth(Math.max(Math.floor(entry.contentRect.width), 320))
     })
     observer.observe(treemapRef.current)
     return () => observer.disconnect()
@@ -56,9 +65,10 @@ export function DiskAnalysisPage() {
       } else {
         setScanning(false)
         setScanProgress(res.error?.message ?? '스캔 실패')
+        showToast(res.error?.message ?? '폴더 스캔을 시작하지 못했습니다.')
       }
     },
-    [clearScan, setSelectedFolder, setScanning, setScanProgress]
+    [clearScan, setSelectedFolder, setScanning, setScanProgress, showToast]
   )
 
   const tryScan = useCallback(
@@ -186,12 +196,24 @@ export function DiskAnalysisPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-        <YourStorage onFolderClick={tryScan} />
-        <GrowthView />
+        <ErrorBoundary title="Home Storage">
+          <Suspense fallback={<SectionFallback title="Home Storage" />}>
+            <YourStorage onFolderClick={tryScan} />
+          </Suspense>
+        </ErrorBoundary>
+        <ErrorBoundary title="Storage Growth">
+          <Suspense fallback={<SectionFallback title="Storage Growth" />}>
+            <GrowthView />
+          </Suspense>
+        </ErrorBoundary>
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <QuickScan onFolderClick={tryScan} />
+        <ErrorBoundary title="Quick Cleanup">
+          <Suspense fallback={<SectionFallback title="Quick Cleanup" />}>
+            <QuickScan onFolderClick={tryScan} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
 
       {/* Scan results */}
@@ -209,23 +231,35 @@ export function DiskAnalysisPage() {
           </div>
 
           <div ref={treemapRef} style={{ marginBottom: '16px' }}>
-            <Accordion title="Folder Map" defaultOpen>
-              <TreemapChart data={scanResult.tree} width={treemapWidth - 40} height={300} />
-            </Accordion>
+            <ErrorBoundary title="Folder Map">
+              <Suspense fallback={<SectionFallback title="Folder Map" />}>
+                <Accordion title="Folder Map" defaultOpen>
+                  <TreemapChart data={scanResult.tree} width={safeTreemapWidth} height={300} />
+                </Accordion>
+              </Suspense>
+            </ErrorBoundary>
           </div>
 
           {/* File Insights — Types / Largest / Old Files / Duplicates 통합 */}
           <div style={{ marginBottom: '16px' }}>
-            <FileInsights
-              extensions={extensions}
-              largeFiles={largeFiles}
-              folderPath={selectedFolder!}
-            />
+            <ErrorBoundary title="File Insights">
+              <Suspense fallback={<SectionFallback title="File Insights" />}>
+                <FileInsights
+                  extensions={extensions}
+                  largeFiles={largeFiles}
+                  folderPath={selectedFolder!}
+                />
+              </Suspense>
+            </ErrorBoundary>
           </div>
 
           {/* Recent Growth */}
           <div>
-            <RecentGrowth folderPath={selectedFolder!} />
+            <ErrorBoundary title="Recent Growth">
+              <Suspense fallback={<SectionFallback title="Recent Growth" />}>
+                <RecentGrowth folderPath={selectedFolder!} />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </>
       )}
@@ -238,6 +272,26 @@ function Stat({ label, value }: { label: string; value: string }) {
     <span style={{ color: 'var(--text-muted)' }}>
       {label}: <strong style={{ color: 'var(--text-primary)' }}>{value}</strong>
     </span>
+  )
+}
+
+function SectionFallback({ title }: { title: string }) {
+  return (
+    <div
+      style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '16px'
+      }}
+    >
+      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {title}
+      </div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+        로딩 중...
+      </div>
+    </div>
   )
 }
 

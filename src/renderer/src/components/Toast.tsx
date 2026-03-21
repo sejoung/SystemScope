@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 
+interface ToastMessage {
+  id: number
+  text: string
+}
+
 interface ToastState {
-  message: string | null
+  message: ToastMessage | null
   show: (message: string) => void
   hide: () => void
 }
 
 export const useToast = create<ToastState>((set) => ({
   message: null,
-  show: (message) => set({ message }),
+  show: (message) =>
+    set({
+      message: {
+        id: Date.now() + Math.random(),
+        text: message
+      }
+    }),
   hide: () => set({ message: null })
 }))
 
@@ -19,13 +30,19 @@ export function ToastContainer() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (message) {
-      setVisible(true)
-      const timer = setTimeout(() => {
-        setVisible(false)
-        setTimeout(hide, 300) // fade out 후 제거
-      }, 3000)
-      return () => clearTimeout(timer)
+    if (!message) return
+
+    setVisible(true)
+    const hideTimer = setTimeout(() => {
+      setVisible(false)
+    }, 3000)
+    const clearTimer = setTimeout(() => {
+      hide()
+    }, 3300)
+
+    return () => {
+      clearTimeout(hideTimer)
+      clearTimeout(clearTimer)
     }
   }, [message, hide])
 
@@ -49,7 +66,7 @@ export function ToastContainer() {
       zIndex: 9999,
       pointerEvents: 'none'
     }}>
-      {message}
+      {message.text}
     </div>
   )
 }

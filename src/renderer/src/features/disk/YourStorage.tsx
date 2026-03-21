@@ -37,7 +37,20 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
     )
   }
 
-  if (!info) return null
+  if (!info) {
+    return (
+      <Accordion title="Home Storage" defaultOpen>
+        <div style={{
+          color: 'var(--text-muted)',
+          fontSize: '13px',
+          padding: '16px 0',
+          textAlign: 'center'
+        }}>
+          홈 스토리지 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+        </div>
+      </Accordion>
+    )
+  }
 
   const usedBySystem = Math.max(info.diskTotal - info.diskAvailable - info.homeSize, 0)
   const diskUsedPercent = ((info.diskTotal - info.diskAvailable) / info.diskTotal) * 100

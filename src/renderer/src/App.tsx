@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { Layout } from './components/Layout'
 import { ToastContainer } from './components/Toast'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessStore } from './stores/useProcessStore'
 import { useSystemStore } from './stores/useSystemStore'
@@ -25,16 +26,24 @@ function App() {
   const pushStats = useSystemStore((s) => s.pushStats)
   const setSubscribed = useSystemStore((s) => s.setSubscribed)
   const addAlerts = useAlertStore((s) => s.addAlerts)
+  const setAlerts = useAlertStore((s) => s.setAlerts)
 
   useEffect(() => {
-    window.systemScope.getSettings().then((res) => {
-      if (res.ok && res.data) {
-        const settings = res.data as { theme?: 'dark' | 'light'; thresholds?: AlertThresholds }
+    void Promise.all([
+      window.systemScope.getSettings(),
+      window.systemScope.getActiveAlerts()
+    ]).then(([settingsRes, alertsRes]) => {
+      if (settingsRes.ok && settingsRes.data) {
+        const settings = settingsRes.data as { theme?: 'dark' | 'light'; thresholds?: AlertThresholds }
         if (settings.theme) setTheme(settings.theme)
         if (settings.thresholds) setThresholds(settings.thresholds)
       }
+
+      if (alertsRes.ok && alertsRes.data) {
+        setAlerts(alertsRes.data as Alert[])
+      }
     })
-  }, [setTheme, setThresholds])
+  }, [setAlerts, setTheme, setThresholds])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -82,10 +91,15 @@ function App() {
   return (
     <>
       <Layout>
-        {currentPage === 'dashboard' && <DashboardPage />}
-        {currentPage === 'disk' && <DiskAnalysisPage />}
-        {currentPage === 'process' && <ProcessPage />}
-        {currentPage === 'settings' && <SettingsPage />}
+        <ErrorBoundary
+          title="Page Render Failed"
+          message="현재 페이지를 렌더링하지 못했습니다. 다른 메뉴로 이동한 뒤 다시 시도해주세요."
+        >
+          {currentPage === 'dashboard' && <DashboardPage />}
+          {currentPage === 'disk' && <DiskAnalysisPage />}
+          {currentPage === 'process' && <ProcessPage />}
+          {currentPage === 'settings' && <SettingsPage />}
+        </ErrorBoundary>
       </Layout>
       <ToastContainer />
     </>

@@ -22,24 +22,38 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
   const [oldFiles, setOldFiles] = useState<LargeFile[]>([])
   const [oldFilesLoading, setOldFilesLoading] = useState(false)
   const [oldFilesScanned, setOldFilesScanned] = useState(false)
+  const [oldFilesError, setOldFilesError] = useState<string | null>(null)
   const [oldDays, setOldDays] = useState(365)
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([])
   const [dupLoading, setDupLoading] = useState(false)
   const [dupScanned, setDupScanned] = useState(false)
+  const [dupError, setDupError] = useState<string | null>(null)
   const [expandedDup, setExpandedDup] = useState<Set<string>>(new Set())
 
   const handleOldFileScan = async () => {
     setOldFilesLoading(true)
+    setOldFilesError(null)
     const res = await window.systemScope.findOldFiles(folderPath, oldDays)
-    if (res.ok && res.data) setOldFiles(res.data as LargeFile[])
+    if (res.ok && res.data) {
+      setOldFiles(res.data as LargeFile[])
+    } else {
+      setOldFiles([])
+      setOldFilesError(res.error?.message ?? '오래된 파일 탐색에 실패했습니다.')
+    }
     setOldFilesLoading(false)
     setOldFilesScanned(true)
   }
 
   const handleDupScan = async () => {
     setDupLoading(true)
+    setDupError(null)
     const res = await window.systemScope.findDuplicates(folderPath, 100)
-    if (res.ok && res.data) setDuplicates(res.data as DuplicateGroup[])
+    if (res.ok && res.data) {
+      setDuplicates(res.data as DuplicateGroup[])
+    } else {
+      setDuplicates([])
+      setDupError(res.error?.message ?? '중복 파일 탐색에 실패했습니다.')
+    }
     setDupLoading(false)
     setDupScanned(true)
     setExpandedDup(new Set())
@@ -78,6 +92,7 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
           files={oldFiles}
           loading={oldFilesLoading}
           scanned={oldFilesScanned}
+          error={oldFilesError}
           days={oldDays}
           onDaysChange={setOldDays}
           onScan={handleOldFileScan}
@@ -88,6 +103,7 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
           groups={duplicates}
           loading={dupLoading}
           scanned={dupScanned}
+          error={dupError}
           expanded={expandedDup}
           onToggle={(hash) => {
             setExpandedDup((prev) => {
@@ -167,6 +183,7 @@ function OldFilesTab({ files, loading, scanned, days, onDaysChange, onScan }: {
   files: LargeFile[]
   loading: boolean
   scanned: boolean
+  error: string | null
   days: number
   onDaysChange: (d: number) => void
   onScan: () => void
@@ -195,6 +212,8 @@ function OldFilesTab({ files, loading, scanned, days, onDaysChange, onScan }: {
 
       {!scanned ? (
         <Empty>오래된 파일을 찾으려면 Scan 버튼을 클릭하세요</Empty>
+      ) : error ? (
+        <Empty>{error}</Empty>
       ) : files.length === 0 ? (
         <Empty>해당 기간 내 오래된 파일이 없습니다</Empty>
       ) : (
@@ -240,6 +259,7 @@ function DuplicatesTab({ groups, loading, scanned, expanded, onToggle, onScan, t
   groups: DuplicateGroup[]
   loading: boolean
   scanned: boolean
+  error: string | null
   expanded: Set<string>
   onToggle: (hash: string) => void
   onScan: () => void
@@ -261,6 +281,8 @@ function DuplicatesTab({ groups, loading, scanned, expanded, onToggle, onScan, t
 
       {!scanned ? (
         <Empty>중복 파일을 찾으려면 Find Duplicates 버튼을 클릭하세요</Empty>
+      ) : error ? (
+        <Empty>{error}</Empty>
       ) : groups.length === 0 ? (
         <Empty>중복 파일을 찾지 못했습니다</Empty>
       ) : (
