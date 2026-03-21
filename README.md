@@ -10,7 +10,7 @@
 
 - `Overview`: 실시간 시스템 상태, 알림, Live Usage 차트, Home Storage, Storage Growth 요약
 - `Storage`: 폴더 스캔, Folder Map, Largest Files, File Types, Recent Growth, Duplicate Finder
-- `Activity`: CPU / 메모리 상위 프로세스 확인
+- `Activity`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
 - `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터 경로 관리
 
 ## 주요 기능
@@ -164,9 +164,14 @@ Windows 예시:
 
 ### 9. 프로세스 모니터링
 
-- CPU 사용률 상위 프로세스 목록
-- 메모리 사용률 상위 프로세스 목록
-- 2초 간격 갱신
+- 전체 프로세스 목록 (CPU 또는 메모리 사용량 > 0)
+- 이름, PID, command 경로 실시간 검색/필터링
+- PID / Name / CPU% / Memory 컬럼 클릭으로 정렬 (오름/내림차순)
+- CPU 사용률 색상 구분 (30% 이상 노랑, 80% 이상 빨강)
+- 검색 시 command 경로 자동 표시
+- Sticky 헤더 (스크롤해도 컬럼 고정)
+- 대시보드에서는 Top 5 요약, Activity 페이지에서는 전체 목록
+- App 레벨 글로벌 폴링 (2초 간격) — 페이지 전환 시 끊김 없이 즉시 표시
 
 ### 10. 트레이 아이콘
 
@@ -188,8 +193,9 @@ Windows 예시:
 - 아코디언: Live Usage, Home Storage, Storage Growth, Quick Cleanup, Largest Files, File Types, Recent Growth, Duplicate Finder 등 모든 섹션 접기/펼치기 지원
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
   - 실행 완료 시 자동으로 열리며 뱃지로 요약 표시
-- 사용자 공간 및 Growth View 분석 결과는 Zustand 스토어에 캐싱하여 페이지 이동 시 재호출 방지
-- 사용자가 Rescan / Refresh 버튼으로 원할 때만 갱신
+- 시스템 모니터링, 프로세스 폴링, 알림 리스너는 App 레벨에서 글로벌 관리 — 어떤 페이지에 있든 백그라운드 갱신
+- 사용자 공간, Growth View, 프로세스 데이터는 Zustand 스토어에 캐싱 — 페이지 전환 시 즉시 표시, 재호출 없음
+- 사용자가 Rescan / Refresh 버튼으로 원할 때만 수동 갱신
 - 다크 / 라이트 테마 지원
 - 라이트 테마에서도 차트, 사이드바, 경고/성공 배지 대비를 별도로 조정
 
@@ -319,7 +325,9 @@ npm run test:watch
 - 스냅샷 파일 손상 자동 복구 + 연속 중복 스냅샷 방지
 - 최근 급성장 폴더 탐색 (스캔 결과 내)
 - 중복 파일 찾기 (3단계 해시: 크기 → 샘플 → 전체)
-- 프로세스 Top 목록 (CPU / Memory)
+- 전체 프로세스 목록 + 검색/필터/정렬 (Activity 페이지)
+- 프로세스 Top 5 요약 (Overview 대시보드)
+- App 레벨 글로벌 폴링 — 페이지 전환 시 끊김 없음
 - 트레이 아이콘 상주 + 창 숨기기/복원
 - 앱 아이콘 (macOS .icns / Windows .ico)
 - 아코디언 UI 전체 적용 + 헤더 액션 버튼
