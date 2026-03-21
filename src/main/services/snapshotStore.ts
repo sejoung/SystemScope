@@ -43,11 +43,12 @@ export function loadSnapshots(): Snapshot[] {
   try {
     if (!fs.existsSync(filePath)) return []
     const raw = fs.readFileSync(filePath, 'utf-8')
-    const data: SnapshotData = JSON.parse(raw)
-    if (data.version !== 1 || !Array.isArray(data.snapshots)) return []
+    const data = parseSnapshotData(raw)
+    if (!data) return []
     return data.snapshots
   } catch (err) {
     log.warn('Failed to load snapshots, starting fresh', err)
+    backupCorruptSnapshotFile(filePath)
     return []
   }
 }
@@ -69,9 +70,10 @@ export async function saveSnapshot(snapshot: Snapshot): Promise<void> {
 
   const data: SnapshotData = { version: 1, snapshots: existing }
 
-  // atomic write 대신 직접 쓰기 (같은 디렉토리 내 rename 실패 방지)
   try {
-    await fsp.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
+    const tempPath = `${filePath}.tmp`
+    await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8')
+    await fsp.rename(tempPath, filePath)
   } catch (err) {
     log.error('Failed to save snapshot', err)
   }
@@ -79,4 +81,32 @@ export async function saveSnapshot(snapshot: Snapshot): Promise<void> {
 
 export function getSnapshotsInRange(since: number): Snapshot[] {
   return loadSnapshots().filter((s) => s.timestamp >= since)
+}
+
+export function parseSnapshotData(raw: string): SnapshotData | null {
+  let data: unknown
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    return null
+  }
+  if (!data || typeof data !== 'object') return null
+
+  const snapshotData = data as Partial<SnapshotData>
+  if (snapshotData.version !== 1 || !Array.isArray(snapshotData.snapshots)) {
+    return null
+  }
+
+  return snapshotData as SnapshotData
+}
+
+function backupCorruptSnapshotFile(filePath: string): void {
+  try {
+    if (!fs.existsSync(filePath)) return
+    const backupPath = `${filePath}.corrupt-${Date.now()}`
+    fs.renameSync(filePath, backupPath)
+    log.warn('Backed up corrupt snapshot file', backupPath)
+  } catch (backupErr) {
+    log.warn('Failed to back up corrupt snapshot file', backupErr)
+  }
 }
