@@ -24,7 +24,6 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   const loading = useDiskStore((s) => s.userSpaceLoading)
   const fetchUserSpace = useDiskStore((s) => s.fetchUserSpace)
 
-  // 캐시가 없을 때만 fetch (페이지 이동 시 재호출 안 함)
   useEffect(() => {
     if (!info && !loading) {
       fetchUserSpace()
@@ -47,14 +46,14 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   if (!info) return null
 
-  const usedBySystem = info.diskTotal - info.diskAvailable - info.homeSize
+  const usedBySystem = Math.max(info.diskTotal - info.diskAvailable - info.homeSize, 0)
   const diskUsedPercent = ((info.diskTotal - info.diskAvailable) / info.diskTotal) * 100
 
   return (
     <Card>
       {/* Disk capacity summary */}
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '13px' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
             Disk Capacity
           </span>
@@ -66,33 +65,39 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
               onClick={() => fetchUserSpace()}
               disabled={loading}
               style={{
-                padding: '3px 10px', fontSize: '11px', fontWeight: 500,
-                border: '1px solid var(--border)', borderRadius: '5px',
-                background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer'
+                padding: '4px 12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: '5px',
+                background: 'var(--bg-card-hover)',
+                color: 'var(--text-primary)',
+                cursor: loading ? 'default' : 'pointer',
+                opacity: loading ? 0.5 : 1
               }}
             >
-              {loading ? '...' : 'Rescan'}
+              {loading ? 'Scanning...' : 'Rescan'}
             </button>
           </div>
         </div>
 
-        {/* Stacked bar: system + home folders + available */}
+        {/* Stacked bar */}
         <div style={{
-          width: '100%', height: '24px',
-          backgroundColor: 'var(--border)', borderRadius: '6px',
-          overflow: 'hidden', display: 'flex', position: 'relative'
+          width: '100%', height: '28px',
+          backgroundColor: '#1a3a2a', borderRadius: '8px',
+          overflow: 'hidden', display: 'flex'
         }}>
-          {/* System (grey) */}
+          {/* System */}
           <div
             style={{
               width: `${(usedBySystem / info.diskTotal) * 100}%`,
               height: '100%',
-              backgroundColor: '#64748b',
+              backgroundColor: '#94a3b8',
               transition: 'width 0.5s'
             }}
-            title={`System: ${formatBytes(usedBySystem > 0 ? usedBySystem : 0)}`}
+            title={`System: ${formatBytes(usedBySystem)}`}
           />
-          {/* Home folders (colored segments) */}
+          {/* Home folders */}
           {info.entries.map((entry, i) => {
             const pct = (entry.size / info.diskTotal) * 100
             if (pct < 0.3) return null
@@ -110,13 +115,14 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
               />
             )
           })}
+          {/* Available — 밝은 녹색 배경으로 "여유 공간" 시각화 */}
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap', fontSize: '11px' }}>
-          <LegendItem color="#64748b" label="System" value={formatBytes(usedBySystem > 0 ? usedBySystem : 0)} />
-          <LegendItem color="var(--text-muted)" label="Available" value={formatBytes(info.diskAvailable)} />
-          <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>
+        <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
+          <LegendItem color="#94a3b8" label="System" value={formatBytes(usedBySystem)} />
+          <LegendItem color="#22c55e" label="Available" value={formatBytes(info.diskAvailable)} />
+          <span style={{ color: 'var(--text-primary)', fontWeight: 600, marginLeft: 'auto' }}>
             {diskUsedPercent.toFixed(1)}% used
           </span>
         </div>
@@ -128,8 +134,8 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
           <span style={{ fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Your Folders
           </span>
-          <span style={{ color: 'var(--text-muted)' }}>
-            Total: {formatBytes(info.homeSize)}
+          <span style={{ color: 'var(--text-secondary)' }}>
+            Total: <strong style={{ color: 'var(--text-primary)' }}>{formatBytes(info.homeSize)}</strong>
           </span>
         </div>
 
@@ -176,7 +182,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 {/* Size */}
                 <span style={{
                   fontSize: '12px', fontWeight: 600, fontFamily: 'monospace',
-                  color: 'var(--text-secondary)', width: '70px', textAlign: 'right', flexShrink: 0
+                  color: 'var(--text-primary)', width: '70px', textAlign: 'right', flexShrink: 0
                 }}>
                   {formatBytes(entry.size)}
                 </span>
@@ -185,9 +191,14 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 <button
                   onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(entry.path) }}
                   style={{
-                    padding: '2px 8px', fontSize: '11px', fontWeight: 500,
-                    border: '1px solid var(--border)', borderRadius: '5px',
-                    background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer',
+                    padding: '3px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    border: 'none',
+                    borderRadius: '5px',
+                    background: 'var(--bg-card-hover)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
                     flexShrink: 0
                   }}
                 >
@@ -204,9 +215,13 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
 function LegendItem({ color, label, value }: { color: string; label: string; value: string }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
-      <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: color, display: 'inline-block' }} />
-      {label}: {value}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+      <span style={{
+        width: '10px', height: '10px', borderRadius: '3px',
+        backgroundColor: color, display: 'inline-block'
+      }} />
+      <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{label}</span>
+      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{value}</span>
     </span>
   )
 }
