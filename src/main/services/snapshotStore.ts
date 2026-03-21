@@ -61,6 +61,10 @@ export async function saveSnapshot(snapshot: Snapshot): Promise<void> {
   await fsp.mkdir(dir, { recursive: true })
 
   const existing = loadSnapshots()
+  const latest = existing[existing.length - 1]
+  if (latest && areSnapshotsEquivalent(latest, snapshot)) {
+    return
+  }
   existing.push(snapshot)
 
   // 오래된 스냅샷 정리
@@ -98,6 +102,25 @@ export function parseSnapshotData(raw: string): SnapshotData | null {
   }
 
   return snapshotData as SnapshotData
+}
+
+export function areSnapshotsEquivalent(a: Snapshot, b: Snapshot): boolean {
+  if (a.totalSize !== b.totalSize) return false
+  if (a.folders.length !== b.folders.length) return false
+
+  for (let i = 0; i < a.folders.length; i++) {
+    const left = a.folders[i]
+    const right = b.folders[i]
+    if (
+      left.name !== right.name ||
+      left.path !== right.path ||
+      left.size !== right.size
+    ) {
+      return false
+    }
+  }
+
+  return true
 }
 
 function backupCorruptSnapshotFile(filePath: string): void {
