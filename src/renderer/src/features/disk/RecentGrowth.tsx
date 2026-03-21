@@ -12,12 +12,17 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
   const [loading, setLoading] = useState(false)
   const [scanned, setScanned] = useState(false)
   const [days, setDays] = useState(7)
+  const [error, setError] = useState<string | null>(null)
 
   const handleScan = async () => {
     setLoading(true)
+    setError(null)
     const res = await window.systemScope.findRecentGrowth(folderPath, days)
     if (res.ok && res.data) {
       setResults(res.data as RecentGrowthEntry[])
+    } else {
+      setResults([])
+      setError(res.error?.message ?? '최근 변경 분석에 실패했습니다.')
     }
     setLoading(false)
     setScanned(true)
@@ -52,13 +57,19 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
       }
     >
 
-      {scanned && results.length === 0 && (
+      {scanned && error && (
+        <div style={{ color: 'var(--accent-red)', fontSize: '13px', padding: '12px 0' }}>
+          {error}
+        </div>
+      )}
+
+      {scanned && !error && results.length === 0 && (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px 0' }}>
           최근 {days}일 내 급격히 커진 폴더가 없습니다
         </div>
       )}
 
-      {results.length > 0 && (
+      {!error && results.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '300px', overflow: 'auto' }}>
           {results.map((entry) => {
             const pct = totalRecent > 0 ? (entry.recentSize / totalRecent) * 100 : 0

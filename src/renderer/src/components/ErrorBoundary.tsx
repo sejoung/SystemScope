@@ -4,6 +4,7 @@ interface ErrorBoundaryProps {
   title: string
   children: ReactNode
   message?: string
+  resetKey?: string
 }
 
 interface ErrorBoundaryState {
@@ -21,6 +22,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error(`Failed to render section: ${this.props.title}`, error, errorInfo)
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps): void {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false })
+    }
   }
 
   render(): ReactNode {

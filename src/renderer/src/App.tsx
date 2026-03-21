@@ -94,6 +94,7 @@ function App() {
         <ErrorBoundary
           title="Page Render Failed"
           message="현재 페이지를 렌더링하지 못했습니다. 다른 메뉴로 이동한 뒤 다시 시도해주세요."
+          resetKey={currentPage}
         >
           {currentPage === 'dashboard' && <DashboardPage />}
           {currentPage === 'disk' && <DiskAnalysisPage />}

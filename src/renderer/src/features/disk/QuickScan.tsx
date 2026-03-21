@@ -29,12 +29,17 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
   const [results, setResults] = useState<QuickScanFolder[]>([])
   const [scanning, setScanning] = useState(false)
   const [scanned, setScanned] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleScan = async () => {
     setScanning(true)
+    setError(null)
     const res = await window.systemScope.quickScan()
     if (res.ok && res.data) {
       setResults(res.data as QuickScanFolder[])
+    } else {
+      setResults([])
+      setError(res.error?.message ?? '빠른 정리 후보 탐색에 실패했습니다.')
     }
     setScanning(false)
     setScanned(true)
@@ -74,6 +79,10 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
       {!scanned ? (
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
           캐시, 로그, 다운로드 등 주요 폴더의 용량을 빠르게 확인합니다
+        </div>
+      ) : error ? (
+        <div style={{ fontSize: '12px', color: 'var(--accent-red)', padding: '4px 0' }}>
+          {error}
         </div>
       ) : (
         <div>
