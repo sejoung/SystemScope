@@ -9,7 +9,7 @@
 ## 화면 구성
 
 - `Overview`: 실시간 시스템 상태, 알림, Live Usage 차트, Home Storage, Storage Growth 요약
-- `Storage`: 폴더 스캔, Folder Map, Largest Files, File Types, Recent Growth, Duplicate Finder
+- `Storage`: 폴더 스캔, Folder Map, File Insights, Recent Growth
 - `Activity`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
 - `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터 경로 관리
 
@@ -127,7 +127,7 @@ Windows 예시:
 
 ### 7. 중복 파일 찾기
 
-스캔한 폴더 내 중복 파일을 탐색합니다.
+스캔한 폴더 내 중복 파일을 탐색합니다. 현재는 `Storage > File Insights > Duplicates` 탭에서 제공합니다.
 
 - 1단계: 파일 크기로 후보 그룹핑 (빠른 필터)
 - 2단계: 같은 크기 파일의 head+tail 샘플 해시로 추가 축소
@@ -190,7 +190,7 @@ Windows 예시:
 
 ### 12. UI 패턴
 
-- 아코디언: Live Usage, Home Storage, Storage Growth, Quick Cleanup, Largest Files, File Types, Recent Growth, Duplicate Finder 등 모든 섹션 접기/펼치기 지원
+- 아코디언: Live Usage, Home Storage, Storage Growth, Quick Cleanup, Folder Map, File Insights, Recent Growth 등 주요 섹션 접기/펼치기 지원
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
   - 실행 완료 시 자동으로 열리며 뱃지로 요약 표시
 - 시스템 모니터링, 프로세스 폴링, 알림 리스너는 App 레벨에서 글로벌 관리 — 어떤 페이지에 있든 백그라운드 갱신
@@ -198,6 +198,7 @@ Windows 예시:
 - 사용자가 Rescan / Refresh 버튼으로 원할 때만 수동 갱신
 - 다크 / 라이트 테마 지원
 - 라이트 테마에서도 차트, 사이드바, 경고/성공 배지 대비를 별도로 조정
+- 페이지 및 주요 섹션 렌더 실패 시 Error Boundary로 전체 앱 대신 해당 영역만 보호
 
 ### 13. 설정
 
@@ -205,7 +206,7 @@ Windows 예시:
 - `Preferences > Alerts`: Disk / Memory / GPU 각각 Warning / Critical 설정
 - `Preferences > Snapshots`: 15분 / 30분 / 1시간 / 2시간 / 6시간 선택
 - `Preferences > App Data`: 저장 경로 확인 및 Finder / Explorer에서 바로 열기
-- 상단 `Save All` 버튼으로 테마, 알림 임계치, 스냅샷 주기를 함께 저장
+- 하단 `Save All` 버튼으로 테마, 알림 임계치, 스냅샷 주기를 함께 저장
 
 ## macOS 동작 보정
 
@@ -224,7 +225,8 @@ src/
   renderer/   React UI, 페이지, 스토어, 차트 컴포넌트
   shared/     IPC 채널, 공용 타입, 상수
 tests/
-  unit/       Vitest 단위 테스트
+  unit/         Vitest 단위 테스트
+  integration/  Vitest 통합 흐름 테스트
 ```
 
 ## 기술 스택
@@ -291,6 +293,11 @@ npm run preview
 npm test
 ```
 
+포함 범위:
+
+- `tests/unit`: 함수/모듈 단위 검증
+- `tests/integration`: 앱 부팅, 설정 저장, 디스크 스캔, 실시간 모니터링, 성장 분석 등 모듈 연결 흐름 검증
+
 감시 모드:
 
 ```bash
@@ -325,9 +332,11 @@ npm run test:watch
 - 스냅샷 파일 손상 자동 복구 + 연속 중복 스냅샷 방지
 - 최근 급성장 폴더 탐색 (스캔 결과 내)
 - 중복 파일 찾기 (3단계 해시: 크기 → 샘플 → 전체)
+- 오래된 파일 탐색 (File Insights > Old Files)
 - 전체 프로세스 목록 + 검색/필터/정렬 (Activity 페이지)
 - 프로세스 Top 5 요약 (Overview 대시보드)
 - App 레벨 글로벌 폴링 — 페이지 전환 시 끊김 없음
+- Vitest 단위 테스트 + 통합 흐름 테스트
 - 트레이 아이콘 상주 + 창 숨기기/복원
 - 앱 아이콘 (macOS .icns / Windows .ico)
 - 아코디언 UI 전체 적용 + 헤더 액션 버튼
