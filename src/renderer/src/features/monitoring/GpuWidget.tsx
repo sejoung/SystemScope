@@ -24,6 +24,26 @@ export function GpuWidget() {
     )
   }
 
+  const hasUsageData = gpu.usage !== null || (gpu.memoryTotal !== null && gpu.memoryUsed !== null)
+
+  // Apple Silicon: 모델은 감지되지만 사용률/VRAM 데이터 없음
+  if (!hasUsageData) {
+    return (
+      <Accordion title="GPU" defaultOpen>
+        <div style={{ textAlign: 'center', padding: '12px 0' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+            {gpu.model}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+            Apple Silicon은 CPU와 통합 메모리(Unified Memory)를
+            <br />
+            공유하여 별도 GPU 사용률 모니터링이 제공되지 않습니다.
+          </div>
+        </div>
+      </Accordion>
+    )
+  }
+
   const memUsage =
     gpu.memoryTotal && gpu.memoryUsed
       ? Math.round((gpu.memoryUsed / gpu.memoryTotal) * 10000) / 100

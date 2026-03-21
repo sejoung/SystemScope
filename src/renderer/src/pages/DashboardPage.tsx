@@ -1,17 +1,14 @@
 import { useSettingsStore } from '../stores/useSettingsStore'
-import { useProcessStore } from '../stores/useProcessStore'
 import { CpuWidget } from '../features/monitoring/CpuWidget'
 import { MemoryWidget } from '../features/monitoring/MemoryWidget'
 import { GpuWidget } from '../features/monitoring/GpuWidget'
 import { RealtimeChart } from '../features/monitoring/RealtimeChart'
 import { YourStorage } from '../features/disk/YourStorage'
 import { GrowthView } from '../features/disk/GrowthView'
-import { TopProcesses } from '../features/process/TopProcesses'
+import { TopResourceConsumers } from '../features/process/TopResourceConsumers'
 import { AlertBanner } from '../features/alerts/AlertBanner'
 
 export function DashboardPage() {
-  const cpuProcesses = useProcessStore((s) => s.cpuProcesses)
-  const memoryProcesses = useProcessStore((s) => s.memoryProcesses)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
 
   return (
@@ -36,10 +33,9 @@ export function DashboardPage() {
         <GrowthView />
       </div>
 
-      {/* Bottom row 2: Process */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <TopProcesses processes={cpuProcesses} title="CPU Hotspots" metric="cpu" />
-        <TopProcesses processes={memoryProcesses} title="Memory Hotspots" metric="memory" />
+      {/* Bottom row 2: Top Resource Consumers */}
+      <div>
+        <TopResourceConsumers />
       </div>
     </div>
   )
