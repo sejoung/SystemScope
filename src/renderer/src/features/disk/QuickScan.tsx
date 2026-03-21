@@ -137,7 +137,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                 </div>
 
                 {/* Bar visual */}
-                <div style={{ width: '80px', flexShrink: 0 }}>
+                <div style={{ width: '60px', flexShrink: 0 }}>
                   <div style={{
                     height: '6px',
                     borderRadius: '3px',

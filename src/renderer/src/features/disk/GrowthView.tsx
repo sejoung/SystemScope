@@ -96,8 +96,9 @@ export function GrowthView() {
         <div>
           {/* Summary */}
           <div style={{
-            display: 'flex', gap: '20px', marginBottom: '16px', padding: '10px 14px',
-            background: 'var(--bg-primary)', borderRadius: 'var(--radius)', fontSize: '13px'
+            display: 'flex', gap: '12px', marginBottom: '16px', padding: '10px 14px',
+            background: 'var(--bg-primary)', borderRadius: 'var(--radius)', fontSize: '13px',
+            flexWrap: 'wrap'
           }}>
             <span style={{ color: 'var(--text-muted)' }}>
               Added: <strong style={{ color: 'var(--accent-yellow)' }}>+{formatBytes(result.totalAdded)}</strong>
@@ -111,14 +112,14 @@ export function GrowthView() {
           </div>
 
           {/* Top 5 Chart + List */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Bar Chart */}
             <div>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                 Fastest Growing TOP {Math.min(top5.length, 5)}
               </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={top5} layout="vertical" margin={{ left: 70 }}>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={top5} layout="vertical" margin={{ left: 60, right: 10 }}>
                   <XAxis
                     type="number"
                     axisLine={{ stroke: 'var(--chart-grid)' }}
@@ -192,7 +193,7 @@ function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: n
         backgroundColor: BAR_COLORS[index % BAR_COLORS.length]
       }} />
 
-      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', width: '90px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '60px', maxWidth: '100px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {folder.name}
       </span>
 

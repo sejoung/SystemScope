@@ -22,8 +22,21 @@ function getTargetFolders(home: string): { name: string; path: string }[] {
   return names.map((name) => ({ name, path: path.join(home, name) }))
 }
 
+// 동시 실행 방지
+let snapshotInProgress: Promise<Snapshot> | null = null
+
 // 현재 폴더 크기를 측정하고 스냅샷 저장
-export async function takeSnapshot(): Promise<Snapshot> {
+export function takeSnapshot(): Promise<Snapshot> {
+  // 이미 진행 중이면 같은 Promise 반환 (중복 실행 방지)
+  if (snapshotInProgress) return snapshotInProgress
+
+  snapshotInProgress = doTakeSnapshot().finally(() => {
+    snapshotInProgress = null
+  })
+  return snapshotInProgress
+}
+
+async function doTakeSnapshot(): Promise<Snapshot> {
   const home = homedir()
   const targets = getTargetFolders(home)
 

@@ -16,7 +16,7 @@ export function DashboardPage() {
       <AlertBanner />
 
       {/* Top: Gauges */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <CpuWidget />
         <MemoryWidget />
         <GpuWidget />
@@ -28,7 +28,7 @@ export function DashboardPage() {
       </div>
 
       {/* Bottom row 1: Storage + Growth */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <YourStorage onFolderClick={() => setCurrentPage('disk')} />
         <GrowthView />
       </div>

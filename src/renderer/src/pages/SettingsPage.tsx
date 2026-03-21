@@ -55,17 +55,9 @@ export function SettingsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, flex: 1 }}>Preferences</h2>
-        <button onClick={handleSave} style={btnStyle}>
-          Save All
-        </button>
-        {saved && (
-          <span style={{ fontSize: '12px', color: 'var(--accent-green)' }}>Saved!</span>
-        )}
-      </div>
+      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Preferences</h2>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
         <Accordion title="Appearance" defaultOpen>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -202,6 +194,24 @@ export function SettingsPage() {
             </div>
           </div>
         </Accordion>
+      </div>
+
+      {/* Save bar — 하단 고정 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        marginTop: '20px', padding: '12px 16px',
+        background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)'
+      }}>
+        <button onClick={handleSave} style={btnStyle}>
+          Save All
+        </button>
+        {saved && (
+          <span style={{ fontSize: '12px', color: 'var(--accent-green)' }}>Saved!</span>
+        )}
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          테마, 알림 임계치, 스냅샷 주기를 함께 저장합니다
+        </span>
       </div>
     </div>
   )

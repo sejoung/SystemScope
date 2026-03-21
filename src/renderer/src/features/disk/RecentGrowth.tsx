@@ -74,7 +74,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-card-hover)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
               >
-                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', width: '160px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '60px', maxWidth: '140px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {entry.name}
                 </span>
 

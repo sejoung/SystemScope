@@ -3,10 +3,10 @@ import { useState, useEffect, type ReactNode } from 'react'
 interface AccordionProps {
   title: string
   defaultOpen?: boolean
-  forceOpen?: boolean          // 외부에서 강제로 열기
+  forceOpen?: boolean
   badge?: string
   badgeColor?: string
-  actions?: ReactNode          // 헤더 우측 액션 버튼
+  actions?: ReactNode
   children: ReactNode
 }
 
@@ -36,17 +36,20 @@ export function Accordion({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '10px 20px',
-        gap: '8px'
+        padding: '10px 16px',
+        gap: '8px',
+        flexWrap: 'wrap',
+        minHeight: '40px'
       }}>
-        {/* Toggle area (title + badge) */}
+        {/* Toggle area */}
         <button
           onClick={() => setOpen(!open)}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            flex: 1,
+            flex: '1 1 auto',
+            minWidth: 0,
             border: 'none',
             background: 'none',
             cursor: 'pointer',
@@ -59,7 +62,8 @@ export function Accordion({
             color: 'var(--text-muted)',
             transition: 'transform 0.2s',
             transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-            display: 'inline-block'
+            display: 'inline-block',
+            flexShrink: 0
           }}>
             ▶
           </span>
@@ -68,7 +72,8 @@ export function Accordion({
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            color: 'var(--text-secondary)'
+            color: 'var(--text-secondary)',
+            whiteSpace: 'nowrap'
           }}>
             {title}
           </span>
@@ -79,14 +84,15 @@ export function Accordion({
               padding: '1px 8px',
               borderRadius: '4px',
               background: badgeColor ? `${badgeColor}20` : 'var(--bg-card-hover)',
-              color: badgeColor ?? 'var(--text-secondary)'
+              color: badgeColor ?? 'var(--text-secondary)',
+              whiteSpace: 'nowrap'
             }}>
               {badge}
             </span>
           )}
         </button>
 
-        {/* Action buttons — always visible */}
+        {/* Action buttons */}
         {actions && (
           <div
             onClick={(e) => e.stopPropagation()}
@@ -99,7 +105,7 @@ export function Accordion({
 
       {/* Content */}
       {open && (
-        <div style={{ padding: '0 20px 16px' }}>
+        <div style={{ padding: '0 16px 16px' }}>
           {children}
         </div>
       )}

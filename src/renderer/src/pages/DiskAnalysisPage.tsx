@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import { useDiskStore } from '../stores/useDiskStore'
 import { useIpcListener } from '../hooks/useIpc'
 import { TreemapChart } from '../features/disk/TreemapChart'
@@ -32,6 +32,18 @@ export function DiskAnalysisPage() {
   } = useDiskStore()
 
   const showToast = useToast((s) => s.show)
+
+  // Treemap 컨테이너 폭 측정
+  const treemapRef = useRef<HTMLDivElement>(null)
+  const [treemapWidth, setTreemapWidth] = useState(600)
+  useEffect(() => {
+    if (!treemapRef.current) return
+    const observer = new ResizeObserver(([entry]) => {
+      setTreemapWidth(Math.floor(entry.contentRect.width))
+    })
+    observer.observe(treemapRef.current)
+    return () => observer.disconnect()
+  }, [scanResult])
 
   const startScan = useCallback(
     async (folderPath: string) => {
@@ -173,7 +185,7 @@ export function DiskAnalysisPage() {
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <YourStorage onFolderClick={tryScan} />
         <GrowthView />
       </div>
@@ -186,7 +198,7 @@ export function DiskAnalysisPage() {
       {scanResult && (
         <>
           <div style={{
-            display: 'flex', gap: '16px', marginBottom: '16px', fontSize: '13px',
+            display: 'flex', gap: '12px', flexWrap: 'wrap' as const, marginBottom: '16px', fontSize: '13px',
             padding: '10px 16px', background: 'var(--bg-card)',
             borderRadius: 'var(--radius)', border: '1px solid var(--border)'
           }}>
@@ -196,9 +208,9 @@ export function DiskAnalysisPage() {
             <Stat label="Duration" value={`${(scanResult.scanDuration / 1000).toFixed(1)}s`} />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
+          <div ref={treemapRef} style={{ marginBottom: '16px' }}>
             <Accordion title="Folder Map" defaultOpen>
-              <TreemapChart data={scanResult.tree} width={800} height={300} />
+              <TreemapChart data={scanResult.tree} width={treemapWidth - 40} height={300} />
             </Accordion>
           </div>
 
