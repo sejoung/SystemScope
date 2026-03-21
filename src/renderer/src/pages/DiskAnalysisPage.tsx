@@ -34,6 +34,7 @@ export function DiskAnalysisPage() {
   } = useDiskStore()
 
   const showToast = useToast((s) => s.show)
+  const sectionResetKey = `${selectedFolder ?? 'none'}:${scanResult?.rootPath ?? 'none'}:${scanResult?.scanDuration ?? 0}:${isScanning ? 'scan' : 'idle'}`
 
   // Treemap 컨테이너 폭 측정
   const treemapRef = useRef<HTMLDivElement>(null)
@@ -196,12 +197,12 @@ export function DiskAnalysisPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-        <ErrorBoundary title="Home Storage">
+        <ErrorBoundary title="Home Storage" resetKey={sectionResetKey}>
           <Suspense fallback={<SectionFallback title="Home Storage" />}>
             <YourStorage onFolderClick={tryScan} />
           </Suspense>
         </ErrorBoundary>
-        <ErrorBoundary title="Storage Growth">
+        <ErrorBoundary title="Storage Growth" resetKey={sectionResetKey}>
           <Suspense fallback={<SectionFallback title="Storage Growth" />}>
             <GrowthView />
           </Suspense>
@@ -209,7 +210,7 @@ export function DiskAnalysisPage() {
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <ErrorBoundary title="Quick Cleanup">
+        <ErrorBoundary title="Quick Cleanup" resetKey={sectionResetKey}>
           <Suspense fallback={<SectionFallback title="Quick Cleanup" />}>
             <QuickScan onFolderClick={tryScan} />
           </Suspense>
@@ -231,7 +232,7 @@ export function DiskAnalysisPage() {
           </div>
 
           <div ref={treemapRef} style={{ marginBottom: '16px' }}>
-            <ErrorBoundary title="Folder Map">
+            <ErrorBoundary title="Folder Map" resetKey={sectionResetKey}>
               <Suspense fallback={<SectionFallback title="Folder Map" />}>
                 <Accordion title="Folder Map" defaultOpen>
                   <TreemapChart data={scanResult.tree} width={safeTreemapWidth} height={300} />
@@ -242,7 +243,7 @@ export function DiskAnalysisPage() {
 
           {/* File Insights — Types / Largest / Old Files / Duplicates 통합 */}
           <div style={{ marginBottom: '16px' }}>
-            <ErrorBoundary title="File Insights">
+            <ErrorBoundary title="File Insights" resetKey={sectionResetKey}>
               <Suspense fallback={<SectionFallback title="File Insights" />}>
                 <FileInsights
                   extensions={extensions}
@@ -255,7 +256,7 @@ export function DiskAnalysisPage() {
 
           {/* Recent Growth */}
           <div>
-            <ErrorBoundary title="Recent Growth">
+            <ErrorBoundary title="Recent Growth" resetKey={sectionResetKey}>
               <Suspense fallback={<SectionFallback title="Recent Growth" />}>
                 <RecentGrowth folderPath={selectedFolder!} />
               </Suspense>

@@ -15,6 +15,7 @@ describe('IPC_CHANNELS', () => {
   })
 
   it('should contain all system channels', () => {
+    expect(IPC_CHANNELS.APP_LOG_RENDERER_ERROR).toBeDefined()
     expect(IPC_CHANNELS.SYSTEM_GET_STATS).toBeDefined()
     expect(IPC_CHANNELS.SYSTEM_SUBSCRIBE).toBeDefined()
     expect(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE).toBeDefined()

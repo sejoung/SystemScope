@@ -1,4 +1,7 @@
 export const IPC_CHANNELS = {
+  // App
+  APP_LOG_RENDERER_ERROR: 'app:logRendererError',
+
   // System Monitoring
   SYSTEM_GET_STATS: 'system:getStats',
   SYSTEM_SUBSCRIBE: 'system:subscribe',

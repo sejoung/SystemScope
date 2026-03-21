@@ -14,6 +14,10 @@ function createListener(channel: string) {
 }
 
 const api = {
+  // App
+  logRendererError: (scope: string, message: string, details?: unknown) =>
+    ipcRenderer.invoke(IPC_CHANNELS.APP_LOG_RENDERER_ERROR, { scope, message, details }),
+
   // System
   getSystemStats: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_STATS),
   subscribeSystem: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_SUBSCRIBE),
@@ -44,8 +48,6 @@ const api = {
 
   // Alerts
   getActiveAlerts: () => ipcRenderer.invoke(IPC_CHANNELS.ALERT_GET_ACTIVE),
-  updateThresholds: (thresholds: Record<string, number>) =>
-    ipcRenderer.invoke(IPC_CHANNELS.ALERT_UPDATE_THRESHOLDS, thresholds),
   dismissAlert: (alertId: string) => ipcRenderer.invoke(IPC_CHANNELS.ALERT_DISMISS, alertId),
   onAlertFired: createListener(IPC_CHANNELS.EVENT_ALERT_FIRED),
 
