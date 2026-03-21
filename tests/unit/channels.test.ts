@@ -40,7 +40,6 @@ describe('IPC_CHANNELS', () => {
 
   it('should contain all alert channels', () => {
     expect(IPC_CHANNELS.ALERT_GET_ACTIVE).toBeDefined()
-    expect(IPC_CHANNELS.ALERT_UPDATE_THRESHOLDS).toBeDefined()
     expect(IPC_CHANNELS.ALERT_DISMISS).toBeDefined()
   })
 

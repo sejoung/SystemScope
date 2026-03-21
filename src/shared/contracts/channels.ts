@@ -25,7 +25,6 @@ export const IPC_CHANNELS = {
 
   // Alerts
   ALERT_GET_ACTIVE: 'alert:getActive',
-  ALERT_UPDATE_THRESHOLDS: 'alert:updateThresholds',
   ALERT_DISMISS: 'alert:dismiss',
 
   // Jobs

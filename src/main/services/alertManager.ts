@@ -23,16 +23,11 @@ export function getThresholds(): AlertThresholds {
 }
 
 export function getActiveAlerts(): Alert[] {
-  return Array.from(activeAlerts.values()).filter((a) => !a.dismissed)
+  return Array.from(activeAlerts.values())
 }
 
 export function dismissAlert(id: string): boolean {
-  const alert = activeAlerts.get(id)
-  if (alert) {
-    alert.dismissed = true
-    return true
-  }
-  return false
+  return activeAlerts.delete(id)
 }
 
 export function checkAlerts(stats: SystemStats): Alert[] {

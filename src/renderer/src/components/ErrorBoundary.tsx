@@ -22,18 +22,24 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error(`Failed to render section: ${this.props.title}`, error, errorInfo)
-    void window.systemScope.logRendererError(
-      'error-boundary',
-      `Failed to render section: ${this.props.title}`,
-      {
-        error: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        },
-        componentStack: errorInfo.componentStack
-      }
-    )
+    try {
+      void window.systemScope.logRendererError(
+        'error-boundary',
+        `Failed to render section: ${this.props.title}`,
+        {
+          error: {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          },
+          componentStack: errorInfo.componentStack
+        }
+      ).catch((logError) => {
+        console.error(`Failed to log renderer error: ${this.props.title}`, logError)
+      })
+    } catch (logError) {
+      console.error(`Failed to log renderer error: ${this.props.title}`, logError)
+    }
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps): void {
