@@ -10,6 +10,7 @@ import { MemoryWidget } from '../features/monitoring/MemoryWidget'
 import { GpuWidget } from '../features/monitoring/GpuWidget'
 import { RealtimeChart } from '../features/monitoring/RealtimeChart'
 import { YourStorage } from '../features/disk/YourStorage'
+import { GrowthView } from '../features/disk/GrowthView'
 import { TopProcesses } from '../features/process/TopProcesses'
 import { AlertBanner } from '../features/alerts/AlertBanner'
 import type { SystemStats, Alert } from '@shared/types'
@@ -79,9 +80,14 @@ export function DashboardPage() {
         <RealtimeChart />
       </div>
 
-      {/* Bottom: Disk + Process */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+      {/* Bottom row 1: Storage + Growth */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
         <YourStorage onFolderClick={() => setCurrentPage('disk')} />
+        <GrowthView />
+      </div>
+
+      {/* Bottom row 2: Process */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <TopProcesses processes={cpuProcesses} title="Top CPU Processes" metric="cpu" />
         <TopProcesses processes={memoryProcesses} title="Top Memory Processes" metric="memory" />
       </div>

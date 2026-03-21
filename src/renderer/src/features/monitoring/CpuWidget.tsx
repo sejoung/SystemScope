@@ -1,5 +1,5 @@
 import { useSystemStore } from '../../stores/useSystemStore'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { GaugeChart } from '../../components/GaugeChart'
 import { ProgressBar } from '../../components/ProgressBar'
 
@@ -8,14 +8,14 @@ export function CpuWidget() {
 
   if (!cpu) {
     return (
-      <Card title="CPU">
+      <Accordion title="CPU" defaultOpen>
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터 로딩 중...</div>
-      </Card>
+      </Accordion>
     )
   }
 
   return (
-    <Card title="CPU">
+    <Accordion title="CPU" defaultOpen>
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
         <GaugeChart
           value={cpu.usage}
@@ -45,6 +45,6 @@ export function CpuWidget() {
           )}
         </div>
       </div>
-    </Card>
+    </Accordion>
   )
 }

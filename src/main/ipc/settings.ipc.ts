@@ -1,10 +1,11 @@
-import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
+import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { getSettings, setSettings } from '../store/settingsStore'
 import { validatePartialSettings } from '../store/settingsSchema'
 import { success, failure } from '@shared/types'
+import { restartSnapshotScheduler } from '../services/growthAnalyzer'
 import log from 'electron-log'
 
 export function registerSettingsIpc(): void {
@@ -17,12 +18,23 @@ export function registerSettingsIpc(): void {
       return failure('INVALID_INPUT', '유효하지 않은 설정 값입니다.')
     }
     try {
-      setSettings(settings as Parameters<typeof setSettings>[0])
+      const parsed = settings as Parameters<typeof setSettings>[0]
+      setSettings(parsed)
+
+      // 스냅샷 주기 변경 시 스케줄러 재시작
+      if (parsed.snapshotIntervalMin) {
+        restartSnapshotScheduler(parsed.snapshotIntervalMin * 60 * 1000)
+      }
+
       return success(getSettings())
     } catch (err) {
       log.error('Failed to save settings', err)
       return failure('UNKNOWN_ERROR', '설정 저장에 실패했습니다.')
     }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DATA_PATH, () => {
+    return success(app.getPath('userData'))
   })
 
   ipcMain.handle(IPC_CHANNELS.DIALOG_SELECT_FOLDER, async () => {
@@ -39,7 +51,35 @@ export function registerSettingsIpc(): void {
     return success(result.filePaths[0])
   })
 
-  // Shell: Finder / Explorer에서 폴더 열기
+  // Shell: 폴더를 Finder / Explorer에서 직접 열기
+  // 가이드라인 6.3: 앱이 관리하는 경로(userData)만 허용
+  ipcMain.handle(IPC_CHANNELS.SHELL_OPEN_PATH, async (_event, targetPath: string) => {
+    if (!targetPath || typeof targetPath !== 'string') {
+      return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+
+    const resolved = path.resolve(targetPath)
+    const userData = app.getPath('userData')
+
+    // userData 하위 경로만 허용 (보안)
+    if (!resolved.startsWith(userData)) {
+      return failure('PERMISSION_DENIED', '허용되지 않은 경로입니다.')
+    }
+
+    if (!fs.existsSync(resolved)) {
+      return failure('INVALID_INPUT', '경로가 존재하지 않습니다.')
+    }
+
+    try {
+      await shell.openPath(resolved)
+      return success(true)
+    } catch (err) {
+      log.error('Failed to open path', { path: resolved, error: err })
+      return failure('UNKNOWN_ERROR', '폴더를 열 수 없습니다.')
+    }
+  })
+
+  // Shell: Finder / Explorer에서 파일/폴더 위치 열기
   // 가이드라인 6.3: 신뢰되지 않은 경로를 검증 없이 열지 않는다
   ipcMain.handle(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, (_event, targetPath: string) => {
     if (!targetPath || typeof targetPath !== 'string') {

@@ -1,5 +1,5 @@
 import { useSystemStore } from '../../stores/useSystemStore'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { GaugeChart } from '../../components/GaugeChart'
 import { formatBytes } from '../../utils/format'
 
@@ -8,19 +8,19 @@ export function GpuWidget() {
 
   if (!gpu) {
     return (
-      <Card title="GPU">
+      <Accordion title="GPU" defaultOpen>
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터 로딩 중...</div>
-      </Card>
+      </Accordion>
     )
   }
 
   if (!gpu.available) {
     return (
-      <Card title="GPU">
+      <Accordion title="GPU" defaultOpen>
         <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>
           GPU를 감지할 수 없습니다
         </div>
-      </Card>
+      </Accordion>
     )
   }
 
@@ -30,7 +30,7 @@ export function GpuWidget() {
       : null
 
   return (
-    <Card title="GPU">
+    <Accordion title="GPU" defaultOpen>
       <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
         {gpu.usage !== null && (
           <GaugeChart
@@ -56,6 +56,6 @@ export function GpuWidget() {
           {gpu.temperature !== null && ` / ${gpu.temperature}°C`}
         </div>
       </div>
-    </Card>
+    </Accordion>
   )
 }

@@ -66,6 +66,23 @@ export interface QuickScanFolder {
   category: ScanCategory
 }
 
+export interface GrowthFolder {
+  name: string
+  path: string
+  addedSize: number      // 기간 내 추가/수정된 파일 총 크기
+  addedFiles: number     // 기간 내 추가/수정된 파일 수
+  totalSize: number      // 폴더 전체 크기
+  growthRate: number     // addedSize / totalSize (0~1)
+}
+
+export interface GrowthViewResult {
+  period: string         // '1h' | '24h' | '7d'
+  cutoffMs: number
+  folders: GrowthFolder[]
+  totalAdded: number
+  totalAddedFiles: number
+}
+
 export interface DuplicateGroup {
   hash: string
   size: number

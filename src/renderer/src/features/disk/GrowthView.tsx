@@ -1,0 +1,221 @@
+import { useEffect } from 'react'
+import { Accordion } from '../../components/Accordion'
+import { formatBytes } from '../../utils/format'
+import { useDiskStore } from '../../stores/useDiskStore'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import type { GrowthFolder } from '@shared/types'
+
+const PERIOD_LABELS: Record<string, string> = {
+  '1h': '1 Hour',
+  '24h': '24 Hours',
+  '7d': '7 Days'
+}
+
+const BAR_COLORS = ['#eab308', '#f97316', '#ef4444', '#a855f7', '#3b82f6', '#22c55e', '#06b6d4', '#ec4899']
+
+export function GrowthView() {
+  const result = useDiskStore((s) => s.growthView)
+  const loading = useDiskStore((s) => s.growthViewLoading)
+  const period = useDiskStore((s) => s.growthViewPeriod)
+  const setPeriod = useDiskStore((s) => s.setGrowthViewPeriod)
+  const fetchGrowthView = useDiskStore((s) => s.fetchGrowthView)
+
+  // 캐시 없으면 자동 fetch (YourStorage와 동일 패턴)
+  useEffect(() => {
+    if (!result && !loading) {
+      fetchGrowthView()
+    }
+  }, [result, loading, fetchGrowthView])
+
+  const handlePeriodChange = (p: string) => {
+    setPeriod(p)
+    if (result) fetchGrowthView(p)
+  }
+
+  const top5 = result ? result.folders.slice(0, 5) : []
+  const hasData = result && result.totalAdded > 0
+
+  return (
+    <Accordion
+      title="Growth View"
+      badge={loading ? 'Analyzing...' : hasData ? `+${formatBytes(result!.totalAdded)} in ${PERIOD_LABELS[result!.period]}` : undefined}
+      badgeColor={loading ? 'var(--text-muted)' : 'var(--accent-yellow)'}
+      defaultOpen
+      forceOpen={!!hasData || loading}
+      actions={
+        <>
+          <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-primary)', borderRadius: '6px', padding: '2px' }}>
+            {['1h', '24h', '7d'].map((p) => (
+              <button
+                key={p}
+                onClick={() => handlePeriodChange(p)}
+                style={{
+                  padding: '3px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: '5px',
+                  background: period === p ? 'var(--accent-yellow)' : 'transparent',
+                  color: period === p ? '#0f172a' : 'var(--text-muted)',
+                  cursor: 'pointer'
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => fetchGrowthView()} disabled={loading} style={btnStyle}>
+            {loading ? 'Analyzing...' : result ? 'Refresh' : 'Analyze'}
+          </button>
+        </>
+      }
+    >
+      {!result ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
+          {loading && (
+            <div style={{
+              width: '14px', height: '14px',
+              border: '2px solid var(--accent-yellow)',
+              borderTop: '2px solid transparent',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite'
+            }} />
+          )}
+          {loading ? '홈 디렉토리 성장 추세 분석 중...' : '홈 디렉토리에서 최근 급격히 커진 폴더를 분석합니다'}
+          {loading && <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>}
+        </div>
+      ) : result.totalAdded === 0 ? (
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
+          최근 {PERIOD_LABELS[result.period]} 동안 변경이 감지되지 않았습니다.
+          <br />
+          <span style={{ fontSize: '11px' }}>
+            스냅샷이 쌓이면 시간대별 증감을 비교할 수 있습니다. (1시간 간격으로 자동 기록)
+          </span>
+        </div>
+      ) : (
+        <div>
+          {/* Summary */}
+          <div style={{
+            display: 'flex', gap: '20px', marginBottom: '16px', padding: '10px 14px',
+            background: 'var(--bg-primary)', borderRadius: 'var(--radius)', fontSize: '13px'
+          }}>
+            <span style={{ color: 'var(--text-muted)' }}>
+              Added: <strong style={{ color: 'var(--accent-yellow)' }}>+{formatBytes(result.totalAdded)}</strong>
+            </span>
+            <span style={{ color: 'var(--text-muted)' }}>
+              Files: <strong style={{ color: 'var(--text-primary)' }}>{result.totalAddedFiles.toLocaleString()}</strong>
+            </span>
+            <span style={{ color: 'var(--text-muted)' }}>
+              Period: <strong style={{ color: 'var(--text-primary)' }}>{PERIOD_LABELS[result.period]}</strong>
+            </span>
+          </div>
+
+          {/* Top 5 Chart + List */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {/* Bar Chart */}
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Fastest Growing TOP {Math.min(top5.length, 5)}
+              </div>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={top5} layout="vertical" margin={{ left: 70 }}>
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                    tickFormatter={(v) => formatBytes(v)}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
+                    width={65}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      fontSize: '12px'
+                    }}
+                    formatter={(val: number) => [`+${formatBytes(val)}`, 'Added']}
+                  />
+                  <Bar dataKey="addedSize" radius={[0, 4, 4, 0]}>
+                    {top5.map((_, i) => (
+                      <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Detail List */}
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                All Folders
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflow: 'auto' }}>
+                {result.folders.map((folder, i) => (
+                  <FolderRow key={folder.path} folder={folder} index={i} maxAdded={result.folders[0]?.addedSize ?? 1} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </Accordion>
+  )
+}
+
+function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: number; maxAdded: number }) {
+  const pct = (folder.addedSize / maxAdded) * 100
+  const growthPct = (folder.growthRate * 100).toFixed(1)
+
+  return (
+    <div
+      style={{
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '6px 8px', borderRadius: '6px',
+        cursor: 'pointer', transition: 'background 0.15s'
+      }}
+      onClick={() => window.systemScope.showInFolder(folder.path)}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-card-hover)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+    >
+      <div style={{
+        width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+        backgroundColor: BAR_COLORS[index % BAR_COLORS.length]
+      }} />
+
+      <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)', width: '90px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {folder.name}
+      </span>
+
+      <div style={{ flex: 1, height: '4px', backgroundColor: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
+        <div style={{
+          width: `${pct}%`, height: '100%',
+          backgroundColor: BAR_COLORS[index % BAR_COLORS.length],
+          borderRadius: '2px', minWidth: '2px'
+        }} />
+      </div>
+
+      <span style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'monospace', color: 'var(--accent-yellow)', width: '65px', textAlign: 'right', flexShrink: 0 }}>
+        +{formatBytes(folder.addedSize)}
+      </span>
+
+      <span style={{ fontSize: '10px', color: 'var(--text-muted)', width: '45px', textAlign: 'right', flexShrink: 0 }}>
+        {growthPct}%
+      </span>
+    </div>
+  )
+}
+
+const btnStyle: React.CSSProperties = {
+  padding: '5px 14px',
+  fontSize: '12px',
+  fontWeight: 600,
+  border: 'none',
+  borderRadius: '6px',
+  background: 'var(--accent-yellow)',
+  color: '#0f172a',
+  cursor: 'pointer'
+}

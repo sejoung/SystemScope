@@ -1,14 +1,23 @@
 import type { AlertThresholds } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 
+export const SNAPSHOT_INTERVAL_OPTIONS = [15, 30, 60, 120, 360] as const
+export type SnapshotIntervalMin = (typeof SNAPSHOT_INTERVAL_OPTIONS)[number]
+
 export interface AppSettings {
   thresholds: AlertThresholds
   theme: 'dark' | 'light'
+  snapshotIntervalMin: SnapshotIntervalMin
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   thresholds: DEFAULT_THRESHOLDS,
-  theme: 'dark'
+  theme: 'dark',
+  snapshotIntervalMin: 60
+}
+
+export function isSnapshotInterval(value: unknown): value is SnapshotIntervalMin {
+  return typeof value === 'number' && SNAPSHOT_INTERVAL_OPTIONS.includes(value as SnapshotIntervalMin)
 }
 
 const THRESHOLD_KEYS = [
@@ -45,7 +54,8 @@ export function sanitizeAppSettings(value: unknown): AppSettings {
   const raw = value as Record<string, unknown>
   return {
     thresholds: isAlertThresholds(raw.thresholds) ? raw.thresholds : DEFAULT_THRESHOLDS,
-    theme: isTheme(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme
+    theme: isTheme(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme,
+    snapshotIntervalMin: isSnapshotInterval(raw.snapshotIntervalMin) ? raw.snapshotIntervalMin : DEFAULT_SETTINGS.snapshotIntervalMin
   }
 }
 
@@ -57,6 +67,9 @@ export function validatePartialSettings(value: unknown): value is Partial<AppSet
     return false
   }
   if ('theme' in raw && !isTheme(raw.theme)) {
+    return false
+  }
+  if ('snapshotIntervalMin' in raw && !isSnapshotInterval(raw.snapshotIntervalMin)) {
     return false
   }
 

@@ -6,6 +6,7 @@ import { LargeFileList } from '../features/disk/LargeFileList'
 import { ExtensionBreakdown } from '../features/disk/ExtensionBreakdown'
 import { QuickScan } from '../features/disk/QuickScan'
 import { YourStorage } from '../features/disk/YourStorage'
+import { GrowthView } from '../features/disk/GrowthView'
 import { RecentGrowth } from '../features/disk/RecentGrowth'
 import { DuplicateFinder } from '../features/disk/DuplicateFinder'
 import { Card } from '../components/Card'
@@ -115,6 +116,11 @@ export function DiskAnalysisPage() {
         <YourStorage onFolderClick={(folderPath) => {
           if (!isScanning) startScan(folderPath)
         }} />
+      </div>
+
+      {/* Growth View — 추세 분석 */}
+      <div style={{ marginBottom: '16px' }}>
+        <GrowthView />
       </div>
 
       {/* Quick Scan — cleanable folders */}

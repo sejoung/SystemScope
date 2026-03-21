@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useDiskStore } from '../../stores/useDiskStore'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 
 const BAR_COLORS = [
@@ -25,7 +25,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   if (!info && loading) {
     return (
-      <Card>
+      <Accordion title="Your Storage" defaultOpen>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0', justifyContent: 'center'
@@ -33,7 +33,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
           <Spinner />
           폴더 크기 분석 중... (첫 실행 시 수 초 소요)
         </div>
-      </Card>
+      </Accordion>
     )
   }
 
@@ -43,7 +43,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   const diskUsedPercent = ((info.diskTotal - info.diskAvailable) / info.diskTotal) * 100
 
   return (
-    <Card>
+    <Accordion title="Your Storage" defaultOpen>
       {/* Disk capacity summary */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '13px' }}>
@@ -202,7 +202,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
           })}
         </div>
       </div>
-    </Card>
+    </Accordion>
   )
 }
 

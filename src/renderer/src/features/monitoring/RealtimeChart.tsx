@@ -1,5 +1,5 @@
 import { useSystemStore } from '../../stores/useSystemStore'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 export function RealtimeChart() {
@@ -13,7 +13,8 @@ export function RealtimeChart() {
   }))
 
   return (
-    <Card title="Real-time Usage" style={{ minHeight: '280px' }}>
+    <Accordion title="Real-time Usage" defaultOpen>
+      <div style={{ minHeight: '280px' }}>
       {data.length < 2 ? (
         <div
           style={{
@@ -58,6 +59,7 @@ export function RealtimeChart() {
           </LineChart>
         </ResponsiveContainer>
       )}
-    </Card>
+      </div>
+    </Accordion>
   )
 }

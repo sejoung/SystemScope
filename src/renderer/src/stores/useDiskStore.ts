@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { DiskScanResult, LargeFile, ExtensionGroup, UserSpaceInfo } from '@shared/types'
+import type { DiskScanResult, LargeFile, ExtensionGroup, UserSpaceInfo, GrowthViewResult } from '@shared/types'
 
 interface DiskState {
   scanResult: DiskScanResult | null
@@ -14,6 +14,11 @@ interface DiskState {
   userSpace: UserSpaceInfo | null
   userSpaceLoading: boolean
 
+  // GrowthView cache
+  growthView: GrowthViewResult | null
+  growthViewLoading: boolean
+  growthViewPeriod: string
+
   setScanResult: (result: DiskScanResult) => void
   setLargeFiles: (files: LargeFile[]) => void
   setExtensions: (groups: ExtensionGroup[]) => void
@@ -25,6 +30,9 @@ interface DiskState {
   setUserSpace: (info: UserSpaceInfo) => void
   setUserSpaceLoading: (val: boolean) => void
   fetchUserSpace: () => Promise<void>
+
+  setGrowthViewPeriod: (period: string) => void
+  fetchGrowthView: (period?: string) => Promise<void>
 }
 
 export const useDiskStore = create<DiskState>((set, get) => ({
@@ -37,6 +45,9 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   selectedFolder: null,
   userSpace: null,
   userSpaceLoading: false,
+  growthView: null,
+  growthViewLoading: false,
+  growthViewPeriod: '7d',
 
   setScanResult: (result) => set({ scanResult: result, isScanning: false }),
   setLargeFiles: (files) => set({ largeFiles: files }),
@@ -65,6 +76,20 @@ export const useDiskStore = create<DiskState>((set, get) => ({
       set({ userSpace: res.data as UserSpaceInfo, userSpaceLoading: false })
     } else {
       set({ userSpaceLoading: false })
+    }
+  },
+
+  setGrowthViewPeriod: (period) => set({ growthViewPeriod: period }),
+
+  fetchGrowthView: async (period?: string) => {
+    if (get().growthViewLoading) return
+    const target = period ?? get().growthViewPeriod
+    set({ growthViewLoading: true, growthViewPeriod: target })
+    const res = await window.systemScope.getGrowthView(target)
+    if (res.ok && res.data) {
+      set({ growthView: res.data as GrowthViewResult, growthViewLoading: false })
+    } else {
+      set({ growthViewLoading: false })
     }
   }
 }))

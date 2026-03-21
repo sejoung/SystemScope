@@ -6,6 +6,7 @@ import { scanFolder, findLargeFiles, getExtensionBreakdown } from '../services/d
 import { runQuickScan } from '../services/quickScan'
 import { getUserSpaceInfo } from '../services/userSpace'
 import { findRecentGrowth, findDuplicates } from '../services/diskInsights'
+import { analyzeGrowth } from '../services/growthAnalyzer'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
 import type { DiskScanResult } from '@shared/types'
@@ -170,6 +171,19 @@ export function registerDiskIpc(): void {
     } catch (err) {
       log.error('Duplicate scan failed', err)
       return failure('SCAN_FAILED', '중복 파일 탐색에 실패했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_GROWTH_VIEW, async (_event, period: string = '7d') => {
+    if (!['1h', '24h', '7d'].includes(period)) {
+      return failure('INVALID_INPUT', '유효하지 않은 기간입니다. (1h, 24h, 7d)')
+    }
+    try {
+      const result = await analyzeGrowth(period)
+      return success(result)
+    } catch (err) {
+      log.error('Growth analysis failed', err)
+      return failure('SCAN_FAILED', '성장 분석에 실패했습니다.')
     }
   })
 

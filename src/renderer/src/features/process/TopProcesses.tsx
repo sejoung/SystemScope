@@ -1,5 +1,5 @@
 import type { ProcessInfo } from '@shared/types'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { ProgressBar } from '../../components/ProgressBar'
 
 interface TopProcessesProps {
@@ -12,7 +12,7 @@ export function TopProcesses({ processes, title, metric }: TopProcessesProps) {
   const top5 = processes.slice(0, 5)
 
   return (
-    <Card title={title}>
+    <Accordion title={title} defaultOpen>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {top5.length === 0 && (
           <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터 로딩 중...</div>
@@ -31,6 +31,6 @@ export function TopProcesses({ processes, title, metric }: TopProcessesProps) {
           />
         ))}
       </div>
-    </Card>
+    </Accordion>
   )
 }

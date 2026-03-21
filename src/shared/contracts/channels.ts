@@ -12,6 +12,7 @@ export const IPC_CHANNELS = {
   DISK_USER_SPACE: 'disk:userSpace',
   DISK_RECENT_GROWTH: 'disk:recentGrowth',
   DISK_FIND_DUPLICATES: 'disk:findDuplicates',
+  DISK_GROWTH_VIEW: 'disk:growthView',
 
   // Process Monitoring
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',
@@ -31,12 +32,14 @@ export const IPC_CHANNELS = {
   // Settings
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
+  SETTINGS_GET_DATA_PATH: 'settings:getDataPath',
 
   // Dialog
   DIALOG_SELECT_FOLDER: 'dialog:selectFolder',
 
   // Shell (Finder / Explorer)
   SHELL_SHOW_IN_FOLDER: 'shell:showInFolder',
+  SHELL_OPEN_PATH: 'shell:openPath',
 
   // Real-time events (main → renderer)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',

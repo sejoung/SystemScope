@@ -1,5 +1,5 @@
 import { useSystemStore } from '../../stores/useSystemStore'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { GaugeChart } from '../../components/GaugeChart'
 import { formatBytes } from '../../utils/format'
 
@@ -8,16 +8,16 @@ export function MemoryWidget() {
 
   if (!memory) {
     return (
-      <Card title="Memory">
+      <Accordion title="Memory" defaultOpen>
         <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터 로딩 중...</div>
-      </Card>
+      </Accordion>
     )
   }
 
   const color = memory.usage > 90 ? 'var(--accent-red)' : memory.usage > 70 ? 'var(--accent-yellow)' : 'var(--accent-green)'
 
   return (
-    <Card title="Memory">
+    <Accordion title="Memory" defaultOpen>
       <GaugeChart value={memory.usage} label="Pressure" color={color} subtitle="실제 메모리 압박도" />
       <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <InfoRow label="Active" value={formatBytes(memory.active)} color="var(--accent-blue)" />
@@ -28,7 +28,7 @@ export function MemoryWidget() {
           <InfoRow label="Swap" value={`${formatBytes(memory.swapUsed)} / ${formatBytes(memory.swapTotal)}`} />
         )}
       </div>
-    </Card>
+    </Accordion>
   )
 }
 

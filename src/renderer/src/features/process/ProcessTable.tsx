@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { ProcessInfo } from '@shared/types'
-import { Card } from '../../components/Card'
+import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 
 interface ProcessTableProps {
@@ -13,7 +13,7 @@ export function ProcessTable({ cpuProcesses, memoryProcesses }: ProcessTableProp
   const processes = sortBy === 'cpu' ? cpuProcesses : memoryProcesses
 
   return (
-    <Card title="Processes">
+    <Accordion title="Processes" defaultOpen>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <TabButton active={sortBy === 'cpu'} onClick={() => setSortBy('cpu')}>
           CPU
@@ -55,7 +55,7 @@ export function ProcessTable({ cpuProcesses, memoryProcesses }: ProcessTableProp
           </tbody>
         </table>
       </div>
-    </Card>
+    </Accordion>
   )
 }
 

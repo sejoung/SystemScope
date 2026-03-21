@@ -8,11 +8,13 @@ const store = new Store<AppSettings>({
 export function getSettings(): AppSettings {
   return sanitizeAppSettings({
     thresholds: store.get('thresholds'),
-    theme: store.get('theme')
+    theme: store.get('theme'),
+    snapshotIntervalMin: store.get('snapshotIntervalMin')
   })
 }
 
 export function setSettings(settings: Partial<AppSettings>): void {
   if (settings.thresholds) store.set('thresholds', settings.thresholds)
   if (settings.theme) store.set('theme', settings.theme)
+  if (settings.snapshotIntervalMin) store.set('snapshotIntervalMin', settings.snapshotIntervalMin)
 }

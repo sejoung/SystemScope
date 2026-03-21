@@ -32,6 +32,8 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.DISK_RECENT_GROWTH, folderPath, days),
   findDuplicates: (folderPath: string, minSizeKB: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_DUPLICATES, folderPath, minSizeKB),
+  getGrowthView: (period: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.DISK_GROWTH_VIEW, period),
 
   // Process
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),
@@ -53,12 +55,14 @@ const api = {
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setSettings: (settings: Record<string, unknown>) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, settings),
+  getDataPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DATA_PATH),
 
   // Dialog
   selectFolder: () => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SELECT_FOLDER),
 
   // Shell — Finder / Explorer에서 열기
-  showInFolder: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, targetPath)
+  showInFolder: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, targetPath),
+  openPath: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath)
 }
 
 contextBridge.exposeInMainWorld('systemScope', api)
