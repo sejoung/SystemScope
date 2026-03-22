@@ -1,9 +1,10 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
-import type { AppRemovalResult } from '@shared/types'
+import type { AppRemovalResult, AppUninstallRequest } from '@shared/types'
 import {
   getInstalledAppById,
+  getInstalledAppRelatedData,
   listInstalledApps,
   openInstalledAppLocation,
   openSystemUninstallSettings,
@@ -45,7 +46,21 @@ export function registerAppsIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.APPS_UNINSTALL, async (_event, appId: string) => {
+  ipcMain.handle(IPC_CHANNELS.APPS_GET_RELATED_DATA, async (_event, appId: string) => {
+    if (!appId || typeof appId !== 'string') {
+      return failure('INVALID_INPUT', '유효하지 않은 앱 ID입니다.')
+    }
+
+    try {
+      return success(await getInstalledAppRelatedData(appId))
+    } catch (error) {
+      logError('apps-ipc', 'Failed to get related app data', { appId, error })
+      return failure('UNKNOWN_ERROR', '관련 데이터 목록을 불러오지 못했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APPS_UNINSTALL, async (_event, request: AppUninstallRequest) => {
+    const appId = request?.appId
     if (!appId || typeof appId !== 'string') {
       logWarn('apps-ipc', 'App uninstall rejected due to invalid input', { appId })
       return failure('INVALID_INPUT', '유효하지 않은 앱 ID입니다.')
@@ -61,14 +76,17 @@ export function registerAppsIpc(): void {
 
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     const actionLabel = target.platform === 'mac' ? '휴지통으로 이동' : '제거 프로그램 실행'
+    const relatedDataCount = Array.isArray(request.relatedDataPaths) ? request.relatedDataPaths.length : 0
     const detailLines = [
       target.version ? `Version: ${target.version}` : null,
       target.publisher ? `Publisher: ${target.publisher}` : null,
       target.installLocation ? `Location: ${target.installLocation}` : null,
+      relatedDataCount > 0 ? `Related Data: ${relatedDataCount} item(s)` : null,
       '',
       target.platform === 'mac'
         ? '앱 번들을 휴지통으로 이동합니다.'
-        : '설치된 제거 프로그램을 실행합니다. 진행은 외부 제거기에서 계속됩니다.'
+        : '설치된 제거 프로그램을 실행합니다. 진행은 외부 제거기에서 계속됩니다.',
+      relatedDataCount > 0 ? '선택한 관련 데이터 경로도 함께 휴지통으로 이동합니다.' : null
     ].filter(Boolean)
 
     const confirm = await dialog.showMessageBox(win ?? undefined, {
@@ -94,7 +112,10 @@ export function registerAppsIpc(): void {
     }
 
     try {
-      const result = await uninstallInstalledApp(appId)
+      const result = await uninstallInstalledApp({
+        appId,
+        relatedDataPaths: Array.isArray(request.relatedDataPaths) ? request.relatedDataPaths : []
+      })
       return success(result)
     } catch (error) {
       logError('apps-ipc', 'Failed to uninstall app', { appId, error })

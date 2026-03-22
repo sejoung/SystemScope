@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const originalAppData = process.env.APPDATA
+const originalLocalAppData = process.env.LOCALAPPDATA
+const originalProgramData = process.env.ProgramData
 
 vi.mock('electron', () => ({
   app: {
@@ -11,12 +15,19 @@ vi.mock('electron', () => ({
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
+  logDebug: vi.fn(),
   logError: vi.fn(),
   logInfo: vi.fn(),
   logWarn: vi.fn()
 }))
 
 describe('installedApps helpers', () => {
+  beforeEach(() => {
+    process.env.APPDATA = originalAppData
+    process.env.LOCALAPPDATA = originalLocalAppData
+    process.env.ProgramData = originalProgramData
+  })
+
   it('should parse Windows uninstall registry output into installed app records', async () => {
     const { parseWindowsRegistryOutput } = await import('../../src/main/services/installedApps')
 
@@ -48,5 +59,36 @@ describe('installedApps helpers', () => {
       protected: true,
       protectedReason: '현재 실행 중인 SystemScope는 제거할 수 없습니다.'
     })
+  })
+
+  it('should build macOS related data candidates from app name and bundle id', async () => {
+    const { getMacRelatedDataCandidates } = await import('../../src/main/services/installedApps')
+
+    const candidates = getMacRelatedDataCandidates(
+      { name: 'ToF', bundleId: 'com.example.tof' },
+      '/Users/test'
+    )
+
+    expect(candidates.map((item) => item.path)).toContain('/Users/test/Library/Application Support/ToF')
+    expect(candidates.map((item) => item.path)).toContain('/Users/test/Library/Application Support/com.example.tof')
+    expect(candidates.map((item) => item.path)).toContain('/Users/test/Library/Preferences/com.example.tof.plist')
+    expect(candidates.map((item) => item.path)).toContain('/Users/test/Library/Containers/com.example.tof')
+  })
+
+  it('should build Windows related data candidates from app name and install location', async () => {
+    process.env.APPDATA = 'C:\\Users\\Test\\AppData\\Roaming'
+    process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local'
+    process.env.ProgramData = 'C:\\ProgramData'
+
+    const { getWindowsRelatedDataCandidates } = await import('../../src/main/services/installedApps')
+
+    const candidates = getWindowsRelatedDataCandidates({
+      name: 'Example App',
+      installLocation: 'C:\\Program Files\\Example App'
+    })
+
+    expect(candidates.map((item) => item.path)).toContain('C:\\Users\\Test\\AppData\\Roaming\\Example App')
+    expect(candidates.map((item) => item.path)).toContain('C:\\Users\\Test\\AppData\\Local\\Programs\\Example App')
+    expect(candidates.map((item) => item.path)).toContain('C:\\ProgramData\\Example App')
   })
 })

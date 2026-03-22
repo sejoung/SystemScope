@@ -63,7 +63,8 @@ const api = {
 
   // Apps
   listInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_LIST_INSTALLED),
-  uninstallApp: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_UNINSTALL, appId),
+  getAppRelatedData: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_GET_RELATED_DATA, appId),
+  uninstallApp: (request: { appId: string; relatedDataPaths?: string[] }) => ipcRenderer.invoke(IPC_CHANNELS.APPS_UNINSTALL, request),
   openAppLocation: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_LOCATION, appId),
   openSystemUninstallSettings: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS),
 

@@ -53,6 +53,7 @@ describe('IPC_CHANNELS', () => {
 
   it('should contain all apps channels', () => {
     expect(IPC_CHANNELS.APPS_LIST_INSTALLED).toBeDefined()
+    expect(IPC_CHANNELS.APPS_GET_RELATED_DATA).toBeDefined()
     expect(IPC_CHANNELS.APPS_UNINSTALL).toBeDefined()
     expect(IPC_CHANNELS.APPS_OPEN_LOCATION).toBeDefined()
     expect(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS).toBeDefined()

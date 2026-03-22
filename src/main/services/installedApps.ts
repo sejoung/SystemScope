@@ -4,7 +4,7 @@ import * as path from 'path'
 import { homedir, platform as getPlatform } from 'os'
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
-import type { AppRemovalResult, InstalledApp } from '@shared/types'
+import type { AppRelatedDataItem, AppRemovalResult, AppUninstallRequest, InstalledApp } from '@shared/types'
 import { logDebug, logError, logInfo, logWarn } from './logging'
 
 const execFileAsync = promisify(execFile)
@@ -27,6 +27,15 @@ export async function listInstalledApps(): Promise<InstalledApp[]> {
 
 export function getInstalledAppById(appId: string): InstalledApp | null {
   return installedAppsCache.get(appId) ?? null
+}
+
+export async function getInstalledAppRelatedData(appId: string): Promise<AppRelatedDataItem[]> {
+  const target = installedAppsCache.get(appId)
+  if (!target) {
+    throw new Error('설치 앱 정보를 찾을 수 없습니다.')
+  }
+
+  return listRelatedDataForApp(target)
 }
 
 export async function openInstalledAppLocation(appId: string): Promise<void> {
@@ -57,8 +66,8 @@ export async function openSystemUninstallSettings(): Promise<void> {
   await shell.openExternal('ms-settings:appsfeatures')
 }
 
-export async function uninstallInstalledApp(appId: string): Promise<AppRemovalResult> {
-  const target = installedAppsCache.get(appId)
+export async function uninstallInstalledApp(request: AppUninstallRequest): Promise<AppRemovalResult> {
+  const target = installedAppsCache.get(request.appId)
   if (!target) {
     throw new Error('설치 앱 정보를 찾을 수 없습니다.')
   }
@@ -76,22 +85,31 @@ export async function uninstallInstalledApp(appId: string): Promise<AppRemovalRe
       await shell.trashItem(target.launchPath)
     } catch (error) {
       logInfo('apps', 'shell.trashItem failed for macOS app, trying Finder fallback', {
-        appId,
+        appId: request.appId,
         name: target.name,
         path: target.launchPath,
         error
       })
       await moveMacAppToTrashWithFinder(target.launchPath)
     }
-    installedAppsCache.delete(appId)
-    logInfo('apps', 'Moved macOS app bundle to trash', { appId, name: target.name, path: target.launchPath })
+    const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataPaths ?? [])
+    installedAppsCache.delete(request.appId)
+    logInfo('apps', 'Moved macOS app bundle to trash', {
+      appId: request.appId,
+      name: target.name,
+      path: target.launchPath,
+      relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
+      relatedDataFailedCount: relatedCleanup.failedPaths.length
+    })
     return {
       id: target.id,
       name: target.name,
       started: true,
       completed: true,
       cancelled: false,
-      message: '앱을 휴지통으로 이동했습니다.'
+      message: buildRemovalMessage('앱을 휴지통으로 이동했습니다.', relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
+      relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
+      relatedDataFailedPaths: relatedCleanup.failedPaths
     }
   }
 
@@ -100,14 +118,22 @@ export async function uninstallInstalledApp(appId: string): Promise<AppRemovalRe
   }
 
   await launchWindowsUninstaller(target.uninstallCommand)
-  logInfo('apps', 'Started Windows uninstall command', { appId, name: target.name })
+  const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataPaths ?? [])
+  logInfo('apps', 'Started Windows uninstall command', {
+    appId: request.appId,
+    name: target.name,
+    relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
+    relatedDataFailedCount: relatedCleanup.failedPaths.length
+  })
   return {
     id: target.id,
     name: target.name,
     started: true,
     completed: false,
     cancelled: false,
-    message: '제거 프로그램을 시작했습니다.'
+    message: buildRemovalMessage('제거 프로그램을 시작했습니다.', relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
+    relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
+    relatedDataFailedPaths: relatedCleanup.failedPaths
   }
 }
 
@@ -187,9 +213,10 @@ async function listMacInstalledApps(): Promise<InstalledApp[]> {
         id: appPath,
         name: metadata.name,
         version: metadata.version,
-        publisher: metadata.bundleId,
-        installLocation: root,
-        launchPath: appPath,
+      publisher: metadata.bundleId,
+      bundleId: metadata.bundleId,
+      installLocation: root,
+      launchPath: appPath,
         platform: 'mac',
         uninstallKind: 'trash_app',
         protected: protectedApp,
@@ -205,17 +232,17 @@ async function readMacAppMetadata(appPath: string): Promise<{ name: string; vers
   const fallbackName = path.basename(appPath, '.app')
   const plistPath = path.join(appPath, 'Contents', 'Info.plist')
 
-  try {
-    const { stdout: version } = await execFileAsync('defaults', ['read', plistPath, 'CFBundleShortVersionString'])
-    const { stdout: bundleId } = await execFileAsync('defaults', ['read', plistPath, 'CFBundleIdentifier'])
-    return {
-      name: fallbackName,
-      version: version.trim() || undefined,
-      bundleId: bundleId.trim() || undefined
-    }
-  } catch (error) {
-    logDebug('apps', 'macOS app metadata unavailable, using bundle name fallback', { appPath, error })
-    return { name: fallbackName }
+  const version = await readMacPlistValue(plistPath, 'CFBundleShortVersionString')
+  const bundleId = await readMacPlistValue(plistPath, 'CFBundleIdentifier')
+
+  if (!version && !bundleId) {
+    logDebug('apps', 'macOS app metadata unavailable, using bundle name fallback', { appPath })
+  }
+
+  return {
+    name: fallbackName,
+    version,
+    bundleId
   }
 }
 
@@ -290,4 +317,142 @@ async function moveMacAppToTrashWithFinder(appPath: string): Promise<void> {
   ].join('\n')
 
   await execFileAsync('osascript', ['-e', script, appPath])
+}
+
+async function readMacPlistValue(plistPath: string, key: string): Promise<string | undefined> {
+  try {
+    const { stdout } = await execFileAsync('defaults', ['read', plistPath, key])
+    const value = stdout.trim()
+    return value || undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function listRelatedDataForApp(target: InstalledApp): Promise<AppRelatedDataItem[]> {
+  const candidates = target.platform === 'mac'
+    ? getMacRelatedDataCandidates(target, homedir())
+    : getWindowsRelatedDataCandidates(target)
+
+  const existingItems = await Promise.all(candidates.map(async (candidate) => {
+    try {
+      await fsp.access(candidate.path)
+      return candidate
+    } catch {
+      return null
+    }
+  }))
+
+  return existingItems.filter((item): item is AppRelatedDataItem => item !== null)
+}
+
+async function trashRelatedDataForApp(
+  target: InstalledApp,
+  selectedPaths: string[]
+): Promise<{ deletedPaths: string[]; failedPaths: string[] }> {
+  if (selectedPaths.length === 0) {
+    return { deletedPaths: [], failedPaths: [] }
+  }
+
+  const available = await listRelatedDataForApp(target)
+  const allowedPaths = new Set(available.map((item) => item.path))
+  const uniqueSelectedPaths = [...new Set(selectedPaths.filter((candidate) => allowedPaths.has(candidate)))]
+
+  const deletedPaths: string[] = []
+  const failedPaths: string[] = []
+
+  for (const relatedPath of uniqueSelectedPaths) {
+    try {
+      await shell.trashItem(relatedPath)
+      deletedPaths.push(relatedPath)
+    } catch (error) {
+      failedPaths.push(relatedPath)
+      logWarn('apps', 'Failed to trash related app data', { appId: target.id, name: target.name, relatedPath, error })
+    }
+  }
+
+  return { deletedPaths, failedPaths }
+}
+
+function buildRemovalMessage(baseMessage: string, deletedCount: number, failedCount: number): string {
+  if (deletedCount === 0 && failedCount === 0) {
+    return baseMessage
+  }
+
+  if (failedCount === 0) {
+    return `${baseMessage} 관련 데이터 ${deletedCount}개도 함께 휴지통으로 이동했습니다.`
+  }
+
+  return `${baseMessage} 관련 데이터 ${deletedCount}개를 함께 이동했고 ${failedCount}개는 이동하지 못했습니다.`
+}
+
+export function getMacRelatedDataCandidates(
+  target: Pick<InstalledApp, 'name' | 'bundleId'>,
+  homeDir: string
+): AppRelatedDataItem[] {
+  const libraryRoot = path.join(homeDir, 'Library')
+  const candidateNames = [...new Set([target.bundleId, target.name].filter(Boolean) as string[])]
+  const candidates: AppRelatedDataItem[] = []
+
+  for (const name of candidateNames) {
+    candidates.push(
+      createRelatedDataItem(path.join(libraryRoot, 'Application Support', name), 'Application Support', 'mac:application-support'),
+      createRelatedDataItem(path.join(libraryRoot, 'Caches', name), 'Caches', 'mac:caches'),
+      createRelatedDataItem(path.join(libraryRoot, 'Logs', name), 'Logs', 'mac:logs')
+    )
+  }
+
+  if (target.bundleId) {
+    candidates.push(
+      createRelatedDataItem(path.join(libraryRoot, 'Preferences', `${target.bundleId}.plist`), 'Preferences', 'mac:preferences'),
+      createRelatedDataItem(path.join(libraryRoot, 'Saved Application State', `${target.bundleId}.savedState`), 'Saved State', 'mac:saved-state'),
+      createRelatedDataItem(path.join(libraryRoot, 'Containers', target.bundleId), 'Container', 'mac:container')
+    )
+  }
+
+  return dedupeRelatedDataItems(candidates)
+}
+
+export function getWindowsRelatedDataCandidates(
+  target: Pick<InstalledApp, 'name' | 'installLocation'>
+): AppRelatedDataItem[] {
+  const appData = process.env.APPDATA
+  const localAppData = process.env.LOCALAPPDATA
+  const programData = process.env.ProgramData
+  const installBaseName = target.installLocation ? path.win32.basename(target.installLocation) : undefined
+  const candidateNames = [...new Set([target.name, installBaseName].filter(Boolean) as string[])]
+  const candidates: AppRelatedDataItem[] = []
+
+  for (const name of candidateNames) {
+    if (appData) {
+      candidates.push(createRelatedDataItem(path.win32.join(appData, name), 'AppData Roaming', 'win:appdata-roaming'))
+    }
+    if (localAppData) {
+      candidates.push(createRelatedDataItem(path.win32.join(localAppData, name), 'AppData Local', 'win:appdata-local'))
+      candidates.push(createRelatedDataItem(path.win32.join(localAppData, 'Programs', name), 'Local Programs', 'win:local-programs'))
+    }
+    if (programData) {
+      candidates.push(createRelatedDataItem(path.win32.join(programData, name), 'ProgramData', 'win:programdata'))
+    }
+  }
+
+  return dedupeRelatedDataItems(candidates)
+}
+
+function createRelatedDataItem(itemPath: string, label: string, source: string): AppRelatedDataItem {
+  return {
+    id: `${source}:${itemPath}`,
+    label,
+    path: itemPath,
+    source
+  }
+}
+
+function dedupeRelatedDataItems(items: AppRelatedDataItem[]): AppRelatedDataItem[] {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    if (seen.has(item.path)) return false
+    seen.add(item.path)
+    return true
+  })
 }

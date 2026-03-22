@@ -6,6 +6,7 @@ export interface InstalledApp {
   name: string
   version?: string
   publisher?: string
+  bundleId?: string
   installLocation?: string
   launchPath?: string
   uninstallCommand?: string
@@ -16,6 +17,18 @@ export interface InstalledApp {
   protectedReason?: string
 }
 
+export interface AppRelatedDataItem {
+  id: string
+  label: string
+  path: string
+  source: string
+}
+
+export interface AppUninstallRequest {
+  appId: string
+  relatedDataPaths?: string[]
+}
+
 export interface AppRemovalResult {
   id: string
   name: string
@@ -23,4 +36,6 @@ export interface AppRemovalResult {
   completed: boolean
   cancelled: boolean
   message?: string
+  relatedDataDeletedCount?: number
+  relatedDataFailedPaths?: string[]
 }

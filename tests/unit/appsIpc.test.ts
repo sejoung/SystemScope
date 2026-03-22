@@ -5,6 +5,7 @@ const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknow
 const showMessageBox = vi.hoisted(() => vi.fn())
 const listInstalledAppsMock = vi.hoisted(() => vi.fn())
 const getInstalledAppByIdMock = vi.hoisted(() => vi.fn())
+const getInstalledAppRelatedDataMock = vi.hoisted(() => vi.fn())
 const openInstalledAppLocationMock = vi.hoisted(() => vi.fn())
 const openSystemUninstallSettingsMock = vi.hoisted(() => vi.fn())
 const uninstallInstalledAppMock = vi.hoisted(() => vi.fn())
@@ -30,6 +31,7 @@ vi.mock('electron', () => ({
 vi.mock('../../src/main/services/installedApps', () => ({
   listInstalledApps: listInstalledAppsMock,
   getInstalledAppById: getInstalledAppByIdMock,
+  getInstalledAppRelatedData: getInstalledAppRelatedDataMock,
   openInstalledAppLocation: openInstalledAppLocationMock,
   openSystemUninstallSettings: openSystemUninstallSettingsMock,
   uninstallInstalledApp: uninstallInstalledAppMock
@@ -48,6 +50,7 @@ describe('registerAppsIpc', () => {
     showMessageBox.mockReset()
     listInstalledAppsMock.mockReset()
     getInstalledAppByIdMock.mockReset()
+    getInstalledAppRelatedDataMock.mockReset()
     openInstalledAppLocationMock.mockReset()
     openSystemUninstallSettingsMock.mockReset()
     uninstallInstalledAppMock.mockReset()
@@ -77,10 +80,23 @@ describe('registerAppsIpc', () => {
     const handler = handlers.get(IPC_CHANNELS.APPS_UNINSTALL)
     expect(handler).toBeTypeOf('function')
 
-    const result = await handler?.({}, '') as { ok: boolean; error?: { code: string } }
+    const result = await handler?.({}, { appId: '' }) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('INVALID_INPUT')
     expect(logWarnMock).toHaveBeenCalled()
+  })
+
+  it('should return related app data', async () => {
+    getInstalledAppRelatedDataMock.mockResolvedValue([{ id: '1', label: 'Caches', path: '/tmp/app', source: 'mac:caches' }])
+
+    const { registerAppsIpc } = await import('../../src/main/ipc/apps.ipc')
+    registerAppsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APPS_GET_RELATED_DATA)
+    const result = await handler?.({}, 'app-1') as { ok: boolean; data?: unknown[] }
+
+    expect(result.ok).toBe(true)
+    expect(result.data).toHaveLength(1)
   })
 
   it('should cancel uninstall when user aborts', async () => {
@@ -96,7 +112,7 @@ describe('registerAppsIpc', () => {
     registerAppsIpc()
 
     const handler = handlers.get(IPC_CHANNELS.APPS_UNINSTALL)
-    const result = await handler?.({}, 'app-1') as { ok: boolean; data?: { cancelled: boolean } }
+    const result = await handler?.({}, { appId: 'app-1', relatedDataPaths: ['/tmp/data'] }) as { ok: boolean; data?: { cancelled: boolean } }
 
     expect(result.ok).toBe(true)
     expect(result.data?.cancelled).toBe(true)
@@ -125,10 +141,13 @@ describe('registerAppsIpc', () => {
     registerAppsIpc()
 
     const handler = handlers.get(IPC_CHANNELS.APPS_UNINSTALL)
-    const result = await handler?.({}, 'app-1') as { ok: boolean; data?: { started: boolean } }
+    const result = await handler?.({}, { appId: 'app-1', relatedDataPaths: ['C:\\Users\\me\\AppData\\Roaming\\Example'] }) as { ok: boolean; data?: { started: boolean } }
 
     expect(result.ok).toBe(true)
     expect(result.data?.started).toBe(true)
-    expect(uninstallInstalledAppMock).toHaveBeenCalledWith('app-1')
+    expect(uninstallInstalledAppMock).toHaveBeenCalledWith({
+      appId: 'app-1',
+      relatedDataPaths: ['C:\\Users\\me\\AppData\\Roaming\\Example']
+    })
   })
 })
