@@ -95,16 +95,16 @@ export function ProcessTable({ processes }: ProcessTableProps) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-              <SortHeader field="pid" current={sortField} dir={sortDir} onClick={handleSort} width="60px">
+              <SortHeader field="pid" current={sortField} onClick={handleSort} width="60px">
                 PID{sortIcon('pid')}
               </SortHeader>
-              <SortHeader field="name" current={sortField} dir={sortDir} onClick={handleSort}>
+              <SortHeader field="name" current={sortField} onClick={handleSort}>
                 Name{sortIcon('name')}
               </SortHeader>
-              <SortHeader field="cpu" current={sortField} dir={sortDir} onClick={handleSort} width="80px" align="right">
+              <SortHeader field="cpu" current={sortField} onClick={handleSort} width="80px" align="right">
                 CPU %{sortIcon('cpu')}
               </SortHeader>
-              <SortHeader field="memory" current={sortField} dir={sortDir} onClick={handleSort} width="90px" align="right">
+              <SortHeader field="memory" current={sortField} onClick={handleSort} width="90px" align="right">
                 Memory{sortIcon('memory')}
               </SortHeader>
               <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>Action</th>
@@ -153,10 +153,9 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   )
 }
 
-function SortHeader({ field, current, dir, onClick, width, align, children }: {
+function SortHeader({ field, current, onClick, width, align, children }: {
   field: SortField
   current: SortField
-  dir: SortDir
   onClick: (field: SortField) => void
   width?: string
   align?: string

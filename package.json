@@ -40,18 +40,21 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^5.2.0",
     "concurrently": "^9.2.1",
     "electron": "^41.0.3",
     "electron-builder": "^26.8.1",
     "electron-vite": "^5.0.0",
     "eslint": "^10.1.0",
+    "globals": "^17.4.0",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.1",
+    "typescript-eslint": "^8.57.1",
+    "vite": "^7.3.1",
     "vitest": "^4.1.0",
     "wait-on": "^9.0.4"
   },
@@ -66,7 +69,11 @@
       {
         "from": "resources",
         "to": "resources",
-        "filter": ["trayTemplate.png", "trayTemplate@2x.png", "tray_win.png"]
+        "filter": [
+          "trayTemplate.png",
+          "trayTemplate@2x.png",
+          "tray_win.png"
+        ]
       }
     ],
     "mac": {

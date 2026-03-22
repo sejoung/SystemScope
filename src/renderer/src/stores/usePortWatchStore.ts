@@ -46,7 +46,7 @@ interface PortWatchState {
   setPrevMatched: (id: string, matched: boolean) => void
 }
 
-export const usePortWatchStore = create<PortWatchState>((set, get) => ({
+export const usePortWatchStore = create<PortWatchState>((set) => ({
   watches: [],
   statuses: new Map(),
   history: [],

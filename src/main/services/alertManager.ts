@@ -7,13 +7,6 @@ const activeAlerts: Map<string, Alert> = new Map()
 const lastFired: Map<string, number> = new Map()
 let alertCounter = 0
 
-function resetAlertState(): void {
-  thresholds = { ...DEFAULT_THRESHOLDS }
-  activeAlerts.clear()
-  lastFired.clear()
-  alertCounter = 0
-}
-
 export function setThresholds(newThresholds: Partial<AlertThresholds>): void {
   thresholds = { ...thresholds, ...newThresholds }
 }

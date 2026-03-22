@@ -82,7 +82,7 @@ export function PortWatch() {
 
   useEffect(() => {
     if (monitoring && watches.length > 0) pollPorts()
-  }, [monitoring, watches.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [monitoring, watches.length, pollPorts])
 
   useInterval(monitoring && watches.length > 0 ? pollPorts : () => {}, pollInterval)
 
