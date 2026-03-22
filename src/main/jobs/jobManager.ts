@@ -36,6 +36,20 @@ export function cancelJob(id: string): boolean {
   return true
 }
 
+export function cancelAllJobs(): number {
+  const runningJobs = [...jobs.values()].filter((job) => job.status === 'running')
+  for (const job of runningJobs) {
+    job.abortController.abort()
+    job.status = 'cancelled'
+    jobs.delete(job.id)
+  }
+  return runningJobs.length
+}
+
+export function getActiveJobCount(): number {
+  return [...jobs.values()].filter((job) => job.status === 'running').length
+}
+
 export function sendJobProgress(win: BrowserWindow, job: Job, progress: number, step: string): void {
   job.progress = progress
   job.currentStep = step

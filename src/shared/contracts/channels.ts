@@ -71,5 +71,6 @@ export const IPC_CHANNELS = {
 
   // Real-time events (main → renderer)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
-  EVENT_ALERT_FIRED: 'event:alertFired'
+  EVENT_ALERT_FIRED: 'event:alertFired',
+  EVENT_SHUTDOWN_STATE: 'event:shutdownState'
 } as const

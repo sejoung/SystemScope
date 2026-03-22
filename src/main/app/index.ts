@@ -1,15 +1,19 @@
 import { app, BrowserWindow } from 'electron'
 import { createMainWindow, setForceQuit } from './createWindow'
-import { registerAllIpc, cleanupSystemIpc } from '../ipc'
+import { registerAllIpc } from '../ipc'
 import { initializeRuntimeSettings } from './initializeRuntimeSettings'
-import { startSnapshotScheduler, stopSnapshotScheduler } from '../services/growthAnalyzer'
+import { startSnapshotScheduler } from '../services/growthAnalyzer'
 import { ensureSnapshotDir } from '../services/snapshotStore'
 import { getSettings } from '../store/settingsStore'
-import { createTray, destroyTray } from './tray'
+import { createTray } from './tray'
 import { initializeLogging, logError } from '../services/logging'
+import { executeGracefulShutdown, initializeShutdownHandlers, markQuitAfterShutdown } from './shutdown'
+
+let appReadyForQuit = false
 
 app.whenReady().then(() => {
   initializeLogging()
+  initializeShutdownHandlers()
   initializeRuntimeSettings()
   ensureSnapshotDir()
   registerAllIpc()
@@ -32,14 +36,25 @@ app.whenReady().then(() => {
   app.quit()
 })
 
-app.on('before-quit', () => {
+app.on('before-quit', (event) => {
+  if (!appReadyForQuit) {
+    event.preventDefault()
+    appReadyForQuit = true
+    markQuitAfterShutdown()
+    void executeGracefulShutdown('before-quit').finally(() => {
+      app.quit()
+    })
+    return
+  }
+
   setForceQuit(true)
 })
 
+app.on('will-quit', () => {
+  void executeGracefulShutdown('will-quit')
+})
+
 app.on('window-all-closed', () => {
-  cleanupSystemIpc()
-  stopSnapshotScheduler()
-  destroyTray()
   if (process.platform !== 'darwin') {
     app.quit()
   }

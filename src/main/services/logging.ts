@@ -41,6 +41,13 @@ export function initializeLogging(): void {
   startLogCleanupScheduler()
 }
 
+export function shutdownLogging(): void {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer)
+    cleanupTimer = null
+  }
+}
+
 export function getLogDir(): string {
   return path.join(app.getPath('userData'), 'logs')
 }

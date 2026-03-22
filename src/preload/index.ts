@@ -74,6 +74,7 @@ const api = {
   getActiveAlerts: () => ipcRenderer.invoke(IPC_CHANNELS.ALERT_GET_ACTIVE),
   dismissAlert: (alertId: string) => ipcRenderer.invoke(IPC_CHANNELS.ALERT_DISMISS, alertId),
   onAlertFired: createListener(IPC_CHANNELS.EVENT_ALERT_FIRED),
+  onShutdownState: createListener(IPC_CHANNELS.EVENT_SHUTDOWN_STATE),
 
   // Jobs
   cancelJob: (jobId: string) => ipcRenderer.invoke(IPC_CHANNELS.JOB_CANCEL, jobId),

@@ -147,6 +147,22 @@ export function stopSnapshotScheduler(): void {
   }
 }
 
+export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<boolean> {
+  if (!snapshotInProgress) {
+    return true
+  }
+
+  try {
+    await Promise.race([
+      snapshotInProgress,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Snapshot wait timed out')), timeoutMs))
+    ])
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function restartSnapshotScheduler(intervalMs: number): void {
   stopSnapshotScheduler()
   startSnapshotScheduler(intervalMs)
