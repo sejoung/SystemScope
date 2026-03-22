@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, dialog } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs/promises'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
@@ -8,9 +8,15 @@ import { getUserSpaceInfo } from '../services/userSpace'
 import { findRecentGrowth, findDuplicates } from '../services/diskInsights'
 import { analyzeGrowth } from '../services/growthAnalyzer'
 import { findOldFiles } from '../services/oldFileFinder'
+import {
+  listDockerContainers,
+  listDockerImages,
+  removeDockerContainers,
+  removeDockerImages
+} from '../services/dockerImages'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
-import type { DiskScanResult } from '@shared/types'
+import type { DiskScanResult, DockerRemoveResult } from '@shared/types'
 import log from 'electron-log'
 
 // Cache last scan result for large files / extension queries
@@ -207,6 +213,142 @@ export function registerDiskIpc(): void {
     }
   })
 
+  ipcMain.handle(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES, async () => {
+    try {
+      const result = await listDockerImages()
+      return success(result)
+    } catch (err) {
+      log.error('Docker image scan failed', err)
+      return failure('SCAN_FAILED', 'Docker 이미지를 조회할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS, async () => {
+    try {
+      const result = await listDockerContainers()
+      return success(result)
+    } catch (err) {
+      log.error('Docker container scan failed', err)
+      return failure('SCAN_FAILED', 'Docker 컨테이너를 조회할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES, async (_event, imageIds: string[]) => {
+    if (!Array.isArray(imageIds) || imageIds.length === 0 || imageIds.some((id) => typeof id !== 'string' || !id.trim())) {
+      return failure('INVALID_INPUT', '삭제할 Docker 이미지가 없습니다.')
+    }
+
+    try {
+      const scan = await listDockerImages()
+      if (scan.status !== 'ready') {
+        return failure('UNKNOWN_ERROR', scan.message ?? 'Docker를 사용할 수 없습니다.')
+      }
+
+      const targets = scan.images.filter((image) => imageIds.includes(image.id))
+      if (targets.length === 0) {
+        return failure('INVALID_INPUT', '삭제할 Docker 이미지를 찾을 수 없습니다.')
+      }
+      if (targets.some((image) => image.inUse)) {
+        return failure('PERMISSION_DENIED', '사용 중인 Docker 이미지는 삭제할 수 없습니다.')
+      }
+
+      const totalSize = targets.reduce((sum, image) => sum + image.sizeBytes, 0)
+      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      const confirm = await dialog.showMessageBox(win ?? undefined, {
+        type: 'warning',
+        buttons: ['Cancel', 'Delete'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Delete Docker Images',
+        message: `${targets.length}개의 Docker 이미지를 삭제하시겠습니까?`,
+        detail: [
+          ...targets.slice(0, 5).map((image) => `- ${image.repository}:${image.tag} (${image.sizeLabel})`),
+          targets.length > 5 ? `- ... 외 ${targets.length - 5}개` : null,
+          '',
+          `총 크기: ${formatDockerBytes(totalSize)}`,
+          '사용 중인 이미지는 삭제 대상에서 제외됩니다.'
+        ].filter(Boolean).join('\n')
+      })
+
+      if (confirm.response === 0) {
+        const result: DockerRemoveResult = {
+          deletedIds: [],
+          failCount: 0,
+          errors: [],
+          cancelled: true
+        }
+        return success(result)
+      }
+
+      const result = await removeDockerImages(targets.map((image) => image.id))
+      return success(result)
+    } catch (err) {
+      log.error('Docker image remove failed', err)
+      return failure('UNKNOWN_ERROR', 'Docker 이미지를 삭제할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS, async (_event, containerIds: string[]) => {
+    if (
+      !Array.isArray(containerIds) ||
+      containerIds.length === 0 ||
+      containerIds.some((id) => typeof id !== 'string' || !id.trim())
+    ) {
+      return failure('INVALID_INPUT', '삭제할 Docker 컨테이너가 없습니다.')
+    }
+
+    try {
+      const scan = await listDockerContainers()
+      if (scan.status !== 'ready') {
+        return failure('UNKNOWN_ERROR', scan.message ?? 'Docker를 사용할 수 없습니다.')
+      }
+
+      const targets = scan.containers.filter((container) => containerIds.includes(container.id))
+      if (targets.length === 0) {
+        return failure('INVALID_INPUT', '삭제할 Docker 컨테이너를 찾을 수 없습니다.')
+      }
+      if (targets.some((container) => container.running)) {
+        return failure('PERMISSION_DENIED', '실행 중인 Docker 컨테이너는 먼저 중지해야 합니다.')
+      }
+
+      const totalSize = targets.reduce((sum, container) => sum + container.sizeBytes, 0)
+      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      const confirm = await dialog.showMessageBox(win ?? undefined, {
+        type: 'warning',
+        buttons: ['Cancel', 'Delete'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Delete Docker Containers',
+        message: `${targets.length}개의 Docker 컨테이너를 삭제하시겠습니까?`,
+        detail: [
+          ...targets.slice(0, 5).map((container) => `- ${container.name} (${container.image})`),
+          targets.length > 5 ? `- ... 외 ${targets.length - 5}개` : null,
+          '',
+          `총 크기: ${formatDockerBytes(totalSize)}`,
+          '실행 중인 컨테이너는 삭제 대상에서 제외됩니다.'
+        ]
+          .filter(Boolean)
+          .join('\n')
+      })
+
+      if (confirm.response === 0) {
+        const result: DockerRemoveResult = {
+          deletedIds: [],
+          failCount: 0,
+          errors: [],
+          cancelled: true
+        }
+        return success(result)
+      }
+
+      const result = await removeDockerContainers(targets.map((container) => container.id))
+      return success(result)
+    } catch (err) {
+      log.error('Docker container remove failed', err)
+      return failure('UNKNOWN_ERROR', 'Docker 컨테이너를 삭제할 수 없습니다.')
+    }
+  })
+
   ipcMain.handle(IPC_CHANNELS.JOB_CANCEL, (_event, jobId: string) => {
     if (!jobId || typeof jobId !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 작업 ID입니다.')
@@ -217,4 +359,16 @@ export function registerDiskIpc(): void {
     }
     return success(true)
   })
+}
+
+function formatDockerBytes(bytes: number): string {
+  if (bytes <= 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex++
+  }
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }

@@ -17,6 +17,10 @@ export const IPC_CHANNELS = {
   DISK_FIND_DUPLICATES: 'disk:findDuplicates',
   DISK_GROWTH_VIEW: 'disk:growthView',
   DISK_FIND_OLD_FILES: 'disk:findOldFiles',
+  DISK_LIST_DOCKER_IMAGES: 'disk:listDockerImages',
+  DISK_REMOVE_DOCKER_IMAGES: 'disk:removeDockerImages',
+  DISK_LIST_DOCKER_CONTAINERS: 'disk:listDockerContainers',
+  DISK_REMOVE_DOCKER_CONTAINERS: 'disk:removeDockerContainers',
 
   // Process Monitoring
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',

@@ -3,9 +3,10 @@ import { useSettingsStore } from '../stores/useSettingsStore'
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Overview', icon: '⊞' },
   { id: 'disk', label: 'Storage', icon: '⊚' },
+  { id: 'docker', label: 'Docker', icon: '◈' },
   { id: 'process', label: 'Activity', icon: '⊡' },
   { id: 'settings', label: 'Preferences', icon: '⊙' }
-]
+] as const
 
 export function Sidebar() {
   const currentPage = useSettingsStore((s) => s.currentPage)

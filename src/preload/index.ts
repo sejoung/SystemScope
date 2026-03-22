@@ -40,6 +40,10 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.DISK_GROWTH_VIEW, period),
   findOldFiles: (folderPath: string, olderThanDays: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_OLD_FILES, folderPath, olderThanDays),
+  listDockerImages: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES),
+  removeDockerImages: (imageIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES, imageIds),
+  listDockerContainers: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS),
+  removeDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS, containerIds),
 
   // Process
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),

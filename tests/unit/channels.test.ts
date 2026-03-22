@@ -30,6 +30,10 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.DISK_RECENT_GROWTH).toBeDefined()
     expect(IPC_CHANNELS.DISK_FIND_DUPLICATES).toBeDefined()
     expect(IPC_CHANNELS.DISK_GROWTH_VIEW).toBeDefined()
+    expect(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES).toBeDefined()
+    expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES).toBeDefined()
+    expect(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS).toBeDefined()
+    expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS).toBeDefined()
   })
 
   it('should contain all process channels', () => {

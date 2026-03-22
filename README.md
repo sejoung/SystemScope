@@ -13,6 +13,10 @@
   - `Overview`: Home Storage + Storage Growth
   - `Scan`: 폴더 스캔, Folder Map, File Insights (File Types / Largest), Recent Growth
   - `Cleanup`: Quick Cleanup + File Cleanup (Largest / Old Files / Duplicates — 삭제 기능 포함)
+- `Docker`: 독립 메뉴, 3개 탭으로 구성
+  - `Overview`: 정리 우선순위 요약, stopped containers / in-use images / dangling images 요약
+  - `Containers`: 종료된 컨테이너 조회 및 삭제
+  - `Images`: 사용 중/미사용 이미지 조회 및 삭제
 - `Activity`: 3개 탭으로 구성
   - `Processes`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
   - `Ports`: 네트워크 포트 조회, Local/Remote 범위 검색, 상태별 필터
@@ -103,7 +107,26 @@ Windows 예시:
 - 정리 가능 여부
 - 선택 항목을 휴지통으로 이동하는 정리 액션
 
-### 5. Growth View (폴더 성장 추세)
+### 5. Docker 정리
+
+`Docker` 메뉴에서 Docker 자원을 파일 정리와 분리해 관리할 수 있습니다.
+
+- `Overview`: 컨테이너와 이미지 상태를 함께 보고 권장 정리 순서 안내
+- `Containers`: stopped container 정리
+- `Images`: unused / dangling image 정리
+
+- `docker image ls`, `docker ps -a` 기반 자원 조회
+- Repository, Tag, Size, Created, Status 표시
+- 상태 구분: `in use`, `unused`, `dangling`
+- 컨테이너 상태 구분: `running`, `stopped`
+- 이미지 삭제 전에 먼저 정리해야 할 stopped container를 별도 탭에서 확인 가능
+- 사용 중인 이미지는 삭제 버튼 비활성화
+- 실행 중인 컨테이너는 삭제 버튼 비활성화
+- 개별 삭제 / 다중 선택 삭제
+- 삭제 전 확인 다이얼로그 표시
+- Docker 미설치 상태와 Docker daemon 미실행 상태를 구분해 안내
+
+### 6. Growth View (폴더 성장 추세)
 
 홈 디렉토리 주요 폴더의 용량 변화를 스냅샷 기반으로 추적합니다.
 
@@ -123,7 +146,7 @@ Windows 예시:
 - 깨진 JSON 파일이 감지되면 백업 후 새 파일로 복구
 - 동일한 내용의 연속 스냅샷은 중복 저장하지 않음
 
-### 6. 최근 급성장 폴더 (폴더 스캔 결과 내)
+### 7. 최근 급성장 폴더 (폴더 스캔 결과 내)
 
 스캔한 폴더 내에서 최근 N일(1/3/7/14/30일) 동안 추가되거나 수정된 파일을 기준으로 급격히 커진 폴더를 찾습니다.
 
@@ -132,7 +155,7 @@ Windows 예시:
 - 기간 선택 가능 (1일 ~ 30일)
 - 클릭 시 Finder / Explorer에서 열기
 
-### 7. 중복 파일 찾기
+### 8. 중복 파일 찾기
 
 스캔한 폴더 내 중복 파일을 탐색합니다. 현재는 `Storage > File Insights > Duplicates` 탭에서 제공합니다.
 
@@ -143,7 +166,7 @@ Windows 예시:
 - 각 중복 그룹의 낭비 용량 합계 표시
 - 접기/펼치기로 중복 파일 경로 확인, 각 파일에 Open 버튼
 
-### 8. 사용자 공간 요약
+### 9. 사용자 공간 요약
 
 홈 디렉터리 기준 주요 폴더의 용량을 한눈에 보여줍니다.
 
@@ -169,7 +192,7 @@ Windows 예시:
 - Music
 - AppData
 
-### 9. 프로세스 모니터링 (Activity > Processes)
+### 10. 프로세스 모니터링 (Activity > Processes)
 
 - 전체 프로세스 목록 (CPU 또는 메모리 사용량 > 0)
 - 이름, PID, command 경로 실시간 검색/필터링
@@ -177,10 +200,12 @@ Windows 예시:
 - CPU 사용률 색상 구분 (30% 이상 노랑, 80% 이상 빨강)
 - 검색 시 command 경로 자동 표시
 - Sticky 헤더 (스크롤해도 컬럼 고정)
+- 프로세스 종료 기능 (`Kill`)과 종료 전 확인 다이얼로그
+- 앱 자체 프로세스와 보호 대상 프로세스는 종료 차단
 - 대시보드에서는 Top Resource Consumers (CPU Top 3 + Memory Top 3 + GPU 상태 통합)
 - App 레벨 글로벌 폴링 (2초 간격) — 페이지 전환 시 끊김 없이 즉시 표시
 
-### 10. 포트 찾기 (Activity > Ports)
+### 11. 포트 찾기 (Activity > Ports)
 
 현재 사용 중인 네트워크 포트와 점유 프로세스를 조회합니다.
 
@@ -191,8 +216,9 @@ Windows 예시:
 - TCP 전체 상태 지원 (LISTEN, ESTABLISHED, SYN_SENT, FIN_WAIT, CLOSE_WAIT 등)
 - 상태별 색상 뱃지 + hover 시 한글 설명 툴팁
 - 조회 결과 Zustand 캐싱 — 탭 전환 시 유지
+- 포트를 점유한 PID 기준 프로세스 종료 (`Kill PID`) 지원
 
-### 11. 포트 모니터링 (Activity > Watch)
+### 12. 포트 모니터링 (Activity > Watch)
 
 특정 포트/IP를 등록하고 연결 상태 변화를 실시간으로 감시합니다.
 
@@ -208,15 +234,17 @@ Windows 예시:
 - Pause / Resume 지원
 - 전체 상태 Zustand 캐싱 — 탭 전환 시 유지
 
-### 12. 트레이 아이콘
+### 13. 트레이 아이콘
 
 - macOS 메뉴바 / Windows 시스템 트레이에 상주
 - 창을 닫아도 트레이에서 다시 열기 가능
 - macOS: Template Image로 다크/라이트 모드 자동 대응
+- macOS: 고정 폭 CPU meter title로 메뉴바 흔들림 최소화
 - Windows: 좌클릭으로 바로 창 열기
+- Windows: CPU 사용률 단계에 따라 트레이 아이콘 동적 갱신
 - 트레이 메뉴: Show SystemScope / Quit
 
-### 13. 시스템 연동
+### 14. 시스템 연동
 
 - 폴더 선택 다이얼로그
 - Finder / Explorer에서 경로 열기
@@ -224,20 +252,20 @@ Windows 예시:
 - 홈 디렉터리 하위 파일을 확인 후 휴지통으로 이동
 - 창 크기, 위치, 최대화 상태 저장
 
-### 14. UI 패턴
+### 15. UI 패턴
 
 - 아코디언: Live Usage, Home Storage, Storage Growth, Quick Cleanup, Folder Map, File Insights, Recent Growth 등 주요 섹션 접기/펼치기 지원
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
   - 실행 완료 시 자동으로 열리며 뱃지로 요약 표시
 - 시스템 모니터링, 프로세스 폴링, 알림 리스너는 App 레벨에서 글로벌 관리 — 어떤 페이지에 있든 백그라운드 갱신
-- Storage, Activity 페이지는 탭 구조 (Overview/Scan/Cleanup, Processes/Ports/Watch)
+- Storage, Docker, Activity 페이지는 탭 구조 (Overview/Scan/Cleanup, Overview/Containers/Images, Processes/Ports/Watch)
 - 사용자 공간, Growth View, 프로세스, Port Finder, Port Watch 데이터는 Zustand 스토어에 캐싱 — 탭/페이지 전환 시 즉시 표시, 재호출 없음
 - 사용자가 Rescan / Refresh 버튼으로 원할 때만 수동 갱신
 - 다크 / 라이트 테마 지원
 - 라이트 테마에서도 차트, 사이드바, 경고/성공 배지 대비를 별도로 조정
 - 페이지 및 주요 섹션 렌더 실패 시 Error Boundary로 전체 앱 대신 해당 영역만 보호
 
-### 15. 설정
+### 16. 설정
 
 - `Preferences > Appearance`: Dark / Light 테마 선택
 - `Preferences > Alerts`: Disk / Memory / GPU 각각 Warning / Critical 설정
@@ -335,6 +363,7 @@ npm test
 
 - `tests/unit`: 함수/모듈 단위 검증
 - `tests/integration`: 앱 부팅, 설정 저장/검증, 디스크 스캔, 실시간 모니터링, 성장 분석 등 모듈 연결 흐름 검증
+- Docker 이미지/컨테이너 조회·삭제와 프로세스 종료 같은 외부 시스템 연동은 주로 unit test에서 IPC/서비스 경계를 검증
 
 감시 모드:
 
@@ -376,6 +405,9 @@ npm run test:watch
 - Top Resource Consumers — CPU/Memory/GPU 통합 위젯 (Overview 대시보드)
 - Port Finder — 포트 조회, Local/Remote 범위 검색, 상태 필터 연동 (Activity > Ports)
 - Port Watch — 포트/IP 실시간 모니터링, 상태 변화 감지, History (Activity > Watch)
+- Docker Cleanup — Overview / Containers / Images 메뉴 분리
+- Docker Containers — stopped container 정리 후 image cleanup 흐름 지원
+- Docker Images — in-use / unused / dangling 상태 기반 정리
 - Storage 탭 구조 (Overview / Scan / Cleanup)
 - Activity 탭 구조 (Processes / Ports / Watch)
 - App 레벨 글로벌 폴링 — 페이지/탭 전환 시 끊김 없음

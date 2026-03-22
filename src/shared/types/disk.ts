@@ -97,3 +97,51 @@ export interface TrashResult {
   trashedPaths: string[]
   errors: string[]
 }
+
+export interface DockerImageSummary {
+  id: string
+  shortId: string
+  repository: string
+  tag: string
+  sizeBytes: number
+  sizeLabel: string
+  createdAt: string
+  createdSince: string
+  inUse: boolean
+  dangling: boolean
+  containers: string[]
+}
+
+export interface DockerImagesScanResult {
+  status: 'ready' | 'not_installed' | 'daemon_unavailable'
+  images: DockerImageSummary[]
+  message: string | null
+}
+
+export interface DockerRemoveResult {
+  deletedIds: string[]
+  failCount: number
+  errors: string[]
+  cancelled: boolean
+}
+
+export interface DockerContainerSummary {
+  id: string
+  shortId: string
+  name: string
+  image: string
+  imageId: string
+  command: string
+  status: string
+  createdSince: string
+  ports: string
+  sizeBytes: number
+  sizeLabel: string
+  running: boolean
+}
+
+export interface DockerContainersScanResult {
+  status: 'ready' | 'not_installed' | 'daemon_unavailable'
+  containers: DockerContainerSummary[]
+  message: string | null
+}

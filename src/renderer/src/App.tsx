@@ -10,6 +10,7 @@ import { useInterval } from './hooks/useInterval'
 import { useIpcListener } from './hooks/useIpc'
 import { DashboardPage } from './pages/DashboardPage'
 import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
+import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
 import { SettingsPage } from './pages/SettingsPage'
 import type { AlertThresholds, Alert, SystemStats } from '@shared/types'
@@ -95,6 +96,7 @@ function App() {
         >
           {currentPage === 'dashboard' && <DashboardPage />}
           {currentPage === 'disk' && <DiskAnalysisPage />}
+          {currentPage === 'docker' && <DockerPage />}
           {currentPage === 'process' && <ProcessPage />}
           {currentPage === 'settings' && <SettingsPage />}
         </ErrorBoundary>
