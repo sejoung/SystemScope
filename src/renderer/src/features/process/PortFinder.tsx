@@ -50,7 +50,7 @@ export function PortFinder() {
       title="Port Finder"
       badge={scanned ? `${listenCount} listening` : undefined}
       badgeColor="var(--accent-cyan)"
-      defaultOpen={false}
+      defaultOpen
       forceOpen={scanned && filtered.length > 0}
       actions={
         <>
