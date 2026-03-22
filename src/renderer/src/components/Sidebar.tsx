@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { id: 'disk', label: 'Storage', icon: '⊚' },
   { id: 'docker', label: 'Docker', icon: '◈' },
   { id: 'process', label: 'Activity', icon: '⊡' },
+  { id: 'apps', label: 'Apps', icon: '◫' },
   { id: 'settings', label: 'Preferences', icon: '⊙' }
 ] as const
 

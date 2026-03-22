@@ -61,6 +61,12 @@ const api = {
   killProcess: (request: { pid: number; name?: string; command?: string; reason?: string }) =>
     ipcRenderer.invoke(IPC_CHANNELS.PROCESS_KILL, request),
 
+  // Apps
+  listInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_LIST_INSTALLED),
+  uninstallApp: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_UNINSTALL, appId),
+  openAppLocation: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_LOCATION, appId),
+  openSystemUninstallSettings: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS),
+
   // Alerts
   getActiveAlerts: () => ipcRenderer.invoke(IPC_CHANNELS.ALERT_GET_ACTIVE),
   dismissAlert: (alertId: string) => ipcRenderer.invoke(IPC_CHANNELS.ALERT_DISMISS, alertId),

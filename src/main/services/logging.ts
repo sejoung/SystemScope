@@ -33,6 +33,8 @@ export function initializeLogging(): void {
 
   log.transports.file.level = 'info'
   log.transports.console.level = 'debug'
+  log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] › {text}'
+  log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
   log.transports.file.resolvePathFn = () => getLogFilePath(new Date())
 
   cleanupOldLogs()
@@ -125,7 +127,7 @@ function startOfDay(date: Date): Date {
 
 function writeLog(level: LogLevel, scope: string, message: string, metadata?: unknown): void {
   const formattedMessage = `[${scope}]\n${message}`
-  const normalizedMetadata = normalizeLogMetadata(metadata)
+  const normalizedMetadata = normalizeLogMetadata(level, metadata)
 
   if (normalizedMetadata === undefined) {
     log[level](formattedMessage)
@@ -135,32 +137,37 @@ function writeLog(level: LogLevel, scope: string, message: string, metadata?: un
   log[level](formattedMessage, normalizedMetadata)
 }
 
-function normalizeLogMetadata(metadata: unknown): unknown {
+function normalizeLogMetadata(level: LogLevel, metadata: unknown): unknown {
   if (metadata === undefined) {
     return undefined
   }
 
   if (metadata instanceof Error) {
-    return serializeError(metadata)
+    return serializeError(level, metadata)
   }
 
   if (Array.isArray(metadata)) {
-    return metadata.map((item) => normalizeLogMetadata(item))
+    return metadata.map((item) => normalizeLogMetadata(level, item))
   }
 
   if (metadata && typeof metadata === 'object') {
     return Object.fromEntries(
-      Object.entries(metadata).map(([key, value]) => [key, normalizeLogMetadata(value)])
+      Object.entries(metadata).map(([key, value]) => [key, normalizeLogMetadata(level, value)])
     )
   }
 
   return metadata
 }
 
-function serializeError(error: Error): Record<string, string | undefined> {
-  return {
+function serializeError(level: LogLevel, error: Error): Record<string, string | undefined> {
+  const serialized: Record<string, string | undefined> = {
     name: error.name,
-    message: error.message,
-    stack: error.stack
+    message: error.message
   }
+
+  if (level === 'error') {
+    serialized.stack = error.stack
+  }
+
+  return serialized
 }

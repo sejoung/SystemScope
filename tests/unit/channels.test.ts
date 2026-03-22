@@ -51,6 +51,13 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.PROCESS_KILL).toBeDefined()
   })
 
+  it('should contain all apps channels', () => {
+    expect(IPC_CHANNELS.APPS_LIST_INSTALLED).toBeDefined()
+    expect(IPC_CHANNELS.APPS_UNINSTALL).toBeDefined()
+    expect(IPC_CHANNELS.APPS_OPEN_LOCATION).toBeDefined()
+    expect(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS).toBeDefined()
+  })
+
   it('should contain all alert channels', () => {
     expect(IPC_CHANNELS.ALERT_GET_ACTIVE).toBeDefined()
     expect(IPC_CHANNELS.ALERT_DISMISS).toBeDefined()

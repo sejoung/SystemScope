@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { AlertThresholds } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 
-export type AppPage = 'dashboard' | 'disk' | 'docker' | 'process' | 'settings'
+export type AppPage = 'dashboard' | 'disk' | 'docker' | 'process' | 'apps' | 'settings'
 
 interface SettingsState {
   thresholds: AlertThresholds

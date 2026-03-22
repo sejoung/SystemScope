@@ -12,6 +12,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
 import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
+import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import type { AlertThresholds, Alert, SystemStats } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
@@ -114,6 +115,7 @@ function App() {
           {currentPage === 'disk' && <DiskAnalysisPage />}
           {currentPage === 'docker' && <DockerPage />}
           {currentPage === 'process' && <ProcessPage />}
+          {currentPage === 'apps' && <AppsPage />}
           {currentPage === 'settings' && <SettingsPage />}
         </ErrorBoundary>
       </Layout>

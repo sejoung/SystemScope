@@ -36,6 +36,12 @@ export const IPC_CHANNELS = {
   PROCESS_GET_PORTS: 'process:getPorts',
   PROCESS_KILL: 'process:kill',
 
+  // Installed Apps
+  APPS_LIST_INSTALLED: 'apps:listInstalled',
+  APPS_UNINSTALL: 'apps:uninstall',
+  APPS_OPEN_LOCATION: 'apps:openLocation',
+  APPS_OPEN_SYSTEM_SETTINGS: 'apps:openSystemSettings',
+
   // Alerts
   ALERT_GET_ACTIVE: 'alert:getActive',
   ALERT_DISMISS: 'alert:dismiss',
