@@ -23,6 +23,9 @@
   - `Processes`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
   - `Ports`: 네트워크 포트 조회, Local/Remote 범위 검색, 상태별 필터
   - `Watch`: 포트/IP 실시간 모니터링, 연결 상태 변화 감지, History 로그
+- `Apps`: 2개 탭으로 구성
+  - `Installed`: 설치 앱 조회, 앱 제거/휴지통 이동, 앱별 관련 데이터 후보 확인
+  - `Leftover Data`: 설치 앱과 연결되지 않는 잔여 데이터 후보 조회, confidence 필터와 근거/위험도 안내
 - `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터/로그 경로 관리
 
 ## 주요 기능
@@ -258,7 +261,34 @@ Windows 예시:
 - Windows: CPU 사용률 단계에 따라 트레이 아이콘 동적 갱신
 - 트레이 메뉴: Show SystemScope / Quit
 
-### 14. 시스템 연동
+### 14. 앱 관리 (Apps)
+
+- `Installed` 탭
+  - macOS `.app` 번들 조회 (`/Applications`, `~/Applications`)
+  - Windows 설치 프로그램 레지스트리 조회
+  - 앱별 `Related Data` 후보 조회
+  - macOS: 앱 번들을 휴지통으로 이동
+  - Windows: 등록된 제거 프로그램 실행
+  - 관련 데이터 선택 시 함께 휴지통 이동
+- `Leftover Data` 탭
+  - 설치 앱과 연결되지 않는 표준 앱 데이터 경로 후보 표시
+  - 검색, 플랫폼 필터, confidence 필터 지원
+  - 각 항목에 `Why`, `Risk`, confidence 배지 표시
+  - 기본 선택 없음, 사용자가 직접 선택 후 휴지통 이동
+  - macOS `~/Library/Containers` 계열은 권한 문제로 기본 목록에서 제외
+
+### 15. 종료 처리
+
+- `before-quit` 시 종료 오케스트레이터 실행
+- 실행 중 job 취소
+- 실시간 시스템 업데이트 interval 정리
+- 스냅샷 스케줄러 중지
+- 진행 중 snapshot 최대 5초 대기
+- tray 정리
+- logging cleanup timer 정리
+- `SIGINT`, `SIGTERM`, `uncaughtException`, `unhandledRejection` 대응
+- 종료 중 renderer에 전역 오버레이 표시
+### 16. 시스템 연동
 
 - 폴더 선택 다이얼로그
 - Finder / Explorer에서 경로 열기
@@ -267,21 +297,22 @@ Windows 예시:
 - 홈 디렉터리 하위 파일을 확인 후 휴지통으로 이동
 - 창 크기, 위치, 최대화 상태 저장
 
-### 15. UI 패턴
+### 17. UI 패턴
 
 - 아코디언: Live Usage, Home Storage, Storage Growth, Quick Cleanup, Folder Map, File Insights, Recent Growth 등 주요 섹션 접기/펼치기 지원
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
   - 실행 완료 시 자동으로 열리며 뱃지로 요약 표시
 - 시스템 모니터링, 프로세스 폴링, 알림 리스너는 App 레벨에서 글로벌 관리 — 어떤 페이지에 있든 백그라운드 갱신
 - Storage, Docker, Activity 페이지는 탭 구조 (Overview/Scan/Cleanup, Overview/Containers/Images/Volumes/Build Cache, Processes/Ports/Watch)
+- Apps 페이지는 탭 구조 (Installed / Leftover Data)
 - 사용자 공간, Growth View, 프로세스, Port Finder, Port Watch 데이터는 Zustand 스토어에 캐싱 — 탭/페이지 전환 시 즉시 표시, 재호출 없음
-- 사용자가 Rescan / Refresh 버튼으로 원할 때만 수동 갱신
+- 사용자가 Rescan / Refresh / Search 버튼으로 원할 때만 수동 갱신
 - 다크 / 라이트 테마 지원
 - 라이트 테마에서도 차트, 사이드바, 경고/성공 배지 대비를 별도로 조정
 - 페이지 및 주요 섹션 렌더 실패 시 Error Boundary로 전체 앱 대신 해당 영역만 보호
 - `File Insights > File Types`는 Recharts 대신 정적 리스트/바 UI로 렌더하여 재스캔 후 렌더 안정성을 우선
-
-### 16. 설정
+- 앱 종료 중에는 전역 shutdown overlay로 현재 정리 단계를 표시
+### 18. 설정
 
 - `Preferences > Appearance`: Dark / Light 테마 선택
 - `Preferences > Alerts`: Disk / Memory / GPU 각각 Warning / Critical 설정
@@ -436,6 +467,9 @@ npm run test:watch
 - Port Finder — 포트 조회, Local/Remote 범위 검색, 상태 필터 연동 (Activity > Ports)
 - Port Watch — 포트/IP 실시간 모니터링, 상태 변화 감지, History (Activity > Watch)
 - Docker Cleanup — Overview / Containers / Images / Volumes / Build Cache 메뉴 분리
+- Apps — Installed / Leftover Data 탭 분리
+- Installed Apps — 앱 제거 + 앱별 Related Data 선택 정리
+- Leftover Data — confidence/reason/risk 기반 잔여 데이터 정리
 - Docker Containers — running container 중지 + stopped container 정리 후 image cleanup 흐름 지원
 - Docker Images — in-use / unused / dangling 상태 기반 정리
 - Docker Volumes — unused volume 정리
@@ -457,6 +491,7 @@ npm run test:watch
 - 로그 포맷 통일 (`[scope]` + message + metadata)
 - 로그 보관 기간 10일 자동 정리
 - APFS 컨테이너 정보 조회 실패 시 세션당 1회만 fallback 로그 기록
+- Graceful shutdown 오케스트레이터 + 종료 중 전역 오버레이
 - 패키징 스크립트 (pack / dist / dist:mac / dist:win)
 
 아직 포함되지 않음:
