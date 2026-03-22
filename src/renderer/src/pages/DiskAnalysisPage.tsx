@@ -6,13 +6,13 @@ import { Accordion } from '../components/Accordion'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { formatBytes } from '../utils/format'
 import { useToast } from '../components/Toast'
+import { YourStorage } from '../features/disk/YourStorage'
+import { GrowthView } from '../features/disk/GrowthView'
 import type { DiskScanResult } from '@shared/types'
 
 const TreemapChart = lazy(async () => import('../features/disk/TreemapChart').then((mod) => ({ default: mod.TreemapChart })))
 const FileInsights = lazy(async () => import('../features/disk/FileInsights').then((mod) => ({ default: mod.FileInsights })))
 const QuickScan = lazy(async () => import('../features/disk/QuickScan').then((mod) => ({ default: mod.QuickScan })))
-const YourStorage = lazy(async () => import('../features/disk/YourStorage').then((mod) => ({ default: mod.YourStorage })))
-const GrowthView = lazy(async () => import('../features/disk/GrowthView').then((mod) => ({ default: mod.GrowthView })))
 const RecentGrowth = lazy(async () => import('../features/disk/RecentGrowth').then((mod) => ({ default: mod.RecentGrowth })))
 
 export function DiskAnalysisPage() {
@@ -198,14 +198,10 @@ export function DiskAnalysisPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
         <ErrorBoundary title="Home Storage" resetKey={sectionResetKey}>
-          <Suspense fallback={<SectionFallback title="Home Storage" />}>
-            <YourStorage onFolderClick={tryScan} />
-          </Suspense>
+          <YourStorage onFolderClick={tryScan} />
         </ErrorBoundary>
         <ErrorBoundary title="Storage Growth" resetKey={sectionResetKey}>
-          <Suspense fallback={<SectionFallback title="Storage Growth" />}>
-            <GrowthView />
-          </Suspense>
+          <GrowthView />
         </ErrorBoundary>
       </div>
 
