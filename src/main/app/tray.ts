@@ -1,7 +1,7 @@
 import { Tray, Menu, app, BrowserWindow, nativeImage } from 'electron'
 import { join } from 'path'
 import { platform } from 'os'
-import log from 'electron-log'
+import { logError } from '../services/logging'
 import { getSystemStats } from '../services/systemMonitor'
 import { createTrayImage, getCpuMeterText } from './trayIconFactory'
 import { CPU_TRAY_THRESHOLDS } from '@shared/constants/thresholds'
@@ -19,7 +19,7 @@ export function createTray(): void {
     const icon = getInitialTrayIcon()
     tray = new Tray(icon)
   } catch (err) {
-    log.error('Failed to create tray icon', err)
+    logError('tray', 'Failed to create tray icon', err)
     tray = null
     return
   }
@@ -111,7 +111,7 @@ async function refreshTrayIcon(): Promise<void> {
 
     tray.setToolTip(`SystemScope\nCPU ${roundedUsage}%`)
   } catch (error) {
-    log.error('Failed to refresh tray icon', error)
+    logError('tray', 'Failed to refresh tray icon', error)
   }
 }
 

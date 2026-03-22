@@ -36,6 +36,12 @@ vi.mock('electron-log', () => ({
   }
 }))
 
+vi.mock('../../src/main/services/logging', () => ({
+  logInfo: vi.fn(),
+  logError: vi.fn(),
+  logDebug: vi.fn()
+}))
+
 vi.mock('../../src/main/services/snapshotStore', () => ({
   saveSnapshot: async (snapshot: { timestamp: number; folders: Array<{ name: string; path: string; size: number }>; totalSize: number }) => {
     snapshotState.snapshots.push(snapshot)

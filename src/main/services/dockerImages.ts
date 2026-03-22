@@ -1,5 +1,4 @@
 import { execFile } from 'child_process'
-import log from 'electron-log'
 import type {
   DockerActionResult,
   DockerBuildCacheScanResult,
@@ -14,6 +13,7 @@ import type {
   DockerVolumesScanResult,
   DockerVolumeSummary
 } from '@shared/types'
+import { logInfo, logWarn } from './logging'
 
 interface DockerImageRow {
   ID?: string
@@ -96,7 +96,7 @@ export async function removeDockerImages(imageIds: string[]): Promise<DockerRemo
 
   for (const imageId of imageIds) {
     if (!validateDockerId(imageId)) {
-      log.warn('Invalid Docker image ID skipped', { imageId })
+      logWarn('docker-images', 'Invalid Docker image ID skipped', { imageId })
       errors.push(`이미지 ${imageId}: 유효하지 않은 ID`)
       continue
     }
@@ -104,12 +104,12 @@ export async function removeDockerImages(imageIds: string[]): Promise<DockerRemo
       await runDockerCommand(['image', 'rm', imageId])
       deletedIds.push(imageId)
     } catch (error) {
-      log.warn('Failed to remove Docker image', { imageId, error: String(error) })
+      logWarn('docker-images', 'Failed to remove Docker image', { imageId, error })
       errors.push(normalizeDockerError(error, `이미지 ${imageId} 삭제 실패`))
     }
   }
 
-  log.info('Docker image removal completed', {
+  logInfo('docker-images', 'Docker image removal completed', {
     requestedCount: imageIds.length,
     deletedCount: deletedIds.length,
     failCount: imageIds.length - deletedIds.length
@@ -162,7 +162,7 @@ export async function removeDockerContainers(containerIds: string[]): Promise<Do
 
   for (const containerId of containerIds) {
     if (!validateDockerId(containerId)) {
-      log.warn('Invalid Docker container ID skipped', { containerId })
+      logWarn('docker-containers', 'Invalid Docker container ID skipped', { containerId })
       errors.push(`컨테이너 ${containerId}: 유효하지 않은 ID`)
       continue
     }
@@ -170,12 +170,12 @@ export async function removeDockerContainers(containerIds: string[]): Promise<Do
       await runDockerCommand(['rm', containerId])
       deletedIds.push(containerId)
     } catch (error) {
-      log.warn('Failed to remove Docker container', { containerId, error: String(error) })
+      logWarn('docker-containers', 'Failed to remove Docker container', { containerId, error })
       errors.push(normalizeDockerError(error, `컨테이너 ${containerId} 삭제 실패`))
     }
   }
 
-  log.info('Docker container removal completed', {
+  logInfo('docker-containers', 'Docker container removal completed', {
     requestedCount: containerIds.length,
     deletedCount: deletedIds.length,
     failCount: containerIds.length - deletedIds.length
@@ -195,7 +195,7 @@ export async function stopDockerContainers(containerIds: string[]): Promise<Dock
 
   for (const containerId of containerIds) {
     if (!validateDockerId(containerId)) {
-      log.warn('Invalid Docker container ID skipped', { containerId })
+      logWarn('docker-containers', 'Invalid Docker container ID skipped', { containerId })
       errors.push(`컨테이너 ${containerId}: 유효하지 않은 ID`)
       continue
     }
@@ -203,12 +203,12 @@ export async function stopDockerContainers(containerIds: string[]): Promise<Dock
       await runDockerCommand(['stop', containerId])
       affectedIds.push(containerId)
     } catch (error) {
-      log.warn('Failed to stop Docker container', { containerId, error: String(error) })
+      logWarn('docker-containers', 'Failed to stop Docker container', { containerId, error })
       errors.push(normalizeDockerError(error, `컨테이너 ${containerId} 중지 실패`))
     }
   }
 
-  log.info('Docker container stop completed', {
+  logInfo('docker-containers', 'Docker container stop completed', {
     requestedCount: containerIds.length,
     affectedCount: affectedIds.length,
     failCount: containerIds.length - affectedIds.length
@@ -271,7 +271,7 @@ export async function removeDockerVolumes(volumeNames: string[]): Promise<Docker
 
   for (const volumeName of volumeNames) {
     if (!validateDockerId(volumeName)) {
-      log.warn('Invalid Docker volume name skipped', { volumeName })
+      logWarn('docker-volumes', 'Invalid Docker volume name skipped', { volumeName })
       errors.push(`볼륨 ${volumeName}: 유효하지 않은 이름`)
       continue
     }
@@ -279,12 +279,12 @@ export async function removeDockerVolumes(volumeNames: string[]): Promise<Docker
       await runDockerCommand(['volume', 'rm', volumeName])
       deletedIds.push(volumeName)
     } catch (error) {
-      log.warn('Failed to remove Docker volume', { volumeName, error: String(error) })
+      logWarn('docker-volumes', 'Failed to remove Docker volume', { volumeName, error })
       errors.push(normalizeDockerError(error, `볼륨 ${volumeName} 삭제 실패`))
     }
   }
 
-  log.info('Docker volume removal completed', {
+  logInfo('docker-volumes', 'Docker volume removal completed', {
     requestedCount: volumeNames.length,
     deletedCount: deletedIds.length,
     failCount: volumeNames.length - deletedIds.length
@@ -328,7 +328,7 @@ export async function getDockerBuildCache(): Promise<DockerBuildCacheScanResult>
 export async function pruneDockerBuildCache(): Promise<DockerPruneResult> {
   const { stdout } = await runDockerCommand(['builder', 'prune', '--force'])
   const reclaimedLabel = parseReclaimedLabel(stdout)
-  log.info('Docker build cache prune completed', { reclaimedLabel: normalizeByteLabel(reclaimedLabel) })
+  logInfo('docker-build-cache', 'Docker build cache prune completed', { reclaimedLabel: normalizeByteLabel(reclaimedLabel) })
   return {
     reclaimedBytes: parseDockerSize(reclaimedLabel),
     reclaimedLabel: normalizeByteLabel(reclaimedLabel),

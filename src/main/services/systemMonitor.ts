@@ -3,7 +3,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { platform } from 'os'
 import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo } from '@shared/types'
-import log from 'electron-log'
+import { logDebug, logWarn } from './logging'
 
 const execFileAsync = promisify(execFile)
 
@@ -28,7 +28,7 @@ export async function getSystemStats(): Promise<SystemStats> {
     const temp = await si.cpuTemperature()
     cpu.temperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
   } catch (err) {
-    log.debug('CPU temperature unavailable', { error: String(err) })
+    logDebug('system-monitor', 'CPU temperature unavailable', { error: err })
   }
 
   // macOS: mem.used にはファイルキャッシュ(inactive)が含まれ常に高い値になる
@@ -118,13 +118,13 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
       const size = parseInt(sizeMatch[1], 10)
       const free = parseInt(freeMatch[1], 10)
       if (isNaN(size) || isNaN(free)) {
-        log.warn('Invalid APFS sizes from diskutil', { sizeMatch: sizeMatch[1], freeMatch: freeMatch[1] })
+        logWarn('system-monitor', 'Invalid APFS sizes from diskutil', { sizeMatch: sizeMatch[1], freeMatch: freeMatch[1] })
         return null
       }
       return { size, free }
     }
   } catch (err) {
-    log.debug('APFS container info unavailable', { error: String(err) })
+    logDebug('system-monitor', 'APFS container info unavailable', { error: err })
   }
   return null
 }

@@ -282,6 +282,7 @@ Windows 예시:
 - `Preferences > Logs`: 로그 폴더 확인 및 Finder / Explorer에서 바로 열기
 - 로그 파일 저장 위치: `userData/logs`
 - 로그 파일 형식: `systemscope-YYYY-MM-DD.log`
+- 로그 레코드 형식: `[scope]` + message + metadata
 - 로그 보관 기간: 최근 10일 자동 유지
 - 하단 `Save All` 버튼으로 테마, 알림 임계치, 스냅샷 주기를 함께 저장
 
@@ -371,6 +372,12 @@ npm run preview
 npm test
 ```
 
+정적 검사:
+
+```bash
+npm run lint
+```
+
 포함 범위:
 
 - `tests/unit`: 함수/모듈 단위 검증
@@ -436,6 +443,7 @@ npm run test:watch
 - 로그 폴더 확인 + 열기 (Settings)
 - Electron 파일 로그 기록 + Renderer 렌더 실패 로그 수집
 - 날짜별 로그 파일 분리 (`systemscope-YYYY-MM-DD.log`)
+- 로그 포맷 통일 (`[scope]` + message + metadata)
 - 로그 보관 기간 10일 자동 정리
 - 패키징 스크립트 (pack / dist / dist:mac / dist:win)
 

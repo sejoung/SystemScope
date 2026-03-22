@@ -5,7 +5,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import type { GrowthFolder, GrowthViewResult } from '@shared/types'
 import { saveSnapshot, getSnapshotsInRange, type Snapshot, type FolderSnapshot } from './snapshotStore'
-import log from 'electron-log'
+import { logDebug, logError, logInfo } from './logging'
 
 const execFileAsync = promisify(execFile)
 
@@ -58,7 +58,7 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   }
 
   await saveSnapshot(snapshot)
-  log.info(`Snapshot saved: ${folders.length} folders, total ${snapshot.totalSize} bytes`)
+  logInfo('snapshot', 'Snapshot saved', { folderCount: folders.length, totalSize: snapshot.totalSize })
   return snapshot
 }
 
@@ -132,11 +132,11 @@ export function startSnapshotScheduler(intervalMs: number = 60 * 60 * 1000): voi
   if (snapshotInterval) return
 
   // 앱 시작 시 즉시 1회 스냅샷
-  takeSnapshot().catch((err) => log.error('Initial snapshot failed', err))
+  takeSnapshot().catch((err) => logError('snapshot', 'Initial snapshot failed', err))
 
   // 이후 매 시간마다
   snapshotInterval = setInterval(() => {
-    takeSnapshot().catch((err) => log.error('Scheduled snapshot failed', err))
+    takeSnapshot().catch((err) => logError('snapshot', 'Scheduled snapshot failed', err))
   }, intervalMs)
 }
 
@@ -174,7 +174,7 @@ async function getDirSizeDu(dirPath: string): Promise<number> {
       const kb = parseInt(errObj.stdout.split('\t')[0], 10)
       return isNaN(kb) ? 0 : kb * 1024
     }
-    log.debug('Failed to measure directory size with du', { dirPath, error: String(err) })
+    logDebug('snapshot', 'Failed to measure directory size with du', { dirPath, error: err })
     return 0
   }
 }

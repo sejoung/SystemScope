@@ -4,7 +4,7 @@ import { SYSTEM_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { getSystemStats } from '../services/systemMonitor'
 import { checkAlerts } from '../services/alertManager'
 import { success, failure } from '@shared/types'
-import log from 'electron-log'
+import { logError } from '../services/logging'
 import {
   addSystemSubscriber,
   getSystemSubscriberIds,
@@ -22,7 +22,7 @@ export function registerSystemIpc(): void {
       const stats = await getSystemStats()
       return success(stats)
     } catch (err) {
-      log.error('Failed to get system stats', err)
+      logError('system-ipc', 'Failed to get system stats', err)
       return failure('UNKNOWN_ERROR', '시스템 정보를 가져올 수 없습니다.')
     }
   })
@@ -74,7 +74,7 @@ function startRealtimeUpdates(): void {
         }
       }
     } catch (err) {
-      log.error('Realtime update failed', err)
+      logError('system-ipc', 'Realtime update failed', err)
     }
   }, SYSTEM_UPDATE_INTERVAL_MS)
 }

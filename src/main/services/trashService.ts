@@ -1,7 +1,7 @@
 import { dialog, shell, BrowserWindow, app } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
-import log from 'electron-log'
+import { logError, logInfo } from './logging'
 import type { TrashResult } from '@shared/types'
 
 function formatBytes(bytes: number): string {
@@ -81,11 +81,16 @@ export async function trashItemsWithConfirm(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       errors.push(`${path.basename(file.path)}: ${msg}`)
-      log.error('Failed to trash item', { path: file.path, error: err })
+      logError('trash', 'Failed to trash item', { path: file.path, error: err })
     }
   }
 
-  log.info(`Trashed ${successCount}/${validPaths.length} items, ${formatBytes(trashedSize)}`)
+  logInfo('trash', 'Trash operation completed', {
+    successCount,
+    requestedCount: validPaths.length,
+    trashedSize,
+    trashedSizeLabel: formatBytes(trashedSize)
+  })
 
   return {
     successCount,

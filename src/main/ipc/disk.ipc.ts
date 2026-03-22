@@ -22,7 +22,7 @@ import {
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
 import type { DiskScanResult, DockerRemoveResult } from '@shared/types'
-import log from 'electron-log'
+import { logError } from '../services/logging'
 
 // Cache last scan result for large files / extension queries
 let lastScanResult: DiskScanResult | null = null
@@ -70,7 +70,7 @@ export function registerDiskIpc(): void {
             sendJobFailed(win, job, '스캔이 취소되었습니다.')
           }
         } else {
-          log.error('Disk scan failed', err)
+          logError('disk-ipc', 'Disk scan failed', err)
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
             sendJobFailed(win, job, '디스크 스캔 중 오류가 발생했습니다.')
           }
@@ -105,7 +105,7 @@ export function registerDiskIpc(): void {
       lastScanResult = result
       return success(findLargeFiles(result.tree, limit))
     } catch (err) {
-      log.error('Large file scan failed', err)
+      logError('disk-ipc', 'Large file scan failed', err)
       return failure('SCAN_FAILED', '대용량 파일 탐색에 실패했습니다.')
     }
   })
@@ -131,7 +131,7 @@ export function registerDiskIpc(): void {
       lastScanResult = result
       return success(getExtensionBreakdown(result.tree))
     } catch (err) {
-      log.error('Extension breakdown failed', err)
+      logError('disk-ipc', 'Extension breakdown failed', err)
       return failure('SCAN_FAILED', '확장자 분석에 실패했습니다.')
     }
   })
@@ -141,7 +141,7 @@ export function registerDiskIpc(): void {
       const results = await runQuickScan()
       return success(results)
     } catch (err) {
-      log.error('Quick scan failed', err)
+      logError('disk-ipc', 'Quick scan failed', err)
       return failure('SCAN_FAILED', '빠른 스캔에 실패했습니다.')
     }
   })
@@ -151,7 +151,7 @@ export function registerDiskIpc(): void {
       const info = await getUserSpaceInfo()
       return success(info)
     } catch (err) {
-      log.error('User space scan failed', err)
+      logError('disk-ipc', 'User space scan failed', err)
       return failure('SCAN_FAILED', '사용자 공간 분석에 실패했습니다.')
     }
   })
@@ -170,7 +170,7 @@ export function registerDiskIpc(): void {
       const results = await findRecentGrowth(resolved, days)
       return success(results)
     } catch (err) {
-      log.error('Recent growth scan failed', err)
+      logError('disk-ipc', 'Recent growth scan failed', err)
       return failure('SCAN_FAILED', '최근 변경 분석에 실패했습니다.')
     }
   })
@@ -189,7 +189,7 @@ export function registerDiskIpc(): void {
       const results = await findDuplicates(resolved, minSizeKB * 1024)
       return success(results)
     } catch (err) {
-      log.error('Duplicate scan failed', err)
+      logError('disk-ipc', 'Duplicate scan failed', err)
       return failure('SCAN_FAILED', '중복 파일 탐색에 실패했습니다.')
     }
   })
@@ -202,7 +202,7 @@ export function registerDiskIpc(): void {
       const result = await analyzeGrowth(period)
       return success(result)
     } catch (err) {
-      log.error('Growth analysis failed', err)
+      logError('disk-ipc', 'Growth analysis failed', err)
       return failure('SCAN_FAILED', '성장 분석에 실패했습니다.')
     }
   })
@@ -221,7 +221,7 @@ export function registerDiskIpc(): void {
       const results = await findOldFiles(resolved, olderThanDays)
       return success(results)
     } catch (err) {
-      log.error('Old file scan failed', err)
+      logError('disk-ipc', 'Old file scan failed', err)
       return failure('SCAN_FAILED', '오래된 파일 탐색에 실패했습니다.')
     }
   })
@@ -231,7 +231,7 @@ export function registerDiskIpc(): void {
       const result = await listDockerImages()
       return success(result)
     } catch (err) {
-      log.error('Docker image scan failed', err)
+      logError('disk-ipc', 'Docker image scan failed', err)
       return failure('SCAN_FAILED', 'Docker 이미지를 조회할 수 없습니다.')
     }
   })
@@ -241,7 +241,7 @@ export function registerDiskIpc(): void {
       const result = await listDockerContainers()
       return success(result)
     } catch (err) {
-      log.error('Docker container scan failed', err)
+      logError('disk-ipc', 'Docker container scan failed', err)
       return failure('SCAN_FAILED', 'Docker 컨테이너를 조회할 수 없습니다.')
     }
   })
@@ -251,7 +251,7 @@ export function registerDiskIpc(): void {
       const result = await listDockerVolumes()
       return success(result)
     } catch (err) {
-      log.error('Docker volume scan failed', err)
+      logError('disk-ipc', 'Docker volume scan failed', err)
       return failure('SCAN_FAILED', 'Docker 볼륨을 조회할 수 없습니다.')
     }
   })
@@ -261,7 +261,7 @@ export function registerDiskIpc(): void {
       const result = await getDockerBuildCache()
       return success(result)
     } catch (err) {
-      log.error('Docker build cache scan failed', err)
+      logError('disk-ipc', 'Docker build cache scan failed', err)
       return failure('SCAN_FAILED', 'Docker build cache를 조회할 수 없습니다.')
     }
   })
@@ -319,7 +319,7 @@ export function registerDiskIpc(): void {
       const result = await removeDockerImages(targets.map((image) => image.id))
       return success(result)
     } catch (err) {
-      log.error('Docker image remove failed', err)
+      logError('disk-ipc', 'Docker image remove failed', err)
       return failure('UNKNOWN_ERROR', 'Docker 이미지를 삭제할 수 없습니다.')
     }
   })
@@ -383,7 +383,7 @@ export function registerDiskIpc(): void {
       const result = await removeDockerContainers(targets.map((container) => container.id))
       return success(result)
     } catch (err) {
-      log.error('Docker container remove failed', err)
+      logError('disk-ipc', 'Docker container remove failed', err)
       return failure('UNKNOWN_ERROR', 'Docker 컨테이너를 삭제할 수 없습니다.')
     }
   })
@@ -439,7 +439,7 @@ export function registerDiskIpc(): void {
       const result = await stopDockerContainers(targets.map((container) => container.id))
       return success(result)
     } catch (err) {
-      log.error('Docker container stop failed', err)
+      logError('disk-ipc', 'Docker container stop failed', err)
       return failure('UNKNOWN_ERROR', 'Docker 컨테이너를 중지할 수 없습니다.')
     }
   })
@@ -495,7 +495,7 @@ export function registerDiskIpc(): void {
       const result = await removeDockerVolumes(targets.map((volume) => volume.name))
       return success(result)
     } catch (err) {
-      log.error('Docker volume remove failed', err)
+      logError('disk-ipc', 'Docker volume remove failed', err)
       return failure('UNKNOWN_ERROR', 'Docker 볼륨을 삭제할 수 없습니다.')
     }
   })
@@ -528,7 +528,7 @@ export function registerDiskIpc(): void {
       const result = await pruneDockerBuildCache()
       return success(result)
     } catch (err) {
-      log.error('Docker build cache prune failed', err)
+      logError('disk-ipc', 'Docker build cache prune failed', err)
       return failure('UNKNOWN_ERROR', 'Docker build cache를 정리할 수 없습니다.')
     }
   })

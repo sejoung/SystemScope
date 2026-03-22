@@ -14,6 +14,7 @@ const createMainWindowMock = vi.hoisted(() => vi.fn())
 const setForceQuitMock = vi.hoisted(() => vi.fn())
 const cleanupSystemIpcMock = vi.hoisted(() => vi.fn())
 const initializeLoggingMock = vi.hoisted(() => vi.fn())
+const logErrorMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   app: {
@@ -73,7 +74,8 @@ vi.mock('../../src/main/app/tray', () => ({
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
-  initializeLogging: initializeLoggingMock
+  initializeLogging: initializeLoggingMock,
+  logError: logErrorMock
 }))
 
 describe('app startup integration', () => {
@@ -93,6 +95,7 @@ describe('app startup integration', () => {
     setForceQuitMock.mockReset()
     cleanupSystemIpcMock.mockReset()
     initializeLoggingMock.mockReset()
+    logErrorMock.mockReset()
     getSettingsMock.mockReturnValue({
       thresholds: {
         diskWarning: 80,

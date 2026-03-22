@@ -9,6 +9,8 @@ const restartSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
 const setThresholdsMock = vi.hoisted(() => vi.fn())
 const getLogDirMock = vi.hoisted(() => vi.fn())
 const getPathMock = vi.hoisted(() => vi.fn())
+const logErrorMock = vi.hoisted(() => vi.fn())
+const logWarnMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -42,7 +44,9 @@ vi.mock('../../src/main/services/alertManager', () => ({
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
-  getLogDir: getLogDirMock
+  getLogDir: getLogDirMock,
+  logError: logErrorMock,
+  logWarn: logWarnMock
 }))
 
 describe('registerSettingsIpc', () => {
@@ -55,6 +59,8 @@ describe('registerSettingsIpc', () => {
     setThresholdsMock.mockReset()
     getLogDirMock.mockReset()
     getPathMock.mockReset()
+    logErrorMock.mockReset()
+    logWarnMock.mockReset()
   })
 
   it('should apply thresholds to runtime alert state when saving settings', async () => {

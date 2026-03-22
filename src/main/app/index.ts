@@ -1,5 +1,4 @@
 import { app, BrowserWindow } from 'electron'
-import log from 'electron-log'
 import { createMainWindow, setForceQuit } from './createWindow'
 import { registerAllIpc, cleanupSystemIpc } from '../ipc'
 import { initializeRuntimeSettings } from './initializeRuntimeSettings'
@@ -7,7 +6,7 @@ import { startSnapshotScheduler, stopSnapshotScheduler } from '../services/growt
 import { ensureSnapshotDir } from '../services/snapshotStore'
 import { getSettings } from '../store/settingsStore'
 import { createTray, destroyTray } from './tray'
-import { initializeLogging } from '../services/logging'
+import { initializeLogging, logError } from '../services/logging'
 
 app.whenReady().then(() => {
   initializeLogging()
@@ -29,7 +28,7 @@ app.whenReady().then(() => {
     }
   })
 }).catch((err) => {
-  log.error('Failed to initialize app', err)
+  logError('app', 'Failed to initialize app', err)
   app.quit()
 })
 

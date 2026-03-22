@@ -4,7 +4,7 @@ import { homedir, platform } from 'os'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
-import log from 'electron-log'
+import { logDebug, logWarn } from './logging'
 
 const execFileAsync = promisify(execFile)
 
@@ -64,7 +64,7 @@ async function getDirSizesBatchMac(paths: string[]): Promise<Map<string, number>
         if (!isNaN(kb)) result.set(p, kb * 1024)
       }
     } else {
-      log.debug('Failed to batch measure user space folders with du', { paths, error: String(err) })
+      logDebug('user-space', 'Failed to batch measure user space folders with du', { paths, error: err })
     }
   }
   return result
@@ -112,7 +112,7 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
         return { total, available: free, purgeable: null }
       }
     } catch {
-      log.debug('Failed to read APFS container info, falling back to statfs')
+      logDebug('user-space', 'Failed to read APFS container info, falling back to statfs')
       // fallback
     }
   }
@@ -123,7 +123,7 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
     const available = stats.bavail * stats.bsize
     return { total, available, purgeable: null }
   } catch {
-    log.warn('Failed to resolve filesystem capacity for user space view')
+    logWarn('user-space', 'Failed to resolve filesystem capacity for user space view')
     return { total: 0, available: 0, purgeable: null }
   }
 }

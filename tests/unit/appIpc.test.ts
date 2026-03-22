@@ -49,7 +49,7 @@ describe('registerAppIpc', () => {
     const result = handler?.({}, payload) as { ok: boolean; data?: boolean }
     expect(result.ok).toBe(true)
     expect(result.data).toBe(true)
-    expect(logError).toHaveBeenCalledWith('[error-boundary] Failed to render section', payload.details)
+    expect(logError).toHaveBeenCalledWith('[error-boundary]\nFailed to render section', payload.details)
   })
 
   it('should reject malformed renderer log payloads', async () => {

@@ -10,6 +10,24 @@ const LOG_FILE_PATTERN = /^systemscope-(\d{4})-(\d{2})-(\d{2})\.log$/
 
 let cleanupTimer: NodeJS.Timeout | null = null
 
+type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+export function logDebug(scope: string, message: string, metadata?: unknown): void {
+  writeLog('debug', scope, message, metadata)
+}
+
+export function logInfo(scope: string, message: string, metadata?: unknown): void {
+  writeLog('info', scope, message, metadata)
+}
+
+export function logWarn(scope: string, message: string, metadata?: unknown): void {
+  writeLog('warn', scope, message, metadata)
+}
+
+export function logError(scope: string, message: string, metadata?: unknown): void {
+  writeLog('error', scope, message, metadata)
+}
+
 export function initializeLogging(): void {
   ensureLogDir()
 
@@ -56,7 +74,7 @@ export function cleanupOldLogs(now = new Date(), retentionDays = LOG_RETENTION_D
     try {
       fs.unlinkSync(filePath)
     } catch (error) {
-      log.warn('Failed to remove old log file', { filePath, error })
+      logWarn('logging', 'Failed to remove old log file', { filePath, error })
     }
   }
 }
@@ -103,4 +121,46 @@ function parseLogDateFromFileName(fileName: string): Date | null {
 function startOfDay(date: Date): Date {
   date.setHours(0, 0, 0, 0)
   return date
+}
+
+function writeLog(level: LogLevel, scope: string, message: string, metadata?: unknown): void {
+  const formattedMessage = `[${scope}]\n${message}`
+  const normalizedMetadata = normalizeLogMetadata(metadata)
+
+  if (normalizedMetadata === undefined) {
+    log[level](formattedMessage)
+    return
+  }
+
+  log[level](formattedMessage, normalizedMetadata)
+}
+
+function normalizeLogMetadata(metadata: unknown): unknown {
+  if (metadata === undefined) {
+    return undefined
+  }
+
+  if (metadata instanceof Error) {
+    return serializeError(metadata)
+  }
+
+  if (Array.isArray(metadata)) {
+    return metadata.map((item) => normalizeLogMetadata(item))
+  }
+
+  if (metadata && typeof metadata === 'object') {
+    return Object.fromEntries(
+      Object.entries(metadata).map(([key, value]) => [key, normalizeLogMetadata(value)])
+    )
+  }
+
+  return metadata
+}
+
+function serializeError(error: Error): Record<string, string | undefined> {
+  return {
+    name: error.name,
+    message: error.message,
+    stack: error.stack
+  }
 }

@@ -2,7 +2,7 @@ import { app } from 'electron'
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
-import log from 'electron-log'
+import { logError, logWarn } from './logging'
 
 export interface FolderSnapshot {
   name: string
@@ -46,13 +46,13 @@ export function loadSnapshots(): Snapshot[] {
     const raw = fs.readFileSync(filePath, 'utf-8')
     const data = parseSnapshotData(raw)
     if (!data) {
-      log.warn('Invalid snapshot file detected, backing up and starting fresh')
+      logWarn('snapshot-store', 'Invalid snapshot file detected, backing up and starting fresh')
       backupCorruptSnapshotFile(filePath)
       return []
     }
     return data.snapshots
   } catch (err) {
-    log.warn('Failed to load snapshots, starting fresh', err)
+    logWarn('snapshot-store', 'Failed to load snapshots, starting fresh', err)
     backupCorruptSnapshotFile(filePath)
     return []
   }
@@ -84,7 +84,7 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
       await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8')
       await fsp.rename(tempPath, filePath)
     } catch (err) {
-      log.error('Failed to save snapshot', err)
+      logError('snapshot-store', 'Failed to save snapshot', err)
       throw err
     } finally {
       await fsp.rm(tempPath, { force: true }).catch(() => undefined)
@@ -139,9 +139,9 @@ function backupCorruptSnapshotFile(filePath: string): void {
     if (!fs.existsSync(filePath)) return
     const backupPath = `${filePath}.corrupt-${Date.now()}`
     fs.renameSync(filePath, backupPath)
-    log.warn('Backed up corrupt snapshot file', backupPath)
+    logWarn('snapshot-store', 'Backed up corrupt snapshot file', { backupPath })
   } catch (backupErr) {
-    log.warn('Failed to back up corrupt snapshot file', backupErr)
+    logWarn('snapshot-store', 'Failed to back up corrupt snapshot file', backupErr)
   }
 }
 
