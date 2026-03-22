@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "lint": "eslint src/",
     "typecheck": "tsc -b",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "format": "prettier --write src/",
     "pack": "electron-vite build && electron-builder --dir",
     "dist": "electron-vite build && electron-builder",

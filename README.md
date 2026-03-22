@@ -411,11 +411,17 @@ npm run preview
 npm test
 ```
 
+전체 검증:
+
+```bash
+npm run check
+```
+
 정적 검사:
 
 ```bash
-npm run lint
 npm run typecheck
+npm run lint
 ```
 
 포함 범위:
@@ -441,6 +447,7 @@ npm run test:watch
 - `npm run dist:win`: Windows만 빌드
 - `npm test`: Vitest 실행
 - `npm run test:watch`: Vitest watch 모드
+- `npm run check`: typecheck -> lint -> test -> build 전체 검증
 - `npm run lint`: ESLint 실행
 - `npm run typecheck`: TypeScript 타입 검사
 - `npm run format`: Prettier 실행
