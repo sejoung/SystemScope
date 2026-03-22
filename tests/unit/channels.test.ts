@@ -36,6 +36,8 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.PROCESS_GET_TOP_CPU).toBeDefined()
     expect(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY).toBeDefined()
     expect(IPC_CHANNELS.PROCESS_GET_ALL).toBeDefined()
+    expect(IPC_CHANNELS.PROCESS_GET_PORTS).toBeDefined()
+    expect(IPC_CHANNELS.PROCESS_KILL).toBeDefined()
   })
 
   it('should contain all alert channels', () => {

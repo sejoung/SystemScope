@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react'
 import { Accordion } from '../../components/Accordion'
+import { useToast } from '../../components/Toast'
 import { usePortFinderStore } from '../../stores/usePortFinderStore'
-import type { PortInfo } from '@shared/types'
+import type { PortInfo, ProcessKillResult } from '@shared/types'
 
 export function PortFinder() {
+  const showToast = useToast((s) => s.show)
   const { ports, loading, scanned, stateFilter, setStateFilter, fetchPorts } = usePortFinderStore()
   const [search, setSearch] = useState('')
   const [searchScope, setSearchScope] = useState<'local' | 'remote' | 'all'>('local')
@@ -34,6 +36,27 @@ export function PortFinder() {
   }, [searchFiltered, stateFilter])
 
   const listenCount = searchFiltered.filter((p) => p.state === 'LISTEN').length
+
+  const handleKill = async (portInfo: PortInfo) => {
+    const remote = formatEndpoint(portInfo.peerAddress, portInfo.peerPort)
+    const res = await window.systemScope.killProcess({
+      pid: portInfo.pid,
+      name: portInfo.process,
+      command: `${portInfo.protocol.toUpperCase()} ${portInfo.localAddress}:${portInfo.localPort} -> ${remote}`,
+      reason: 'Activity > Ports'
+    })
+    if (!res.ok) {
+      showToast(res.error?.message ?? '프로세스를 종료하지 못했습니다.')
+      return
+    }
+
+    const result = res.data as ProcessKillResult
+    if (result.cancelled) return
+    if (result.killed) {
+      showToast(`"${result.name}" (PID ${result.pid}) 종료 요청을 보냈습니다.`)
+      await fetchPorts()
+    }
+  }
 
   return (
     <Accordion
@@ -105,6 +128,7 @@ export function PortFinder() {
                     <th style={thStyle}>PID</th>
                     <th style={thStyle}>Remote</th>
                     <th style={thStyle}>State</th>
+                    <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -127,6 +151,9 @@ export function PortFinder() {
                       </td>
                       <td style={tdStyle}>
                         <StateBadge state={p.state} />
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => void handleKill(p)} style={killBtnStyle}>Kill PID</button>
                       </td>
                     </tr>
                   ))}
@@ -216,5 +243,16 @@ const btnStyle: React.CSSProperties = {
   padding: '5px 14px', fontSize: '12px', fontWeight: 600,
   border: 'none', borderRadius: '6px',
   background: 'var(--accent-cyan)', color: 'var(--text-on-accent)',
+  cursor: 'pointer'
+}
+
+const killBtnStyle: React.CSSProperties = {
+  padding: '4px 10px',
+  fontSize: '11px',
+  fontWeight: 600,
+  border: 'none',
+  borderRadius: '6px',
+  background: 'var(--accent-red)',
+  color: 'var(--text-on-accent)',
   cursor: 'pointer'
 }

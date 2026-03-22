@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import type { ProcessInfo } from '@shared/types'
+import type { ProcessInfo, ProcessKillResult } from '@shared/types'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
+import { useToast } from '../../components/Toast'
 
 type SortField = 'cpu' | 'memory' | 'name' | 'pid'
 type SortDir = 'asc' | 'desc'
@@ -11,6 +12,7 @@ interface ProcessTableProps {
 }
 
 export function ProcessTable({ processes }: ProcessTableProps) {
+  const showToast = useToast((s) => s.show)
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<SortField>('cpu')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -53,6 +55,25 @@ export function ProcessTable({ processes }: ProcessTableProps) {
     return sortDir === 'desc' ? ' ▼' : ' ▲'
   }
 
+  const handleKill = async (processInfo: ProcessInfo) => {
+    const res = await window.systemScope.killProcess({
+      pid: processInfo.pid,
+      name: processInfo.name,
+      command: processInfo.command,
+      reason: 'Activity > Processes'
+    })
+    if (!res.ok) {
+      showToast(res.error?.message ?? '프로세스를 종료하지 못했습니다.')
+      return
+    }
+
+    const result = res.data as ProcessKillResult
+    if (result.cancelled) return
+    if (result.killed) {
+      showToast(`"${result.name}" (PID ${result.pid}) 종료 요청을 보냈습니다.`)
+    }
+  }
+
   return (
     <Accordion
       title={`All Processes (${filtered.length})`}
@@ -86,12 +107,13 @@ export function ProcessTable({ processes }: ProcessTableProps) {
               <SortHeader field="memory" current={sortField} dir={sortDir} onClick={handleSort} width="90px" align="right">
                 Memory{sortIcon('memory')}
               </SortHeader>
+              <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>Action</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
+                <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
                   {search ? `"${search}" 검색 결과 없음` : '프로세스 데이터 로딩 중...'}
                 </td>
               </tr>
@@ -118,6 +140,9 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                 </td>
                 <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace' }}>
                   {formatBytes(p.memoryBytes)}
+                </td>
+                <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                  <button onClick={() => void handleKill(p)} style={killBtnStyle}>Kill</button>
                 </td>
               </tr>
             ))}
@@ -177,4 +202,15 @@ const searchStyle: React.CSSProperties = {
   background: 'var(--bg-primary)',
   color: 'var(--text-primary)',
   outline: 'none'
+}
+
+const killBtnStyle: React.CSSProperties = {
+  padding: '4px 10px',
+  fontSize: '11px',
+  fontWeight: 600,
+  border: 'none',
+  borderRadius: '6px',
+  background: 'var(--accent-red)',
+  color: 'var(--text-on-accent)',
+  cursor: 'pointer'
 }

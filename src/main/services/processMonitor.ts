@@ -25,6 +25,12 @@ export async function getAllProcesses(): Promise<ProcessInfo[]> {
     .map(toProcessInfo)
 }
 
+export async function getProcessByPid(pid: number): Promise<ProcessInfo | null> {
+  const data = await si.processes()
+  const found = data.list.find((processInfo) => processInfo.pid === pid)
+  return found ? toProcessInfo(found) : null
+}
+
 export async function getNetworkPorts(): Promise<PortInfo[]> {
   const connections = await si.networkConnections()
   return connections

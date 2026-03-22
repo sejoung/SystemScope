@@ -18,3 +18,17 @@ export interface PortInfo {
   process: string
   localPortNum: number  // 정렬/필터용
 }
+
+export interface ProcessKillRequest {
+  pid: number
+  name?: string
+  command?: string
+  reason?: string
+}
+
+export interface ProcessKillResult {
+  pid: number
+  name: string
+  killed: boolean
+  cancelled: boolean
+}
