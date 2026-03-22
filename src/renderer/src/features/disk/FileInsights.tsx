@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useToast } from '../../components/Toast'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
-import { useContainerWidth } from '../../hooks/useContainerWidth'
 import type { LargeFile, ExtensionGroup, DuplicateGroup, TrashResult } from '@shared/types'
 
 type Tab = 'types' | 'largest' | 'old' | 'duplicates'
@@ -28,7 +26,6 @@ interface FileInsightsProps {
 export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true, onFilesRemoved, onRefreshRequested }: FileInsightsProps) {
   const showToast = useToast((s) => s.show)
   const [tab, setTab] = useState<Tab>(defaultTab)
-  const [visibleLargeFiles, setVisibleLargeFiles] = useState<LargeFile[]>(largeFiles)
   const [oldFiles, setOldFiles] = useState<LargeFile[]>([])
   const [oldFilesLoading, setOldFilesLoading] = useState(false)
   const [oldFilesScanned, setOldFilesScanned] = useState(false)
@@ -39,10 +36,6 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
   const [dupScanned, setDupScanned] = useState(false)
   const [dupError, setDupError] = useState<string | null>(null)
   const [expandedDup, setExpandedDup] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    setVisibleLargeFiles(largeFiles)
-  }, [folderPath, largeFiles])
 
   const handleOldFileScan = async () => {
     setOldFilesLoading(true)
@@ -127,11 +120,9 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       {tab === 'types' && <TypesTab data={extensions} />}
       {tab === 'largest' && (
         <LargestTab
-          files={visibleLargeFiles}
+          files={largeFiles}
           showDelete={showDelete}
-          onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제', (trashed) => {
-            setVisibleLargeFiles((prev) => prev.filter((f) => !trashed.has(f.path)))
-          })}
+          onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제')}
         />
       )}
       {tab === 'old' && (
@@ -180,23 +171,41 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
 // ─── Types Tab ───
 
 function TypesTab({ data }: { data: ExtensionGroup[] }) {
-  const [ref, width] = useContainerWidth(400)
-  const top10 = data.slice(0, 10).map((d) => ({ ...d, sizeGB: d.totalSize / (1024 * 1024 * 1024) }))
+  const top10 = data.slice(0, 10)
+  const maxSize = top10[0]?.totalSize ?? 0
 
   if (top10.length === 0) return <Empty>데이터가 없습니다</Empty>
 
   return (
-    <div ref={ref}>
-      {width > 0 && (
-        <BarChart data={top10} layout="vertical" width={width} height={250} margin={{ left: 60 }}>
-          <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => formatBytes(v * 1024 * 1024 * 1024)} />
-          <YAxis type="category" dataKey="extension" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} width={55} />
-          <Tooltip contentStyle={tooltipStyle} formatter={(val: number) => formatBytes(val * 1024 * 1024 * 1024)} />
-          <Bar dataKey="sizeGB" radius={[0, 4, 4, 0]}>
-            {top10.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-          </Bar>
-        </BarChart>
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {top10.map((entry, index) => {
+        const widthRatio = maxSize > 0 ? Math.max((entry.totalSize / maxSize) * 100, 4) : 0
+        return (
+          <div key={`${entry.extension}-${index}`} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ minWidth: '64px', fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {entry.extension || '(none)'}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                {entry.count} files
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                {formatBytes(entry.totalSize)}
+              </span>
+            </div>
+            <div style={{ height: '8px', borderRadius: '999px', background: 'var(--bg-card-hover)', overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${widthRatio}%`,
+                  height: '100%',
+                  borderRadius: '999px',
+                  background: COLORS[index % COLORS.length]
+                }}
+              />
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -444,4 +453,3 @@ const openBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fon
 const trashBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--accent-red)', color: 'var(--text-on-accent)', cursor: 'pointer' }
 const actionBtnStyle: React.CSSProperties = { padding: '5px 14px', fontSize: '12px', fontWeight: 600, border: 'none', borderRadius: '6px', background: 'var(--accent-yellow)', color: 'var(--text-on-accent-strong)', cursor: 'pointer' }
 const selectStyle: React.CSSProperties = { padding: '4px 8px', fontSize: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }
-const tooltipStyle: React.CSSProperties = { backgroundColor: 'var(--chart-tooltip-bg)', border: '1px solid var(--border)', borderRadius: '8px', boxShadow: 'var(--chart-tooltip-shadow)', color: 'var(--text-primary)', fontSize: '12px' }

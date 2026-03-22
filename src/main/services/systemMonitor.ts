@@ -6,6 +6,7 @@ import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo } from '@shar
 import { logDebug, logWarn } from './logging'
 
 const execFileAsync = promisify(execFile)
+let hasLoggedApfsContainerFallback = false
 
 export async function getSystemStats(): Promise<SystemStats> {
   const [cpuLoad, cpuInfo, mem, gpu, disks] = await Promise.all([
@@ -124,7 +125,10 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
       return { size, free }
     }
   } catch (err) {
-    logDebug('system-monitor', 'APFS container info unavailable', { error: err })
+    if (!hasLoggedApfsContainerFallback) {
+      hasLoggedApfsContainerFallback = true
+      logDebug('system-monitor', 'APFS container info unavailable, falling back to fsSize data', { error: err })
+    }
   }
   return null
 }

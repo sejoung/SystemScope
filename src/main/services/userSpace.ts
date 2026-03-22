@@ -7,6 +7,7 @@ import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
 import { logDebug, logWarn } from './logging'
 
 const execFileAsync = promisify(execFile)
+let hasLoggedUserSpaceApfsFallback = false
 
 function getHomeFolders(): { name: string; rel: string; icon: string }[] {
   if (platform() === 'darwin') {
@@ -112,7 +113,10 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
         return { total, available: free, purgeable: null }
       }
     } catch {
-      logDebug('user-space', 'Failed to read APFS container info, falling back to statfs')
+      if (!hasLoggedUserSpaceApfsFallback) {
+        hasLoggedUserSpaceApfsFallback = true
+        logDebug('user-space', 'Failed to read APFS container info, falling back to statfs')
+      }
       // fallback
     }
   }

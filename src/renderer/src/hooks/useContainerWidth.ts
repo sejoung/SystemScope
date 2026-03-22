@@ -8,13 +8,16 @@ export function useContainerWidth(defaultWidth: number = 400): [React.RefObject<
     const el = ref.current
     if (!el) return
 
-    setWidth(el.clientWidth || defaultWidth)
+    const initialWidth = el.clientWidth || defaultWidth
+    setWidth((prev) => (prev === initialWidth ? prev : initialWidth))
 
     if (typeof ResizeObserver === 'undefined') return
 
     const observer = new ResizeObserver(([entry]) => {
       const w = Math.floor(entry.contentRect.width)
-      if (w > 0) setWidth(w)
+      if (w > 0) {
+        setWidth((prev) => (prev === w ? prev : w))
+      }
     })
     observer.observe(el)
     return () => observer.disconnect()
