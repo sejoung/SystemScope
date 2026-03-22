@@ -23,7 +23,7 @@
   - `Processes`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
   - `Ports`: 네트워크 포트 조회, Local/Remote 범위 검색, 상태별 필터
   - `Watch`: 포트/IP 실시간 모니터링, 연결 상태 변화 감지, History 로그
-- `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터 경로 관리
+- `Preferences`: 테마, 알림 임계치, 스냅샷 주기, 앱 데이터/로그 경로 관리
 
 ## 주요 기능
 
@@ -256,6 +256,7 @@ Windows 예시:
 - 폴더 선택 다이얼로그
 - Finder / Explorer에서 경로 열기
 - 앱 데이터 폴더 열기 (userData 하위만 허용)
+- 로그 폴더 열기 (userData/logs 하위)
 - 홈 디렉터리 하위 파일을 확인 후 휴지통으로 이동
 - 창 크기, 위치, 최대화 상태 저장
 
@@ -278,6 +279,10 @@ Windows 예시:
 - `Preferences > Alerts`: Disk / Memory / GPU 각각 Warning / Critical 설정
 - `Preferences > Snapshots`: 15분 / 30분 / 1시간 / 2시간 / 6시간 선택
 - `Preferences > App Data`: 저장 경로 확인 및 Finder / Explorer에서 바로 열기
+- `Preferences > Logs`: 로그 폴더 확인 및 Finder / Explorer에서 바로 열기
+- 로그 파일 저장 위치: `userData/logs`
+- 로그 파일 형식: `systemscope-YYYY-MM-DD.log`
+- 로그 보관 기간: 최근 10일 자동 유지
 - 하단 `Save All` 버튼으로 테마, 알림 임계치, 스냅샷 주기를 함께 저장
 
 ## macOS 동작 보정
@@ -428,14 +433,16 @@ npm run test:watch
 - 아코디언 UI 전체 적용 + 헤더 액션 버튼
 - 스냅샷 주기 설정 (Settings)
 - 데이터 저장 경로 확인 + 열기 (Settings)
-- Electron 로그 기록 + Renderer 렌더 실패 로그 수집
+- 로그 폴더 확인 + 열기 (Settings)
+- Electron 파일 로그 기록 + Renderer 렌더 실패 로그 수집
+- 날짜별 로그 파일 분리 (`systemscope-YYYY-MM-DD.log`)
+- 로그 보관 기간 10일 자동 정리
 - 패키징 스크립트 (pack / dist / dist:mac / dist:win)
 
 아직 포함되지 않음:
 
 - 자동 업데이트 (구현 계획: `docs/auto-update-plan.md`)
 - 휴지통이 아닌 영구 삭제
-- 로그 보관 기간 관리 및 자동 정리
 
 ## 라이선스
 
