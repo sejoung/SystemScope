@@ -59,6 +59,7 @@
 - 폴더 트리맵 시각화
 - 대용량 파일 상위 목록 제공
 - 확장자별 용량 분포 분석
+  - `File Types`는 상위 확장자 리스트 + 막대 시각화로 안정적으로 표시
 - 스캔 결과 요약
   - 총 용량
   - 파일 수
@@ -429,6 +430,7 @@ npm run test:watch
 - File Insights 항목 휴지통 이동 + 확인 다이얼로그
 - 삭제 후 파일 목록 즉시 반영 + 스캔 캐시 무효화
 - 삭제 후 백그라운드 재스캔으로 스캔 요약/대용량 파일/확장자 통계 자동 갱신
+- `File Types` 렌더 안정성을 위해 Recharts 대신 정적 리스트/바 UI 사용
 - 전체 프로세스 목록 + 검색/필터/정렬 (Activity > Processes)
 - Top Resource Consumers — CPU/Memory/GPU 통합 위젯 (Overview 대시보드)
 - Port Finder — 포트 조회, Local/Remote 범위 검색, 상태 필터 연동 (Activity > Ports)
