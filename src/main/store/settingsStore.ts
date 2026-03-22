@@ -1,5 +1,7 @@
-import Store from 'electron-store'
+import ElectronStore from 'electron-store'
 import { DEFAULT_SETTINGS, type AppSettings, sanitizeAppSettings } from './settingsSchema'
+
+const Store = (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
 
 const store = new Store<AppSettings>({
   defaults: DEFAULT_SETTINGS
