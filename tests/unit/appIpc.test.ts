@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '../../src/shared/contracts/channels'
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>())
 const logError = vi.hoisted(() => vi.fn())
+const logWarn = vi.hoisted(() => vi.fn())
 const setUnsavedSettingsState = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
@@ -15,7 +16,8 @@ vi.mock('electron', () => ({
 
 vi.mock('electron-log', () => ({
   default: {
-    error: logError
+    error: logError,
+    warn: logWarn
   }
 }))
 
@@ -27,6 +29,7 @@ describe('registerAppIpc', () => {
   beforeEach(() => {
     handlers.clear()
     logError.mockReset()
+    logWarn.mockReset()
     setUnsavedSettingsState.mockReset()
   })
 
@@ -59,6 +62,7 @@ describe('registerAppIpc', () => {
     const invalidPayloadResult = handler?.({}, null) as { ok: boolean; error?: { code: string } }
     expect(invalidPayloadResult.ok).toBe(false)
     expect(invalidPayloadResult.error?.code).toBe('INVALID_INPUT')
+    expect(logWarn).toHaveBeenCalled()
 
     const invalidMessageResult = handler?.({}, { scope: 1, message: '' }) as { ok: boolean; error?: { code: string } }
     expect(invalidMessageResult.ok).toBe(false)
@@ -88,5 +92,6 @@ describe('registerAppIpc', () => {
     const result = handler?.({}, { hasUnsavedSettings: 'yes' }) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('INVALID_INPUT')
+    expect(logWarn).toHaveBeenCalled()
   })
 })

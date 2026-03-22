@@ -21,7 +21,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error(`Failed to render section: ${this.props.title}`, error, errorInfo)
     try {
       void window.systemScope.logRendererError(
         'error-boundary',
@@ -34,11 +33,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           },
           componentStack: errorInfo.componentStack
         }
-      ).catch((logError) => {
-        console.error(`Failed to log renderer error: ${this.props.title}`, logError)
-      })
-    } catch (logError) {
-      console.error(`Failed to log renderer error: ${this.props.title}`, logError)
+      ).catch(() => undefined)
+    } catch {
+      // Ignore logging failures to avoid recursive renderer errors.
     }
   }
 

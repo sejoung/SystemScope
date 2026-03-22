@@ -7,11 +7,10 @@ import { startSnapshotScheduler, stopSnapshotScheduler } from '../services/growt
 import { ensureSnapshotDir } from '../services/snapshotStore'
 import { getSettings } from '../store/settingsStore'
 import { createTray, destroyTray } from './tray'
-
-log.transports.file.level = 'info'
-log.transports.console.level = 'debug'
+import { initializeLogging } from '../services/logging'
 
 app.whenReady().then(() => {
+  initializeLogging()
   initializeRuntimeSettings()
   ensureSnapshotDir()
   registerAllIpc()

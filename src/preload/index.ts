@@ -75,6 +75,7 @@ const api = {
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setSettings: (settings: Record<string, unknown>) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, settings),
   getDataPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DATA_PATH),
+  getLogPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_LOG_PATH),
 
   // Dialog
   selectFolder: () => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SELECT_FOLDER),

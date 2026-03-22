@@ -11,13 +11,16 @@ export function registerAlertIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.ALERT_DISMISS, (_event, alertId: string) => {
     if (!alertId || typeof alertId !== 'string') {
+      log.warn('Alert dismiss rejected due to invalid input', { alertId })
       return failure('INVALID_INPUT', '유효하지 않은 알림 ID입니다.')
     }
     try {
       const dismissed = dismissAlert(alertId)
       if (!dismissed) {
+        log.warn('Alert dismiss failed because alert was not found', { alertId })
         return failure('UNKNOWN_ERROR', '알림을 찾을 수 없습니다.')
       }
+      log.info('Alert dismissed', { alertId })
       return success(true)
     } catch (err) {
       log.error('Failed to dismiss alert', err)

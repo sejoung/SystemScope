@@ -54,15 +54,18 @@ export function registerProcessIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.PROCESS_KILL, async (_event, request: ProcessKillRequest) => {
     if (!request || typeof request !== 'object' || !Number.isInteger(request.pid) || request.pid < 1) {
+      log.warn('Process kill rejected due to invalid PID', { request })
       return failure('INVALID_INPUT', '유효하지 않은 PID입니다.')
     }
 
     try {
       const target = await getProcessByPid(request.pid)
       if (!target) {
+        log.warn('Process kill failed because target was not found', { pid: request.pid })
         return failure('UNKNOWN_ERROR', '프로세스를 찾을 수 없습니다.')
       }
       if (isProtectedProcess(target)) {
+        log.warn('Process kill blocked for protected target', { pid: target.pid, name: target.name })
         return failure('PERMISSION_DENIED', '앱 자신이나 보호된 프로세스는 종료할 수 없습니다.')
       }
 
@@ -87,6 +90,7 @@ export function registerProcessIpc(): void {
       })
 
       if (confirm.response === 0) {
+        log.info('Process kill cancelled by user', { pid: target.pid, name: target.name })
         const result: ProcessKillResult = {
           pid: target.pid,
           name: target.name,
@@ -98,10 +102,12 @@ export function registerProcessIpc(): void {
 
       const confirmedTarget = await getProcessByPid(request.pid)
       if (!confirmedTarget || confirmedTarget.name !== target.name || confirmedTarget.command !== target.command) {
+        log.warn('Process kill aborted because target changed before termination', { pid: request.pid })
         return failure('UNKNOWN_ERROR', '프로세스 상태가 변경되어 종료를 중단했습니다.')
       }
 
       process.kill(request.pid, 'SIGTERM')
+      log.info('Process kill signal sent', { pid: confirmedTarget.pid, name: confirmedTarget.name })
 
       const result: ProcessKillResult = {
         pid: confirmedTarget.pid,

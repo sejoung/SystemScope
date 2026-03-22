@@ -66,6 +66,7 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.SETTINGS_GET).toBeDefined()
     expect(IPC_CHANNELS.SETTINGS_SET).toBeDefined()
     expect(IPC_CHANNELS.SETTINGS_GET_DATA_PATH).toBeDefined()
+    expect(IPC_CHANNELS.SETTINGS_GET_LOG_PATH).toBeDefined()
   })
 
   it('should contain all dialog and shell channels', () => {

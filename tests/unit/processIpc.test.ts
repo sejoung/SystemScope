@@ -3,6 +3,8 @@ import { IPC_CHANNELS } from '../../src/shared/contracts/channels'
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>())
 const logError = vi.hoisted(() => vi.fn())
+const logWarn = vi.hoisted(() => vi.fn())
+const logInfo = vi.hoisted(() => vi.fn())
 const getNetworkPorts = vi.hoisted(() => vi.fn())
 const getProcessByPid = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
@@ -31,7 +33,9 @@ vi.mock('electron', () => ({
 
 vi.mock('electron-log', () => ({
   default: {
-    error: logError
+    error: logError,
+    warn: logWarn,
+    info: logInfo
   }
 }))
 
@@ -48,6 +52,8 @@ describe('registerProcessIpc', () => {
     vi.resetModules()
     handlers.clear()
     logError.mockReset()
+    logWarn.mockReset()
+    logInfo.mockReset()
     getNetworkPorts.mockReset()
     getProcessByPid.mockReset()
     showMessageBox.mockReset()
@@ -111,6 +117,7 @@ describe('registerProcessIpc', () => {
     expect(result.data).toEqual({ pid: 4321, name: 'node', killed: true, cancelled: false })
     expect(showMessageBox).toHaveBeenCalled()
     expect(killSpy).toHaveBeenCalledWith(4321, 'SIGTERM')
+    expect(logInfo).toHaveBeenCalled()
     killSpy.mockRestore()
   })
 
@@ -129,6 +136,7 @@ describe('registerProcessIpc', () => {
     expect(result.ok).toBe(true)
     expect(result.data).toEqual({ pid: 4321, name: 'node', killed: false, cancelled: true })
     expect(killSpy).not.toHaveBeenCalled()
+    expect(logInfo).toHaveBeenCalled()
     killSpy.mockRestore()
   })
 
@@ -153,6 +161,7 @@ describe('registerProcessIpc', () => {
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('PERMISSION_DENIED')
     expect(killSpy).not.toHaveBeenCalled()
+    expect(logWarn).toHaveBeenCalled()
     killSpy.mockRestore()
   })
 })

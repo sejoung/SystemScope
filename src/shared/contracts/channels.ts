@@ -49,6 +49,7 @@ export const IPC_CHANNELS = {
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
   SETTINGS_GET_DATA_PATH: 'settings:getDataPath',
+  SETTINGS_GET_LOG_PATH: 'settings:getLogPath',
 
   // Dialog
   DIALOG_SELECT_FOLDER: 'dialog:selectFolder',

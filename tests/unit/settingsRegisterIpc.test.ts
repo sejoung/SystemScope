@@ -7,6 +7,8 @@ const getSettingsMock = vi.hoisted(() => vi.fn())
 const validatePartialSettingsMock = vi.hoisted(() => vi.fn())
 const restartSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
 const setThresholdsMock = vi.hoisted(() => vi.fn())
+const getLogDirMock = vi.hoisted(() => vi.fn())
+const getPathMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -17,7 +19,7 @@ vi.mock('electron', () => ({
   dialog: {},
   shell: {},
   app: {
-    getPath: vi.fn()
+    getPath: getPathMock
   },
   BrowserWindow: {}
 }))
@@ -39,6 +41,10 @@ vi.mock('../../src/main/services/alertManager', () => ({
   setThresholds: setThresholdsMock
 }))
 
+vi.mock('../../src/main/services/logging', () => ({
+  getLogDir: getLogDirMock
+}))
+
 describe('registerSettingsIpc', () => {
   beforeEach(() => {
     handlers.clear()
@@ -47,6 +53,8 @@ describe('registerSettingsIpc', () => {
     validatePartialSettingsMock.mockReset()
     restartSnapshotSchedulerMock.mockReset()
     setThresholdsMock.mockReset()
+    getLogDirMock.mockReset()
+    getPathMock.mockReset()
   })
 
   it('should apply thresholds to runtime alert state when saving settings', async () => {
@@ -88,5 +96,18 @@ describe('registerSettingsIpc', () => {
     expect(setThresholdsMock).toHaveBeenCalledWith(payload.thresholds)
     expect(restartSnapshotSchedulerMock).toHaveBeenCalledWith(30 * 60 * 1000)
     expect(result.ok).toBe(true)
+  })
+
+  it('should expose the log directory path through settings:getLogPath', async () => {
+    getLogDirMock.mockReturnValue('/tmp/systemscope/logs')
+
+    const { registerSettingsIpc } = await import('../../src/main/ipc/settings.ipc')
+    registerSettingsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.SETTINGS_GET_LOG_PATH)
+    expect(handler).toBeTypeOf('function')
+
+    const result = handler?.({}, undefined) as { ok: boolean; data?: string }
+    expect(result).toEqual({ ok: true, data: '/tmp/systemscope/logs' })
   })
 })

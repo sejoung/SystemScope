@@ -9,6 +9,7 @@ import { restartSnapshotScheduler } from '../services/growthAnalyzer'
 import { setThresholds } from '../services/alertManager'
 import { didShellOpenPathFail, isPathInsideParent } from './settingsPathUtils'
 import log from 'electron-log'
+import { getLogDir } from '../services/logging'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => {
@@ -40,6 +41,10 @@ export function registerSettingsIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DATA_PATH, () => {
     return success(app.getPath('userData'))
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_LOG_PATH, () => {
+    return success(getLogDir())
   })
 
   ipcMain.handle(IPC_CHANNELS.DIALOG_SELECT_FOLDER, async () => {

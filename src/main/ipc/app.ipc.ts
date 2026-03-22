@@ -9,12 +9,14 @@ export function registerAppIpc(): void {
     IPC_CHANNELS.APP_LOG_RENDERER_ERROR,
     (_event, payload: { scope?: unknown; message?: unknown; details?: unknown }) => {
       if (!payload || typeof payload !== 'object') {
+        log.warn('Renderer log rejected due to invalid payload shape')
         return failure('INVALID_INPUT', '유효하지 않은 로그 payload입니다.')
       }
 
       const scope = typeof payload.scope === 'string' ? payload.scope : 'renderer'
       const message = typeof payload.message === 'string' ? payload.message : null
       if (!message) {
+        log.warn('Renderer log rejected due to invalid message', { scope })
         return failure('INVALID_INPUT', '유효하지 않은 로그 메시지입니다.')
       }
 
@@ -25,6 +27,7 @@ export function registerAppIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, (_event, payload: { hasUnsavedSettings?: unknown }) => {
     if (!payload || typeof payload !== 'object' || typeof payload.hasUnsavedSettings !== 'boolean') {
+      log.warn('Unsaved settings state rejected due to invalid payload', { payload })
       return failure('INVALID_INPUT', '유효하지 않은 unsaved settings payload입니다.')
     }
 

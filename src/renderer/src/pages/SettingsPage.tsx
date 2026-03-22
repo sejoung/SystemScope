@@ -15,6 +15,7 @@ export function SettingsPage() {
   const [localTheme, setLocalTheme] = useState<'dark' | 'light'>(theme)
   const [saved, setSaved] = useState(false)
   const [dataPath, setDataPath] = useState<string | null>(null)
+  const [logPath, setLogPath] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasEditedRef = useRef(false)
@@ -55,6 +56,9 @@ export function SettingsPage() {
     })
     window.systemScope.getDataPath().then((res) => {
       if (res.ok && res.data) setDataPath(res.data as string)
+    })
+    window.systemScope.getLogPath().then((res) => {
+      if (res.ok && res.data) setLogPath(res.data as string)
     })
 
     return () => {
@@ -120,6 +124,14 @@ export function SettingsPage() {
     if (!isNaN(num) && num >= 0 && num <= 100) {
       hasEditedRef.current = true
       setLocal({ ...local, [key]: num })
+    }
+  }
+
+  const handleOpenPath = async (targetPath: string | null, errorMessage: string) => {
+    if (!targetPath) return
+    const res = await window.systemScope.openPath(targetPath)
+    if (!res.ok) {
+      showToast(res.error?.message ?? errorMessage)
     }
   }
 
@@ -270,7 +282,7 @@ export function SettingsPage() {
                   {dataPath}
                 </span>
                 <button
-                  onClick={() => window.systemScope.openPath(dataPath)}
+                  onClick={() => void handleOpenPath(dataPath, '앱 데이터 폴더를 열지 못했습니다.')}
                   style={btnStyle}
                 >
                   Open
@@ -281,6 +293,41 @@ export function SettingsPage() {
               <div>config.json — 알림 임계치, 테마 설정</div>
               <div>window-state.json — 창 크기/위치</div>
               <div>snapshots/growth.json — 폴더 크기 스냅샷 (Growth View용)</div>
+            </div>
+          </div>
+        </Accordion>
+
+        <Accordion title="Logs" defaultOpen>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              앱 로그는 날짜별 파일로 저장되며 최근 10일치만 유지됩니다.
+            </div>
+            {logPath && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 14px',
+                background: 'var(--bg-primary)',
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--border)'
+              }}>
+                <span style={{
+                  flex: 1, fontSize: '13px', fontFamily: 'monospace',
+                  color: 'var(--text-primary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                }}>
+                  {logPath}
+                </span>
+                <button
+                  onClick={() => void handleOpenPath(logPath, '로그 폴더를 열지 못했습니다.')}
+                  style={btnStyle}
+                >
+                  Open Logs
+                </button>
+              </div>
+            )}
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+              <div>파일명 형식 — systemscope-YYYY-MM-DD.log</div>
+              <div>보관 기간 — 최근 10일</div>
             </div>
           </div>
         </Accordion>

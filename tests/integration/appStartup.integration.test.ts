@@ -13,6 +13,7 @@ const destroyTrayMock = vi.hoisted(() => vi.fn())
 const createMainWindowMock = vi.hoisted(() => vi.fn())
 const setForceQuitMock = vi.hoisted(() => vi.fn())
 const cleanupSystemIpcMock = vi.hoisted(() => vi.fn())
+const initializeLoggingMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   app: {
@@ -28,6 +29,10 @@ vi.mock('electron', () => ({
     on: (event: string, handler: (...args: unknown[]) => void) => {
       appEventHandlers.set(event, handler)
     },
+    getPath: vi.fn((name: string) => {
+      if (name === 'userData') return '/tmp/systemscope-test'
+      return '/tmp'
+    }),
     quit: vi.fn()
   },
   BrowserWindow: {
@@ -67,6 +72,10 @@ vi.mock('../../src/main/app/tray', () => ({
   destroyTray: destroyTrayMock
 }))
 
+vi.mock('../../src/main/services/logging', () => ({
+  initializeLogging: initializeLoggingMock
+}))
+
 describe('app startup integration', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -83,6 +92,7 @@ describe('app startup integration', () => {
     createMainWindowMock.mockReset()
     setForceQuitMock.mockReset()
     cleanupSystemIpcMock.mockReset()
+    initializeLoggingMock.mockReset()
     getSettingsMock.mockReturnValue({
       thresholds: {
         diskWarning: 80,
@@ -104,6 +114,7 @@ describe('app startup integration', () => {
 
     whenReadyCallbacks[0]()
 
+    expect(initializeLoggingMock).toHaveBeenCalledTimes(1)
     expect(initializeRuntimeSettingsMock).toHaveBeenCalledTimes(1)
     expect(ensureSnapshotDirMock).toHaveBeenCalledTimes(1)
     expect(registerAllIpcMock).toHaveBeenCalledTimes(1)
