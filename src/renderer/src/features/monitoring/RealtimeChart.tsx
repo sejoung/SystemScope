@@ -57,7 +57,10 @@ export function RealtimeChart() {
                 color: 'var(--text-primary)',
                 fontSize: '12px'
               }}
-              formatter={(val: number) => `${val.toFixed(1)}%`}
+              formatter={(value) => {
+                const numericValue = typeof value === 'number' ? value : 0
+                return `${numericValue.toFixed(1)}%`
+              }}
             />
             <Legend wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)' }} />
             <Line type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name="CPU" />

@@ -146,7 +146,10 @@ export function GrowthView() {
                       color: 'var(--text-primary)',
                       fontSize: '12px'
                     }}
-                    formatter={(val: number) => [`+${formatBytes(val)}`, 'Added']}
+                    formatter={(value) => {
+                      const numericValue = typeof value === 'number' ? value : 0
+                      return [`+${formatBytes(numericValue)}`, 'Added']
+                    }}
                   />
                   <Bar dataKey="addedSize" radius={[0, 4, 4, 0]}>
                     {top5.map((_, i) => (
