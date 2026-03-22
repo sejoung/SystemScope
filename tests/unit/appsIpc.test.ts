@@ -6,6 +6,8 @@ const showMessageBox = vi.hoisted(() => vi.fn())
 const listInstalledAppsMock = vi.hoisted(() => vi.fn())
 const getInstalledAppByIdMock = vi.hoisted(() => vi.fn())
 const getInstalledAppRelatedDataMock = vi.hoisted(() => vi.fn())
+const listLeftoverAppDataMock = vi.hoisted(() => vi.fn())
+const removeLeftoverAppDataMock = vi.hoisted(() => vi.fn())
 const openInstalledAppLocationMock = vi.hoisted(() => vi.fn())
 const openSystemUninstallSettingsMock = vi.hoisted(() => vi.fn())
 const uninstallInstalledAppMock = vi.hoisted(() => vi.fn())
@@ -32,6 +34,8 @@ vi.mock('../../src/main/services/installedApps', () => ({
   listInstalledApps: listInstalledAppsMock,
   getInstalledAppById: getInstalledAppByIdMock,
   getInstalledAppRelatedData: getInstalledAppRelatedDataMock,
+  listLeftoverAppData: listLeftoverAppDataMock,
+  removeLeftoverAppData: removeLeftoverAppDataMock,
   openInstalledAppLocation: openInstalledAppLocationMock,
   openSystemUninstallSettings: openSystemUninstallSettingsMock,
   uninstallInstalledApp: uninstallInstalledAppMock
@@ -51,6 +55,8 @@ describe('registerAppsIpc', () => {
     listInstalledAppsMock.mockReset()
     getInstalledAppByIdMock.mockReset()
     getInstalledAppRelatedDataMock.mockReset()
+    listLeftoverAppDataMock.mockReset()
+    removeLeftoverAppDataMock.mockReset()
     openInstalledAppLocationMock.mockReset()
     openSystemUninstallSettingsMock.mockReset()
     uninstallInstalledAppMock.mockReset()
@@ -97,6 +103,30 @@ describe('registerAppsIpc', () => {
 
     expect(result.ok).toBe(true)
     expect(result.data).toHaveLength(1)
+  })
+
+  it('should return leftover app data', async () => {
+    listLeftoverAppDataMock.mockResolvedValue([{ id: 'left-1', appName: 'ToF', label: 'Caches', path: '/tmp/ToF', source: 'mac:caches', platform: 'mac' }])
+
+    const { registerAppsIpc } = await import('../../src/main/ipc/apps.ipc')
+    registerAppsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA)
+    const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown[] }
+
+    expect(result.ok).toBe(true)
+    expect(result.data).toHaveLength(1)
+  })
+
+  it('should reject invalid leftover removal requests', async () => {
+    const { registerAppsIpc } = await import('../../src/main/ipc/apps.ipc')
+    registerAppsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA)
+    const result = await handler?.({}, ['ok', '']) as { ok: boolean; error?: { code: string } }
+
+    expect(result.ok).toBe(false)
+    expect(result.error?.code).toBe('INVALID_INPUT')
   })
 
   it('should cancel uninstall when user aborts', async () => {

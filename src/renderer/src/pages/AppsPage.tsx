@@ -1,39 +1,65 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
-import type { AppRelatedDataItem, AppRemovalResult, InstalledApp } from '@shared/types'
+import { Fragment, startTransition, useEffect, useMemo, useState } from 'react'
+import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, InstalledApp } from '@shared/types'
 import { useToast } from '../components/Toast'
 
 type PlatformFilter = 'all' | 'mac' | 'windows'
+type AppsTab = 'installed' | 'leftover'
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show)
+  const [activeTab, setActiveTab] = useState<AppsTab>('installed')
   const [apps, setApps] = useState<InstalledApp[]>([])
+  const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [draftSearch, setDraftSearch] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
   const [busyAppId, setBusyAppId] = useState<string | null>(null)
+  const [leftoverBusy, setLeftoverBusy] = useState(false)
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null)
   const [relatedLoadingAppId, setRelatedLoadingAppId] = useState<string | null>(null)
   const [relatedDataByAppId, setRelatedDataByAppId] = useState<Record<string, AppRelatedDataItem[]>>({})
   const [selectedRelatedPathsByAppId, setSelectedRelatedPathsByAppId] = useState<Record<string, string[]>>({})
+  const [selectedLeftoverPaths, setSelectedLeftoverPaths] = useState<string[]>([])
+  const [visibleLeftoverCount, setVisibleLeftoverCount] = useState(120)
   const isWindows = navigator.userAgent.includes('Windows')
 
   const loadApps = async () => {
-    setLoading(true)
     const res = await window.systemScope.listInstalledApps()
     if (res.ok && res.data) {
       setApps(res.data as InstalledApp[])
     } else {
       showToast(res.error?.message ?? '설치 앱 목록을 불러오지 못했습니다.')
     }
+  }
+
+  const loadLeftovers = async () => {
+    const res = await window.systemScope.listLeftoverAppData()
+    if (res.ok && res.data) {
+      const items = res.data as AppLeftoverDataItem[]
+      setLeftoverItems(items)
+      setSelectedLeftoverPaths((current) => current.filter((item) => items.some((entry) => entry.path === item)))
+    } else {
+      showToast(res.error?.message ?? '잔여 앱 데이터를 불러오지 못했습니다.')
+    }
+  }
+
+  const refreshCurrentTab = async () => {
+    setLoading(true)
+    if (activeTab === 'installed') {
+      await loadApps()
+    } else {
+      await loadLeftovers()
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    void loadApps()
-  }, [])
+    void refreshCurrentTab()
+  }, [activeTab])
 
   const filteredApps = useMemo(() => {
-    const normalizedQuery = search.trim().toLowerCase()
+    const normalizedQuery = appliedSearch.trim().toLowerCase()
     return apps.filter((app) => {
       if (platformFilter !== 'all' && app.platform !== platformFilter) return false
       if (!normalizedQuery) return true
@@ -44,7 +70,42 @@ export function AppsPage() {
         app.installLocation
       ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
     })
-  }, [apps, platformFilter, search])
+  }, [appliedSearch, apps, platformFilter])
+
+  const filteredLeftovers = useMemo(() => {
+    const normalizedQuery = appliedSearch.trim().toLowerCase()
+    return leftoverItems.filter((item) => {
+      if (platformFilter !== 'all' && item.platform !== platformFilter) return false
+      if (!normalizedQuery) return true
+      return [item.appName, item.label, item.path].some((value) => value.toLowerCase().includes(normalizedQuery))
+    })
+  }, [appliedSearch, leftoverItems, platformFilter])
+  const visibleLeftovers = useMemo(
+    () => filteredLeftovers.slice(0, visibleLeftoverCount),
+    [filteredLeftovers, visibleLeftoverCount]
+  )
+  const selectedFilteredLeftoverCount = useMemo(
+    () => filteredLeftovers.filter((item) => selectedLeftoverPaths.includes(item.path)).length,
+    [filteredLeftovers, selectedLeftoverPaths]
+  )
+  const allFilteredLeftoversChecked = filteredLeftovers.length > 0 && selectedFilteredLeftoverCount === filteredLeftovers.length
+
+  useEffect(() => {
+    setVisibleLeftoverCount(120)
+  }, [activeTab, appliedSearch, platformFilter])
+
+  const applySearch = () => {
+    startTransition(() => {
+      setAppliedSearch(draftSearch)
+    })
+  }
+
+  const clearSearch = () => {
+    setDraftSearch('')
+    startTransition(() => {
+      setAppliedSearch('')
+    })
+  }
 
   const handleUninstall = async (app: InstalledApp) => {
     setBusyAppId(app.id)
@@ -63,7 +124,44 @@ export function AppsPage() {
     if (result.cancelled) return
 
     showToast(result.message ?? (result.completed ? '앱을 제거했습니다.' : '제거 프로그램을 시작했습니다.'))
-    void loadApps()
+    await loadApps()
+    await loadLeftovers()
+  }
+
+  const handleToggleLeftoverPath = (targetPath: string) => {
+    setSelectedLeftoverPaths((current) => current.includes(targetPath)
+      ? current.filter((item) => item !== targetPath)
+      : [...current, targetPath]
+    )
+  }
+
+  const handleRemoveSelectedLeftovers = async () => {
+    if (selectedLeftoverPaths.length === 0) return
+
+    setLeftoverBusy(true)
+    const res = await window.systemScope.removeLeftoverAppData(selectedLeftoverPaths)
+    setLeftoverBusy(false)
+
+    if (!res.ok || !res.data) {
+      showToast(res.error?.message ?? '잔여 앱 데이터를 이동하지 못했습니다.')
+      return
+    }
+
+    const result = res.data as { deletedPaths: string[]; failedPaths: string[] }
+    setSelectedLeftoverPaths([])
+    showToast(
+      result.failedPaths.length === 0
+        ? `잔여 데이터 ${result.deletedPaths.length}개를 휴지통으로 이동했습니다.`
+        : `잔여 데이터 ${result.deletedPaths.length}개 이동, ${result.failedPaths.length}개 실패`
+    )
+    await loadLeftovers()
+  }
+
+  const handleOpenLeftoverPath = async (targetPath: string) => {
+    const res = await window.systemScope.openPath(targetPath)
+    if (!res.ok) {
+      showToast(res.error?.message ?? '경로를 열지 못했습니다.')
+    }
   }
 
   const handleToggleRelatedData = async (app: InstalledApp) => {
@@ -123,20 +221,47 @@ export function AppsPage() {
 
   return (
     <div>
+      <div style={stickyHeaderStyle}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Apps</h2>
-        <button onClick={() => void loadApps()} style={btnStyle}>Refresh</button>
+        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
+          <PageTab active={activeTab === 'installed'} onClick={() => setActiveTab('installed')}>Installed</PageTab>
+          <PageTab active={activeTab === 'leftover'} onClick={() => setActiveTab('leftover')}>Leftover Data</PageTab>
+        </div>
+        <button onClick={() => void refreshCurrentTab()} style={btnStyle}>Refresh</button>
         {isWindows && (
           <button onClick={() => void handleOpenSystemSettings()} style={{ ...btnStyle, background: 'var(--bg-card-hover)', color: 'var(--text-primary)' }}>
             Open System Settings
           </button>
         )}
         <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={draftSearch}
+          onChange={(e) => {
+            const nextValue = e.target.value
+            setDraftSearch(nextValue)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              applySearch()
+            }
+          }}
           placeholder="Search apps"
           style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
         />
+        <button onClick={applySearch} style={btnStyle}>Search</button>
+        <button
+          onClick={clearSearch}
+          disabled={!draftSearch && !appliedSearch}
+          style={{
+            ...btnStyle,
+            background: 'var(--bg-card-hover)',
+            color: 'var(--text-primary)',
+            opacity: !draftSearch && !appliedSearch ? 0.55 : 1,
+            cursor: !draftSearch && !appliedSearch ? 'default' : 'pointer'
+          }}
+        >
+          Clear
+        </button>
         <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
           <option value="all">All Platforms</option>
           <option value="mac">macOS</option>
@@ -151,131 +276,269 @@ export function AppsPage() {
         border: '1px solid var(--border)'
       }}>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-          macOS는 앱 번들을 휴지통으로 이동하고, Windows는 등록된 제거 프로그램을 실행합니다. 펼친 항목에서 관련 데이터도 함께 선택할 수 있습니다.
+          {activeTab === 'installed'
+            ? 'macOS는 앱 번들을 휴지통으로 이동하고, Windows는 등록된 제거 프로그램을 실행합니다. 펼친 항목에서 관련 데이터도 함께 선택할 수 있습니다.'
+            : '앱 본체가 없어도 남아 있는 관련 데이터 후보를 따로 정리할 수 있습니다.'}
         </span>
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          {filteredApps.length} apps
+          {activeTab === 'installed' ? `${filteredApps.length} apps` : `${filteredLeftovers.length} items`}
         </span>
+        {appliedSearch && (
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Search: <strong style={{ color: 'var(--text-primary)' }}>{appliedSearch}</strong>
+          </span>
+        )}
+      </div>
       </div>
 
       {loading ? (
-        <div style={emptyStyle}>설치 앱 목록을 불러오는 중입니다.</div>
-      ) : filteredApps.length === 0 ? (
-        <div style={emptyStyle}>표시할 설치 앱이 없습니다.</div>
-      ) : (
-        <div style={{ maxHeight: 'calc(100vh - 220px)', overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th style={thStyle}>Name</th>
-                <th style={thStyle}>Version</th>
-                <th style={thStyle}>Publisher</th>
-                <th style={thStyle}>Platform</th>
-                <th style={thStyle}>Location</th>
-                <th style={{ ...thStyle, width: '210px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredApps.map((entry) => (
-                <Fragment key={entry.id}>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={tdStyle}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{entry.name}</span>
-                        {entry.protected && (
-                          <span style={protectedBadgeStyle}>Protected</span>
-                        )}
-                      </div>
-                      {entry.protectedReason && (
-                        <div style={{ marginTop: '4px', color: 'var(--text-muted)' }}>{entry.protectedReason}</div>
-                      )}
-                    </td>
-                    <td style={tdStyle}>{entry.version ?? '-'}</td>
-                    <td style={tdStyle}>{entry.publisher ?? '-'}</td>
-                    <td style={tdStyle}>{entry.platform === 'mac' ? 'macOS' : 'Windows'}</td>
-                    <td style={{ ...tdStyle, maxWidth: '340px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        {entry.installLocation ?? entry.launchPath ?? '-'}
-                      </span>
-                    </td>
-                    <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => void handleToggleRelatedData(entry)} style={openBtn}>
-                        {expandedAppId === entry.id ? 'Hide Data' : 'Related Data'}
-                      </button>
-                      <button onClick={() => void handleOpenLocation(entry.id)} style={openBtn}>
-                        Open
-                      </button>
-                      <button
-                        onClick={() => void handleUninstall(entry)}
-                        disabled={entry.protected || busyAppId === entry.id}
-                        style={{
-                          ...actionBtnStyle,
-                          opacity: entry.protected || busyAppId === entry.id ? 0.55 : 1,
-                          cursor: entry.protected || busyAppId === entry.id ? 'default' : 'pointer'
-                        }}
-                      >
-                        {busyAppId === entry.id ? 'Working...' : entry.platform === 'mac' ? 'Move to Trash' : 'Uninstall'}
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedAppId === entry.id && (
+        <div style={emptyStyle}>{activeTab === 'installed' ? '설치 앱 목록을 불러오는 중입니다.' : '잔여 앱 데이터를 불러오는 중입니다.'}</div>
+      ) : activeTab === 'installed' ? (
+        filteredApps.length === 0 ? (
+          <div style={emptyStyle}>표시할 설치 앱이 없습니다.</div>
+        ) : (
+          <div>
+            <div style={infoBarStyle}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {filteredApps.length} installed apps
+              </span>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Version</th>
+                  <th style={thStyle}>Publisher</th>
+                  <th style={thStyle}>Platform</th>
+                  <th style={thStyle}>Location</th>
+                  <th style={{ ...thStyle, width: '210px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredApps.map((entry) => (
+                  <Fragment key={entry.id}>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td colSpan={6} style={{ padding: '0 6px 12px 6px' }}>
-                        <div style={relatedPanelStyle}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
-                            <div>
-                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>Related Data</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                                선택한 경로만 앱 제거와 함께 휴지통으로 이동합니다.
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                              {(selectedRelatedPathsByAppId[entry.id] ?? []).length} selected
-                            </div>
-                          </div>
-
-                          {relatedLoadingAppId === entry.id ? (
-                            <div style={relatedEmptyStyle}>관련 데이터 후보를 찾는 중입니다.</div>
-                          ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
-                            <div style={relatedEmptyStyle}>감지된 관련 데이터 경로가 없습니다.</div>
-                          ) : (
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                              {(relatedDataByAppId[entry.id] ?? []).map((item) => {
-                                const checked = (selectedRelatedPathsByAppId[entry.id] ?? []).includes(item.path)
-                                return (
-                                  <label key={item.id} style={relatedItemStyle}>
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      onChange={() => handleToggleRelatedPath(entry.id, item.path)}
-                                    />
-                                    <div style={{ display: 'grid', gap: '3px' }}>
-                                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</span>
-                                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.path}</span>
-                                    </div>
-                                  </label>
-                                )
-                              })}
-                            </div>
+                      <td style={tdStyle}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{entry.name}</span>
+                          {entry.protected && (
+                            <span style={protectedBadgeStyle}>Protected</span>
                           )}
                         </div>
+                        {entry.protectedReason && (
+                          <div style={{ marginTop: '4px', color: 'var(--text-muted)' }}>{entry.protectedReason}</div>
+                        )}
+                      </td>
+                      <td style={tdStyle}>{entry.version ?? '-'}</td>
+                      <td style={tdStyle}>
+                        {entry.publisher
+                          ? <span style={{ color: 'var(--text-secondary)' }}>{entry.publisher}</span>
+                          : <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                      </td>
+                      <td style={tdStyle}>
+                        <Badge text={entry.platform === 'mac' ? 'macOS' : 'Windows'} color={entry.platform === 'mac' ? 'var(--accent-cyan)' : 'var(--accent-yellow)'} />
+                      </td>
+                      <td style={{ ...tdStyle, maxWidth: '340px' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          {entry.installLocation ?? entry.launchPath ?? '-'}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => void handleToggleRelatedData(entry)} style={openBtn}>
+                          {expandedAppId === entry.id ? 'Hide Data' : 'Related Data'}
+                        </button>
+                        <button onClick={() => void handleOpenLocation(entry.id)} style={openBtn}>
+                          Open
+                        </button>
+                        <button
+                          onClick={() => void handleUninstall(entry)}
+                          disabled={entry.protected || busyAppId === entry.id}
+                          style={{
+                            ...actionBtnStyle,
+                            opacity: entry.protected || busyAppId === entry.id ? 0.55 : 1,
+                            cursor: entry.protected || busyAppId === entry.id ? 'default' : 'pointer'
+                          }}
+                        >
+                          {busyAppId === entry.id ? 'Working...' : entry.platform === 'mac' ? 'Move to Trash' : 'Uninstall'}
+                        </button>
                       </td>
                     </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {expandedAppId === entry.id && (
+                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td colSpan={6} style={{ padding: '0 6px 12px 6px' }}>
+                          <div style={relatedPanelStyle}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
+                              <div>
+                                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>Related Data</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
+                                  선택한 경로만 앱 제거와 함께 휴지통으로 이동합니다.
+                                </div>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                {(selectedRelatedPathsByAppId[entry.id] ?? []).length} selected
+                              </div>
+                            </div>
+
+                            {relatedLoadingAppId === entry.id ? (
+                              <div style={relatedEmptyStyle}>관련 데이터 후보를 찾는 중입니다.</div>
+                            ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
+                              <div style={relatedEmptyStyle}>감지된 관련 데이터 경로가 없습니다.</div>
+                            ) : (
+                              <div style={{ display: 'grid', gap: '8px' }}>
+                                {(relatedDataByAppId[entry.id] ?? []).map((item) => {
+                                  const checked = (selectedRelatedPathsByAppId[entry.id] ?? []).includes(item.path)
+                                  return (
+                                    <label key={item.id} style={relatedItemStyle}>
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => handleToggleRelatedPath(entry.id, item.path)}
+                                      />
+                                      <div style={{ display: 'grid', gap: '3px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</span>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.path}</span>
+                                      </div>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      ) : (
+        filteredLeftovers.length === 0 ? (
+          <div style={emptyStyle}>표시할 잔여 앱 데이터가 없습니다.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={infoBarStyle}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 선택한 항목만 휴지통으로 이동합니다.
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {selectedFilteredLeftoverCount} selected
+              </span>
+            </div>
+            <div style={bulkToggleRowStyle}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={allFilteredLeftoversChecked}
+                  disabled={filteredLeftovers.length === 0}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      setSelectedLeftoverPaths((current) => {
+                        const next = new Set(current)
+                        filteredLeftovers.forEach((item) => next.add(item.path))
+                        return [...next]
+                      })
+                    } else {
+                      setSelectedLeftoverPaths((current) => current.filter((path) => !filteredLeftovers.some((item) => item.path === path)))
+                    }
+                  }}
+                />
+                <span>{filteredLeftovers.length} leftover items</span>
+              </label>
+            </div>
+            <div style={{ display: 'grid', gap: '10px', paddingBottom: '84px' }}>
+              {visibleLeftovers.map((item) => {
+                const checked = selectedLeftoverPaths.includes(item.path)
+                return (
+                  <label key={item.id} style={leftoverCardStyle}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => handleToggleLeftoverPath(item.path)}
+                        style={{ marginTop: '3px' }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: 0, flex: '1 1 220px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                              {item.appName}
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                              <Badge text={item.platform === 'mac' ? 'macOS' : 'Windows'} color={item.platform === 'mac' ? 'var(--accent-cyan)' : 'var(--accent-yellow)'} />
+                              <Badge text={item.label} color="var(--accent-green)" />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault()
+                              void handleOpenLeftoverPath(item.path)
+                            }}
+                            style={{ ...openBtn, marginRight: 0 }}
+                          >
+                            Open
+                          </button>
+                        </div>
+                        <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                          {formatPathPreview(item.path)}
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                )
+              })}
+              {visibleLeftovers.length < filteredLeftovers.length && (
+                <button
+                  onClick={() => setVisibleLeftoverCount((current) => current + 120)}
+                  style={{ ...btnStyle, justifySelf: 'center' }}
+                >
+                  Show More ({filteredLeftovers.length - visibleLeftovers.length} left)
+                </button>
+              )}
+            </div>
+            <div style={stickyActionBarStyle}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {selectedFilteredLeftoverCount} selected
+              </div>
+              <button
+                onClick={() => void handleRemoveSelectedLeftovers()}
+                disabled={leftoverBusy || selectedLeftoverPaths.length === 0}
+                style={{
+                  ...actionBtnStyle,
+                  minWidth: '170px',
+                  opacity: leftoverBusy || selectedLeftoverPaths.length === 0 ? 0.55 : 1,
+                  cursor: leftoverBusy || selectedLeftoverPaths.length === 0 ? 'default' : 'pointer'
+                }}
+              >
+                {leftoverBusy ? 'Working...' : 'Move Selected to Trash'}
+              </button>
+            </div>
+          </div>
+        )
       )}
     </div>
   )
 }
 
+function formatPathPreview(targetPath: string): string {
+  if (targetPath.length <= 140) {
+    return targetPath
+  }
+
+  const head = targetPath.slice(0, 72)
+  const tail = targetPath.slice(-52)
+  return `${head} ... ${tail}`
+}
+
 const btnStyle: React.CSSProperties = {
-  padding: '6px 14px',
-  fontSize: '12px',
-  fontWeight: 600,
+  padding: '8px 16px',
+  fontSize: '13px',
+  fontWeight: 500,
   border: 'none',
   borderRadius: 'var(--radius)',
   background: 'var(--accent-blue)',
@@ -290,6 +553,16 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 'var(--radius)',
   background: 'var(--bg-primary)',
   color: 'var(--text-primary)'
+}
+
+const stickyHeaderStyle: React.CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 5,
+  paddingBottom: '8px',
+  marginBottom: '8px',
+  background: 'color-mix(in srgb, var(--bg-primary) 92%, transparent)',
+  backdropFilter: 'blur(10px)'
 }
 
 const thStyle: React.CSSProperties = {
@@ -369,6 +642,52 @@ const relatedEmptyStyle: React.CSSProperties = {
   borderRadius: '10px'
 }
 
+const infoBarStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10px',
+  marginBottom: '12px',
+  padding: '10px 14px',
+  background: 'var(--bg-card)',
+  borderRadius: 'var(--radius)',
+  border: '1px solid var(--border)',
+  flexWrap: 'wrap'
+}
+
+const bulkToggleRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  padding: '0 4px'
+}
+
+const leftoverCardStyle: React.CSSProperties = {
+  display: 'block',
+  padding: '14px',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: '12px',
+  cursor: 'pointer'
+}
+
+const stickyActionBarStyle: React.CSSProperties = {
+  position: 'sticky',
+  bottom: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  padding: '12px 14px',
+  background: 'color-mix(in srgb, var(--bg-card) 92%, transparent)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--border)',
+  borderRadius: '12px',
+  boxShadow: 'var(--shadow)',
+  flexWrap: 'wrap'
+}
+
 const emptyStyle: React.CSSProperties = {
   padding: '40px 20px',
   textAlign: 'center',
@@ -376,4 +695,42 @@ const emptyStyle: React.CSSProperties = {
   background: 'var(--bg-card)',
   borderRadius: 'var(--radius-lg)',
   border: '1px solid var(--border)'
+}
+
+function Badge({ text, color }: { text: string; color: string }) {
+  return (
+    <span style={{
+      fontSize: '10px',
+      fontWeight: 700,
+      padding: '2px 6px',
+      borderRadius: '999px',
+      background: `${color}20`,
+      color,
+      whiteSpace: 'nowrap'
+    }}>
+      {text}
+    </span>
+  )
+}
+
+function PageTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '6px 16px',
+        fontSize: '13px',
+        fontWeight: active ? 600 : 400,
+        border: 'none',
+        borderRadius: '6px',
+        background: active ? 'var(--accent-blue)' : 'transparent',
+        color: active ? 'var(--text-on-accent)' : 'var(--text-secondary)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center'
+      }}
+    >
+      {children}
+    </button>
+  )
 }

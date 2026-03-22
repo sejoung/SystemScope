@@ -6,7 +6,9 @@ import {
   getInstalledAppById,
   getInstalledAppRelatedData,
   listInstalledApps,
+  listLeftoverAppData,
   openInstalledAppLocation,
+  removeLeftoverAppData,
   openSystemUninstallSettings,
   uninstallInstalledApp
 } from '../services/installedApps'
@@ -56,6 +58,28 @@ export function registerAppsIpc(): void {
     } catch (error) {
       logError('apps-ipc', 'Failed to get related app data', { appId, error })
       return failure('UNKNOWN_ERROR', '관련 데이터 목록을 불러오지 못했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA, async () => {
+    try {
+      return success(await listLeftoverAppData())
+    } catch (error) {
+      logError('apps-ipc', 'Failed to list leftover app data', error)
+      return failure('UNKNOWN_ERROR', '잔여 앱 데이터를 불러오지 못했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, async (_event, paths: string[]) => {
+    if (!Array.isArray(paths) || paths.some((entry) => typeof entry !== 'string' || !entry)) {
+      return failure('INVALID_INPUT', '유효하지 않은 경로 목록입니다.')
+    }
+
+    try {
+      return success(await removeLeftoverAppData(paths))
+    } catch (error) {
+      logError('apps-ipc', 'Failed to remove leftover app data', { paths, error })
+      return failure('UNKNOWN_ERROR', '잔여 앱 데이터를 휴지통으로 이동하지 못했습니다.')
     }
   })
 

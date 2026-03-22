@@ -91,4 +91,12 @@ describe('installedApps helpers', () => {
     expect(candidates.map((item) => item.path)).toContain('C:\\Users\\Test\\AppData\\Local\\Programs\\Example App')
     expect(candidates.map((item) => item.path)).toContain('C:\\ProgramData\\Example App')
   })
+
+  it('should infer macOS leftover app names from plist and saved state names', async () => {
+    const { inferMacLeftoverAppName } = await import('../../src/main/services/installedApps')
+
+    expect(inferMacLeftoverAppName('com.example.tof.plist')).toBe('com.example.tof')
+    expect(inferMacLeftoverAppName('com.example.tof.savedState')).toBe('com.example.tof')
+    expect(inferMacLeftoverAppName('ToF')).toBe('ToF')
+  })
 })

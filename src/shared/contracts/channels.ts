@@ -39,6 +39,8 @@ export const IPC_CHANNELS = {
   // Installed Apps
   APPS_LIST_INSTALLED: 'apps:listInstalled',
   APPS_GET_RELATED_DATA: 'apps:getRelatedData',
+  APPS_LIST_LEFTOVER_DATA: 'apps:listLeftoverData',
+  APPS_REMOVE_LEFTOVER_DATA: 'apps:removeLeftoverData',
   APPS_UNINSTALL: 'apps:uninstall',
   APPS_OPEN_LOCATION: 'apps:openLocation',
   APPS_OPEN_SYSTEM_SETTINGS: 'apps:openSystemSettings',

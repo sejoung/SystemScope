@@ -24,6 +24,11 @@ export interface AppRelatedDataItem {
   source: string
 }
 
+export interface AppLeftoverDataItem extends AppRelatedDataItem {
+  appName: string
+  platform: InstalledAppPlatform
+}
+
 export interface AppUninstallRequest {
   appId: string
   relatedDataPaths?: string[]

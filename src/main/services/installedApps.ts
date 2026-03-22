@@ -4,11 +4,12 @@ import * as path from 'path'
 import { homedir, platform as getPlatform } from 'os'
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
-import type { AppRelatedDataItem, AppRemovalResult, AppUninstallRequest, InstalledApp } from '@shared/types'
+import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, AppUninstallRequest, InstalledApp } from '@shared/types'
 import { logDebug, logError, logInfo, logWarn } from './logging'
 
 const execFileAsync = promisify(execFile)
 const installedAppsCache = new Map<string, InstalledApp>()
+const leftoverAppDataCache = new Map<string, AppLeftoverDataItem>()
 
 export async function listInstalledApps(): Promise<InstalledApp[]> {
   const apps = getPlatform() === 'darwin'
@@ -36,6 +37,41 @@ export async function getInstalledAppRelatedData(appId: string): Promise<AppRela
   }
 
   return listRelatedDataForApp(target)
+}
+
+export async function listLeftoverAppData(): Promise<AppLeftoverDataItem[]> {
+  const installedApps = await listInstalledApps()
+  const leftovers = getPlatform() === 'darwin'
+    ? await listMacLeftoverAppData(installedApps)
+    : getPlatform() === 'win32'
+      ? await listWindowsLeftoverAppData(installedApps)
+      : []
+
+  leftoverAppDataCache.clear()
+  for (const item of leftovers) {
+    leftoverAppDataCache.set(item.path, item)
+  }
+
+  return leftovers.sort((a, b) => a.appName.localeCompare(b.appName) || a.path.localeCompare(b.path))
+}
+
+export async function removeLeftoverAppData(pathsToTrash: string[]): Promise<{ deletedPaths: string[]; failedPaths: string[] }> {
+  const uniquePaths = [...new Set(pathsToTrash)].filter((candidate) => leftoverAppDataCache.has(candidate))
+  const deletedPaths: string[] = []
+  const failedPaths: string[] = []
+
+  for (const targetPath of uniquePaths) {
+    try {
+      await trashPathWithFallback(targetPath, 'leftover')
+      leftoverAppDataCache.delete(targetPath)
+      deletedPaths.push(targetPath)
+    } catch (error) {
+      failedPaths.push(targetPath)
+      logWarn('apps', 'Failed to trash leftover app data', { targetPath, error })
+    }
+  }
+
+  return { deletedPaths, failedPaths }
 }
 
 export async function openInstalledAppLocation(appId: string): Promise<void> {
@@ -81,17 +117,10 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
       throw new Error('삭제할 앱 경로를 찾을 수 없습니다.')
     }
 
-    try {
-      await shell.trashItem(target.launchPath)
-    } catch (error) {
-      logInfo('apps', 'shell.trashItem failed for macOS app, trying Finder fallback', {
-        appId: request.appId,
-        name: target.name,
-        path: target.launchPath,
-        error
-      })
-      await moveMacAppToTrashWithFinder(target.launchPath)
-    }
+    await trashPathWithFallback(target.launchPath, 'mac-app', {
+      appId: request.appId,
+      name: target.name
+    })
     const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataPaths ?? [])
     installedAppsCache.delete(request.appId)
     logInfo('apps', 'Moved macOS app bundle to trash', {
@@ -213,10 +242,10 @@ async function listMacInstalledApps(): Promise<InstalledApp[]> {
         id: appPath,
         name: metadata.name,
         version: metadata.version,
-      publisher: metadata.bundleId,
-      bundleId: metadata.bundleId,
-      installLocation: root,
-      launchPath: appPath,
+        publisher: metadata.bundleId,
+        bundleId: metadata.bundleId,
+        installLocation: root,
+        launchPath: appPath,
         platform: 'mac',
         uninstallKind: 'trash_app',
         protected: protectedApp,
@@ -319,6 +348,29 @@ async function moveMacAppToTrashWithFinder(appPath: string): Promise<void> {
   await execFileAsync('osascript', ['-e', script, appPath])
 }
 
+async function trashPathWithFallback(
+  targetPath: string,
+  reason: 'mac-app' | 'related-data' | 'leftover',
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    await shell.trashItem(targetPath)
+  } catch (error) {
+    if (getPlatform() !== 'darwin') {
+      throw error
+    }
+
+    logInfo('apps', 'shell.trashItem failed on macOS, trying Finder fallback', {
+      reason,
+      path: targetPath,
+      ...metadata,
+      error
+    })
+
+    await moveMacAppToTrashWithFinder(targetPath)
+  }
+}
+
 async function readMacPlistValue(plistPath: string, key: string): Promise<string | undefined> {
   try {
     const { stdout } = await execFileAsync('defaults', ['read', plistPath, key])
@@ -363,7 +415,10 @@ async function trashRelatedDataForApp(
 
   for (const relatedPath of uniqueSelectedPaths) {
     try {
-      await shell.trashItem(relatedPath)
+      await trashPathWithFallback(relatedPath, 'related-data', {
+        appId: target.id,
+        name: target.name
+      })
       deletedPaths.push(relatedPath)
     } catch (error) {
       failedPaths.push(relatedPath)
@@ -449,6 +504,115 @@ function createRelatedDataItem(itemPath: string, label: string, source: string):
 }
 
 function dedupeRelatedDataItems(items: AppRelatedDataItem[]): AppRelatedDataItem[] {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    if (seen.has(item.path)) return false
+    seen.add(item.path)
+    return true
+  })
+}
+
+async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
+  const knownNames = new Set(installedApps.map((app) => app.name.toLowerCase()))
+  const knownBundleIds = new Set(installedApps.map((app) => app.bundleId?.toLowerCase()).filter(Boolean))
+  const homeDir = homedir()
+  const specs = [
+    { root: path.join(homeDir, 'Library', 'Application Support'), type: 'dir', label: 'Application Support', source: 'mac:application-support' },
+    { root: path.join(homeDir, 'Library', 'Caches'), type: 'dir', label: 'Caches', source: 'mac:caches' },
+    { root: path.join(homeDir, 'Library', 'Logs'), type: 'dir', label: 'Logs', source: 'mac:logs' },
+    { root: path.join(homeDir, 'Library', 'Containers'), type: 'dir', label: 'Container', source: 'mac:container' },
+    { root: path.join(homeDir, 'Library', 'Saved Application State'), type: 'dir', label: 'Saved State', source: 'mac:saved-state' },
+    { root: path.join(homeDir, 'Library', 'Preferences'), type: 'plist', label: 'Preferences', source: 'mac:preferences' }
+  ] as const
+
+  const items: AppLeftoverDataItem[] = []
+
+  for (const spec of specs) {
+    let entries: Awaited<ReturnType<typeof fsp.readdir>>
+    try {
+      entries = await fsp.readdir(spec.root, { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    for (const entry of entries) {
+      if (spec.type === 'dir' && !entry.isDirectory()) continue
+      if (spec.type === 'plist' && (!entry.isFile() || !entry.name.endsWith('.plist'))) continue
+
+      const appName = inferMacLeftoverAppName(entry.name)
+      if (!appName) continue
+
+      const normalized = appName.toLowerCase()
+      if (knownNames.has(normalized) || knownBundleIds.has(normalized)) continue
+
+      items.push({
+        id: `${spec.source}:${path.join(spec.root, entry.name)}`,
+        appName,
+        label: spec.label,
+        path: path.join(spec.root, entry.name),
+        source: spec.source,
+        platform: 'mac'
+      })
+    }
+  }
+
+  return dedupeLeftoverDataItems(items)
+}
+
+async function listWindowsLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
+  const knownNames = new Set(installedApps.flatMap((app) => {
+    const values = [app.name]
+    if (app.installLocation) values.push(path.win32.basename(app.installLocation))
+    return values.map((value) => value.toLowerCase())
+  }))
+
+  const roots = [
+    { root: process.env.APPDATA, label: 'AppData Roaming', source: 'win:appdata-roaming' },
+    { root: process.env.LOCALAPPDATA, label: 'AppData Local', source: 'win:appdata-local' },
+    { root: process.env.LOCALAPPDATA ? path.win32.join(process.env.LOCALAPPDATA, 'Programs') : undefined, label: 'Local Programs', source: 'win:local-programs' },
+    { root: process.env.ProgramData, label: 'ProgramData', source: 'win:programdata' }
+  ]
+
+  const items: AppLeftoverDataItem[] = []
+
+  for (const spec of roots) {
+    if (!spec.root) continue
+
+    let entries: Awaited<ReturnType<typeof fsp.readdir>>
+    try {
+      entries = await fsp.readdir(spec.root, { withFileTypes: true })
+    } catch {
+      continue
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      const appName = entry.name.trim()
+      if (!appName) continue
+      if (knownNames.has(appName.toLowerCase())) continue
+
+      items.push({
+        id: `${spec.source}:${path.win32.join(spec.root, entry.name)}`,
+        appName,
+        label: spec.label,
+        path: path.win32.join(spec.root, entry.name),
+        source: spec.source,
+        platform: 'windows'
+      })
+    }
+  }
+
+  return dedupeLeftoverDataItems(items)
+}
+
+export function inferMacLeftoverAppName(entryName: string): string | null {
+  const withoutPlist = entryName.endsWith('.plist') ? entryName.slice(0, -6) : entryName
+  const withoutSavedState = withoutPlist.endsWith('.savedState') ? withoutPlist.slice(0, -11) : withoutPlist
+  const trimmed = withoutSavedState.trim()
+  return trimmed || null
+}
+
+function dedupeLeftoverDataItems(items: AppLeftoverDataItem[]): AppLeftoverDataItem[] {
   const seen = new Set<string>()
   return items.filter((item) => {
     if (seen.has(item.path)) return false
