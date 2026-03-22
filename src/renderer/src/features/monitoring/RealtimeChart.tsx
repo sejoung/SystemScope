@@ -11,7 +11,7 @@ export function RealtimeChart() {
     idx: i,
     cpu: h.cpu.usage,
     memory: h.memory.usage,
-    gpu: h.gpu.usage ?? 0
+    gpu: h.gpu?.usage ?? 0
   }))
 
   return (

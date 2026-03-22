@@ -8,19 +8,11 @@ export function isPathInsideParent(targetPath: string, parentPath: string): bool
   let realParent: string
 
   try {
-    // 심볼릭 링크인지 먼저 확인 — 심볼릭 링크인데 realpath가 실패하면 거부
-    const lstat = fs.lstatSync(targetPath)
-    if (lstat.isSymbolicLink()) {
-      realTarget = fs.realpathSync(targetPath)
-    } else {
-      realTarget = fs.realpathSync(targetPath)
-    }
+    realTarget = fs.realpathSync(targetPath)
   } catch {
-    // 경로가 존재하지 않는 경우: lstat 자체가 실패하면 resolve로 대체 허용
-    // (아직 존재하지 않는 경로를 검증하는 경우)
+    // realpath 실패: 경로가 존재하는데 실패했다면 깨진 심볼릭 링크 → 거부
     try {
       fs.lstatSync(targetPath)
-      // lstat은 성공했지만 realpath는 실패 = 깨진 심볼릭 링크 → 거부
       return false
     } catch {
       // 경로 자체가 존재하지 않음 → resolve로 대체

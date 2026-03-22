@@ -6,15 +6,15 @@ const initializeRuntimeSettingsMock = vi.hoisted(() => vi.fn())
 const ensureSnapshotDirMock = vi.hoisted(() => vi.fn())
 const registerAllIpcMock = vi.hoisted(() => vi.fn())
 const startSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
-const stopSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
 const getSettingsMock = vi.hoisted(() => vi.fn())
 const createTrayMock = vi.hoisted(() => vi.fn())
-const destroyTrayMock = vi.hoisted(() => vi.fn())
 const createMainWindowMock = vi.hoisted(() => vi.fn())
 const setForceQuitMock = vi.hoisted(() => vi.fn())
-const cleanupSystemIpcMock = vi.hoisted(() => vi.fn())
 const initializeLoggingMock = vi.hoisted(() => vi.fn())
 const logErrorMock = vi.hoisted(() => vi.fn())
+const executeGracefulShutdownMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
+const initializeShutdownHandlersMock = vi.hoisted(() => vi.fn())
+const markQuitAfterShutdownMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   app: {
@@ -47,8 +47,7 @@ vi.mock('../../src/main/app/createWindow', () => ({
 }))
 
 vi.mock('../../src/main/ipc', () => ({
-  registerAllIpc: registerAllIpcMock,
-  cleanupSystemIpc: cleanupSystemIpcMock
+  registerAllIpc: registerAllIpcMock
 }))
 
 vi.mock('../../src/main/app/initializeRuntimeSettings', () => ({
@@ -56,8 +55,7 @@ vi.mock('../../src/main/app/initializeRuntimeSettings', () => ({
 }))
 
 vi.mock('../../src/main/services/growthAnalyzer', () => ({
-  startSnapshotScheduler: startSnapshotSchedulerMock,
-  stopSnapshotScheduler: stopSnapshotSchedulerMock
+  startSnapshotScheduler: startSnapshotSchedulerMock
 }))
 
 vi.mock('../../src/main/services/snapshotStore', () => ({
@@ -69,13 +67,18 @@ vi.mock('../../src/main/store/settingsStore', () => ({
 }))
 
 vi.mock('../../src/main/app/tray', () => ({
-  createTray: createTrayMock,
-  destroyTray: destroyTrayMock
+  createTray: createTrayMock
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
   initializeLogging: initializeLoggingMock,
   logError: logErrorMock
+}))
+
+vi.mock('../../src/main/app/shutdown', () => ({
+  executeGracefulShutdown: executeGracefulShutdownMock,
+  initializeShutdownHandlers: initializeShutdownHandlersMock,
+  markQuitAfterShutdown: markQuitAfterShutdownMock
 }))
 
 describe('app startup integration', () => {
@@ -87,15 +90,16 @@ describe('app startup integration', () => {
     ensureSnapshotDirMock.mockReset()
     registerAllIpcMock.mockReset()
     startSnapshotSchedulerMock.mockReset()
-    stopSnapshotSchedulerMock.mockReset()
     getSettingsMock.mockReset()
     createTrayMock.mockReset()
-    destroyTrayMock.mockReset()
     createMainWindowMock.mockReset()
     setForceQuitMock.mockReset()
-    cleanupSystemIpcMock.mockReset()
     initializeLoggingMock.mockReset()
     logErrorMock.mockReset()
+    executeGracefulShutdownMock.mockReset()
+    executeGracefulShutdownMock.mockReturnValue(Promise.resolve())
+    initializeShutdownHandlersMock.mockReset()
+    markQuitAfterShutdownMock.mockReset()
     getSettingsMock.mockReturnValue({
       thresholds: {
         diskWarning: 80,
@@ -118,6 +122,7 @@ describe('app startup integration', () => {
     whenReadyCallbacks[0]()
 
     expect(initializeLoggingMock).toHaveBeenCalledTimes(1)
+    expect(initializeShutdownHandlersMock).toHaveBeenCalledTimes(1)
     expect(initializeRuntimeSettingsMock).toHaveBeenCalledTimes(1)
     expect(ensureSnapshotDirMock).toHaveBeenCalledTimes(1)
     expect(registerAllIpcMock).toHaveBeenCalledTimes(1)
@@ -135,12 +140,13 @@ describe('app startup integration', () => {
     expect(beforeQuit).toBeTypeOf('function')
     expect(windowAllClosed).toBeTypeOf('function')
 
-    beforeQuit?.()
-    windowAllClosed?.()
+    // before-quit handler expects an event with preventDefault
+    const mockEvent = { preventDefault: vi.fn() }
+    beforeQuit?.(mockEvent)
 
-    expect(setForceQuitMock).toHaveBeenCalledWith(true)
-    expect(cleanupSystemIpcMock).toHaveBeenCalledTimes(1)
-    expect(stopSnapshotSchedulerMock).toHaveBeenCalledTimes(1)
-    expect(destroyTrayMock).toHaveBeenCalledTimes(1)
+    // First call: preventDefault is called, graceful shutdown starts
+    expect(mockEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(markQuitAfterShutdownMock).toHaveBeenCalledTimes(1)
+    expect(executeGracefulShutdownMock).toHaveBeenCalledWith('before-quit')
   })
 })
