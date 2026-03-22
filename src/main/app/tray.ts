@@ -1,13 +1,20 @@
-import { Tray, Menu, nativeImage, app, BrowserWindow } from 'electron'
+import { Tray, Menu, app, BrowserWindow, nativeImage } from 'electron'
 import { join } from 'path'
 import { platform } from 'os'
+import log from 'electron-log'
+import { getSystemStats } from '../services/systemMonitor'
+import { createTrayImage, getCpuMeterText } from './trayIconFactory'
 
 let tray: Tray | null = null
+let trayUpdateTimer: ReturnType<typeof setInterval> | null = null
+let pulseFrame = false
+let lastVisualKey = ''
+const cpuSamples: number[] = []
 
 export function createTray(): void {
   if (tray) return
 
-  const icon = getTrayIcon()
+  const icon = getInitialTrayIcon()
   tray = new Tray(icon)
 
   tray.setToolTip('SystemScope')
@@ -45,32 +52,68 @@ export function createTray(): void {
       }
     })
   }
+
+  void refreshTrayIcon()
+  trayUpdateTimer = setInterval(() => {
+    void refreshTrayIcon()
+  }, 2000)
 }
 
 export function destroyTray(): void {
+  if (trayUpdateTimer) {
+    clearInterval(trayUpdateTimer)
+    trayUpdateTimer = null
+  }
+  cpuSamples.length = 0
+  pulseFrame = false
+  lastVisualKey = ''
   if (tray) {
     tray.destroy()
     tray = null
   }
 }
 
-function getTrayIcon(): Electron.NativeImage {
-  const resourcesPath = getResourcesPath()
+async function refreshTrayIcon(): Promise<void> {
+  if (!tray) return
 
-  if (platform() === 'darwin') {
-    // macOS: Template Image — 파일 이름에 Template이 포함되면 자동 dark/light 대응
-    const icon = nativeImage.createFromPath(join(resourcesPath, 'trayTemplate.png'))
+  try {
+    const stats = await getSystemStats()
+    cpuSamples.push(stats.cpu.usage)
+    if (cpuSamples.length > 3) {
+      cpuSamples.shift()
+    }
+
+    const averageUsage = cpuSamples.reduce((sum, value) => sum + value, 0) / cpuSamples.length
+    const roundedUsage = Math.round(averageUsage)
+    const isHighLoad = roundedUsage >= 75
+    pulseFrame = isHighLoad ? !pulseFrame : false
+
+    const visualKey = `${roundedUsage >= 90 ? 4 : roundedUsage >= 75 ? 3 : roundedUsage >= 50 ? 2 : roundedUsage >= 25 ? 1 : 0}:${pulseFrame ? 1 : 0}:${process.platform}`
+    if (visualKey !== lastVisualKey) {
+      if (process.platform === 'darwin') {
+        tray.setTitle(getCpuMeterText(roundedUsage, pulseFrame))
+      } else {
+        tray.setImage(createTrayImage(roundedUsage, pulseFrame, process.platform))
+      }
+      lastVisualKey = visualKey
+    }
+
+    tray.setToolTip(`SystemScope\nCPU ${roundedUsage}%`)
+  } catch (error) {
+    log.error('Failed to refresh tray icon', error)
+  }
+}
+
+function getInitialTrayIcon(): Electron.NativeImage {
+  if (process.platform === 'darwin') {
+    const icon = nativeImage.createFromPath(join(getResourcesPath(), 'trayTemplate.png'))
     icon.setTemplateImage(true)
     return icon
   }
-
-  // Windows
-  return nativeImage.createFromPath(join(resourcesPath, 'tray_win.png'))
+  return createTrayImage(0, false, process.platform)
 }
 
 function getResourcesPath(): string {
-  // 개발 모드: 프로젝트 루트의 resources/
-  // 프로덕션: app.asar 밖의 resources/
   if (app.isPackaged) {
     return join(process.resourcesPath, 'resources')
   }
