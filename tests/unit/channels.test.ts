@@ -24,6 +24,7 @@ describe('IPC_CHANNELS', () => {
 
   it('should contain all disk channels', () => {
     expect(IPC_CHANNELS.DISK_SCAN_FOLDER).toBeDefined()
+    expect(IPC_CHANNELS.DISK_INVALIDATE_SCAN_CACHE).toBeDefined()
     expect(IPC_CHANNELS.DISK_GET_LARGE_FILES).toBeDefined()
     expect(IPC_CHANNELS.DISK_GET_EXTENSIONS).toBeDefined()
     expect(IPC_CHANNELS.DISK_QUICK_SCAN).toBeDefined()

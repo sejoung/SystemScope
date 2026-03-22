@@ -10,6 +10,7 @@ export const IPC_CHANNELS = {
 
   // Disk Analysis
   DISK_SCAN_FOLDER: 'disk:scanFolder',
+  DISK_INVALIDATE_SCAN_CACHE: 'disk:invalidateScanCache',
   DISK_GET_LARGE_FILES: 'disk:getLargeFiles',
   DISK_GET_EXTENSIONS: 'disk:getExtensions',
   DISK_QUICK_SCAN: 'disk:quickScan',

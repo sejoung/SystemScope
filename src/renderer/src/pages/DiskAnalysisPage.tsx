@@ -21,12 +21,13 @@ export function DiskAnalysisPage() {
     scanResult, largeFiles, extensions,
     isScanning, scanJobId, scanProgress, selectedFolder,
     setScanResult, setLargeFiles, setExtensions,
-    setScanning, setScanProgress, setSelectedFolder, clearScan
+    setScanning, setScanProgress, setSelectedFolder, removeLargeFilesByPaths, clearScan
   } = useDiskStore()
 
   const showToast = useToast((s) => s.show)
   const [tab, setTab] = useState<StorageTab>('overview')
   const sectionResetKey = `${selectedFolder ?? 'none'}:${scanResult?.scanDuration ?? 0}:${isScanning}`
+  const pendingRefreshRef = useRef(false)
 
   // Treemap 컨테이너 폭 측정
   const treemapRef = useRef<HTMLDivElement>(null)
@@ -94,6 +95,26 @@ export function DiskAnalysisPage() {
     }
   }, [isScanning, startScan, showToast])
 
+  const refreshScanInBackground = useCallback(async (folderPath: string) => {
+    if (isScanning) {
+      pendingRefreshRef.current = true
+      return
+    }
+
+    setScanning(true)
+    setScanProgress('삭제 후 스캔 결과를 새로고침하는 중...')
+
+    const res = await window.systemScope.scanFolder(folderPath)
+    if (res.ok && res.data) {
+      setScanning(true, (res.data as { jobId: string }).jobId)
+      return
+    }
+
+    setScanning(false)
+    setScanProgress(res.error?.message ?? '새로고침 실패')
+    showToast(res.error?.message ?? '삭제 후 스캔 결과를 새로고침하지 못했습니다.')
+  }, [isScanning, setScanning, setScanProgress, showToast])
+
   // --- IPC listeners ---
   const handleJobProgress = useCallback(
     (data: unknown) => {
@@ -117,9 +138,13 @@ export function DiskAnalysisPage() {
             if (res.ok && res.data) setExtensions(res.data)
           })
         }
+        if (pendingRefreshRef.current && selectedFolder) {
+          pendingRefreshRef.current = false
+          void refreshScanInBackground(selectedFolder)
+        }
       }
     },
-    [scanJobId, selectedFolder, setScanResult, setLargeFiles, setExtensions]
+    [scanJobId, selectedFolder, setScanResult, setLargeFiles, setExtensions, refreshScanInBackground]
   )
   useIpcListener(window.systemScope.onJobCompleted, handleJobCompleted)
 
@@ -129,9 +154,13 @@ export function DiskAnalysisPage() {
       if (d.id === scanJobId) {
         setScanning(false)
         setScanProgress(d.error)
+        if (pendingRefreshRef.current && selectedFolder) {
+          pendingRefreshRef.current = false
+          void refreshScanInBackground(selectedFolder)
+        }
       }
     },
-    [scanJobId, setScanning, setScanProgress]
+    [scanJobId, selectedFolder, setScanning, setScanProgress, refreshScanInBackground]
   )
   useIpcListener(window.systemScope.onJobFailed, handleJobFailed)
 
@@ -179,6 +208,8 @@ export function DiskAnalysisPage() {
           scanResult={scanResult}
           largeFiles={largeFiles}
           selectedFolder={selectedFolder}
+          onFilesRemoved={removeLargeFilesByPaths}
+          onRefreshRequested={() => selectedFolder ? void refreshScanInBackground(selectedFolder) : undefined}
         />
       )}
     </div>
@@ -334,12 +365,14 @@ function ScanTab({
 
 // ─── Cleanup Tab ───
 
-function CleanupTab({ tryScan, sectionResetKey, scanResult, largeFiles, selectedFolder }: {
+function CleanupTab({ tryScan, sectionResetKey, scanResult, largeFiles, selectedFolder, onFilesRemoved, onRefreshRequested }: {
   tryScan: (path: string) => void
   sectionResetKey: string
   scanResult: DiskScanResult | null
   largeFiles: ReturnType<typeof useDiskStore.getState>['largeFiles']
   selectedFolder: string | null
+  onFilesRemoved: (paths: string[]) => void
+  onRefreshRequested: () => void
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -361,6 +394,8 @@ function CleanupTab({ tryScan, sectionResetKey, scanResult, largeFiles, selected
               defaultTab="largest"
               title="File Cleanup"
               hiddenTabs={['types']}
+              onFilesRemoved={onFilesRemoved}
+              onRefreshRequested={onRefreshRequested}
             />
           </Suspense>
         </ErrorBoundary>

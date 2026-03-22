@@ -28,6 +28,7 @@ const api = {
 
   // Disk
   scanFolder: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.DISK_SCAN_FOLDER, folderPath),
+  invalidateScanCache: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.DISK_INVALIDATE_SCAN_CACHE, folderPath),
   getLargeFiles: (folderPath: string, limit: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_LARGE_FILES, folderPath, limit),
   getExtensionBreakdown: (folderPath: string) =>

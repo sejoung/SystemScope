@@ -138,4 +138,67 @@ describe('disk scan flow integration', () => {
     expect(findLargeFilesMock).toHaveBeenCalledWith(scanResult.tree, 50)
     expect(getExtensionBreakdownMock).toHaveBeenCalledWith(scanResult.tree)
   })
+
+  it('should invalidate cached scan results and force a fresh scan for follow-up insights', async () => {
+    const firstScanResult = {
+      rootPath: '/Users/test/Downloads',
+      tree: {
+        name: 'Downloads',
+        path: '/Users/test/Downloads',
+        size: 300,
+        children: [],
+        isFile: false
+      },
+      totalSize: 300,
+      fileCount: 3,
+      folderCount: 1,
+      scanDuration: 1000
+    }
+
+    const refreshedScanResult = {
+      rootPath: '/Users/test/Downloads',
+      tree: {
+        name: 'Downloads',
+        path: '/Users/test/Downloads',
+        size: 120,
+        children: [],
+        isFile: false
+      },
+      totalSize: 120,
+      fileCount: 1,
+      folderCount: 1,
+      scanDuration: 900
+    }
+
+    scanFolderMock
+      .mockResolvedValueOnce(firstScanResult)
+      .mockResolvedValueOnce(refreshedScanResult)
+
+    findLargeFilesMock
+      .mockReturnValueOnce([{ name: 'before.zip', path: '/Users/test/Downloads/before.zip', size: 200, modified: 1 }])
+      .mockReturnValueOnce([{ name: 'after.zip', path: '/Users/test/Downloads/after.zip', size: 120, modified: 2 }])
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const largeFilesHandler = handlers.get(IPC_CHANNELS.DISK_GET_LARGE_FILES)
+    const invalidateHandler = handlers.get(IPC_CHANNELS.DISK_INVALIDATE_SCAN_CACHE)
+
+    expect(largeFilesHandler).toBeTypeOf('function')
+    expect(invalidateHandler).toBeTypeOf('function')
+
+    const firstResult = await largeFilesHandler?.({}, '/Users/test/Downloads', 50) as { ok: boolean; data?: unknown }
+    expect(firstResult.ok).toBe(true)
+    expect(firstResult.data).toEqual([{ name: 'before.zip', path: '/Users/test/Downloads/before.zip', size: 200, modified: 1 }])
+    expect(scanFolderMock).toHaveBeenCalledTimes(1)
+
+    const invalidateResult = await invalidateHandler?.({}, '/Users/test/Downloads') as { ok: boolean; data?: boolean }
+    expect(invalidateResult).toEqual({ ok: true, data: true })
+
+    const secondResult = await largeFilesHandler?.({}, '/Users/test/Downloads', 50) as { ok: boolean; data?: unknown }
+    expect(secondResult.ok).toBe(true)
+    expect(secondResult.data).toEqual([{ name: 'after.zip', path: '/Users/test/Downloads/after.zip', size: 120, modified: 2 }])
+    expect(scanFolderMock).toHaveBeenCalledTimes(2)
+    expect(findLargeFilesMock).toHaveBeenLastCalledWith(refreshedScanResult.tree, 50)
+  })
 })

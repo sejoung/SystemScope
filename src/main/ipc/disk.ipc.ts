@@ -80,6 +80,19 @@ export function registerDiskIpc(): void {
     return success({ jobId: job.id })
   })
 
+  ipcMain.handle(IPC_CHANNELS.DISK_INVALIDATE_SCAN_CACHE, (_event, folderPath: string) => {
+    if (!folderPath || typeof folderPath !== 'string') {
+      return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+
+    const resolved = path.resolve(folderPath)
+    if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
+      lastScanResult = null
+    }
+
+    return success(true)
+  })
+
   ipcMain.handle(IPC_CHANNELS.DISK_GET_LARGE_FILES, async (_event, folderPath: string, limit: number) => {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')

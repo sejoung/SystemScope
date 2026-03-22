@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useToast } from '../../components/Toast'
@@ -21,11 +21,14 @@ interface FileInsightsProps {
   title?: string
   hiddenTabs?: Tab[]
   showDelete?: boolean
+  onFilesRemoved?: (paths: string[]) => void
+  onRefreshRequested?: () => void
 }
 
-export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true }: FileInsightsProps) {
+export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true, onFilesRemoved, onRefreshRequested }: FileInsightsProps) {
   const showToast = useToast((s) => s.show)
   const [tab, setTab] = useState<Tab>(defaultTab)
+  const [visibleLargeFiles, setVisibleLargeFiles] = useState<LargeFile[]>(largeFiles)
   const [oldFiles, setOldFiles] = useState<LargeFile[]>([])
   const [oldFilesLoading, setOldFilesLoading] = useState(false)
   const [oldFilesScanned, setOldFilesScanned] = useState(false)
@@ -36,6 +39,10 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
   const [dupScanned, setDupScanned] = useState(false)
   const [dupError, setDupError] = useState<string | null>(null)
   const [expandedDup, setExpandedDup] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    setVisibleLargeFiles(largeFiles)
+  }, [folderPath, largeFiles])
 
   const handleOldFileScan = async () => {
     setOldFilesLoading(true)
@@ -76,7 +83,11 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       if (result.successCount > 0) {
         showToast(`${result.successCount}개 항목 (${formatBytes(result.totalSize)})을 휴지통으로 이동했습니다`)
         const trashedSet = new Set(result.trashedPaths)
+        onFilesRemoved?.(result.trashedPaths)
         onDone?.(trashedSet)
+        void window.systemScope.invalidateScanCache(folderPath).finally(() => {
+          onRefreshRequested?.()
+        })
         if (result.failCount > 0 && result.errors.length > 0) {
           showToast(`일부 실패: ${result.errors[0]}`)
         }
@@ -116,9 +127,11 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       {tab === 'types' && <TypesTab data={extensions} />}
       {tab === 'largest' && (
         <LargestTab
-          files={largeFiles}
+          files={visibleLargeFiles}
           showDelete={showDelete}
-          onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제')}
+          onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제', (trashed) => {
+            setVisibleLargeFiles((prev) => prev.filter((f) => !trashed.has(f.path)))
+          })}
         />
       )}
       {tab === 'old' && (

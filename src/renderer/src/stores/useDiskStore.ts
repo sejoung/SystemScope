@@ -25,6 +25,7 @@ interface DiskState {
   setScanning: (val: boolean, jobId?: string | null) => void
   setScanProgress: (progress: string) => void
   setSelectedFolder: (folder: string | null) => void
+  removeLargeFilesByPaths: (paths: string[]) => void
   clearScan: () => void
 
   setUserSpace: (info: UserSpaceInfo) => void
@@ -55,6 +56,12 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   setScanning: (val, jobId = null) => set({ isScanning: val, scanJobId: jobId }),
   setScanProgress: (progress) => set({ scanProgress: progress }),
   setSelectedFolder: (folder) => set({ selectedFolder: folder }),
+  removeLargeFilesByPaths: (paths) => {
+    const pathSet = new Set(paths)
+    set((state) => ({
+      largeFiles: state.largeFiles.filter((file) => !pathSet.has(file.path))
+    }))
+  },
   clearScan: () =>
     set({
       scanResult: null,
