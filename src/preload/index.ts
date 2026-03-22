@@ -45,6 +45,7 @@ const api = {
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),
   getTopMemoryProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY, limit),
   getAllProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_ALL),
+  getNetworkPorts: () => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_PORTS),
 
   // Alerts
   getActiveAlerts: () => ipcRenderer.invoke(IPC_CHANNELS.ALERT_GET_ACTIVE),

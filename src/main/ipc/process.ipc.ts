@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
-import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses } from '../services/processMonitor'
+import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
 import log from 'electron-log'
 
@@ -38,6 +38,16 @@ export function registerProcessIpc(): void {
     } catch (err) {
       log.error('Failed to get all processes', err)
       return failure('UNKNOWN_ERROR', '프로세스 정보를 가져올 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_PORTS, async () => {
+    try {
+      const ports = await getNetworkPorts()
+      return success(ports)
+    } catch (err) {
+      log.error('Failed to get network ports', err)
+      return failure('UNKNOWN_ERROR', '포트 정보를 가져올 수 없습니다.')
     }
   })
 }

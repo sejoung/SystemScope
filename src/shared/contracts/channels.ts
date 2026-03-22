@@ -22,6 +22,7 @@ export const IPC_CHANNELS = {
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',
   PROCESS_GET_TOP_MEMORY: 'process:getTopMemory',
   PROCESS_GET_ALL: 'process:getAll',
+  PROCESS_GET_PORTS: 'process:getPorts',
 
   // Alerts
   ALERT_GET_ACTIVE: 'alert:getActive',
