@@ -17,6 +17,7 @@ export function SettingsPage() {
   const [dataPath, setDataPath] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasEditedRef = useRef(false)
   const persistedRef = useRef<{
     thresholds: AlertThresholds
     snapshotInterval: number
@@ -32,15 +33,23 @@ export function SettingsPage() {
     window.systemScope.getSettings().then((res) => {
       if (res.ok && res.data) {
         const s = res.data as { thresholds: AlertThresholds; snapshotIntervalMin?: number; theme?: 'dark' | 'light' }
-        setLocal(s.thresholds)
-        setThresholds(s.thresholds)
         persistedRef.current.thresholds = s.thresholds
-        if (s.snapshotIntervalMin) setSnapshotInterval(s.snapshotIntervalMin)
         persistedRef.current.snapshotInterval = s.snapshotIntervalMin ?? 60
         if (s.theme) {
-          setLocalTheme(s.theme)
-          setTheme(s.theme)
           persistedRef.current.theme = s.theme
+        }
+
+        if (!hasEditedRef.current) {
+          setLocal(s.thresholds)
+          if (s.snapshotIntervalMin) setSnapshotInterval(s.snapshotIntervalMin)
+          if (s.theme) {
+            setLocalTheme(s.theme)
+          }
+        }
+
+        setThresholds(s.thresholds)
+        if (s.theme) {
+          setTheme(s.theme)
         }
       }
     })
@@ -87,6 +96,7 @@ export function SettingsPage() {
           snapshotInterval,
           theme: localTheme
         }
+        hasEditedRef.current = false
         setThresholds(local)
         setTheme(localTheme)
         setSaved(true)
@@ -108,6 +118,7 @@ export function SettingsPage() {
   const updateField = (key: keyof AlertThresholds, value: string) => {
     const num = parseInt(value, 10)
     if (!isNaN(num) && num >= 0 && num <= 100) {
+      hasEditedRef.current = true
       setLocal({ ...local, [key]: num })
     }
   }
@@ -145,7 +156,10 @@ export function SettingsPage() {
                 return (
                   <button
                     key={option.value}
-                    onClick={() => setLocalTheme(option.value as 'dark' | 'light')}
+                    onClick={() => {
+                      hasEditedRef.current = true
+                      setLocalTheme(option.value as 'dark' | 'light')
+                    }}
                     style={{
                       padding: '8px 18px',
                       fontSize: '13px',
@@ -208,7 +222,10 @@ export function SettingsPage() {
               ].map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setSnapshotInterval(opt.value)}
+                  onClick={() => {
+                    hasEditedRef.current = true
+                    setSnapshotInterval(opt.value)
+                  }}
                   style={{
                     padding: '6px 16px',
                     fontSize: '13px',

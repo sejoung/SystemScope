@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import log from 'electron-log'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
+import { setUnsavedSettingsState } from '../app/rendererState'
 
 export function registerAppIpc(): void {
   ipcMain.handle(
@@ -21,4 +22,13 @@ export function registerAppIpc(): void {
       return success(true)
     }
   )
+
+  ipcMain.handle(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, (_event, payload: { hasUnsavedSettings?: unknown }) => {
+    if (!payload || typeof payload !== 'object' || typeof payload.hasUnsavedSettings !== 'boolean') {
+      return failure('INVALID_INPUT', '유효하지 않은 unsaved settings payload입니다.')
+    }
+
+    setUnsavedSettingsState(payload.hasUnsavedSettings)
+    return success(true)
+  })
 }

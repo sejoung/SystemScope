@@ -57,7 +57,13 @@ export function DockerOverview({
     void refresh()
   }, [refreshToken])
 
-  const dockerStatus = imageScan?.status ?? containerScan?.status ?? volumeScan?.status ?? buildCacheScan?.status ?? 'ready'
+  const scans = [imageScan, containerScan, volumeScan, buildCacheScan].filter(Boolean)
+  const hasFailure = scans.some((scan) => scan?.status !== 'ready')
+  const dockerStatus = scans.length === 0 ? 'ready' : !hasFailure ? 'ready' : 'degraded'
+  const failureMessages = scans
+    .filter((scan) => scan?.status !== 'ready')
+    .map((scan) => scan?.message)
+    .filter((message): message is string => Boolean(message))
   const stoppedCount = useMemo(() => containerScan?.containers.filter((container) => !container.running).length ?? 0, [containerScan])
   const runningCount = useMemo(() => containerScan?.containers.filter((container) => container.running).length ?? 0, [containerScan])
   const inUseImageCount = useMemo(() => imageScan?.images.filter((image) => image.inUse).length ?? 0, [imageScan])
@@ -70,23 +76,21 @@ export function DockerOverview({
   const reclaimableBuildCache = buildCacheScan?.summary?.reclaimableLabel ?? '0 B'
 
   const statusTitle =
-    dockerStatus === 'not_installed'
-      ? 'Docker가 설치되어 있지 않습니다.'
-      : dockerStatus === 'daemon_unavailable'
-        ? 'Docker daemon에 연결할 수 없습니다.'
-        : 'Docker Cleanup Summary'
+    dockerStatus === 'ready'
+      ? 'Docker Cleanup Summary'
+      : 'Docker Cleanup Summary (Partial)'
 
   const statusDetail =
     dockerStatus === 'ready'
       ? '이미지 정리 전에 종료된 컨테이너를 먼저 비우면 참조 때문에 막히는 삭제를 줄일 수 있습니다.'
-      : imageScan?.message ?? containerScan?.message ?? 'Docker Desktop 또는 Docker Engine 상태를 확인하세요.'
+      : failureMessages[0] ?? '일부 Docker 리소스를 조회하지 못했습니다. Docker Desktop 또는 Docker Engine 상태를 확인하세요.'
 
   return (
     <Accordion
       title="Overview"
       defaultOpen
-      badge={dockerStatus === 'ready' ? 'workflow' : undefined}
-      badgeColor="var(--accent-cyan)"
+      badge={dockerStatus === 'ready' ? 'workflow' : 'partial'}
+      badgeColor={dockerStatus === 'ready' ? 'var(--accent-cyan)' : 'var(--accent-yellow)'}
       actions={
         <button onClick={() => void refresh()} disabled={loading} style={actionBtnStyle}>
           {loading ? 'Refreshing...' : 'Refresh All'}
@@ -99,7 +103,7 @@ export function DockerOverview({
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{statusDetail}</div>
         </div>
 
-        {dockerStatus === 'ready' && (
+        {scans.length > 0 && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <SummaryCard title="Stopped Containers" value={String(stoppedCount)} tone="var(--accent-red)" actionLabel="Clean First" onClick={onOpenContainers} />

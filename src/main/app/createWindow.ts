@@ -1,9 +1,11 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
 import { getSettings } from '../store/settingsStore'
+import { getUnsavedSettingsState, setUnsavedSettingsState } from './rendererState'
 
 let forceQuit = false
+let bypassUnsavedSettingsPrompt = false
 
 export function setForceQuit(value: boolean): void {
   forceQuit = value
@@ -44,6 +46,40 @@ export function createMainWindow(): BrowserWindow {
   // app.quit() 등 강제 종료 시에만 실제로 닫힘
   win.on('close', (e) => {
     saveWindowState(win)
+    if (bypassUnsavedSettingsPrompt) {
+      bypassUnsavedSettingsPrompt = false
+      return
+    }
+
+    if (getUnsavedSettingsState()) {
+      e.preventDefault()
+      const response = dialog.showMessageBoxSync(win, {
+        type: 'warning',
+        buttons: ['Cancel', 'Discard Changes'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Unsaved Settings',
+        message: '저장하지 않은 설정 변경사항이 있습니다.',
+        detail: forceQuit
+          ? '저장하지 않고 앱을 종료하시겠습니까?'
+          : '저장하지 않고 창을 닫으면 변경사항이 사라집니다.'
+      })
+
+      if (response === 0) {
+        return
+      }
+
+      setUnsavedSettingsState(false)
+      if (forceQuit) {
+        bypassUnsavedSettingsPrompt = true
+        win.close()
+        return
+      }
+
+      win.hide()
+      return
+    }
+
     if (!forceQuit) {
       e.preventDefault()
       win.hide()

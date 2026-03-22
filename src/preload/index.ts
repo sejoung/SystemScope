@@ -17,6 +17,8 @@ const api = {
   // App
   logRendererError: (scope: string, message: string, details?: unknown) =>
     ipcRenderer.invoke(IPC_CHANNELS.APP_LOG_RENDERER_ERROR, { scope, message, details }),
+  setUnsavedSettingsState: (hasUnsavedSettings: boolean) =>
+    ipcRenderer.invoke(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, { hasUnsavedSettings }),
 
   // System
   getSystemStats: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_STATS),

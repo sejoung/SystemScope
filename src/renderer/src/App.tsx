@@ -18,6 +18,7 @@ import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 
 function App() {
   const currentPage = useSettingsStore((s) => s.currentPage)
+  const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const theme = useSettingsStore((s) => s.theme)
   const setTheme = useSettingsStore((s) => s.setTheme)
   const setThresholds = useSettingsStore((s) => s.setThresholds)
@@ -48,6 +49,21 @@ function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
+
+  useEffect(() => {
+    void window.systemScope.setUnsavedSettingsState(hasUnsavedSettings)
+  }, [hasUnsavedSettings])
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedSettings) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedSettings])
 
   useEffect(() => {
     window.systemScope.subscribeSystem()

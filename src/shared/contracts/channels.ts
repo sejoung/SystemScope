@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
   // App
   APP_LOG_RENDERER_ERROR: 'app:logRendererError',
+  APP_SET_UNSAVED_SETTINGS: 'app:setUnsavedSettings',
 
   // System Monitoring
   SYSTEM_GET_STATS: 'system:getStats',
