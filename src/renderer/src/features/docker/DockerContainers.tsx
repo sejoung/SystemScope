@@ -25,6 +25,7 @@ export function DockerContainers({
     () => removableContainers.filter((container) => selectedIds.has(container.id)).length,
     [removableContainers, selectedIds]
   )
+  const allRemovableChecked = removableContainers.length > 0 && selectedRemovableCount === removableContainers.length
 
   const scanContainers = async () => {
     setLoading(true)
@@ -122,7 +123,20 @@ export function DockerContainers({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                  <th style={{ ...thStyle, width: '36px' }} />
+                  <th style={{ ...thStyle, width: '36px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allRemovableChecked}
+                      disabled={removableContainers.length === 0}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          setSelectedIds(new Set(removableContainers.map((container) => container.id)))
+                        } else {
+                          setSelectedIds(new Set())
+                        }
+                      }}
+                    />
+                  </th>
                   <th style={thStyle}>Container</th>
                   <th style={thStyle}>Image</th>
                   <th style={thStyle}>Status</th>

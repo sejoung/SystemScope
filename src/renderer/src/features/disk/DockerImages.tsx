@@ -25,6 +25,7 @@ export function DockerImages({
     () => selectableImages.filter((image) => selectedIds.has(image.id)).length,
     [selectableImages, selectedIds]
   )
+  const allSelectableChecked = selectableImages.length > 0 && selectedSelectableCount === selectableImages.length
 
   const scanImages = async () => {
     setLoading(true)
@@ -108,7 +109,20 @@ export function DockerImages({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                  <th style={{ ...thStyle, width: '36px' }} />
+                  <th style={{ ...thStyle, width: '36px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allSelectableChecked}
+                      disabled={selectableImages.length === 0}
+                      onChange={(event) => {
+                        if (event.target.checked) {
+                          setSelectedIds(new Set(selectableImages.map((image) => image.id)))
+                        } else {
+                          setSelectedIds(new Set())
+                        }
+                      }}
+                    />
+                  </th>
                   <th style={thStyle}>Repository</th>
                   <th style={thStyle}>Tag</th>
                   <th style={{ ...thStyle, textAlign: 'right' }}>Size</th>
