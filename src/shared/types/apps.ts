@@ -1,5 +1,6 @@
 export type InstalledAppPlatform = 'mac' | 'windows'
 export type InstalledAppUninstallKind = 'trash_app' | 'uninstall_command' | 'open_settings'
+export type AppLeftoverConfidence = 'high' | 'medium' | 'low'
 
 export interface InstalledApp {
   id: string
@@ -27,6 +28,9 @@ export interface AppRelatedDataItem {
 export interface AppLeftoverDataItem extends AppRelatedDataItem {
   appName: string
   platform: InstalledAppPlatform
+  confidence: AppLeftoverConfidence
+  reason: string
+  risk: string
 }
 
 export interface AppUninstallRequest {

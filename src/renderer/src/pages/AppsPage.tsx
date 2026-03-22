@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast'
 
 type PlatformFilter = 'all' | 'mac' | 'windows'
 type AppsTab = 'installed' | 'leftover'
+type ConfidenceFilter = 'all' | 'high' | 'medium' | 'low'
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show)
@@ -11,9 +12,13 @@ export function AppsPage() {
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [draftSearch, setDraftSearch] = useState('')
-  const [appliedSearch, setAppliedSearch] = useState('')
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
+  const [installedDraftSearch, setInstalledDraftSearch] = useState('')
+  const [installedAppliedSearch, setInstalledAppliedSearch] = useState('')
+  const [installedPlatformFilter, setInstalledPlatformFilter] = useState<PlatformFilter>('all')
+  const [leftoverDraftSearch, setLeftoverDraftSearch] = useState('')
+  const [leftoverAppliedSearch, setLeftoverAppliedSearch] = useState('')
+  const [leftoverPlatformFilter, setLeftoverPlatformFilter] = useState<PlatformFilter>('all')
+  const [leftoverConfidenceFilter, setLeftoverConfidenceFilter] = useState<ConfidenceFilter>('all')
   const [busyAppId, setBusyAppId] = useState<string | null>(null)
   const [leftoverBusy, setLeftoverBusy] = useState(false)
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null)
@@ -21,7 +26,6 @@ export function AppsPage() {
   const [relatedDataByAppId, setRelatedDataByAppId] = useState<Record<string, AppRelatedDataItem[]>>({})
   const [selectedRelatedPathsByAppId, setSelectedRelatedPathsByAppId] = useState<Record<string, string[]>>({})
   const [selectedLeftoverPaths, setSelectedLeftoverPaths] = useState<string[]>([])
-  const [visibleLeftoverCount, setVisibleLeftoverCount] = useState(120)
   const isWindows = navigator.userAgent.includes('Windows')
 
   const loadApps = async () => {
@@ -59,9 +63,9 @@ export function AppsPage() {
   }, [activeTab])
 
   const filteredApps = useMemo(() => {
-    const normalizedQuery = appliedSearch.trim().toLowerCase()
+    const normalizedQuery = installedAppliedSearch.trim().toLowerCase()
     return apps.filter((app) => {
-      if (platformFilter !== 'all' && app.platform !== platformFilter) return false
+      if (installedPlatformFilter !== 'all' && app.platform !== installedPlatformFilter) return false
       if (!normalizedQuery) return true
       return [
         app.name,
@@ -70,40 +74,46 @@ export function AppsPage() {
         app.installLocation
       ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
     })
-  }, [appliedSearch, apps, platformFilter])
+  }, [apps, installedAppliedSearch, installedPlatformFilter])
 
   const filteredLeftovers = useMemo(() => {
-    const normalizedQuery = appliedSearch.trim().toLowerCase()
+    const normalizedQuery = leftoverAppliedSearch.trim().toLowerCase()
     return leftoverItems.filter((item) => {
-      if (platformFilter !== 'all' && item.platform !== platformFilter) return false
+      if (leftoverPlatformFilter !== 'all' && item.platform !== leftoverPlatformFilter) return false
+      if (leftoverConfidenceFilter !== 'all' && item.confidence !== leftoverConfidenceFilter) return false
       if (!normalizedQuery) return true
       return [item.appName, item.label, item.path].some((value) => value.toLowerCase().includes(normalizedQuery))
     })
-  }, [appliedSearch, leftoverItems, platformFilter])
-  const visibleLeftovers = useMemo(
-    () => filteredLeftovers.slice(0, visibleLeftoverCount),
-    [filteredLeftovers, visibleLeftoverCount]
-  )
+  }, [leftoverAppliedSearch, leftoverConfidenceFilter, leftoverItems, leftoverPlatformFilter])
   const selectedFilteredLeftoverCount = useMemo(
     () => filteredLeftovers.filter((item) => selectedLeftoverPaths.includes(item.path)).length,
     [filteredLeftovers, selectedLeftoverPaths]
   )
   const allFilteredLeftoversChecked = filteredLeftovers.length > 0 && selectedFilteredLeftoverCount === filteredLeftovers.length
 
-  useEffect(() => {
-    setVisibleLeftoverCount(120)
-  }, [activeTab, appliedSearch, platformFilter])
-
-  const applySearch = () => {
+  const applyInstalledSearch = () => {
     startTransition(() => {
-      setAppliedSearch(draftSearch)
+      setInstalledAppliedSearch(installedDraftSearch)
     })
   }
 
-  const clearSearch = () => {
-    setDraftSearch('')
+  const clearInstalledSearch = () => {
+    setInstalledDraftSearch('')
     startTransition(() => {
-      setAppliedSearch('')
+      setInstalledAppliedSearch('')
+    })
+  }
+
+  const applyLeftoverSearch = () => {
+    startTransition(() => {
+      setLeftoverAppliedSearch(leftoverDraftSearch)
+    })
+  }
+
+  const clearLeftoverSearch = () => {
+    setLeftoverDraftSearch('')
+    startTransition(() => {
+      setLeftoverAppliedSearch('')
     })
   }
 
@@ -228,45 +238,6 @@ export function AppsPage() {
           <PageTab active={activeTab === 'installed'} onClick={() => setActiveTab('installed')}>Installed</PageTab>
           <PageTab active={activeTab === 'leftover'} onClick={() => setActiveTab('leftover')}>Leftover Data</PageTab>
         </div>
-        <button onClick={() => void refreshCurrentTab()} style={btnStyle}>Refresh</button>
-        {isWindows && (
-          <button onClick={() => void handleOpenSystemSettings()} style={{ ...btnStyle, background: 'var(--bg-card-hover)', color: 'var(--text-primary)' }}>
-            Open System Settings
-          </button>
-        )}
-        <input
-          value={draftSearch}
-          onChange={(e) => {
-            const nextValue = e.target.value
-            setDraftSearch(nextValue)
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              applySearch()
-            }
-          }}
-          placeholder="Search apps"
-          style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
-        />
-        <button onClick={applySearch} style={btnStyle}>Search</button>
-        <button
-          onClick={clearSearch}
-          disabled={!draftSearch && !appliedSearch}
-          style={{
-            ...btnStyle,
-            background: 'var(--bg-card-hover)',
-            color: 'var(--text-primary)',
-            opacity: !draftSearch && !appliedSearch ? 0.55 : 1,
-            cursor: !draftSearch && !appliedSearch ? 'default' : 'pointer'
-          }}
-        >
-          Clear
-        </button>
-        <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
-          <option value="all">All Platforms</option>
-          <option value="mac">macOS</option>
-          <option value="windows">Windows</option>
-        </select>
       </div>
 
       <div style={{
@@ -283,9 +254,14 @@ export function AppsPage() {
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
           {activeTab === 'installed' ? `${filteredApps.length} apps` : `${filteredLeftovers.length} items`}
         </span>
-        {appliedSearch && (
+        {activeTab === 'installed' && installedAppliedSearch && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Search: <strong style={{ color: 'var(--text-primary)' }}>{appliedSearch}</strong>
+            Search: <strong style={{ color: 'var(--text-primary)' }}>{installedAppliedSearch}</strong>
+          </span>
+        )}
+        {activeTab === 'leftover' && leftoverAppliedSearch && (
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Search: <strong style={{ color: 'var(--text-primary)' }}>{leftoverAppliedSearch}</strong>
           </span>
         )}
       </div>
@@ -298,6 +274,38 @@ export function AppsPage() {
           <div style={emptyStyle}>표시할 설치 앱이 없습니다.</div>
         ) : (
           <div>
+            <div style={stickyTabControlsWrapStyle}>
+            <div style={tabControlsStyle}>
+              <button onClick={() => void loadApps()} style={btnStyle}>Refresh</button>
+              {isWindows && (
+                <button onClick={() => void handleOpenSystemSettings()} style={{ ...btnStyle, background: 'var(--bg-card-hover)', color: 'var(--text-primary)' }}>
+                  Open System Settings
+                </button>
+              )}
+              <input
+                value={installedDraftSearch}
+                onChange={(e) => setInstalledDraftSearch(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') applyInstalledSearch()
+                }}
+                placeholder="Search installed apps"
+                style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
+              />
+              <button onClick={applyInstalledSearch} style={btnStyle}>Search</button>
+              <button
+                onClick={clearInstalledSearch}
+                disabled={!installedDraftSearch && !installedAppliedSearch}
+                style={secondaryBtnStyle(!installedDraftSearch && !installedAppliedSearch)}
+              >
+                Clear
+              </button>
+              <select value={installedPlatformFilter} onChange={(e) => setInstalledPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
+                <option value="all">All Platforms</option>
+                <option value="mac">macOS</option>
+                <option value="windows">Windows</option>
+              </select>
+            </div>
+            </div>
             <div style={infoBarStyle}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.
@@ -421,9 +429,42 @@ export function AppsPage() {
           <div style={emptyStyle}>표시할 잔여 앱 데이터가 없습니다.</div>
         ) : (
           <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={stickyTabControlsWrapStyle}>
+            <div style={tabControlsStyle}>
+              <button onClick={() => void loadLeftovers()} style={btnStyle}>Refresh</button>
+              <input
+                value={leftoverDraftSearch}
+                onChange={(e) => setLeftoverDraftSearch(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') applyLeftoverSearch()
+                }}
+                placeholder="Search leftover data"
+                style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
+              />
+              <button onClick={applyLeftoverSearch} style={btnStyle}>Search</button>
+              <button
+                onClick={clearLeftoverSearch}
+                disabled={!leftoverDraftSearch && !leftoverAppliedSearch}
+                style={secondaryBtnStyle(!leftoverDraftSearch && !leftoverAppliedSearch)}
+              >
+                Clear
+              </button>
+              <select value={leftoverPlatformFilter} onChange={(e) => setLeftoverPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
+                <option value="all">All Platforms</option>
+                <option value="mac">macOS</option>
+                <option value="windows">Windows</option>
+              </select>
+              <select value={leftoverConfidenceFilter} onChange={(e) => setLeftoverConfidenceFilter(e.target.value as ConfidenceFilter)} style={inputStyle}>
+                <option value="all">All Confidence</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            </div>
             <div style={infoBarStyle}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 선택한 항목만 휴지통으로 이동합니다.
+                설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 각 카드의 근거와 위험도를 보고 직접 선택하세요.
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                 {selectedFilteredLeftoverCount} selected
@@ -451,7 +492,7 @@ export function AppsPage() {
               </label>
             </div>
             <div style={{ display: 'grid', gap: '10px', paddingBottom: '84px' }}>
-              {visibleLeftovers.map((item) => {
+              {filteredLeftovers.map((item) => {
                 const checked = selectedLeftoverPaths.includes(item.path)
                 return (
                   <label key={item.id} style={leftoverCardStyle}>
@@ -471,6 +512,7 @@ export function AppsPage() {
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
                               <Badge text={item.platform === 'mac' ? 'macOS' : 'Windows'} color={item.platform === 'mac' ? 'var(--accent-cyan)' : 'var(--accent-yellow)'} />
                               <Badge text={item.label} color="var(--accent-green)" />
+                              <Badge text={getConfidenceLabel(item.confidence)} color={getConfidenceColor(item.confidence)} />
                             </div>
                           </div>
                           <button
@@ -487,19 +529,19 @@ export function AppsPage() {
                         <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
                           {formatPathPreview(item.path)}
                         </div>
+                        <div style={{ display: 'grid', gap: '6px', marginTop: '10px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            <strong style={{ color: 'var(--text-primary)' }}>Why:</strong> {item.reason}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            <strong style={{ color: 'var(--text-primary)' }}>Risk:</strong> {item.risk}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </label>
                 )
               })}
-              {visibleLeftovers.length < filteredLeftovers.length && (
-                <button
-                  onClick={() => setVisibleLeftoverCount((current) => current + 120)}
-                  style={{ ...btnStyle, justifySelf: 'center' }}
-                >
-                  Show More ({filteredLeftovers.length - visibleLeftovers.length} left)
-                </button>
-              )}
             </div>
             <div style={stickyActionBarStyle}>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -535,6 +577,28 @@ function formatPathPreview(targetPath: string): string {
   return `${head} ... ${tail}`
 }
 
+function getConfidenceLabel(confidence: AppLeftoverDataItem['confidence']): string {
+  switch (confidence) {
+    case 'high':
+      return 'High confidence'
+    case 'medium':
+      return 'Medium confidence'
+    default:
+      return 'Low confidence'
+  }
+}
+
+function getConfidenceColor(confidence: AppLeftoverDataItem['confidence']): string {
+  switch (confidence) {
+    case 'high':
+      return 'var(--accent-green)'
+    case 'medium':
+      return 'var(--accent-yellow)'
+    default:
+      return 'var(--accent-red)'
+  }
+}
+
 const btnStyle: React.CSSProperties = {
   padding: '8px 16px',
   fontSize: '13px',
@@ -563,6 +627,32 @@ const stickyHeaderStyle: React.CSSProperties = {
   marginBottom: '8px',
   background: 'color-mix(in srgb, var(--bg-primary) 92%, transparent)',
   backdropFilter: 'blur(10px)'
+}
+
+const tabControlsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  flexWrap: 'wrap',
+  padding: '0 0 12px 0'
+}
+
+const stickyTabControlsWrapStyle: React.CSSProperties = {
+  position: 'sticky',
+  top: '112px',
+  zIndex: 4,
+  background: 'color-mix(in srgb, var(--bg-primary) 94%, transparent)',
+  backdropFilter: 'blur(10px)'
+}
+
+function secondaryBtnStyle(disabled: boolean): React.CSSProperties {
+  return {
+    ...btnStyle,
+    background: 'var(--bg-card-hover)',
+    color: 'var(--text-primary)',
+    opacity: disabled ? 0.55 : 1,
+    cursor: disabled ? 'default' : 'pointer'
+  }
 }
 
 const thStyle: React.CSSProperties = {

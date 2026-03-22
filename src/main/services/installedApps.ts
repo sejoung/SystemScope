@@ -520,7 +520,6 @@ async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<Ap
     { root: path.join(homeDir, 'Library', 'Application Support'), type: 'dir', label: 'Application Support', source: 'mac:application-support' },
     { root: path.join(homeDir, 'Library', 'Caches'), type: 'dir', label: 'Caches', source: 'mac:caches' },
     { root: path.join(homeDir, 'Library', 'Logs'), type: 'dir', label: 'Logs', source: 'mac:logs' },
-    { root: path.join(homeDir, 'Library', 'Containers'), type: 'dir', label: 'Container', source: 'mac:container' },
     { root: path.join(homeDir, 'Library', 'Saved Application State'), type: 'dir', label: 'Saved State', source: 'mac:saved-state' },
     { root: path.join(homeDir, 'Library', 'Preferences'), type: 'plist', label: 'Preferences', source: 'mac:preferences' }
   ] as const
@@ -551,7 +550,8 @@ async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<Ap
         label: spec.label,
         path: path.join(spec.root, entry.name),
         source: spec.source,
-        platform: 'mac'
+        platform: 'mac',
+        ...getMacLeftoverGuidance(spec.label, appName)
       })
     }
   }
@@ -597,7 +597,8 @@ async function listWindowsLeftoverAppData(installedApps: InstalledApp[]): Promis
         label: spec.label,
         path: path.win32.join(spec.root, entry.name),
         source: spec.source,
-        platform: 'windows'
+        platform: 'windows',
+        ...getWindowsLeftoverGuidance(spec.label)
       })
     }
   }
@@ -619,4 +620,67 @@ function dedupeLeftoverDataItems(items: AppLeftoverDataItem[]): AppLeftoverDataI
     seen.add(item.path)
     return true
   })
+}
+
+function getMacLeftoverGuidance(
+  label: AppLeftoverDataItem['label'],
+  appName: string
+): Pick<AppLeftoverDataItem, 'confidence' | 'reason' | 'risk'> {
+  if (label === 'Container' || label === 'Saved State') {
+    return {
+      confidence: 'high',
+      reason: `표준 macOS ${label.toLowerCase()} 경로에 있고 설치된 앱 번들과 일치 항목이 없습니다.`,
+      risk: '앱을 더 이상 쓰지 않는다면 지워도 될 가능성이 높지만, 로그인 상태나 샌드박스 데이터가 사라질 수 있습니다.'
+    }
+  }
+
+  if (label === 'Preferences') {
+    return {
+      confidence: appName.includes('.') ? 'high' : 'medium',
+      reason: appName.includes('.')
+        ? 'bundle id 형태의 환경설정 파일이며 설치된 앱과 일치 항목이 없습니다.'
+        : '환경설정 파일이지만 이름 기반으로만 추정했습니다.',
+      risk: '설정값만 지워질 가능성이 높지만, 앱 재설치 후 기존 설정을 복구하지 못할 수 있습니다.'
+    }
+  }
+
+  if (label === 'Application Support') {
+    return {
+      confidence: 'medium',
+      reason: '표준 앱 데이터 경로에 있지만 이름 기반으로 분류된 항목입니다.',
+      risk: '앱 데이터, 다운로드, 내부 DB가 포함될 수 있어 삭제 전 경로 확인이 필요합니다.'
+    }
+  }
+
+  return {
+    confidence: 'medium',
+    reason: `표준 ${label.toLowerCase()} 경로에 있는 항목이지만 이름 기반 후보입니다.`,
+    risk: '캐시/로그 성격일 가능성이 높지만 일부 재사용 데이터가 섞여 있을 수 있습니다.'
+  }
+}
+
+function getWindowsLeftoverGuidance(
+  label: AppLeftoverDataItem['label']
+): Pick<AppLeftoverDataItem, 'confidence' | 'reason' | 'risk'> {
+  if (label === 'ProgramData') {
+    return {
+      confidence: 'medium',
+      reason: '공용 프로그램 데이터 경로에 있고 설치된 프로그램 목록과 일치 항목이 없습니다.',
+      risk: '공용 설정이나 서비스 데이터가 남아 있을 수 있어 삭제 전 확인이 필요합니다.'
+    }
+  }
+
+  if (label === 'Local Programs') {
+    return {
+      confidence: 'high',
+      reason: '사용자 로컬 프로그램 경로에 있지만 설치 목록과 일치 항목이 없습니다.',
+      risk: '앱을 더 이상 쓰지 않는다면 삭제해도 될 가능성이 높지만 휴대용 앱일 수도 있습니다.'
+    }
+  }
+
+  return {
+    confidence: 'medium',
+    reason: `표준 ${label} 경로에 있지만 설치 목록과 이름 기반으로만 비교된 항목입니다.`,
+    risk: '캐시나 설정일 수 있지만 일부 앱은 재설치 시 재사용할 데이터가 포함될 수 있습니다.'
+  }
 }
