@@ -54,6 +54,7 @@ vi.mock('../../src/main/services/growthAnalyzer', () => ({
 
 describe('settings flow integration', () => {
   beforeEach(() => {
+    vi.resetModules()
     handlers.clear()
     schedulerCalls.length = 0
     storeState.thresholds = {
@@ -70,9 +71,8 @@ describe('settings flow integration', () => {
 
   it('should persist settings and update runtime thresholds through settings:set', async () => {
     const { registerSettingsIpc } = await import('../../src/main/ipc/settings.ipc')
-    const { checkAlerts, resetAlertState } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
 
-    resetAlertState()
     registerSettingsIpc()
 
     const setHandler = handlers.get(IPC_CHANNELS.SETTINGS_SET)

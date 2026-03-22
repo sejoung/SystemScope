@@ -7,8 +7,6 @@ import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
 
 const execFileAsync = promisify(execFile)
 
-export type { UserSpaceEntry, UserSpaceInfo }
-
 function getHomeFolders(): { name: string; rel: string; icon: string }[] {
   if (platform() === 'darwin') {
     return [

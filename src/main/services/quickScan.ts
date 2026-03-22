@@ -4,8 +4,6 @@ import * as path from 'path'
 import { homedir, tmpdir, platform } from 'os'
 import type { ScanCategory, QuickScanFolder } from '@shared/types'
 
-export type { ScanCategory, QuickScanFolder }
-
 interface ScanTarget {
   name: string
   description: string

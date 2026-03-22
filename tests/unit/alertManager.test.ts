@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { checkAlerts, setThresholds, getActiveAlerts, dismissAlert, resetAlertState } from '../../src/main/services/alertManager'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SystemStats } from '../../src/shared/types'
 
 function makeStats(overrides: Partial<{
@@ -48,42 +47,48 @@ function makeStats(overrides: Partial<{
 
 describe('AlertManager', () => {
   beforeEach(() => {
-    resetAlertState()
+    vi.resetModules()
   })
 
-  it('should not fire alerts when values are below thresholds', () => {
+  it('should not fire alerts when values are below thresholds', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     const alerts = checkAlerts(makeStats({ memoryUsage: 50, diskUsage: 50 }))
     expect(alerts).toHaveLength(0)
   })
 
-  it('should fire warning alert when disk usage exceeds warning threshold', () => {
+  it('should fire warning alert when disk usage exceeds warning threshold', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     const alerts = checkAlerts(makeStats({ diskUsage: 85 }))
     expect(alerts.length).toBeGreaterThan(0)
     expect(alerts[0].type).toBe('disk')
     expect(alerts[0].severity).toBe('warning')
   })
 
-  it('should fire critical alert when disk usage exceeds critical threshold', () => {
+  it('should fire critical alert when disk usage exceeds critical threshold', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     const alerts = checkAlerts(makeStats({ diskUsage: 95 }))
     expect(alerts.length).toBeGreaterThan(0)
     expect(alerts[0].severity).toBe('critical')
   })
 
-  it('should fire memory warning alert', () => {
+  it('should fire memory warning alert', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     const alerts = checkAlerts(makeStats({ memoryUsage: 85 }))
     const memAlert = alerts.find((a) => a.type === 'memory')
     expect(memAlert).toBeDefined()
     expect(memAlert!.severity).toBe('warning')
   })
 
-  it('should fire memory critical alert', () => {
+  it('should fire memory critical alert', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     const alerts = checkAlerts(makeStats({ memoryUsage: 95 }))
     const memAlert = alerts.find((a) => a.type === 'memory')
     expect(memAlert).toBeDefined()
     expect(memAlert!.severity).toBe('critical')
   })
 
-  it('should respect cooldown and not fire duplicate alerts', () => {
+  it('should respect cooldown and not fire duplicate alerts', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     const alerts1 = checkAlerts(makeStats({ memoryUsage: 95 }))
     expect(alerts1.length).toBeGreaterThan(0)
 
@@ -92,7 +97,8 @@ describe('AlertManager', () => {
     expect(memAlerts2).toHaveLength(0)
   })
 
-  it('should allow dismissing alerts', () => {
+  it('should allow dismissing alerts', async () => {
+    const { checkAlerts, getActiveAlerts, dismissAlert } = await import('../../src/main/services/alertManager')
     const alerts = checkAlerts(makeStats({ diskUsage: 95 }))
     expect(alerts.length).toBeGreaterThan(0)
 
@@ -106,7 +112,8 @@ describe('AlertManager', () => {
     expect(afterDismiss.find((a) => a.id === active[0].id)).toBeUndefined()
   })
 
-  it('should handle custom thresholds', () => {
+  it('should handle custom thresholds', async () => {
+    const { setThresholds, checkAlerts } = await import('../../src/main/services/alertManager')
     setThresholds({ diskWarning: 50, diskCritical: 60 })
     const alerts = checkAlerts(makeStats({ diskUsage: 55 }))
     expect(alerts.length).toBeGreaterThan(0)

@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   snapshotIntervalMin: 60
 }
 
-export function isSnapshotInterval(value: unknown): value is SnapshotIntervalMin {
+function isSnapshotInterval(value: unknown): value is SnapshotIntervalMin {
   return typeof value === 'number' && SNAPSHOT_INTERVAL_OPTIONS.includes(value as SnapshotIntervalMin)
 }
 
@@ -29,11 +29,11 @@ const THRESHOLD_KEYS = [
   'gpuMemoryCritical'
 ] as const satisfies readonly (keyof AlertThresholds)[]
 
-export function isTheme(value: unknown): value is AppSettings['theme'] {
+function isTheme(value: unknown): value is AppSettings['theme'] {
   return value === 'dark' || value === 'light'
 }
 
-export function isAlertThresholds(value: unknown): value is AlertThresholds {
+function isAlertThresholds(value: unknown): value is AlertThresholds {
   if (!value || typeof value !== 'object') return false
 
   for (const key of THRESHOLD_KEYS) {

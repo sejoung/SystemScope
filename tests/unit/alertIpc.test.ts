@@ -20,15 +20,14 @@ vi.mock('electron-log', () => ({
 
 describe('registerAlertIpc', () => {
   beforeEach(() => {
+    vi.resetModules()
     handlers.clear()
     logError.mockReset()
   })
 
   it('should return active alerts and allow dismissing them', async () => {
     const { registerAlertIpc } = await import('../../src/main/ipc/alert.ipc')
-    const { checkAlerts, resetAlertState } = await import('../../src/main/services/alertManager')
-
-    resetAlertState()
+    const { checkAlerts } = await import('../../src/main/services/alertManager')
     registerAlertIpc()
 
     checkAlerts({

@@ -3,8 +3,6 @@ import * as path from 'path'
 import * as crypto from 'crypto'
 import type { RecentGrowthEntry, DuplicateGroup } from '@shared/types'
 
-export type { RecentGrowthEntry, DuplicateGroup }
-
 export async function findRecentGrowth(
   folderPath: string,
   days: number = 7,
