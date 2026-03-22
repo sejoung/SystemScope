@@ -1,10 +1,17 @@
 import { execFile } from 'child_process'
 import type {
+  DockerActionResult,
+  DockerBuildCacheScanResult,
+  DockerBuildCacheSummary,
   DockerContainersScanResult,
   DockerContainerSummary,
   DockerImagesScanResult,
   DockerImageSummary,
+  DockerPruneResult,
   DockerRemoveResult
+  ,
+  DockerVolumesScanResult,
+  DockerVolumeSummary
 } from '@shared/types'
 
 interface DockerImageRow {
@@ -26,6 +33,21 @@ interface DockerContainerRow {
   Names?: string
   Ports?: string
   Size?: string
+  Mounts?: string
+}
+
+interface DockerVolumeRow {
+  Name?: string
+  Driver?: string
+  Mountpoint?: string
+}
+
+interface DockerSystemDfRow {
+  Type?: string
+  TotalCount?: string
+  Active?: string
+  Size?: string
+  Reclaimable?: string
 }
 
 export async function listDockerImages(): Promise<DockerImagesScanResult> {
@@ -137,6 +159,128 @@ export async function removeDockerContainers(containerIds: string[]): Promise<Do
   }
 }
 
+export async function stopDockerContainers(containerIds: string[]): Promise<DockerActionResult> {
+  const affectedIds: string[] = []
+  const errors: string[] = []
+
+  for (const containerId of containerIds) {
+    try {
+      await runDockerCommand(['stop', containerId])
+      affectedIds.push(containerId)
+    } catch (error) {
+      errors.push(normalizeDockerError(error, `컨테이너 ${containerId} 중지 실패`))
+    }
+  }
+
+  return {
+    affectedIds,
+    failCount: containerIds.length - affectedIds.length,
+    errors,
+    cancelled: false
+  }
+}
+
+export async function listDockerVolumes(): Promise<DockerVolumesScanResult> {
+  const volumeResult = await runDockerJsonLines<DockerVolumeRow>(['volume', 'ls', '--format', '{{json .}}'])
+  if (volumeResult.status !== 'ready') {
+    return {
+      status: volumeResult.status,
+      volumes: [],
+      message: volumeResult.message
+    }
+  }
+
+  const containerResult = await runDockerJsonLines<DockerContainerRow>([
+    'ps',
+    '-a',
+    '--format',
+    '{{json .}}'
+  ])
+  const containersByVolume = new Map<string, string[]>()
+  if (containerResult.status === 'ready') {
+    for (const container of containerResult.rows) {
+      const mounts = String(container.Mounts ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+      for (const mount of mounts) {
+        const containers = containersByVolume.get(mount) ?? []
+        if (container.Names) containers.push(container.Names)
+        containersByVolume.set(mount, containers)
+      }
+    }
+  }
+
+  const volumes = volumeResult.rows
+    .map((row) => toDockerVolumeSummary(row, containersByVolume))
+    .filter((volume): volume is DockerVolumeSummary => volume !== null)
+    .sort((a, b) => Number(a.inUse) - Number(b.inUse) || a.name.localeCompare(b.name))
+
+  return {
+    status: 'ready',
+    volumes,
+    message: volumes.length === 0 ? 'Docker 볼륨이 없습니다.' : null
+  }
+}
+
+export async function removeDockerVolumes(volumeNames: string[]): Promise<DockerRemoveResult> {
+  const deletedIds: string[] = []
+  const errors: string[] = []
+
+  for (const volumeName of volumeNames) {
+    try {
+      await runDockerCommand(['volume', 'rm', volumeName])
+      deletedIds.push(volumeName)
+    } catch (error) {
+      errors.push(normalizeDockerError(error, `볼륨 ${volumeName} 삭제 실패`))
+    }
+  }
+
+  return {
+    deletedIds,
+    failCount: volumeNames.length - deletedIds.length,
+    errors,
+    cancelled: false
+  }
+}
+
+export async function getDockerBuildCache(): Promise<DockerBuildCacheScanResult> {
+  const dfResult = await runDockerJsonLines<DockerSystemDfRow>(['system', 'df', '--format', '{{json .}}'])
+  if (dfResult.status !== 'ready') {
+    return {
+      status: dfResult.status,
+      summary: null,
+      message: dfResult.message
+    }
+  }
+
+  const row = dfResult.rows.find((entry) => String(entry.Type ?? '').toLowerCase() === 'build cache')
+  const summary = row ? toDockerBuildCacheSummary(row) : {
+    totalCount: 0,
+    activeCount: 0,
+    sizeBytes: 0,
+    sizeLabel: '0 B',
+    reclaimableBytes: 0,
+    reclaimableLabel: '0 B'
+  }
+
+  return {
+    status: 'ready',
+    summary,
+    message: summary.totalCount === 0 ? '정리할 Docker build cache가 없습니다.' : null
+  }
+}
+
+export async function pruneDockerBuildCache(): Promise<DockerPruneResult> {
+  const { stdout } = await runDockerCommand(['builder', 'prune', '--force'])
+  const reclaimedLabel = parseReclaimedLabel(stdout)
+  return {
+    reclaimedBytes: parseDockerSize(reclaimedLabel),
+    reclaimedLabel: normalizeByteLabel(reclaimedLabel),
+    cancelled: false
+  }
+}
+
 async function runDockerJsonLines<T>(args: string[]): Promise<
   | { status: 'ready'; rows: T[]; message: null }
   | { status: 'not_installed' | 'daemon_unavailable'; rows: T[]; message: string }
@@ -222,6 +366,39 @@ function toDockerContainerSummary(row: DockerContainerRow): DockerContainerSumma
   }
 }
 
+function toDockerVolumeSummary(
+  row: DockerVolumeRow,
+  containersByVolume: Map<string, string[]>
+): DockerVolumeSummary | null {
+  const name = String(row.Name ?? '').trim()
+  if (!name) return null
+  const containers = containersByVolume.get(name) ?? []
+
+  return {
+    name,
+    driver: String(row.Driver ?? '-'),
+    mountpoint: String(row.Mountpoint ?? '-'),
+    inUse: containers.length > 0,
+    containers
+  }
+}
+
+function toDockerBuildCacheSummary(row: DockerSystemDfRow): DockerBuildCacheSummary {
+  const totalCount = Number.parseInt(String(row.TotalCount ?? '0'), 10) || 0
+  const activeCount = Number.parseInt(String(row.Active ?? '0'), 10) || 0
+  const sizeLabel = normalizeByteLabel(String(row.Size ?? '0 B'))
+  const reclaimableLabel = normalizeReclaimableLabel(String(row.Reclaimable ?? '0 B'))
+
+  return {
+    totalCount,
+    activeCount,
+    sizeBytes: parseDockerSize(sizeLabel),
+    sizeLabel,
+    reclaimableBytes: parseDockerSize(reclaimableLabel),
+    reclaimableLabel
+  }
+}
+
 function parseDockerSize(size: string | undefined): number {
   if (!size) return 0
   const normalized = size.replace(/,/g, '').trim()
@@ -241,6 +418,26 @@ function parseDockerSize(size: string | undefined): number {
   }
 
   return Math.round(value * (multiplier[unit] ?? 1))
+}
+
+function normalizeReclaimableLabel(label: string): string {
+  const trimmed = label.trim()
+  if (!trimmed) return '0 B'
+  const primary = trimmed.split('(')[0]?.trim() ?? trimmed
+  return normalizeByteLabel(primary)
+}
+
+function normalizeByteLabel(label: string): string {
+  const trimmed = label.replace(/,/g, '').trim()
+  if (/^\d+(\.\d+)?[KMGTP]?B$/i.test(trimmed)) {
+    return trimmed.replace(/([0-9.])([A-Za-z])/, '$1 $2')
+  }
+  return trimmed || '0 B'
+}
+
+function parseReclaimedLabel(stdout: string): string {
+  const match = stdout.match(/Total reclaimed space:\s*([^\n]+)/i)
+  return normalizeByteLabel(match?.[1]?.trim() ?? '0 B')
 }
 
 function detectDockerStatus(error: unknown): 'not_installed' | 'daemon_unavailable' {

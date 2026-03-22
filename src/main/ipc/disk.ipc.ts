@@ -9,10 +9,15 @@ import { findRecentGrowth, findDuplicates } from '../services/diskInsights'
 import { analyzeGrowth } from '../services/growthAnalyzer'
 import { findOldFiles } from '../services/oldFileFinder'
 import {
+  getDockerBuildCache,
   listDockerContainers,
   listDockerImages,
+  listDockerVolumes,
+  pruneDockerBuildCache,
   removeDockerContainers,
-  removeDockerImages
+  removeDockerImages,
+  removeDockerVolumes,
+  stopDockerContainers
 } from '../services/dockerImages'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
@@ -233,6 +238,26 @@ export function registerDiskIpc(): void {
     }
   })
 
+  ipcMain.handle(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES, async () => {
+    try {
+      const result = await listDockerVolumes()
+      return success(result)
+    } catch (err) {
+      log.error('Docker volume scan failed', err)
+      return failure('SCAN_FAILED', 'Docker 볼륨을 조회할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_GET_DOCKER_BUILD_CACHE, async () => {
+    try {
+      const result = await getDockerBuildCache()
+      return success(result)
+    } catch (err) {
+      log.error('Docker build cache scan failed', err)
+      return failure('SCAN_FAILED', 'Docker build cache를 조회할 수 없습니다.')
+    }
+  })
+
   ipcMain.handle(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES, async (_event, imageIds: string[]) => {
     if (!Array.isArray(imageIds) || imageIds.length === 0 || imageIds.some((id) => typeof id !== 'string' || !id.trim())) {
       return failure('INVALID_INPUT', '삭제할 Docker 이미지가 없습니다.')
@@ -346,6 +371,142 @@ export function registerDiskIpc(): void {
     } catch (err) {
       log.error('Docker container remove failed', err)
       return failure('UNKNOWN_ERROR', 'Docker 컨테이너를 삭제할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS, async (_event, containerIds: string[]) => {
+    if (
+      !Array.isArray(containerIds) ||
+      containerIds.length === 0 ||
+      containerIds.some((id) => typeof id !== 'string' || !id.trim())
+    ) {
+      return failure('INVALID_INPUT', '중지할 Docker 컨테이너가 없습니다.')
+    }
+
+    try {
+      const scan = await listDockerContainers()
+      if (scan.status !== 'ready') {
+        return failure('UNKNOWN_ERROR', scan.message ?? 'Docker를 사용할 수 없습니다.')
+      }
+
+      const targets = scan.containers.filter((container) => containerIds.includes(container.id))
+      if (targets.length === 0) {
+        return failure('INVALID_INPUT', '중지할 Docker 컨테이너를 찾을 수 없습니다.')
+      }
+      if (targets.some((container) => !container.running)) {
+        return failure('PERMISSION_DENIED', '이미 중지된 컨테이너는 중지할 수 없습니다.')
+      }
+
+      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      const confirm = await dialog.showMessageBox(win ?? undefined, {
+        type: 'warning',
+        buttons: ['Cancel', 'Stop'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Stop Docker Containers',
+        message: `${targets.length}개의 Docker 컨테이너를 중지하시겠습니까?`,
+        detail: [
+          ...targets.slice(0, 5).map((container) => `- ${container.name} (${container.image})`),
+          targets.length > 5 ? `- ... 외 ${targets.length - 5}개` : null,
+          '',
+          '중지 후 Containers 탭에서 삭제하거나 Images 탭에서 참조 이미지를 정리할 수 있습니다.'
+        ]
+          .filter(Boolean)
+          .join('\n')
+      })
+
+      if (confirm.response === 0) {
+        return success({ affectedIds: [], failCount: 0, errors: [], cancelled: true })
+      }
+
+      const result = await stopDockerContainers(targets.map((container) => container.id))
+      return success(result)
+    } catch (err) {
+      log.error('Docker container stop failed', err)
+      return failure('UNKNOWN_ERROR', 'Docker 컨테이너를 중지할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES, async (_event, volumeNames: string[]) => {
+    if (
+      !Array.isArray(volumeNames) ||
+      volumeNames.length === 0 ||
+      volumeNames.some((name) => typeof name !== 'string' || !name.trim())
+    ) {
+      return failure('INVALID_INPUT', '삭제할 Docker 볼륨이 없습니다.')
+    }
+
+    try {
+      const scan = await listDockerVolumes()
+      if (scan.status !== 'ready') {
+        return failure('UNKNOWN_ERROR', scan.message ?? 'Docker를 사용할 수 없습니다.')
+      }
+
+      const targets = scan.volumes.filter((volume) => volumeNames.includes(volume.name))
+      if (targets.length === 0) {
+        return failure('INVALID_INPUT', '삭제할 Docker 볼륨을 찾을 수 없습니다.')
+      }
+      if (targets.some((volume) => volume.inUse)) {
+        return failure('PERMISSION_DENIED', '사용 중인 Docker 볼륨은 삭제할 수 없습니다.')
+      }
+
+      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      const confirm = await dialog.showMessageBox(win ?? undefined, {
+        type: 'warning',
+        buttons: ['Cancel', 'Delete'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Delete Docker Volumes',
+        message: `${targets.length}개의 Docker 볼륨을 삭제하시겠습니까?`,
+        detail: [
+          ...targets.slice(0, 5).map((volume) => `- ${volume.name} (${volume.driver})`),
+          targets.length > 5 ? `- ... 외 ${targets.length - 5}개` : null,
+          '',
+          '사용 중인 볼륨은 삭제 대상에서 제외됩니다.'
+        ]
+          .filter(Boolean)
+          .join('\n')
+      })
+
+      if (confirm.response === 0) {
+        return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
+      }
+
+      const result = await removeDockerVolumes(targets.map((volume) => volume.name))
+      return success(result)
+    } catch (err) {
+      log.error('Docker volume remove failed', err)
+      return failure('UNKNOWN_ERROR', 'Docker 볼륨을 삭제할 수 없습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE, async () => {
+    try {
+      const cache = await getDockerBuildCache()
+      if (cache.status !== 'ready') {
+        return failure('UNKNOWN_ERROR', cache.message ?? 'Docker를 사용할 수 없습니다.')
+      }
+
+      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      const confirm = await dialog.showMessageBox(win ?? undefined, {
+        type: 'warning',
+        buttons: ['Cancel', 'Prune'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Prune Docker Build Cache',
+        message: 'Docker build cache를 정리하시겠습니까?',
+        detail: `현재 회수 가능 용량: ${cache.summary?.reclaimableLabel ?? '0 B'}`
+      })
+
+      if (confirm.response === 0) {
+        return success({ reclaimedBytes: 0, reclaimedLabel: '0 B', cancelled: true })
+      }
+
+      const result = await pruneDockerBuildCache()
+      return success(result)
+    } catch (err) {
+      log.error('Docker build cache prune failed', err)
+      return failure('UNKNOWN_ERROR', 'Docker build cache를 정리할 수 없습니다.')
     }
   })
 

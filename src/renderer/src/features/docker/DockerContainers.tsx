@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { useToast } from '../../components/Toast'
 import { formatBytes } from '../../utils/format'
-import type { DockerContainerSummary, DockerContainersScanResult, DockerRemoveResult } from '@shared/types'
+import type { DockerActionResult, DockerContainerSummary, DockerContainersScanResult, DockerRemoveResult } from '@shared/types'
 
 export function DockerContainers({
   refreshToken = 0,
@@ -21,6 +21,7 @@ export function DockerContainers({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const removableContainers = useMemo(() => containers.filter((container) => !container.running), [containers])
+  const runningContainers = useMemo(() => containers.filter((container) => container.running), [containers])
   const selectedRemovableCount = useMemo(
     () => removableContainers.filter((container) => selectedIds.has(container.id)).length,
     [removableContainers, selectedIds]
@@ -75,6 +76,32 @@ export function DockerContainers({
     }
   }
 
+  const handleStop = async (ids: string[]) => {
+    const res = await window.systemScope.stopDockerContainers(ids)
+    if (!res.ok || !res.data) {
+      showToast(res.error?.message ?? 'Docker 컨테이너를 중지하지 못했습니다.')
+      return
+    }
+
+    const result = res.data as DockerActionResult
+    if (result.cancelled) return
+
+    if (result.affectedIds.length > 0) {
+      showToast(`${result.affectedIds.length}개 Docker 컨테이너를 중지했습니다.`)
+      setContainers((prev) =>
+        prev.map((container) =>
+          result.affectedIds.includes(container.id)
+            ? { ...container, running: false, status: 'Exited (stopped by SystemScope)' }
+            : container
+        )
+      )
+      onChanged?.()
+    }
+    if (result.failCount > 0 && result.errors.length > 0) {
+      showToast(`일부 실패: ${result.errors[0]}`)
+    }
+  }
+
   return (
     <Accordion
       title="Containers"
@@ -110,6 +137,14 @@ export function DockerContainers({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
             종료된 컨테이너를 먼저 정리하면 Images 탭에서 참조 중으로 막힌 이미지 삭제가 가능해집니다.
+            {runningContainers.length > 0 && (
+              <button
+                onClick={() => void handleStop(runningContainers.map((container) => container.id))}
+                style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+              >
+                running {runningContainers.length}개 중지
+              </button>
+            )}
             {onOpenImages && (
               <button
                 onClick={onOpenImages}
@@ -142,7 +177,7 @@ export function DockerContainers({
                   <th style={thStyle}>Status</th>
                   <th style={thStyle}>Ports</th>
                   <th style={{ ...thStyle, textAlign: 'right' }}>Writable</th>
-                  <th style={{ ...thStyle, width: '110px', textAlign: 'center' }}>Action</th>
+                  <th style={{ ...thStyle, width: '160px', textAlign: 'center' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -184,18 +219,32 @@ export function DockerContainers({
                     <td style={tdStyle}>{container.ports || '-'}</td>
                     <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace' }}>{formatBytes(container.sizeBytes)}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' }}>
-                      <button
-                        onClick={() => void handleDelete([container.id])}
-                        disabled={container.running || loading}
-                        style={{
-                          ...actionBtnStyle,
-                          background: container.running ? 'var(--bg-card-hover)' : 'var(--accent-red)',
-                          color: container.running ? 'var(--text-muted)' : 'var(--text-on-accent)',
-                          cursor: container.running ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        Remove
-                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                        <button
+                          onClick={() => void handleStop([container.id])}
+                          disabled={!container.running || loading}
+                          style={{
+                            ...actionBtnStyle,
+                            background: container.running ? 'var(--accent-yellow)' : 'var(--bg-card-hover)',
+                            color: container.running ? 'var(--text-on-accent)' : 'var(--text-muted)',
+                            cursor: container.running ? 'pointer' : 'not-allowed'
+                          }}
+                        >
+                          Stop
+                        </button>
+                        <button
+                          onClick={() => void handleDelete([container.id])}
+                          disabled={container.running || loading}
+                          style={{
+                            ...actionBtnStyle,
+                            background: container.running ? 'var(--bg-card-hover)' : 'var(--accent-red)',
+                            color: container.running ? 'var(--text-muted)' : 'var(--text-on-accent)',
+                            cursor: container.running ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

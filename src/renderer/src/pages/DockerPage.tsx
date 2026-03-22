@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { DockerOverview } from '../features/docker/DockerOverview'
 import { DockerContainers } from '../features/docker/DockerContainers'
+import { DockerVolumes } from '../features/docker/DockerVolumes'
+import { DockerBuildCache } from '../features/docker/DockerBuildCache'
 import { DockerImages } from '../features/disk/DockerImages'
 
-type DockerTab = 'overview' | 'containers' | 'images'
+type DockerTab = 'overview' | 'containers' | 'images' | 'volumes' | 'build-cache'
 
 export function DockerPage() {
   const [tab, setTab] = useState<DockerTab>('overview')
@@ -20,6 +22,8 @@ export function DockerPage() {
           <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</PageTab>
           <PageTab active={tab === 'containers'} onClick={() => setTab('containers')}>Containers</PageTab>
           <PageTab active={tab === 'images'} onClick={() => setTab('images')}>Images</PageTab>
+          <PageTab active={tab === 'volumes'} onClick={() => setTab('volumes')}>Volumes</PageTab>
+          <PageTab active={tab === 'build-cache'} onClick={() => setTab('build-cache')}>Build Cache</PageTab>
         </div>
       </div>
 
@@ -29,6 +33,8 @@ export function DockerPage() {
             refreshToken={refreshToken}
             onOpenContainers={() => setTab('containers')}
             onOpenImages={() => setTab('images')}
+            onOpenVolumes={() => setTab('volumes')}
+            onOpenBuildCache={() => setTab('build-cache')}
           />
         </ErrorBoundary>
       )}
@@ -49,6 +55,24 @@ export function DockerPage() {
             refreshToken={refreshToken}
             onChanged={handleChanged}
             onOpenContainers={() => setTab('containers')}
+          />
+        </ErrorBoundary>
+      )}
+
+      {tab === 'volumes' && (
+        <ErrorBoundary title="Docker Volumes">
+          <DockerVolumes
+            refreshToken={refreshToken}
+            onChanged={handleChanged}
+          />
+        </ErrorBoundary>
+      )}
+
+      {tab === 'build-cache' && (
+        <ErrorBoundary title="Docker Build Cache">
+          <DockerBuildCache
+            refreshToken={refreshToken}
+            onChanged={handleChanged}
           />
         </ErrorBoundary>
       )}

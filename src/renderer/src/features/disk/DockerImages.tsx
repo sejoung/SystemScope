@@ -103,7 +103,7 @@ export function DockerImages({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            사용 중인 이미지는 먼저 Containers 탭에서 참조 컨테이너를 정리해야 합니다. `dangling` 이미지는 태그가 없는 고아 이미지입니다.
+            사용 중인 이미지는 먼저 Containers 탭에서 참조 컨테이너를 정리해야 합니다. Untagged (&lt;none&gt;) 이미지는 repository 또는 tag가 끊어진 고아 이미지입니다.
           </div>
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -162,7 +162,7 @@ export function DockerImages({
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                           {image.inUse && <Badge text="in use" color="var(--accent-yellow)" />}
                           {!image.inUse && <Badge text="unused" color="var(--accent-green)" />}
-                          {image.dangling && <Badge text="dangling" color="var(--accent-red)" />}
+                          {image.dangling && <Badge text="untagged (<none>)" color="var(--accent-red)" />}
                         </div>
                         {image.containers.length > 0 && (
                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>

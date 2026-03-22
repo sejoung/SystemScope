@@ -34,6 +34,11 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES).toBeDefined()
     expect(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS).toBeDefined()
     expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS).toBeDefined()
+    expect(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS).toBeDefined()
+    expect(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES).toBeDefined()
+    expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES).toBeDefined()
+    expect(IPC_CHANNELS.DISK_GET_DOCKER_BUILD_CACHE).toBeDefined()
+    expect(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE).toBeDefined()
   })
 
   it('should contain all process channels', () => {

@@ -44,6 +44,11 @@ const api = {
   removeDockerImages: (imageIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES, imageIds),
   listDockerContainers: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS),
   removeDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS, containerIds),
+  stopDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS, containerIds),
+  listDockerVolumes: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES),
+  removeDockerVolumes: (volumeNames: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES, volumeNames),
+  getDockerBuildCache: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_DOCKER_BUILD_CACHE),
+  pruneDockerBuildCache: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE),
 
   // Process
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),

@@ -21,6 +21,11 @@ export const IPC_CHANNELS = {
   DISK_REMOVE_DOCKER_IMAGES: 'disk:removeDockerImages',
   DISK_LIST_DOCKER_CONTAINERS: 'disk:listDockerContainers',
   DISK_REMOVE_DOCKER_CONTAINERS: 'disk:removeDockerContainers',
+  DISK_STOP_DOCKER_CONTAINERS: 'disk:stopDockerContainers',
+  DISK_LIST_DOCKER_VOLUMES: 'disk:listDockerVolumes',
+  DISK_REMOVE_DOCKER_VOLUMES: 'disk:removeDockerVolumes',
+  DISK_GET_DOCKER_BUILD_CACHE: 'disk:getDockerBuildCache',
+  DISK_PRUNE_DOCKER_BUILD_CACHE: 'disk:pruneDockerBuildCache',
 
   // Process Monitoring
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',

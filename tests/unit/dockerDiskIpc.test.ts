@@ -6,6 +6,11 @@ const listDockerImages = vi.hoisted(() => vi.fn())
 const removeDockerImages = vi.hoisted(() => vi.fn())
 const listDockerContainers = vi.hoisted(() => vi.fn())
 const removeDockerContainers = vi.hoisted(() => vi.fn())
+const stopDockerContainers = vi.hoisted(() => vi.fn())
+const listDockerVolumes = vi.hoisted(() => vi.fn())
+const removeDockerVolumes = vi.hoisted(() => vi.fn())
+const getDockerBuildCache = vi.hoisted(() => vi.fn())
+const pruneDockerBuildCache = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
 
@@ -34,7 +39,12 @@ vi.mock('../../src/main/services/dockerImages', () => ({
   listDockerImages,
   removeDockerImages,
   listDockerContainers,
-  removeDockerContainers
+  removeDockerContainers,
+  stopDockerContainers,
+  listDockerVolumes,
+  removeDockerVolumes,
+  getDockerBuildCache,
+  pruneDockerBuildCache
 }))
 
 vi.mock('../../src/main/services/diskAnalyzer', () => ({
@@ -63,6 +73,11 @@ describe('docker disk IPC', () => {
     removeDockerImages.mockReset()
     listDockerContainers.mockReset()
     removeDockerContainers.mockReset()
+    stopDockerContainers.mockReset()
+    listDockerVolumes.mockReset()
+    removeDockerVolumes.mockReset()
+    getDockerBuildCache.mockReset()
+    pruneDockerBuildCache.mockReset()
     showMessageBox.mockReset()
     logError.mockReset()
   })
@@ -179,5 +194,81 @@ describe('docker disk IPC', () => {
     expect(result.ok).toBe(true)
     expect(result.data).toEqual({ deletedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
     expect(removeDockerContainers).toHaveBeenCalledWith(['container:a'])
+  })
+
+  it('should stop running containers after confirmation', async () => {
+    listDockerContainers.mockResolvedValue({
+      status: 'ready',
+      message: null,
+      containers: [
+        { id: 'container:a', running: true, name: 'web', image: 'node:20', command: '', status: 'Up 1 hour', ports: '', sizeBytes: 0, shortId: 'container:a' }
+      ]
+    })
+    showMessageBox.mockResolvedValue({ response: 1 })
+    stopDockerContainers.mockResolvedValue({ affectedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS)
+    expect(handler).toBeTypeOf('function')
+
+    const result = await handler?.({}, ['container:a']) as { ok: boolean; data?: unknown }
+    expect(result.ok).toBe(true)
+    expect(result.data).toEqual({ affectedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
+    expect(stopDockerContainers).toHaveBeenCalledWith(['container:a'])
+  })
+
+  it('should return docker volumes scan result', async () => {
+    listDockerVolumes.mockResolvedValue({ status: 'ready', volumes: [], message: 'Docker 볼륨이 없습니다.' })
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES)
+    expect(handler).toBeTypeOf('function')
+
+    const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
+    expect(result.ok).toBe(true)
+    expect(result.data).toEqual({ status: 'ready', volumes: [], message: 'Docker 볼륨이 없습니다.' })
+  })
+
+  it('should refuse deleting in-use volumes', async () => {
+    listDockerVolumes.mockResolvedValue({
+      status: 'ready',
+      message: null,
+      volumes: [{ name: 'pgdata', driver: 'local', mountpoint: '/tmp/pgdata', inUse: true, containers: ['db'] }]
+    })
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES)
+    expect(handler).toBeTypeOf('function')
+
+    const result = await handler?.({}, ['pgdata']) as { ok: boolean; error?: { code: string } }
+    expect(result.ok).toBe(false)
+    expect(result.error?.code).toBe('PERMISSION_DENIED')
+  })
+
+  it('should prune docker build cache after confirmation', async () => {
+    getDockerBuildCache.mockResolvedValue({
+      status: 'ready',
+      summary: { totalCount: 10, activeCount: 1, sizeBytes: 1000, sizeLabel: '1000 B', reclaimableBytes: 800, reclaimableLabel: '800 B' },
+      message: null
+    })
+    showMessageBox.mockResolvedValue({ response: 1 })
+    pruneDockerBuildCache.mockResolvedValue({ reclaimedBytes: 800, reclaimedLabel: '800 B', cancelled: false })
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE)
+    expect(handler).toBeTypeOf('function')
+
+    const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
+    expect(result.ok).toBe(true)
+    expect(result.data).toEqual({ reclaimedBytes: 800, reclaimedLabel: '800 B', cancelled: false })
+    expect(pruneDockerBuildCache).toHaveBeenCalled()
   })
 })

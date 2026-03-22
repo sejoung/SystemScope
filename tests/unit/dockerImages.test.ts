@@ -113,4 +113,67 @@ describe('dockerImages service', () => {
       running: false
     })
   })
+
+  it('should parse volumes and mark in-use state from mounts', async () => {
+    execFile.mockImplementation((...callArgs: unknown[]) => {
+      const args = callArgs[1] as string[]
+      const callback = callArgs[callArgs.length - 1] as (error: Error | null, stdout?: string, stderr?: string) => void
+      const joined = Array.isArray(args) ? args.join(' ') : ''
+      if (joined.startsWith('volume ls')) {
+        callback(
+          null,
+          [
+            '{"Name":"pgdata","Driver":"local","Mountpoint":"/var/lib/docker/volumes/pgdata/_data"}',
+            '{"Name":"unused-cache","Driver":"local","Mountpoint":"/var/lib/docker/volumes/unused-cache/_data"}'
+          ].join('\n'),
+          ''
+        )
+        return
+      }
+      if (joined.startsWith('ps -a --format')) {
+        callback(null, '{"Names":"db","Mounts":"pgdata"}', '')
+        return
+      }
+      callback(new Error(`unexpected args: ${joined}`))
+    })
+
+    const { listDockerVolumes } = await import('../../src/main/services/dockerImages')
+    const result = await listDockerVolumes()
+
+    expect(result.status).toBe('ready')
+    expect(result.volumes).toHaveLength(2)
+    expect(result.volumes[0]).toMatchObject({ name: 'unused-cache', inUse: false })
+    expect(result.volumes[1]).toMatchObject({ name: 'pgdata', inUse: true, containers: ['db'] })
+  })
+
+  it('should parse build cache summary', async () => {
+    execFile.mockImplementation((...callArgs: unknown[]) => {
+      const args = callArgs[1] as string[]
+      const callback = callArgs[callArgs.length - 1] as (error: Error | null, stdout?: string, stderr?: string) => void
+      const joined = Array.isArray(args) ? args.join(' ') : ''
+      if (joined.startsWith('system df')) {
+        callback(
+          null,
+          [
+            '{"Type":"Images","TotalCount":"10","Active":"4","Size":"12.4GB","Reclaimable":"2.1GB (16%)"}',
+            '{"Type":"Build Cache","TotalCount":"18","Active":"2","Size":"3.5GB","Reclaimable":"2.9GB (82%)"}'
+          ].join('\n'),
+          ''
+        )
+        return
+      }
+      callback(new Error(`unexpected args: ${joined}`))
+    })
+
+    const { getDockerBuildCache } = await import('../../src/main/services/dockerImages')
+    const result = await getDockerBuildCache()
+
+    expect(result.status).toBe('ready')
+    expect(result.summary).toMatchObject({
+      totalCount: 18,
+      activeCount: 2,
+      sizeLabel: '3.5 GB',
+      reclaimableLabel: '2.9 GB'
+    })
+  })
 })

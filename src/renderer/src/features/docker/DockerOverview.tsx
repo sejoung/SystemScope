@@ -1,25 +1,33 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Accordion } from '../../components/Accordion'
-import type { DockerContainersScanResult, DockerImagesScanResult } from '@shared/types'
+import type { DockerBuildCacheScanResult, DockerContainersScanResult, DockerImagesScanResult, DockerVolumesScanResult } from '@shared/types'
 
 export function DockerOverview({
   refreshToken = 0,
   onOpenContainers,
-  onOpenImages
+  onOpenImages,
+  onOpenVolumes,
+  onOpenBuildCache
 }: {
   refreshToken?: number
   onOpenContainers: () => void
   onOpenImages: () => void
+  onOpenVolumes: () => void
+  onOpenBuildCache: () => void
 }) {
   const [loading, setLoading] = useState(false)
   const [imageScan, setImageScan] = useState<DockerImagesScanResult | null>(null)
   const [containerScan, setContainerScan] = useState<DockerContainersScanResult | null>(null)
+  const [volumeScan, setVolumeScan] = useState<DockerVolumesScanResult | null>(null)
+  const [buildCacheScan, setBuildCacheScan] = useState<DockerBuildCacheScanResult | null>(null)
 
   const refresh = async () => {
     setLoading(true)
-    const [imagesRes, containersRes] = await Promise.all([
+    const [imagesRes, containersRes, volumesRes, buildCacheRes] = await Promise.all([
       window.systemScope.listDockerImages(),
-      window.systemScope.listDockerContainers()
+      window.systemScope.listDockerContainers(),
+      window.systemScope.listDockerVolumes(),
+      window.systemScope.getDockerBuildCache()
     ])
 
     setImageScan(
@@ -32,6 +40,16 @@ export function DockerOverview({
         ? (containersRes.data as DockerContainersScanResult)
         : { status: 'daemon_unavailable', containers: [], message: containersRes.error?.message ?? 'Docker 컨테이너를 조회하지 못했습니다.' }
     )
+    setVolumeScan(
+      volumesRes.ok && volumesRes.data
+        ? (volumesRes.data as DockerVolumesScanResult)
+        : { status: 'daemon_unavailable', volumes: [], message: volumesRes.error?.message ?? 'Docker 볼륨을 조회하지 못했습니다.' }
+    )
+    setBuildCacheScan(
+      buildCacheRes.ok && buildCacheRes.data
+        ? (buildCacheRes.data as DockerBuildCacheScanResult)
+        : { status: 'daemon_unavailable', summary: null, message: buildCacheRes.error?.message ?? 'Docker build cache를 조회하지 못했습니다.' }
+    )
     setLoading(false)
   }
 
@@ -39,15 +57,17 @@ export function DockerOverview({
     void refresh()
   }, [refreshToken])
 
-  const dockerStatus = imageScan?.status ?? containerScan?.status ?? 'ready'
+  const dockerStatus = imageScan?.status ?? containerScan?.status ?? volumeScan?.status ?? buildCacheScan?.status ?? 'ready'
   const stoppedCount = useMemo(() => containerScan?.containers.filter((container) => !container.running).length ?? 0, [containerScan])
   const runningCount = useMemo(() => containerScan?.containers.filter((container) => container.running).length ?? 0, [containerScan])
   const inUseImageCount = useMemo(() => imageScan?.images.filter((image) => image.inUse).length ?? 0, [imageScan])
   const danglingImageCount = useMemo(() => imageScan?.images.filter((image) => image.dangling).length ?? 0, [imageScan])
+  const unusedVolumeCount = useMemo(() => volumeScan?.volumes.filter((volume) => !volume.inUse).length ?? 0, [volumeScan])
   const reclaimableImageBytes = useMemo(
     () => imageScan?.images.filter((image) => !image.inUse).reduce((sum, image) => sum + image.sizeBytes, 0) ?? 0,
     [imageScan]
   )
+  const reclaimableBuildCache = buildCacheScan?.summary?.reclaimableLabel ?? '0 B'
 
   const statusTitle =
     dockerStatus === 'not_installed'
@@ -85,7 +105,9 @@ export function DockerOverview({
               <SummaryCard title="Stopped Containers" value={String(stoppedCount)} tone="var(--accent-red)" actionLabel="Clean First" onClick={onOpenContainers} />
               <SummaryCard title="Running Containers" value={String(runningCount)} tone="var(--accent-yellow)" actionLabel="View" onClick={onOpenContainers} />
               <SummaryCard title="In-use Images" value={String(inUseImageCount)} tone="var(--accent-blue)" actionLabel="Inspect" onClick={onOpenImages} />
-              <SummaryCard title="Dangling Images" value={String(danglingImageCount)} tone="var(--accent-green)" actionLabel="Delete" onClick={onOpenImages} />
+              <SummaryCard title="Untagged Images (<none>)" value={String(danglingImageCount)} tone="var(--accent-green)" actionLabel="Review" onClick={onOpenImages} />
+              <SummaryCard title="Unused Volumes" value={String(unusedVolumeCount)} tone="var(--accent-cyan)" actionLabel="Review" onClick={onOpenVolumes} />
+              <SummaryCard title="Build Cache" value={reclaimableBuildCache} tone="var(--accent-red)" actionLabel="Prune" onClick={onOpenBuildCache} />
             </div>
 
             <div
@@ -108,6 +130,12 @@ export function DockerOverview({
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                 현재 바로 정리 가능한 이미지 용량은 {formatCompactBytes(reclaimableImageBytes)} 입니다.
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, marginTop: '10px' }}>
+                3. 미사용 볼륨과 build cache 정리
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                unused volume {unusedVolumeCount}개, build cache {reclaimableBuildCache}를 추가로 회수할 수 있습니다.
               </div>
             </div>
           </>

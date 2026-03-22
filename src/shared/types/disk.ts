@@ -124,6 +124,13 @@ export interface DockerRemoveResult {
   cancelled: boolean
 }
 
+export interface DockerActionResult {
+  affectedIds: string[]
+  failCount: number
+  errors: string[]
+  cancelled: boolean
+}
+
 export interface DockerContainerSummary {
   id: string
   shortId: string
@@ -140,4 +147,39 @@ export interface DockerContainersScanResult {
   status: 'ready' | 'not_installed' | 'daemon_unavailable'
   containers: DockerContainerSummary[]
   message: string | null
+}
+
+export interface DockerVolumeSummary {
+  name: string
+  driver: string
+  mountpoint: string
+  inUse: boolean
+  containers: string[]
+}
+
+export interface DockerVolumesScanResult {
+  status: 'ready' | 'not_installed' | 'daemon_unavailable'
+  volumes: DockerVolumeSummary[]
+  message: string | null
+}
+
+export interface DockerBuildCacheSummary {
+  totalCount: number
+  activeCount: number
+  sizeBytes: number
+  sizeLabel: string
+  reclaimableBytes: number
+  reclaimableLabel: string
+}
+
+export interface DockerBuildCacheScanResult {
+  status: 'ready' | 'not_installed' | 'daemon_unavailable'
+  summary: DockerBuildCacheSummary | null
+  message: string | null
+}
+
+export interface DockerPruneResult {
+  reclaimedBytes: number
+  reclaimedLabel: string
+  cancelled: boolean
 }

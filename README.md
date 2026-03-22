@@ -13,10 +13,12 @@
   - `Overview`: Home Storage + Storage Growth
   - `Scan`: 폴더 스캔, Folder Map, File Insights (File Types / Largest), Recent Growth
   - `Cleanup`: Quick Cleanup + File Cleanup (Largest / Old Files / Duplicates — 삭제 기능 포함)
-- `Docker`: 독립 메뉴, 3개 탭으로 구성
+- `Docker`: 독립 메뉴, 5개 탭으로 구성
   - `Overview`: 정리 우선순위 요약, stopped containers / in-use images / dangling images 요약
-  - `Containers`: 종료된 컨테이너 조회 및 삭제
+  - `Containers`: 실행 중 컨테이너 중지, 종료된 컨테이너 삭제
   - `Images`: 사용 중/미사용 이미지 조회 및 삭제
+  - `Volumes`: 미사용 볼륨 조회 및 삭제
+  - `Build Cache`: reclaimable build cache 조회 및 prune
 - `Activity`: 3개 탭으로 구성
   - `Processes`: 전체 프로세스 목록, 검색/필터, 컬럼 정렬
   - `Ports`: 네트워크 포트 조회, Local/Remote 범위 검색, 상태별 필터
@@ -112,16 +114,21 @@ Windows 예시:
 `Docker` 메뉴에서 Docker 자원을 파일 정리와 분리해 관리할 수 있습니다.
 
 - `Overview`: 컨테이너와 이미지 상태를 함께 보고 권장 정리 순서 안내
-- `Containers`: stopped container 정리
+- `Containers`: running container 중지 + stopped container 정리
 - `Images`: unused / dangling image 정리
+- `Volumes`: unused volume 정리
+- `Build Cache`: reclaimable builder cache prune
 
 - `docker image ls`, `docker ps -a` 기반 자원 조회
+- `docker volume ls`, `docker system df` 기반 볼륨/캐시 조회
 - Repository, Tag, Size, Created, Status 표시
 - 상태 구분: `in use`, `unused`, `dangling`
 - 컨테이너 상태 구분: `running`, `stopped`
 - 이미지 삭제 전에 먼저 정리해야 할 stopped container를 별도 탭에서 확인 가능
+- running container는 `Stop` 후 삭제 가능
 - 사용 중인 이미지는 삭제 버튼 비활성화
 - 실행 중인 컨테이너는 삭제 버튼 비활성화
+- 사용 중인 볼륨은 삭제 버튼 비활성화
 - 개별 삭제 / 다중 선택 삭제
 - 삭제 전 확인 다이얼로그 표시
 - Docker 미설치 상태와 Docker daemon 미실행 상태를 구분해 안내
@@ -258,7 +265,7 @@ Windows 예시:
   - 접힌 상태에서도 헤더의 액션 버튼으로 바로 실행 가능
   - 실행 완료 시 자동으로 열리며 뱃지로 요약 표시
 - 시스템 모니터링, 프로세스 폴링, 알림 리스너는 App 레벨에서 글로벌 관리 — 어떤 페이지에 있든 백그라운드 갱신
-- Storage, Docker, Activity 페이지는 탭 구조 (Overview/Scan/Cleanup, Overview/Containers/Images, Processes/Ports/Watch)
+- Storage, Docker, Activity 페이지는 탭 구조 (Overview/Scan/Cleanup, Overview/Containers/Images/Volumes/Build Cache, Processes/Ports/Watch)
 - 사용자 공간, Growth View, 프로세스, Port Finder, Port Watch 데이터는 Zustand 스토어에 캐싱 — 탭/페이지 전환 시 즉시 표시, 재호출 없음
 - 사용자가 Rescan / Refresh 버튼으로 원할 때만 수동 갱신
 - 다크 / 라이트 테마 지원
@@ -363,7 +370,7 @@ npm test
 
 - `tests/unit`: 함수/모듈 단위 검증
 - `tests/integration`: 앱 부팅, 설정 저장/검증, 디스크 스캔, 실시간 모니터링, 성장 분석 등 모듈 연결 흐름 검증
-- Docker 이미지/컨테이너 조회·삭제와 프로세스 종료 같은 외부 시스템 연동은 주로 unit test에서 IPC/서비스 경계를 검증
+- Docker 이미지/컨테이너/볼륨/build cache 조회·정리와 프로세스 종료 같은 외부 시스템 연동은 주로 unit test에서 IPC/서비스 경계를 검증
 
 감시 모드:
 
@@ -405,9 +412,11 @@ npm run test:watch
 - Top Resource Consumers — CPU/Memory/GPU 통합 위젯 (Overview 대시보드)
 - Port Finder — 포트 조회, Local/Remote 범위 검색, 상태 필터 연동 (Activity > Ports)
 - Port Watch — 포트/IP 실시간 모니터링, 상태 변화 감지, History (Activity > Watch)
-- Docker Cleanup — Overview / Containers / Images 메뉴 분리
-- Docker Containers — stopped container 정리 후 image cleanup 흐름 지원
+- Docker Cleanup — Overview / Containers / Images / Volumes / Build Cache 메뉴 분리
+- Docker Containers — running container 중지 + stopped container 정리 후 image cleanup 흐름 지원
 - Docker Images — in-use / unused / dangling 상태 기반 정리
+- Docker Volumes — unused volume 정리
+- Docker Build Cache — reclaimable cache 확인 및 prune
 - Storage 탭 구조 (Overview / Scan / Cleanup)
 - Activity 탭 구조 (Processes / Ports / Watch)
 - App 레벨 글로벌 폴링 — 페이지/탭 전환 시 끊김 없음
