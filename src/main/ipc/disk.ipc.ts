@@ -173,6 +173,9 @@ export function registerDiskIpc(): void {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
     }
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      return failure('INVALID_INPUT', '유효하지 않은 기간입니다. (1~365일)')
+    }
     const resolved = path.resolve(folderPath)
     try {
       await fs.access(resolved, fs.constants.R_OK)
@@ -191,6 +194,9 @@ export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_FIND_DUPLICATES, async (_event, folderPath: string, minSizeKB: number = 100) => {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+    if (!Number.isInteger(minSizeKB) || minSizeKB < 1 || minSizeKB > 1048576) {
+      return failure('INVALID_INPUT', '유효하지 않은 최소 크기입니다. (1KB~1GB)')
     }
     const resolved = path.resolve(folderPath)
     try {
@@ -223,6 +229,9 @@ export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_FIND_OLD_FILES, async (_event, folderPath: string, olderThanDays: number = 365) => {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
+    }
+    if (!Number.isInteger(olderThanDays) || olderThanDays < 1 || olderThanDays > 3650) {
+      return failure('INVALID_INPUT', '유효하지 않은 기간입니다. (1~3650일)')
     }
     const resolved = path.resolve(folderPath)
     try {

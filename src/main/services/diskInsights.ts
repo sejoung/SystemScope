@@ -227,6 +227,12 @@ async function hashFileSample(filePath: string, fileSize: number): Promise<strin
 }
 
 async function hashFileFull(filePath: string): Promise<string> {
-  const data = await fs.readFile(filePath)
-  return crypto.createHash('md5').update(data).digest('hex')
+  const { createReadStream } = await import('fs')
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('md5')
+    const stream = createReadStream(filePath)
+    stream.on('data', (chunk) => hash.update(chunk))
+    stream.on('end', () => resolve(hash.digest('hex')))
+    stream.on('error', reject)
+  })
 }

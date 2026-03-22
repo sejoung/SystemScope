@@ -81,7 +81,7 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
     const data: SnapshotData = { version: 1, snapshots: existing }
 
     try {
-      await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8')
+      await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 })
       await fsp.rename(tempPath, filePath)
     } catch (err) {
       logError('snapshot-store', 'Failed to save snapshot', err)
@@ -119,14 +119,11 @@ export function areSnapshotsEquivalent(a: Snapshot, b: Snapshot): boolean {
   if (a.totalSize !== b.totalSize) return false
   if (a.folders.length !== b.folders.length) return false
 
-  for (let i = 0; i < a.folders.length; i++) {
-    const left = a.folders[i]
-    const right = b.folders[i]
-    if (
-      left.name !== right.name ||
-      left.path !== right.path ||
-      left.size !== right.size
-    ) {
+  // 순서에 무관하게 비교하기 위해 path를 키로 사용
+  const bMap = new Map(b.folders.map((f) => [f.path, f]))
+  for (const left of a.folders) {
+    const right = bMap.get(left.path)
+    if (!right || left.name !== right.name || left.size !== right.size) {
       return false
     }
   }

@@ -2,6 +2,7 @@ import { dialog, shell, BrowserWindow, app } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import { logError, logInfo } from './logging'
+import { isPathInsideParent } from '../ipc/settingsPathUtils'
 import type { TrashResult } from '@shared/types'
 
 function formatBytes(bytes: number): string {
@@ -24,9 +25,8 @@ export async function trashItemsWithConfirm(
 
   for (const p of filePaths) {
     const resolved = path.resolve(p)
-    const relative = path.relative(homePath, resolved)
 
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    if (!isPathInsideParent(resolved, homePath)) {
       invalidPaths.push(p)
       continue
     }

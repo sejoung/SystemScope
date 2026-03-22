@@ -1,4 +1,5 @@
 import { nativeImage } from 'electron'
+import log from 'electron-log'
 
 type TrayPlatform = 'darwin' | 'win32' | 'other'
 
@@ -73,22 +74,28 @@ export function renderTraySvg({ level, pulse, platform }: TrayVisualState): stri
 export function createTrayImage(usage: number, pulse: boolean, processPlatform: NodeJS.Platform): Electron.NativeImage {
   const platform: TrayPlatform =
     processPlatform === 'darwin' ? 'darwin' : processPlatform === 'win32' ? 'win32' : 'other'
-  const svg = renderTraySvg({
-    level: getCpuLevel(usage),
-    pulse,
-    platform
-  })
-  const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
-  const icon = nativeImage.createFromDataURL(dataUrl).resize({
-    width: platform === 'darwin' ? 18 : 16,
-    height: platform === 'darwin' ? 18 : 16
-  })
 
-  if (platform === 'darwin') {
-    icon.setTemplateImage(true)
+  try {
+    const svg = renderTraySvg({
+      level: getCpuLevel(usage),
+      pulse,
+      platform
+    })
+    const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+    const icon = nativeImage.createFromDataURL(dataUrl).resize({
+      width: platform === 'darwin' ? 18 : 16,
+      height: platform === 'darwin' ? 18 : 16
+    })
+
+    if (platform === 'darwin') {
+      icon.setTemplateImage(true)
+    }
+
+    return icon
+  } catch (err) {
+    log.error('Failed to create tray image, using empty fallback', err)
+    return nativeImage.createEmpty()
   }
-
-  return icon
 }
 
 export function getCpuMeterText(usage: number, pulse: boolean): string {

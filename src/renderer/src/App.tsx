@@ -91,7 +91,7 @@ function App() {
 
   // 프로세스 데이터 글로벌 폴링 — 어떤 페이지에 있든 갱신
   useInterval(() => {
-    Promise.all([
+    void Promise.all([
       window.systemScope.getAllProcesses(),
       window.systemScope.getTopCpuProcesses(10),
       window.systemScope.getTopMemoryProcesses(10)

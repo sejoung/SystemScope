@@ -22,6 +22,7 @@ export function DockerOverview({
   const [buildCacheScan, setBuildCacheScan] = useState<DockerBuildCacheScanResult | null>(null)
 
   const refresh = async () => {
+    if (loading) return
     setLoading(true)
     const [imagesRes, containersRes, volumesRes, buildCacheRes] = await Promise.all([
       window.systemScope.listDockerImages(),

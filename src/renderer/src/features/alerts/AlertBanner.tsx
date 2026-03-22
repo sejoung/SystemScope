@@ -30,12 +30,10 @@ export function AlertBanner() {
             {alert.severity === 'critical' ? 'CRITICAL' : 'WARNING'}: {alert.message}
           </span>
           <button
+            aria-label="알림 닫기"
             onClick={() => {
-              window.systemScope.dismissAlert(alert.id).then(() => {
-                dismissAlert(alert.id)
-              }).catch(() => {
-                dismissAlert(alert.id)
-              })
+              dismissAlert(alert.id)
+              void window.systemScope.dismissAlert(alert.id)
             }}
             style={{
               border: 'none',

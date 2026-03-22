@@ -13,6 +13,7 @@ interface DiskState {
   // UserSpace cache
   userSpace: UserSpaceInfo | null
   userSpaceLoading: boolean
+  userSpaceFetched: boolean
 
   // GrowthView cache
   growthView: GrowthViewResult | null
@@ -46,6 +47,7 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   selectedFolder: null,
   userSpace: null,
   userSpaceLoading: false,
+  userSpaceFetched: false,
   growthView: null,
   growthViewLoading: false,
   growthViewPeriod: '7d',
@@ -77,7 +79,7 @@ export const useDiskStore = create<DiskState>((set, get) => ({
 
   fetchUserSpace: async () => {
     if (get().userSpaceLoading) return
-    set({ userSpaceLoading: true })
+    set({ userSpaceLoading: true, userSpaceFetched: true })
     const res = await window.systemScope.getUserSpace()
     if (res.ok && res.data) {
       set({ userSpace: res.data as UserSpaceInfo, userSpaceLoading: false })

@@ -15,13 +15,14 @@ interface YourStorageProps {
 export function YourStorage({ onFolderClick }: YourStorageProps) {
   const info = useDiskStore((s) => s.userSpace)
   const loading = useDiskStore((s) => s.userSpaceLoading)
+  const fetched = useDiskStore((s) => s.userSpaceFetched)
   const fetchUserSpace = useDiskStore((s) => s.fetchUserSpace)
 
   useEffect(() => {
-    if (!info && !loading) {
+    if (!info && !loading && !fetched) {
       fetchUserSpace()
     }
-  }, [info, loading, fetchUserSpace])
+  }, [info, loading, fetched, fetchUserSpace])
 
   if (!info && loading) {
     return (
