@@ -19,7 +19,6 @@ interface DockerImageRow {
   Repository?: string
   Tag?: string
   Size?: string
-  CreatedAt?: string
   CreatedSince?: string
 }
 
@@ -29,7 +28,6 @@ interface DockerContainerRow {
   Image?: string
   Command?: string
   Status?: string
-  RunningFor?: string
   Names?: string
   Ports?: string
   Size?: string

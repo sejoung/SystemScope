@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { PortInfo } from '@shared/types'
 
-interface WatchEntry {
+export interface WatchEntry {
   id: string
   pattern: string
   type: 'port' | 'ip' | 'ip:port'
@@ -105,5 +105,3 @@ export const usePortWatchStore = create<PortWatchState>((set) => ({
     return { prevMatched: next }
   })
 }))
-
-export type { WatchEntry, WatchStatus, HistoryEntry }
