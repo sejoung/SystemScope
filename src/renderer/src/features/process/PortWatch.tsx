@@ -4,6 +4,7 @@ import { useInterval } from '../../hooks/useInterval'
 import { useToast } from '../../components/Toast'
 import { usePortWatchStore } from '../../stores/usePortWatchStore'
 import type { PortInfo } from '@shared/types'
+import { formatPortAddress, matchWatchPorts, parseWatchPattern } from './portWatchUtils'
 
 const POLL_OPTIONS = [
   { value: 1000, label: '1s' },
@@ -13,52 +14,8 @@ const POLL_OPTIONS = [
   { value: 30000, label: '30s' }
 ]
 
-function parsePattern(input: string, scope: 'local' | 'remote' | 'all'): { id: string; pattern: string; type: 'port' | 'ip' | 'ip:port'; scope: typeof scope } | null {
-  const trimmed = input.trim()
-  if (!trimmed) return null
-  const id = `watch-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/.test(trimmed)) return { id, pattern: trimmed, type: 'ip:port', scope }
-  if (/^\d+$/.test(trimmed)) return { id, pattern: trimmed, type: 'port', scope }
-  return { id, pattern: trimmed, type: 'ip', scope }
-}
-
-function matchPorts(watch: { pattern: string; type: string; scope: string }, ports: PortInfo[]): PortInfo[] {
-  const matchLocal = watch.scope === 'local' || watch.scope === 'all'
-  const matchRemote = watch.scope === 'remote' || watch.scope === 'all'
-
-  switch (watch.type) {
-    case 'port':
-      return ports.filter((p) =>
-        (matchLocal && p.localPort === watch.pattern) ||
-        (matchRemote && p.peerPort === watch.pattern)
-      )
-    case 'ip':
-      return ports.filter((p) =>
-        (matchLocal && p.localAddress.includes(watch.pattern)) ||
-        (matchRemote && p.peerAddress.includes(watch.pattern))
-      )
-    case 'ip:port': {
-      const [ip, port] = watch.pattern.split(':')
-      return ports.filter((p) =>
-        (matchLocal && p.localAddress.includes(ip) && p.localPort === port) ||
-        (matchRemote && p.peerAddress.includes(ip) && p.peerPort === port)
-      )
-    }
-    default: return []
-  }
-}
-
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString()
-}
-
-function formatAddr(addr: string, port: string): string {
-  const hasAddr = addr && addr !== '*' && addr !== ''
-  const hasPort = port && port !== '*' && port !== '0' && port !== ''
-  if (hasAddr && hasPort) return `${addr}:${port}`
-  if (hasAddr) return addr
-  if (hasPort) return `:${port}`
-  return '*'
 }
 
 const DISPLAY_LIMIT = 100
@@ -75,7 +32,7 @@ export function PortWatch() {
   const [watchScope, setWatchScope] = useState<'local' | 'remote' | 'all'>('local')
 
   const handleAddWatch = () => {
-    const entry = parsePattern(input, watchScope)
+    const entry = parseWatchPattern(input, watchScope)
     if (!entry) return
     if (watches.some((w) => w.pattern === entry.pattern)) {
       showToast(`"${entry.pattern}"은 이미 등록되어 있습니다.`)
@@ -96,7 +53,7 @@ export function PortWatch() {
     const newHistory: { timestamp: number; watchId: string; pattern: string; event: 'connected' | 'disconnected'; process: string; detail: string }[] = []
 
     for (const watch of watches) {
-      const matches = matchPorts(watch, ports)
+      const matches = matchWatchPorts(watch, ports)
       const matched = matches.length > 0
       const prev = prevMatched.get(watch.id)
 
@@ -105,7 +62,7 @@ export function PortWatch() {
       if (prev !== undefined && prev !== matched) {
         const proc = matches[0]?.process ?? '-'
         const detail = matched
-          ? matches.slice(0, 3).map((m) => `${formatAddr(m.localAddress, m.localPort)}→${formatAddr(m.peerAddress, m.peerPort)} (${m.state})`).join(', ')
+          ? matches.slice(0, 3).map((m) => `${formatPortAddress(m.localAddress, m.localPort)}→${formatPortAddress(m.peerAddress, m.peerPort)} (${m.state})`).join(', ')
           : ''
 
         newHistory.push({
@@ -281,8 +238,8 @@ export function PortWatch() {
                               {display.map((m, i) => (
                                 <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                                   <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{m.protocol}</td>
-                                  <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{formatAddr(m.localAddress, m.localPort)}</td>
-                                  <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{formatAddr(m.peerAddress, m.peerPort)}</td>
+                                  <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{formatPortAddress(m.localAddress, m.localPort)}</td>
+                                  <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{formatPortAddress(m.peerAddress, m.peerPort)}</td>
                                   <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--text-primary)' }}>{m.process}</td>
                                   <td style={tdStyle}><StateBadge state={m.state} /></td>
                                 </tr>
