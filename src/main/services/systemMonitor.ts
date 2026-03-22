@@ -3,6 +3,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { platform } from 'os'
 import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo } from '@shared/types'
+import log from 'electron-log'
 
 const execFileAsync = promisify(execFile)
 
@@ -26,8 +27,8 @@ export async function getSystemStats(): Promise<SystemStats> {
   try {
     const temp = await si.cpuTemperature()
     cpu.temperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
-  } catch {
-    // ignore
+  } catch (err) {
+    log.debug('CPU temperature unavailable', { error: String(err) })
   }
 
   // macOS: mem.used にはファイルキャッシュ(inactive)が含まれ常に高い値になる
@@ -45,14 +46,23 @@ export async function getSystemStats(): Promise<SystemStats> {
   }
 
   const primaryGpu = gpu.controllers[0]
-  const gpuInfo: GpuInfo = {
-    available: gpu.controllers.length > 0 && !!primaryGpu?.model,
-    model: primaryGpu?.model ?? null,
-    usage: primaryGpu?.utilizationGpu ?? null,
-    memoryTotal: primaryGpu?.memoryTotal ? primaryGpu.memoryTotal * 1024 * 1024 : null,
-    memoryUsed: primaryGpu?.memoryUsed ? primaryGpu.memoryUsed * 1024 * 1024 : null,
-    temperature: primaryGpu?.temperatureGpu ?? null
-  }
+  const gpuInfo: GpuInfo = primaryGpu && primaryGpu.model
+    ? {
+        available: true,
+        model: primaryGpu.model,
+        usage: primaryGpu.utilizationGpu ?? null,
+        memoryTotal: primaryGpu.memoryTotal ? primaryGpu.memoryTotal * 1024 * 1024 : null,
+        memoryUsed: primaryGpu.memoryUsed ? primaryGpu.memoryUsed * 1024 * 1024 : null,
+        temperature: primaryGpu.temperatureGpu ?? null
+      }
+    : {
+        available: false,
+        model: null,
+        usage: null,
+        memoryTotal: null,
+        memoryUsed: null,
+        temperature: null
+      }
 
   // macOS APFS: purgeable space 계산
   const apfsInfo = platform() === 'darwin' ? await getApfsContainerInfo() : null
@@ -105,13 +115,16 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
     const sizeMatch = stdout.match(/<key>APFSContainerSize<\/key>\s*<integer>(\d+)<\/integer>/)
     const freeMatch = stdout.match(/<key>APFSContainerFree<\/key>\s*<integer>(\d+)<\/integer>/)
     if (sizeMatch && freeMatch) {
-      return {
-        size: parseInt(sizeMatch[1], 10),
-        free: parseInt(freeMatch[1], 10)
+      const size = parseInt(sizeMatch[1], 10)
+      const free = parseInt(freeMatch[1], 10)
+      if (isNaN(size) || isNaN(free)) {
+        log.warn('Invalid APFS sizes from diskutil', { sizeMatch: sizeMatch[1], freeMatch: freeMatch[1] })
+        return null
       }
+      return { size, free }
     }
-  } catch {
-    // not APFS or command failed
+  } catch (err) {
+    log.debug('APFS container info unavailable', { error: String(err) })
   }
   return null
 }

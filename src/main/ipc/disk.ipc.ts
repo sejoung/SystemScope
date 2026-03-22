@@ -52,20 +52,28 @@ export function registerDiskIpc(): void {
     scanFolder(
       resolved,
       (current, fileCount) => {
-        sendJobProgress(win, job, -1, `스캔 중: ${path.basename(current)} (${fileCount}개 파일)`)
+        if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+          sendJobProgress(win, job, -1, `스캔 중: ${path.basename(current)} (${fileCount}개 파일)`)
+        }
       },
       job.abortController.signal
     )
       .then((result) => {
         lastScanResult = result
-        sendJobCompleted(win, job, result)
+        if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+          sendJobCompleted(win, job, result)
+        }
       })
       .catch((err) => {
         if (err instanceof Error && err.message === 'Scan cancelled') {
-          sendJobFailed(win, job, '스캔이 취소되었습니다.')
+          if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+            sendJobFailed(win, job, '스캔이 취소되었습니다.')
+          }
         } else {
           log.error('Disk scan failed', err)
-          sendJobFailed(win, job, '디스크 스캔 중 오류가 발생했습니다.')
+          if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+            sendJobFailed(win, job, '디스크 스캔 중 오류가 발생했습니다.')
+          }
         }
       })
 
@@ -76,7 +84,7 @@ export function registerDiskIpc(): void {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
     }
-    if (typeof limit !== 'number' || limit < 1 || limit > 500) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
       return failure('INVALID_INPUT', '유효하지 않은 limit 값입니다.')
     }
 
@@ -279,7 +287,10 @@ export function registerDiskIpc(): void {
 
       const totalSize = targets.reduce((sum, image) => sum + image.sizeBytes, 0)
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      const confirm = await dialog.showMessageBox(win ?? undefined, {
+      if (!win || win.isDestroyed()) {
+        return failure('UNKNOWN_ERROR', '활성 창을 찾을 수 없습니다.')
+      }
+      const confirm = await dialog.showMessageBox(win, {
         type: 'warning',
         buttons: ['Cancel', 'Delete'],
         defaultId: 0,
@@ -338,7 +349,10 @@ export function registerDiskIpc(): void {
 
       const totalSize = targets.reduce((sum, container) => sum + container.sizeBytes, 0)
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      const confirm = await dialog.showMessageBox(win ?? undefined, {
+      if (!win || win.isDestroyed()) {
+        return failure('UNKNOWN_ERROR', '활성 창을 찾을 수 없습니다.')
+      }
+      const confirm = await dialog.showMessageBox(win, {
         type: 'warning',
         buttons: ['Cancel', 'Delete'],
         defaultId: 0,
@@ -398,7 +412,10 @@ export function registerDiskIpc(): void {
       }
 
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      const confirm = await dialog.showMessageBox(win ?? undefined, {
+      if (!win || win.isDestroyed()) {
+        return failure('UNKNOWN_ERROR', '활성 창을 찾을 수 없습니다.')
+      }
+      const confirm = await dialog.showMessageBox(win, {
         type: 'warning',
         buttons: ['Cancel', 'Stop'],
         defaultId: 0,
@@ -451,7 +468,10 @@ export function registerDiskIpc(): void {
       }
 
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      const confirm = await dialog.showMessageBox(win ?? undefined, {
+      if (!win || win.isDestroyed()) {
+        return failure('UNKNOWN_ERROR', '활성 창을 찾을 수 없습니다.')
+      }
+      const confirm = await dialog.showMessageBox(win, {
         type: 'warning',
         buttons: ['Cancel', 'Delete'],
         defaultId: 0,
@@ -488,7 +508,10 @@ export function registerDiskIpc(): void {
       }
 
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      const confirm = await dialog.showMessageBox(win ?? undefined, {
+      if (!win || win.isDestroyed()) {
+        return failure('UNKNOWN_ERROR', '활성 창을 찾을 수 없습니다.')
+      }
+      const confirm = await dialog.showMessageBox(win, {
         type: 'warning',
         buttons: ['Cancel', 'Prune'],
         defaultId: 0,

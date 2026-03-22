@@ -59,14 +59,18 @@ function startRealtimeUpdates(): void {
       const subscriberWins = wins.filter((win) => hasSubscribedWebContents(win.webContents.id))
 
       for (const win of subscriberWins) {
-        win.webContents.send(IPC_CHANNELS.EVENT_SYSTEM_UPDATE, stats)
+        if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+          win.webContents.send(IPC_CHANNELS.EVENT_SYSTEM_UPDATE, stats)
+        }
       }
 
       // Check alerts
       const newAlerts = checkAlerts(stats)
       if (newAlerts.length > 0) {
         for (const win of subscriberWins) {
-          win.webContents.send(IPC_CHANNELS.EVENT_ALERT_FIRED, newAlerts)
+          if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+            win.webContents.send(IPC_CHANNELS.EVENT_ALERT_FIRED, newAlerts)
+          }
         }
       }
     } catch (err) {

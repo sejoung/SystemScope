@@ -16,11 +16,15 @@ const cleanupSystemIpcMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   app: {
-    whenReady: () => ({
-      then: (callback: () => void) => {
-        whenReadyCallbacks.push(callback)
+    whenReady: () => {
+      const thenChain = {
+        then: (callback: () => void) => {
+          whenReadyCallbacks.push(callback)
+          return { catch: vi.fn() }
+        }
       }
-    }),
+      return thenChain
+    },
     on: (event: string, handler: (...args: unknown[]) => void) => {
       appEventHandlers.set(event, handler)
     },

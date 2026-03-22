@@ -3,6 +3,7 @@ import { Accordion } from '../../components/Accordion'
 import { useInterval } from '../../hooks/useInterval'
 import { useToast } from '../../components/Toast'
 import { usePortWatchStore } from '../../stores/usePortWatchStore'
+import { getStateStyle } from './portStateStyles'
 import type { PortInfo } from '@shared/types'
 import { formatPortAddress, matchWatchPorts, parseWatchPattern } from './portWatchUtils'
 
@@ -23,7 +24,7 @@ const DISPLAY_LIMIT = 100
 export function PortWatch() {
   const showToast = useToast((s) => s.show)
   const {
-    watches, statuses, history, monitoring, pollInterval, expandedWatch, watchFilters, prevMatched,
+    watches, statuses, history, monitoring, pollInterval, expandedWatch, watchFilters,
     addWatch: storeAddWatch, removeWatch, setStatuses, addHistory, clearHistory,
     setMonitoring, setPollInterval, toggleExpanded, setWatchFilter, setPrevMatched
   } = usePortWatchStore()
@@ -52,10 +53,13 @@ export function PortWatch() {
     const newStatuses = new Map<string, { id: string; matched: boolean; matches: PortInfo[]; lastChecked: number }>()
     const newHistory: { timestamp: number; watchId: string; pattern: string; event: 'connected' | 'disconnected'; process: string; detail: string }[] = []
 
+    // store에서 직접 읽어 의존성 루프 방지
+    const currentPrevMatched = usePortWatchStore.getState().prevMatched
+
     for (const watch of watches) {
       const matches = matchWatchPorts(watch, ports)
       const matched = matches.length > 0
-      const prev = prevMatched.get(watch.id)
+      const prev = currentPrevMatched.get(watch.id)
 
       newStatuses.set(watch.id, { id: watch.id, matched, matches, lastChecked: now })
 
@@ -78,7 +82,7 @@ export function PortWatch() {
 
     setStatuses(newStatuses)
     if (newHistory.length > 0) addHistory(newHistory)
-  }, [watches, prevMatched, showToast, setStatuses, addHistory, setPrevMatched])
+  }, [watches, showToast, setStatuses, addHistory, setPrevMatched])
 
   useEffect(() => {
     if (monitoring && watches.length > 0) pollPorts()
@@ -325,26 +329,8 @@ function StateCount({ label, count, color, active, onClick }: {
   )
 }
 
-const STATE_STYLES: Record<string, { bg: string; color: string; tip: string }> = {
-  LISTEN:       { bg: 'var(--success-soft)', color: 'var(--accent-green)', tip: '포트에서 연결 대기 중' },
-  ESTABLISHED:  { bg: 'rgba(59,130,246,0.15)', color: 'var(--accent-blue)', tip: '연결이 수립된 상태' },
-  SYN_SENT:     { bg: 'rgba(6,182,212,0.15)', color: 'var(--accent-cyan)', tip: '연결 요청을 보낸 상태' },
-  SYN_RECEIVED: { bg: 'rgba(6,182,212,0.15)', color: 'var(--accent-cyan)', tip: '연결 요청을 받은 상태' },
-  SYN_RECV:     { bg: 'rgba(6,182,212,0.15)', color: 'var(--accent-cyan)', tip: '연결 요청을 받은 상태' },
-  FIN_WAIT_1:   { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '연결 종료를 시작함' },
-  FIN_WAIT_2:   { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '상대의 FIN을 기다리는 중' },
-  FIN_WAIT1:    { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '연결 종료를 시작함' },
-  FIN_WAIT2:    { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '상대의 FIN을 기다리는 중' },
-  TIME_WAIT:    { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '종료 후 잔여 패킷 대기' },
-  CLOSING:      { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '양쪽이 동시에 종료를 시작' },
-  LAST_ACK:     { bg: 'var(--alert-yellow-soft)', color: 'var(--accent-yellow)', tip: '마지막 ACK를 기다리는 중' },
-  CLOSE_WAIT:   { bg: 'var(--alert-red-soft)', color: 'var(--accent-red)', tip: '상대가 연결을 종료함 — close() 필요' },
-  CLOSED:       { bg: 'rgba(148,163,184,0.15)', color: 'var(--text-secondary)', tip: '연결 종료됨' },
-  UNKNOWN:      { bg: 'rgba(148,163,184,0.15)', color: 'var(--text-secondary)', tip: 'UDP 또는 상태 불명' },
-}
-
 function StateBadge({ state }: { state: string }) {
-  const s = STATE_STYLES[state] ?? { bg: 'rgba(148,163,184,0.15)', color: 'var(--text-secondary)', tip: state }
+  const s = getStateStyle(state)
   return (
     <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', background: s.bg, color: s.color, whiteSpace: 'nowrap' }} title={s.tip}>
       {state}

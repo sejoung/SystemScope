@@ -14,6 +14,13 @@ const pruneDockerBuildCache = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
 
+const mockWindow = vi.hoisted(() => ({
+  isDestroyed: vi.fn(() => false),
+  webContents: {
+    isDestroyed: vi.fn(() => false)
+  }
+}))
+
 vi.mock('electron', () => ({
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -21,8 +28,8 @@ vi.mock('electron', () => ({
     }
   },
   BrowserWindow: {
-    getFocusedWindow: vi.fn(() => null),
-    getAllWindows: vi.fn(() => [])
+    getFocusedWindow: vi.fn(() => mockWindow),
+    getAllWindows: vi.fn(() => [mockWindow])
   },
   dialog: {
     showMessageBox
@@ -31,7 +38,9 @@ vi.mock('electron', () => ({
 
 vi.mock('electron-log', () => ({
   default: {
-    error: logError
+    error: logError,
+    warn: vi.fn(),
+    debug: vi.fn()
   }
 }))
 

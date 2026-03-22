@@ -4,6 +4,7 @@ import { platform } from 'os'
 import log from 'electron-log'
 import { getSystemStats } from '../services/systemMonitor'
 import { createTrayImage, getCpuMeterText } from './trayIconFactory'
+import { CPU_TRAY_THRESHOLDS } from '@shared/constants/thresholds'
 
 let tray: Tray | null = null
 let trayUpdateTimer: ReturnType<typeof setInterval> | null = null
@@ -14,8 +15,14 @@ const cpuSamples: number[] = []
 export function createTray(): void {
   if (tray) return
 
-  const icon = getInitialTrayIcon()
-  tray = new Tray(icon)
+  try {
+    const icon = getInitialTrayIcon()
+    tray = new Tray(icon)
+  } catch (err) {
+    log.error('Failed to create tray icon', err)
+    tray = null
+    return
+  }
 
   tray.setToolTip('SystemScope')
 
@@ -85,10 +92,14 @@ async function refreshTrayIcon(): Promise<void> {
 
     const averageUsage = cpuSamples.reduce((sum, value) => sum + value, 0) / cpuSamples.length
     const roundedUsage = Math.round(averageUsage)
-    const isHighLoad = roundedUsage >= 75
+    const isHighLoad = roundedUsage >= CPU_TRAY_THRESHOLDS.HIGH
     pulseFrame = isHighLoad ? !pulseFrame : false
 
-    const visualKey = `${roundedUsage >= 90 ? 4 : roundedUsage >= 75 ? 3 : roundedUsage >= 50 ? 2 : roundedUsage >= 25 ? 1 : 0}:${pulseFrame ? 1 : 0}:${process.platform}`
+    const level = roundedUsage >= CPU_TRAY_THRESHOLDS.CRITICAL ? 4
+      : roundedUsage >= CPU_TRAY_THRESHOLDS.HIGH ? 3
+      : roundedUsage >= CPU_TRAY_THRESHOLDS.MEDIUM ? 2
+      : roundedUsage >= CPU_TRAY_THRESHOLDS.LOW ? 1 : 0
+    const visualKey = `${level}:${pulseFrame ? 1 : 0}:${process.platform}`
     if (visualKey !== lastVisualKey) {
       if (process.platform === 'darwin') {
         tray.setTitle(getCpuMeterText(roundedUsage, pulseFrame))

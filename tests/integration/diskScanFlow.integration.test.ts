@@ -6,8 +6,10 @@ const scanFolderMock = vi.hoisted(() => vi.fn())
 const findLargeFilesMock = vi.hoisted(() => vi.fn())
 const getExtensionBreakdownMock = vi.hoisted(() => vi.fn())
 const focusedWindow = vi.hoisted(() => ({
+  isDestroyed: vi.fn(() => false),
   webContents: {
-    send: vi.fn()
+    send: vi.fn(),
+    isDestroyed: vi.fn(() => false)
   }
 }))
 

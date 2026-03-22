@@ -29,6 +29,9 @@ app.whenReady().then(() => {
       createMainWindow()
     }
   })
+}).catch((err) => {
+  log.error('Failed to initialize app', err)
+  app.quit()
 })
 
 app.on('before-quit', () => {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 
 interface ToastMessage {
-  id: number
+  id: string
   text: string
 }
 
@@ -17,7 +17,7 @@ export const useToast = create<ToastState>((set) => ({
   show: (message) =>
     set({
       message: {
-        id: Date.now() + Math.random(),
+        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
         text: message
       }
     }),

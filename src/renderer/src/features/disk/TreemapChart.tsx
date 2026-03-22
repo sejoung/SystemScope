@@ -86,7 +86,7 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
                 fontSize="11"
                 fontWeight="600"
               >
-                {r.node.name.length > Math.floor(r.w / 7) ? r.node.name.slice(0, Math.floor(r.w / 7)) + '...' : r.node.name}
+                {(r.node.name ?? '').length > Math.floor(r.w / 7) ? (r.node.name ?? '').slice(0, Math.floor(r.w / 7)) + '...' : r.node.name ?? ''}
               </text>
               <text
                 x={r.x + 6}

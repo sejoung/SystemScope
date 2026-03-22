@@ -31,8 +31,11 @@ export function AlertBanner() {
           </span>
           <button
             onClick={() => {
-              dismissAlert(alert.id)
-              window.systemScope.dismissAlert(alert.id)
+              window.systemScope.dismissAlert(alert.id).then(() => {
+                dismissAlert(alert.id)
+              }).catch(() => {
+                dismissAlert(alert.id)
+              })
             }}
             style={{
               border: 'none',

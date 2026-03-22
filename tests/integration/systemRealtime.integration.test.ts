@@ -10,7 +10,8 @@ const subscriberWindow = vi.hoisted(() => ({
   isDestroyed: vi.fn(() => false),
   webContents: {
     id: 11,
-    send: vi.fn()
+    send: vi.fn(),
+    isDestroyed: vi.fn(() => false)
   }
 }))
 
@@ -42,6 +43,8 @@ describe('system realtime integration', () => {
     checkAlertsMock.mockReset()
     subscriberWindow.isDestroyed.mockReset()
     subscriberWindow.isDestroyed.mockReturnValue(false)
+    subscriberWindow.webContents.isDestroyed.mockReset()
+    subscriberWindow.webContents.isDestroyed.mockReturnValue(false)
     subscriberWindow.webContents.send.mockReset()
   })
 

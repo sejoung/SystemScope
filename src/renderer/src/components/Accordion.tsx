@@ -22,7 +22,7 @@ export function Accordion({
   const [open, setOpen] = useState(defaultOpen)
 
   useEffect(() => {
-    if (forceOpen) setOpen(true)
+    if (forceOpen !== undefined) setOpen(forceOpen)
   }, [forceOpen])
 
   return (

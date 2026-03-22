@@ -1,4 +1,5 @@
 import { execFile } from 'child_process'
+import log from 'electron-log'
 import type {
   DockerActionResult,
   DockerBuildCacheScanResult,
@@ -82,11 +83,23 @@ export async function listDockerImages(): Promise<DockerImagesScanResult> {
   }
 }
 
+// Docker ID/이름 검증: 영숫자, :, ., -, _, / 만 허용
+const DOCKER_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.:\-/]*$/
+
+function validateDockerId(id: string): boolean {
+  return DOCKER_ID_PATTERN.test(id)
+}
+
 export async function removeDockerImages(imageIds: string[]): Promise<DockerRemoveResult> {
   const deletedIds: string[] = []
   const errors: string[] = []
 
   for (const imageId of imageIds) {
+    if (!validateDockerId(imageId)) {
+      log.warn('Invalid Docker image ID skipped', { imageId })
+      errors.push(`이미지 ${imageId}: 유효하지 않은 ID`)
+      continue
+    }
     try {
       await runDockerCommand(['image', 'rm', imageId])
       deletedIds.push(imageId)
@@ -141,6 +154,11 @@ export async function removeDockerContainers(containerIds: string[]): Promise<Do
   const errors: string[] = []
 
   for (const containerId of containerIds) {
+    if (!validateDockerId(containerId)) {
+      log.warn('Invalid Docker container ID skipped', { containerId })
+      errors.push(`컨테이너 ${containerId}: 유효하지 않은 ID`)
+      continue
+    }
     try {
       await runDockerCommand(['rm', containerId])
       deletedIds.push(containerId)
@@ -162,6 +180,11 @@ export async function stopDockerContainers(containerIds: string[]): Promise<Dock
   const errors: string[] = []
 
   for (const containerId of containerIds) {
+    if (!validateDockerId(containerId)) {
+      log.warn('Invalid Docker container ID skipped', { containerId })
+      errors.push(`컨테이너 ${containerId}: 유효하지 않은 ID`)
+      continue
+    }
     try {
       await runDockerCommand(['stop', containerId])
       affectedIds.push(containerId)
@@ -226,6 +249,11 @@ export async function removeDockerVolumes(volumeNames: string[]): Promise<Docker
   const errors: string[] = []
 
   for (const volumeName of volumeNames) {
+    if (!validateDockerId(volumeName)) {
+      log.warn('Invalid Docker volume name skipped', { volumeName })
+      errors.push(`볼륨 ${volumeName}: 유효하지 않은 이름`)
+      continue
+    }
     try {
       await runDockerCommand(['volume', 'rm', volumeName])
       deletedIds.push(volumeName)
@@ -285,11 +313,16 @@ async function runDockerJsonLines<T>(args: string[]): Promise<
 > {
   try {
     const { stdout } = await runDockerCommand(args)
-    const rows = stdout
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => JSON.parse(line) as T)
+    const rows: T[] = []
+    for (const line of stdout.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      try {
+        rows.push(JSON.parse(trimmed) as T)
+      } catch {
+        // skip malformed JSON lines from Docker output
+      }
+    }
 
     return {
       status: 'ready',
