@@ -60,7 +60,7 @@ export function ToastContainer() {
       borderRadius: 'var(--radius)',
       background: 'var(--bg-card)',
       border: '1px solid var(--border)',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+      boxShadow: 'var(--shadow-lg)',
       fontSize: '13px',
       color: 'var(--text-primary)',
       zIndex: 9999,

@@ -38,6 +38,8 @@
   --sidebar-width: 220px;
   --radius: 8px;
   --radius-lg: 12px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 :root[data-theme='light'] {
@@ -69,6 +71,8 @@
   --nav-active-border: rgba(37, 99, 235, 0.22);
   --disk-bar-available: #d1fae5;
   --disk-bar-system: #64748b;
+  --shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 html,
@@ -82,6 +86,11 @@ body,
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+input:focus {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: -1px;
 }
 
 /* macOS titlebar drag region */

@@ -64,7 +64,7 @@ export function Sidebar() {
               fontWeight: currentPage === item.id ? 700 : 500,
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              boxShadow: currentPage === item.id ? '0 8px 20px rgba(15, 23, 42, 0.08)' : 'none'
+              boxShadow: currentPage === item.id ? 'var(--shadow)' : 'none'
             }}
           >
             <span style={{ fontSize: '16px', opacity: currentPage === item.id ? 1 : 0.7 }}>{item.icon}</span>

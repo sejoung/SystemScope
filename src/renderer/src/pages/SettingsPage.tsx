@@ -372,8 +372,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   borderRadius: 'var(--radius)',
   background: 'var(--bg-primary)',
-  color: 'var(--text-primary)',
-  outline: 'none'
+  color: 'var(--text-primary)'
 }
 
 const btnStyle: React.CSSProperties = {
