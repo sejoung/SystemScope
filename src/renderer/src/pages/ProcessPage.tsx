@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useProcessStore } from '../stores/useProcessStore'
 import { ProcessTable } from '../features/process/ProcessTable'
 import { PortFinder } from '../features/process/PortFinder'
+import { PortWatch } from '../features/process/PortWatch'
 
-type ActivityTab = 'processes' | 'ports'
+type ActivityTab = 'processes' | 'ports' | 'watch'
 
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses)
@@ -20,11 +21,15 @@ export function ProcessPage() {
           <PageTab active={tab === 'ports'} onClick={() => setTab('ports')}>
             Ports
           </PageTab>
+          <PageTab active={tab === 'watch'} onClick={() => setTab('watch')}>
+            Watch
+          </PageTab>
         </div>
       </div>
 
       {tab === 'processes' && <ProcessTable processes={allProcesses} />}
       {tab === 'ports' && <PortFinder />}
+      {tab === 'watch' && <PortWatch />}
     </div>
   )
 }

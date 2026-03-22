@@ -10,10 +10,11 @@ export interface ProcessInfo {
 export interface PortInfo {
   protocol: string
   localAddress: string
-  localPort: number
+  localPort: string
   peerAddress: string
-  peerPort: number
+  peerPort: string
   state: string
   pid: number
   process: string
+  localPortNum: number  // 정렬/필터용
 }

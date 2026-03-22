@@ -29,17 +29,27 @@ export async function getNetworkPorts(): Promise<PortInfo[]> {
   const connections = await si.networkConnections()
   return connections
     .filter((c) => c.localPort && c.pid > 0)
-    .map((c) => ({
-      protocol: c.protocol,
-      localAddress: c.localAddress,
-      localPort: Number(c.localPort),
-      peerAddress: c.peerAddress,
-      peerPort: Number(c.peerPort),
-      state: c.state,
-      pid: c.pid,
-      process: c.process ? c.process.split('/').pop()?.replace('.app', '') ?? c.process : `PID ${c.pid}`
-    }))
-    .sort((a, b) => a.localPort - b.localPort)
+    .map((c) => {
+      const localPortNum = toNum(c.localPort)
+      return {
+        protocol: c.protocol,
+        localAddress: String(c.localAddress ?? ''),
+        localPort: String(c.localPort ?? '*'),
+        peerAddress: String(c.peerAddress ?? ''),
+        peerPort: String(c.peerPort ?? '*'),
+        state: c.state,
+        pid: c.pid,
+        process: c.process ? c.process.split('/').pop()?.replace('.app', '') ?? c.process : `PID ${c.pid}`,
+        localPortNum
+      }
+    })
+    .sort((a, b) => a.localPortNum - b.localPortNum)
+}
+
+function toNum(v: string | number | undefined | null): number {
+  if (v === undefined || v === null || v === '' || v === '*') return 0
+  const n = Number(v)
+  return isNaN(n) ? 0 : n
 }
 
 function toProcessInfo(p: si.Systeminformation.ProcessesProcessData): ProcessInfo {
