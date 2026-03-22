@@ -27,7 +27,7 @@ async function walk(
 ): Promise<void> {
   if (depth > maxDepth) return
 
-  let entries: Awaited<ReturnType<typeof fs.readdir>>
+  let entries
   try {
     entries = await fs.readdir(dirPath, { withFileTypes: true })
   } catch {

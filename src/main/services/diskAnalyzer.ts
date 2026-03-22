@@ -27,7 +27,7 @@ export async function scanFolder(
       isFile: false
     }
 
-    let entries: Awaited<ReturnType<typeof fs.readdir>>
+    let entries
     try {
       entries = await fs.readdir(dirPath, { withFileTypes: true })
     } catch {

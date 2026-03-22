@@ -225,7 +225,7 @@ async function listMacInstalledApps(): Promise<InstalledApp[]> {
   const apps: InstalledApp[] = []
 
   for (const root of roots) {
-    let entries: Awaited<ReturnType<typeof fsp.readdir>>
+    let entries
     try {
       entries = await fsp.readdir(root, { withFileTypes: true })
     } catch {
@@ -527,7 +527,7 @@ async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<Ap
   const items: AppLeftoverDataItem[] = []
 
   for (const spec of specs) {
-    let entries: Awaited<ReturnType<typeof fsp.readdir>>
+    let entries
     try {
       entries = await fsp.readdir(spec.root, { withFileTypes: true })
     } catch {
@@ -578,7 +578,7 @@ async function listWindowsLeftoverAppData(installedApps: InstalledApp[]): Promis
   for (const spec of roots) {
     if (!spec.root) continue
 
-    let entries: Awaited<ReturnType<typeof fsp.readdir>>
+    let entries
     try {
       entries = await fsp.readdir(spec.root, { withFileTypes: true })
     } catch {

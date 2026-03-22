@@ -415,6 +415,7 @@ npm test
 
 ```bash
 npm run lint
+npm run typecheck
 ```
 
 포함 범위:
@@ -441,6 +442,7 @@ npm run test:watch
 - `npm test`: Vitest 실행
 - `npm run test:watch`: Vitest watch 모드
 - `npm run lint`: ESLint 실행
+- `npm run typecheck`: TypeScript 타입 검사
 - `npm run format`: Prettier 실행
 
 ## 현재 구현 범위

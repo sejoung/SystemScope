@@ -105,11 +105,16 @@ describe('disk scan flow integration', () => {
     const extensionsHandler = handlers.get(IPC_CHANNELS.DISK_GET_EXTENSIONS)
 
     expect(scanHandler).toBeTypeOf('function')
-    const startResult = await scanHandler?.({}, '/Users/test/Downloads') as { ok: boolean; data?: { jobId: string } }
+    expect(largeFilesHandler).toBeTypeOf('function')
+    expect(extensionsHandler).toBeTypeOf('function')
+
+    const startResult = await scanHandler!({}, '/Users/test/Downloads') as { ok: boolean; data?: { jobId: string } }
     expect(startResult.ok).toBe(true)
     expect(startResult.data?.jobId).toBeDefined()
+    expect(progressCallback).not.toBeNull()
+    expect(resolveScan).not.toBeNull()
 
-    progressCallback?.('/Users/test/Downloads/file-a', 2)
+    progressCallback!('/Users/test/Downloads/file-a', 2)
     expect(focusedWindow.webContents.send).toHaveBeenCalledWith(
       IPC_CHANNELS.JOB_PROGRESS,
       expect.objectContaining({
@@ -118,7 +123,7 @@ describe('disk scan flow integration', () => {
       })
     )
 
-    resolveScan?.(scanResult)
+    resolveScan!(scanResult)
     await Promise.resolve()
 
     expect(focusedWindow.webContents.send).toHaveBeenCalledWith(
@@ -129,8 +134,8 @@ describe('disk scan flow integration', () => {
       })
     )
 
-    const largeFilesResult = await largeFilesHandler?.({}, '/Users/test/Downloads', 50) as { ok: boolean; data?: unknown }
-    const extensionsResult = await extensionsHandler?.({}, '/Users/test/Downloads') as { ok: boolean; data?: unknown }
+    const largeFilesResult = await largeFilesHandler!({}, '/Users/test/Downloads', 50) as { ok: boolean; data?: unknown }
+    const extensionsResult = await extensionsHandler!({}, '/Users/test/Downloads') as { ok: boolean; data?: unknown }
 
     expect(largeFilesResult.ok).toBe(true)
     expect(extensionsResult.ok).toBe(true)

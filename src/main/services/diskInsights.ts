@@ -33,7 +33,7 @@ async function walkForGrowth(
   let recentSize = 0
   let recentFiles = 0
 
-  let entries: Awaited<ReturnType<typeof fs.readdir>>
+  let entries
   try {
     entries = await fs.readdir(dirPath, { withFileTypes: true })
   } catch {
@@ -168,7 +168,7 @@ async function collectFilesBySize(
   if (signal?.aborted) throw new Error('Cancelled')
   if (depth > maxDepth) return
 
-  let entries: Awaited<ReturnType<typeof fs.readdir>>
+  let entries
   try {
     entries = await fs.readdir(dirPath, { withFileTypes: true })
   } catch {
