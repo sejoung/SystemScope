@@ -105,7 +105,6 @@ export interface DockerImageSummary {
   tag: string
   sizeBytes: number
   sizeLabel: string
-  createdAt: string
   createdSince: string
   inUse: boolean
   dangling: boolean
@@ -130,13 +129,10 @@ export interface DockerContainerSummary {
   shortId: string
   name: string
   image: string
-  imageId: string
   command: string
   status: string
-  createdSince: string
   ports: string
   sizeBytes: number
-  sizeLabel: string
   running: boolean
 }
 

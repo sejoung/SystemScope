@@ -195,7 +195,6 @@ function toDockerImageSummary(row: DockerImageRow, containersByImageId: Map<stri
     tag,
     sizeBytes: parseDockerSize(row.Size),
     sizeLabel: String(row.Size ?? '-'),
-    createdAt: String(row.CreatedAt ?? '-'),
     createdSince: String(row.CreatedSince ?? '-'),
     inUse: containers.length > 0,
     dangling: repository === '<none>' || tag === '<none>',
@@ -215,13 +214,10 @@ function toDockerContainerSummary(row: DockerContainerRow): DockerContainerSumma
     shortId: id.slice(0, 12),
     name: String(row.Names ?? '-'),
     image: String(row.Image ?? '-'),
-    imageId: String(row.ImageID ?? '').trim(),
     command: String(row.Command ?? '').trim(),
     status: status || '-',
-    createdSince: String(row.RunningFor ?? '-'),
     ports: String(row.Ports ?? '').trim(),
     sizeBytes: parseDockerSize(sizeLabel),
-    sizeLabel,
     running: /^up\b/i.test(status)
   }
 }

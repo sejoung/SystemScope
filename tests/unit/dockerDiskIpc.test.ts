@@ -86,7 +86,7 @@ describe('docker disk IPC', () => {
       status: 'ready',
       message: null,
       images: [
-        { id: 'sha256:a', inUse: true, repository: 'node', tag: '20', sizeBytes: 100, sizeLabel: '100B', createdAt: '', createdSince: '', shortId: 'a', dangling: false, containers: ['web'] }
+        { id: 'sha256:a', inUse: true, repository: 'node', tag: '20', sizeBytes: 100, sizeLabel: '100B', createdSince: '', shortId: 'a', dangling: false, containers: ['web'] }
       ]
     })
 
@@ -106,7 +106,7 @@ describe('docker disk IPC', () => {
       status: 'ready',
       message: null,
       images: [
-        { id: 'sha256:a', inUse: false, repository: 'node', tag: '20', sizeBytes: 100, sizeLabel: '100B', createdAt: '', createdSince: '', shortId: 'a', dangling: false, containers: [] }
+        { id: 'sha256:a', inUse: false, repository: 'node', tag: '20', sizeBytes: 100, sizeLabel: '100B', createdSince: '', shortId: 'a', dangling: false, containers: [] }
       ]
     })
     showMessageBox.mockResolvedValue({ response: 1 })
@@ -143,7 +143,7 @@ describe('docker disk IPC', () => {
       status: 'ready',
       message: null,
       containers: [
-        { id: 'container:a', running: true, name: 'web', image: 'node:20', imageId: 'sha256:a', command: '', status: 'Up 1 hour', createdSince: '', ports: '', sizeBytes: 0, sizeLabel: '0B', shortId: 'container:a' }
+        { id: 'container:a', running: true, name: 'web', image: 'node:20', command: '', status: 'Up 1 hour', ports: '', sizeBytes: 0, shortId: 'container:a' }
       ]
     })
 
@@ -163,7 +163,7 @@ describe('docker disk IPC', () => {
       status: 'ready',
       message: null,
       containers: [
-        { id: 'container:a', running: false, name: 'web-old', image: 'node:20', imageId: 'sha256:a', command: '', status: 'Exited (0)', createdSince: '', ports: '', sizeBytes: 100, sizeLabel: '100B', shortId: 'container:a' }
+        { id: 'container:a', running: false, name: 'web-old', image: 'node:20', command: '', status: 'Exited (0)', ports: '', sizeBytes: 100, shortId: 'container:a' }
       ]
     })
     showMessageBox.mockResolvedValue({ response: 1 })
