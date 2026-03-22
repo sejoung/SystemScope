@@ -1,7 +1,6 @@
 import { lazy, Suspense, useCallback, useRef, useState, useEffect } from 'react'
 import { useDiskStore } from '../stores/useDiskStore'
 import { useIpcListener } from '../hooks/useIpc'
-import { Card } from '../components/Card'
 import { Accordion } from '../components/Accordion'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { formatBytes } from '../utils/format'
@@ -15,26 +14,19 @@ const FileInsights = lazy(async () => import('../features/disk/FileInsights').th
 const QuickScan = lazy(async () => import('../features/disk/QuickScan').then((mod) => ({ default: mod.QuickScan })))
 const RecentGrowth = lazy(async () => import('../features/disk/RecentGrowth').then((mod) => ({ default: mod.RecentGrowth })))
 
+type StorageTab = 'overview' | 'scan' | 'cleanup'
+
 export function DiskAnalysisPage() {
   const {
-    scanResult,
-    largeFiles,
-    extensions,
-    isScanning,
-    scanJobId,
-    scanProgress,
-    selectedFolder,
-    setScanResult,
-    setLargeFiles,
-    setExtensions,
-    setScanning,
-    setScanProgress,
-    setSelectedFolder,
-    clearScan
+    scanResult, largeFiles, extensions,
+    isScanning, scanJobId, scanProgress, selectedFolder,
+    setScanResult, setLargeFiles, setExtensions,
+    setScanning, setScanProgress, setSelectedFolder, clearScan
   } = useDiskStore()
 
   const showToast = useToast((s) => s.show)
-  const sectionResetKey = `${selectedFolder ?? 'none'}:${scanResult?.rootPath ?? 'none'}:${scanResult?.scanDuration ?? 0}:${isScanning ? 'scan' : 'idle'}`
+  const [tab, setTab] = useState<StorageTab>('overview')
+  const sectionResetKey = `${selectedFolder ?? 'none'}:${scanResult?.scanDuration ?? 0}:${isScanning}`
 
   // Treemap 컨테이너 폭 측정
   const treemapRef = useRef<HTMLDivElement>(null)
@@ -46,7 +38,6 @@ export function DiskAnalysisPage() {
       setTreemapWidth(Math.max(treemapRef.current.clientWidth, 600))
       return
     }
-
     setTreemapWidth(Math.max(treemapRef.current.clientWidth, 600))
     const observer = new ResizeObserver(([entry]) => {
       setTreemapWidth(Math.max(Math.floor(entry.contentRect.width), 320))
@@ -55,11 +46,13 @@ export function DiskAnalysisPage() {
     return () => observer.disconnect()
   }, [scanResult])
 
+  // --- Scan logic ---
   const startScan = useCallback(
     async (folderPath: string) => {
       clearScan()
       setSelectedFolder(folderPath)
       setScanning(true)
+      setTab('scan') // 스캔 시작하면 Scan 탭으로 자동 이동
       const res = await window.systemScope.scanFolder(folderPath)
       if (res.ok && res.data) {
         setScanning(true, (res.data as { jobId: string }).jobId)
@@ -101,6 +94,7 @@ export function DiskAnalysisPage() {
     }
   }, [isScanning, startScan, showToast])
 
+  // --- IPC listeners ---
   const handleJobProgress = useCallback(
     (data: unknown) => {
       const d = data as { id: string; currentStep: string }
@@ -143,81 +137,157 @@ export function DiskAnalysisPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Storage</h2>
+      {/* Header + Tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Storage</h2>
+        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
+          <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</PageTab>
+          <PageTab active={tab === 'scan'} onClick={() => setTab('scan')}>
+            Scan
+            {isScanning && <span style={{ marginLeft: '4px', color: 'var(--accent-yellow)' }}>●</span>}
+            {!isScanning && scanResult && <span style={{ marginLeft: '4px', color: 'var(--accent-green)' }}>✓</span>}
+          </PageTab>
+          <PageTab active={tab === 'cleanup'} onClick={() => setTab('cleanup')}>Cleanup</PageTab>
+        </div>
+      </div>
 
-      {/* Scan status bar */}
-      <div style={{ marginBottom: '16px' }}>
-        <Card>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={handleSelectFolder} disabled={isScanning} style={btnStyle}>
-              Browse Folder
+      {/* Tab content */}
+      {tab === 'overview' && (
+        <OverviewTab tryScan={tryScan} />
+      )}
+
+      {tab === 'scan' && (
+        <ScanTab
+          selectedFolder={selectedFolder}
+          isScanning={isScanning}
+          scanProgress={scanProgress}
+          scanResult={scanResult}
+          largeFiles={largeFiles}
+          extensions={extensions}
+          treemapRef={treemapRef}
+          safeTreemapWidth={safeTreemapWidth}
+          sectionResetKey={sectionResetKey}
+          onSelectFolder={handleSelectFolder}
+          onCancelScan={handleCancelScan}
+        />
+      )}
+
+      {tab === 'cleanup' && (
+        <CleanupTab
+          tryScan={tryScan}
+          sectionResetKey={sectionResetKey}
+          scanResult={scanResult}
+          largeFiles={largeFiles}
+          selectedFolder={selectedFolder}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Overview Tab ───
+
+function OverviewTab({ tryScan }: { tryScan: (path: string) => void }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px' }}>
+      <ErrorBoundary title="Home Storage">
+        <YourStorage onFolderClick={tryScan} />
+      </ErrorBoundary>
+      <ErrorBoundary title="Storage Growth">
+        <GrowthView />
+      </ErrorBoundary>
+    </div>
+  )
+}
+
+// ─── Scan Tab ───
+
+function ScanTab({
+  selectedFolder, isScanning, scanProgress, scanResult,
+  largeFiles, extensions, treemapRef, safeTreemapWidth,
+  sectionResetKey, onSelectFolder, onCancelScan
+}: {
+  selectedFolder: string | null
+  isScanning: boolean
+  scanProgress: string
+  scanResult: DiskScanResult | null
+  largeFiles: ReturnType<typeof useDiskStore.getState>['largeFiles']
+  extensions: ReturnType<typeof useDiskStore.getState>['extensions']
+  treemapRef: React.RefObject<HTMLDivElement | null>
+  safeTreemapWidth: number
+  sectionResetKey: string
+  onSelectFolder: () => void
+  onCancelScan: () => void
+}) {
+  return (
+    <div>
+      {/* Scan controls */}
+      <div style={{
+        display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap',
+        padding: '12px 16px', marginBottom: '16px',
+        background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)'
+      }}>
+        <button onClick={onSelectFolder} disabled={isScanning} style={btnStyle}>
+          Browse Folder
+        </button>
+        {selectedFolder && (
+          <>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {selectedFolder}
+            </span>
+            <button
+              onClick={() => window.systemScope.showInFolder(selectedFolder)}
+              style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            >
+              Open
             </button>
-            {selectedFolder && (
-              <>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {selectedFolder}
-                </span>
-                <button
-                  onClick={() => window.systemScope.showInFolder(selectedFolder)}
-                  style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-                >
-                  Open
-                </button>
-              </>
-            )}
-            {isScanning && (
-              <button onClick={handleCancelScan} style={{ ...btnStyle, background: 'var(--accent-red)' }}>
-                Cancel
-              </button>
-            )}
-          </div>
-          {isScanning && (
-            <div style={{ marginTop: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '14px', height: '14px',
-                  border: '2px solid var(--accent-blue)',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite'
-                }} />
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  {scanProgress || '스캔 준비 중...'}
-                </span>
-              </div>
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            </div>
-          )}
-          {!isScanning && !selectedFolder && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.
-            </div>
-          )}
-        </Card>
+          </>
+        )}
+        {isScanning && (
+          <button onClick={onCancelScan} style={{ ...btnStyle, background: 'var(--accent-red)' }}>
+            Cancel
+          </button>
+        )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-        <ErrorBoundary title="Home Storage" resetKey={sectionResetKey}>
-          <YourStorage onFolderClick={tryScan} />
-        </ErrorBoundary>
-        <ErrorBoundary title="Storage Growth" resetKey={sectionResetKey}>
-          <GrowthView />
-        </ErrorBoundary>
-      </div>
+      {/* Scan progress */}
+      {isScanning && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '10px 16px', marginBottom: '16px',
+          background: 'var(--bg-card)', borderRadius: 'var(--radius)',
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{
+            width: '14px', height: '14px',
+            border: '2px solid var(--accent-blue)',
+            borderTop: '2px solid transparent',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite'
+          }} />
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {scanProgress || '스캔 준비 중...'}
+          </span>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
 
-      <div style={{ marginBottom: '16px' }}>
-        <ErrorBoundary title="Quick Cleanup" resetKey={sectionResetKey}>
-          <Suspense fallback={<SectionFallback title="Quick Cleanup" />}>
-            <QuickScan onFolderClick={tryScan} />
-          </Suspense>
-        </ErrorBoundary>
-      </div>
+      {/* Empty state */}
+      {!isScanning && !scanResult && (
+        <div style={{
+          textAlign: 'center', padding: '60px 20px',
+          color: 'var(--text-muted)', fontSize: '13px'
+        }}>
+          폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.
+        </div>
+      )}
 
       {/* Scan results */}
       {scanResult && (
         <>
           <div style={{
-            display: 'flex', gap: '12px', flexWrap: 'wrap' as const, marginBottom: '16px', fontSize: '13px',
+            display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px', fontSize: '13px',
             padding: '10px 16px', background: 'var(--bg-card)',
             borderRadius: 'var(--radius)', border: '1px solid var(--border)'
           }}>
@@ -237,7 +307,6 @@ export function DiskAnalysisPage() {
             </ErrorBoundary>
           </div>
 
-          {/* File Insights — Types / Largest / Old Files / Duplicates 통합 */}
           <div style={{ marginBottom: '16px' }}>
             <ErrorBoundary title="File Insights" resetKey={sectionResetKey}>
               <Suspense fallback={<SectionFallback title="File Insights" />}>
@@ -245,22 +314,95 @@ export function DiskAnalysisPage() {
                   extensions={extensions}
                   largeFiles={largeFiles}
                   folderPath={selectedFolder!}
+                  hiddenTabs={['old', 'duplicates']}
+                  showDelete={false}
                 />
               </Suspense>
             </ErrorBoundary>
           </div>
 
-          {/* Recent Growth */}
-          <div>
-            <ErrorBoundary title="Recent Growth" resetKey={sectionResetKey}>
-              <Suspense fallback={<SectionFallback title="Recent Growth" />}>
-                <RecentGrowth folderPath={selectedFolder!} />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
+          <ErrorBoundary title="Recent Growth" resetKey={sectionResetKey}>
+            <Suspense fallback={<SectionFallback title="Recent Growth" />}>
+              <RecentGrowth folderPath={selectedFolder!} />
+            </Suspense>
+          </ErrorBoundary>
         </>
       )}
     </div>
+  )
+}
+
+// ─── Cleanup Tab ───
+
+function CleanupTab({ tryScan, sectionResetKey, scanResult, largeFiles, selectedFolder }: {
+  tryScan: (path: string) => void
+  sectionResetKey: string
+  scanResult: DiskScanResult | null
+  largeFiles: ReturnType<typeof useDiskStore.getState>['largeFiles']
+  selectedFolder: string | null
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Quick Cleanup — 항상 표시 */}
+      <ErrorBoundary title="Quick Cleanup" resetKey={sectionResetKey}>
+        <Suspense fallback={<SectionFallback title="Quick Cleanup" />}>
+          <QuickScan onFolderClick={tryScan} />
+        </Suspense>
+      </ErrorBoundary>
+
+      {/* 스캔 결과 기반 삭제 대상 — 스캔 완료 시에만 표시 */}
+      {scanResult && selectedFolder ? (
+        <ErrorBoundary title="File Cleanup" resetKey={sectionResetKey}>
+          <Suspense fallback={<SectionFallback title="File Cleanup" />}>
+            <FileInsights
+              extensions={[]}
+              largeFiles={largeFiles}
+              folderPath={selectedFolder}
+              defaultTab="largest"
+              title="File Cleanup"
+              hiddenTabs={['types']}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      ) : (
+        <div style={{
+          padding: '24px', textAlign: 'center',
+          background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+            폴더를 스캔하면 대용량 파일, 오래된 파일, 중복 파일을 정리할 수 있습니다.
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Scan 탭에서 폴더를 스캔하거나, 위 Quick Cleanup에서 폴더를 선택하세요.
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Shared ───
+
+function PageTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '6px 16px',
+        fontSize: '13px',
+        fontWeight: active ? 600 : 400,
+        border: 'none',
+        borderRadius: '6px',
+        background: active ? 'var(--accent-blue)' : 'transparent',
+        color: active ? 'var(--text-on-accent)' : 'var(--text-secondary)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center'
+      }}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -274,20 +416,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function SectionFallback({ title }: { title: string }) {
   return (
-    <div
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '16px'
-      }}
-    >
+    <div style={{
+      background: 'var(--bg-card)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)', padding: '16px'
+    }}>
       <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         {title}
       </div>
-      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-        로딩 중...
-      </div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>로딩 중...</div>
     </div>
   )
 }

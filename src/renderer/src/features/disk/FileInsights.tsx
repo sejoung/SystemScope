@@ -17,11 +17,15 @@ interface FileInsightsProps {
   extensions: ExtensionGroup[]
   largeFiles: LargeFile[]
   folderPath: string
+  defaultTab?: Tab
+  title?: string
+  hiddenTabs?: Tab[]
+  showDelete?: boolean
 }
 
-export function FileInsights({ extensions, largeFiles, folderPath }: FileInsightsProps) {
+export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true }: FileInsightsProps) {
   const showToast = useToast((s) => s.show)
-  const [tab, setTab] = useState<Tab>('types')
+  const [tab, setTab] = useState<Tab>(defaultTab)
   const [oldFiles, setOldFiles] = useState<LargeFile[]>([])
   const [oldFilesLoading, setOldFilesLoading] = useState(false)
   const [oldFilesScanned, setOldFilesScanned] = useState(false)
@@ -91,17 +95,17 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
 
   return (
     <Accordion
-      title="File Insights"
+      title={title}
       defaultOpen
       badge={badge}
       badgeColor={tab === 'duplicates' && totalWaste > 0 ? 'var(--accent-red)' : tab === 'old' && oldTotalSize > 0 ? 'var(--accent-yellow)' : undefined}
     >
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        <TabBtn active={tab === 'types'} onClick={() => setTab('types')}>File Types</TabBtn>
-        <TabBtn active={tab === 'largest'} onClick={() => setTab('largest')}>Largest</TabBtn>
-        <TabBtn active={tab === 'old'} onClick={() => setTab('old')}>Old Files</TabBtn>
-        <TabBtn active={tab === 'duplicates'} onClick={() => setTab('duplicates')}>Duplicates</TabBtn>
+        {!hiddenTabs.includes('types') && <TabBtn active={tab === 'types'} onClick={() => setTab('types')}>File Types</TabBtn>}
+        {!hiddenTabs.includes('largest') && <TabBtn active={tab === 'largest'} onClick={() => setTab('largest')}>Largest</TabBtn>}
+        {!hiddenTabs.includes('old') && <TabBtn active={tab === 'old'} onClick={() => setTab('old')}>Old Files</TabBtn>}
+        {!hiddenTabs.includes('duplicates') && <TabBtn active={tab === 'duplicates'} onClick={() => setTab('duplicates')}>Duplicates</TabBtn>}
       </div>
 
       {/* Tab content */}
@@ -109,6 +113,7 @@ export function FileInsights({ extensions, largeFiles, folderPath }: FileInsight
       {tab === 'largest' && (
         <LargestTab
           files={largeFiles}
+          showDelete={showDelete}
           onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제')}
         />
       )}
@@ -181,7 +186,7 @@ function TypesTab({ data }: { data: ExtensionGroup[] }) {
 
 // ─── Largest Tab ───
 
-function LargestTab({ files, onTrash }: { files: LargeFile[]; onTrash: (paths: string[]) => void }) {
+function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[]; showDelete?: boolean; onTrash: (paths: string[]) => void }) {
   if (files.length === 0) return <Empty>대용량 파일이 없습니다</Empty>
 
   return (
@@ -206,7 +211,7 @@ function LargestTab({ files, onTrash }: { files: LargeFile[]; onTrash: (paths: s
               </td>
               <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>Open</button>
-                <button onClick={() => onTrash([f.path])} style={trashBtn}>Delete</button>
+                {showDelete && <button onClick={() => onTrash([f.path])} style={trashBtn}>Delete</button>}
               </td>
             </tr>
           ))}
