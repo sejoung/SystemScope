@@ -40,7 +40,7 @@ export async function trashItemsWithConfirm(
   }
 
   if (validPaths.length === 0) {
-    return { successCount: 0, failCount: filePaths.length, totalSize: 0, errors: ['삭제할 수 있는 파일이 없습니다.'] }
+    return { successCount: 0, failCount: filePaths.length, totalSize: 0, trashedPaths: [], errors: ['삭제할 수 있는 파일이 없습니다.'] }
   }
 
   const totalSize = validPaths.reduce((acc, f) => acc + f.size, 0)
@@ -63,12 +63,13 @@ export async function trashItemsWithConfirm(
   })
 
   if (result.response === 0) {
-    return { successCount: 0, failCount: 0, totalSize: 0, errors: [] }
+    return { successCount: 0, failCount: 0, totalSize: 0, trashedPaths: [], errors: [] }
   }
 
   // 휴지통으로 이동
   let successCount = 0
   let trashedSize = 0
+  const trashedPaths: string[] = []
   const errors: string[] = []
 
   for (const file of validPaths) {
@@ -76,6 +77,7 @@ export async function trashItemsWithConfirm(
       await shell.trashItem(file.path)
       successCount++
       trashedSize += file.size
+      trashedPaths.push(file.path)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       errors.push(`${path.basename(file.path)}: ${msg}`)
@@ -89,6 +91,7 @@ export async function trashItemsWithConfirm(
     successCount,
     failCount: validPaths.length - successCount + invalidPaths.length,
     totalSize: trashedSize,
+    trashedPaths,
     errors
   }
 }

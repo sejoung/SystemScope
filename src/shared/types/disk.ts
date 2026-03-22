@@ -94,5 +94,6 @@ export interface TrashResult {
   successCount: number
   failCount: number
   totalSize: number
+  trashedPaths: string[]
   errors: string[]
 }

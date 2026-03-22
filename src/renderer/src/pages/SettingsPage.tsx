@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { Accordion } from '../components/Accordion'
+import { useToast } from '../components/Toast'
 import type { AlertThresholds } from '@shared/types'
 
 export function SettingsPage() {
@@ -13,6 +14,8 @@ export function SettingsPage() {
   const [localTheme, setLocalTheme] = useState<'dark' | 'light'>(theme)
   const [saved, setSaved] = useState(false)
   const [dataPath, setDataPath] = useState<string | null>(null)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showToast = useToast((s) => s.show)
 
   useEffect(() => {
     window.systemScope.getSettings().then((res) => {
@@ -30,6 +33,13 @@ export function SettingsPage() {
     window.systemScope.getDataPath().then((res) => {
       if (res.ok && res.data) setDataPath(res.data as string)
     })
+
+    return () => {
+      if (savedTimerRef.current) {
+        clearTimeout(savedTimerRef.current)
+        savedTimerRef.current = null
+      }
+    }
   }, [setTheme, setThresholds])
 
   const handleSave = async () => {
@@ -42,7 +52,15 @@ export function SettingsPage() {
       setThresholds(local)
       setTheme(localTheme)
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      if (savedTimerRef.current) {
+        clearTimeout(savedTimerRef.current)
+      }
+      savedTimerRef.current = setTimeout(() => {
+        setSaved(false)
+        savedTimerRef.current = null
+      }, 2000)
+    } else {
+      showToast(res.error?.message ?? '설정을 저장하지 못했습니다.')
     }
   }
 

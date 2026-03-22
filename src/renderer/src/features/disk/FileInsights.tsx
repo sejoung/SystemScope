@@ -75,14 +75,18 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       const result = res.data as TrashResult
       if (result.successCount > 0) {
         showToast(`${result.successCount}개 항목 (${formatBytes(result.totalSize)})을 휴지통으로 이동했습니다`)
-        // 성공한 파일을 목록에서 제거하기 위해 trashedPaths 전달
-        const trashedSet = new Set(paths.slice(0, result.successCount))
+        const trashedSet = new Set(result.trashedPaths)
         onDone?.(trashedSet)
+        if (result.failCount > 0 && result.errors.length > 0) {
+          showToast(`일부 실패: ${result.errors[0]}`)
+        }
       } else if (result.successCount === 0 && result.failCount === 0) {
         // 사용자가 Cancel 클릭
       } else {
         showToast(`삭제 실패: ${result.errors[0] ?? '알 수 없는 오류'}`)
       }
+    } else {
+      showToast(res.error?.message ?? '휴지통 이동에 실패했습니다.')
     }
   }
 
