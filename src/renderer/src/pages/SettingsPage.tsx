@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { Accordion } from '../components/Accordion'
 import { useToast } from '../components/Toast'
@@ -9,12 +9,23 @@ export function SettingsPage() {
   const setThresholds = useSettingsStore((s) => s.setThresholds)
   const theme = useSettingsStore((s) => s.theme)
   const setTheme = useSettingsStore((s) => s.setTheme)
+  const setHasUnsavedSettings = useSettingsStore((s) => s.setHasUnsavedSettings)
   const [local, setLocal] = useState<AlertThresholds>(thresholds)
   const [snapshotInterval, setSnapshotInterval] = useState(60)
   const [localTheme, setLocalTheme] = useState<'dark' | 'light'>(theme)
   const [saved, setSaved] = useState(false)
   const [dataPath, setDataPath] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const persistedRef = useRef<{
+    thresholds: AlertThresholds
+    snapshotInterval: number
+    theme: 'dark' | 'light'
+  }>({
+    thresholds,
+    snapshotInterval: 60,
+    theme
+  })
   const showToast = useToast((s) => s.show)
 
   useEffect(() => {
@@ -23,10 +34,13 @@ export function SettingsPage() {
         const s = res.data as { thresholds: AlertThresholds; snapshotIntervalMin?: number; theme?: 'dark' | 'light' }
         setLocal(s.thresholds)
         setThresholds(s.thresholds)
+        persistedRef.current.thresholds = s.thresholds
         if (s.snapshotIntervalMin) setSnapshotInterval(s.snapshotIntervalMin)
+        persistedRef.current.snapshotInterval = s.snapshotIntervalMin ?? 60
         if (s.theme) {
           setLocalTheme(s.theme)
           setTheme(s.theme)
+          persistedRef.current.theme = s.theme
         }
       }
     })
@@ -39,28 +53,55 @@ export function SettingsPage() {
         clearTimeout(savedTimerRef.current)
         savedTimerRef.current = null
       }
+      setHasUnsavedSettings(false)
     }
-  }, [setTheme, setThresholds])
+  }, [setHasUnsavedSettings, setTheme, setThresholds])
+
+  const appearanceDirty = localTheme !== persistedRef.current.theme
+  const alertsDirty = useMemo(
+    () => JSON.stringify(local) !== JSON.stringify(persistedRef.current.thresholds),
+    [local]
+  )
+  const snapshotsDirty = snapshotInterval !== persistedRef.current.snapshotInterval
+  const isDirty = appearanceDirty || alertsDirty || snapshotsDirty
+
+  useEffect(() => {
+    setHasUnsavedSettings(isDirty)
+    if (isDirty && saved) {
+      setSaved(false)
+    }
+  }, [isDirty, saved, setHasUnsavedSettings])
 
   const handleSave = async () => {
-    const res = await window.systemScope.setSettings({
-      thresholds: local,
-      theme: localTheme,
-      snapshotIntervalMin: snapshotInterval
-    })
-    if (res.ok) {
-      setThresholds(local)
-      setTheme(localTheme)
-      setSaved(true)
-      if (savedTimerRef.current) {
-        clearTimeout(savedTimerRef.current)
+    if (!isDirty || isSaving) return
+    setIsSaving(true)
+    try {
+      const res = await window.systemScope.setSettings({
+        thresholds: local,
+        theme: localTheme,
+        snapshotIntervalMin: snapshotInterval
+      })
+      if (res.ok) {
+        persistedRef.current = {
+          thresholds: local,
+          snapshotInterval,
+          theme: localTheme
+        }
+        setThresholds(local)
+        setTheme(localTheme)
+        setSaved(true)
+        if (savedTimerRef.current) {
+          clearTimeout(savedTimerRef.current)
+        }
+        savedTimerRef.current = setTimeout(() => {
+          setSaved(false)
+          savedTimerRef.current = null
+        }, 2000)
+      } else {
+        showToast(res.error?.message ?? '설정을 저장하지 못했습니다.')
       }
-      savedTimerRef.current = setTimeout(() => {
-        setSaved(false)
-        savedTimerRef.current = null
-      }, 2000)
-    } else {
-      showToast(res.error?.message ?? '설정을 저장하지 못했습니다.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -73,10 +114,24 @@ export function SettingsPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>Preferences</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Preferences</h2>
+        <span
+          style={{
+            fontSize: '12px',
+            fontWeight: 700,
+            padding: '4px 10px',
+            borderRadius: '999px',
+            background: isDirty ? 'rgba(245, 158, 11, 0.16)' : 'rgba(34, 197, 94, 0.16)',
+            color: isDirty ? 'var(--accent-yellow)' : 'var(--accent-green)'
+          }}
+        >
+          {isSaving ? 'Saving...' : saved ? 'Saved' : isDirty ? 'Unsaved changes' : 'All changes saved'}
+        </span>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-        <Accordion title="Appearance" defaultOpen>
+        <Accordion title="Appearance" defaultOpen badge={appearanceDirty ? 'Edited' : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
               앱 전체 색상 테마를 선택합니다.
@@ -111,7 +166,7 @@ export function SettingsPage() {
         </Accordion>
 
         {/* Alert Thresholds */}
-        <Accordion title="Alerts" defaultOpen>
+        <Accordion title="Alerts" defaultOpen badge={alertsDirty ? 'Edited' : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <ThresholdGroup
               label="Disk"
@@ -138,7 +193,7 @@ export function SettingsPage() {
         </Accordion>
 
         {/* Snapshot Settings */}
-        <Accordion title="Snapshots" defaultOpen>
+        <Accordion title="Snapshots" defaultOpen badge={snapshotsDirty ? 'Edited' : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
               Growth View에서 폴더 크기 변화를 추적하기 위한 스냅샷 주기입니다.
@@ -221,12 +276,20 @@ export function SettingsPage() {
         background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border)'
       }}>
-        <button onClick={handleSave} style={btnStyle}>
-          Save All
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || isSaving}
+          style={{
+            ...btnStyle,
+            opacity: !isDirty || isSaving ? 0.55 : 1,
+            cursor: !isDirty || isSaving ? 'default' : 'pointer'
+          }}
+        >
+          {isSaving ? 'Saving...' : isDirty ? 'Save All' : 'Saved'}
         </button>
-        {saved && (
-          <span style={{ fontSize: '12px', color: 'var(--accent-green)' }}>Saved!</span>
-        )}
+        <span style={{ fontSize: '12px', color: saved ? 'var(--accent-green)' : isDirty ? 'var(--accent-yellow)' : 'var(--text-muted)' }}>
+          {saved ? '모든 변경사항이 저장되었습니다.' : isDirty ? '저장하지 않은 변경사항이 있습니다.' : '현재 표시 중인 설정은 저장된 상태입니다.'}
+        </span>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
           테마, 알림 임계치, 스냅샷 주기를 함께 저장합니다
         </span>

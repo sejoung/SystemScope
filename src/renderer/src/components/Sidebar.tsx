@@ -10,6 +10,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const currentPage = useSettingsStore((s) => s.currentPage)
+  const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
 
   return (
@@ -41,7 +42,14 @@ export function Sidebar() {
         {NAV_ITEMS.map((item) => (
           <button
             key={item.id}
-            onClick={() => setCurrentPage(item.id)}
+            onClick={() => {
+              if (item.id === currentPage) return
+              if (currentPage === 'settings' && hasUnsavedSettings) {
+                const confirmed = window.confirm('저장하지 않은 설정 변경사항이 있습니다. 저장하지 않고 이동하시겠습니까?')
+                if (!confirmed) return
+              }
+              setCurrentPage(item.id)
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
