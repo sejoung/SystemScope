@@ -173,6 +173,12 @@ Windows 예시:
 - 각 중복 그룹의 낭비 용량 합계 표시
 - 접기/펼치기로 중복 파일 경로 확인, 각 파일에 Open 버튼
 
+### 8-1. 삭제 후 상태 동기화
+
+- `Cleanup > File Cleanup`에서 파일 삭제 성공 시 목록에서 즉시 제거
+- 마지막 스캔 캐시를 무효화하여 삭제 전 결과가 재사용되지 않도록 처리
+- 같은 폴더에 대해 백그라운드 재스캔을 실행해 총 용량, 파일 수, 폴더 수, 대용량 파일 목록, 확장자 통계를 최신 상태로 갱신
+
 ### 9. 사용자 공간 요약
 
 홈 디렉터리 기준 주요 폴더의 용량을 한눈에 보여줍니다.
@@ -272,6 +278,7 @@ Windows 예시:
 - 다크 / 라이트 테마 지원
 - 라이트 테마에서도 차트, 사이드바, 경고/성공 배지 대비를 별도로 조정
 - 페이지 및 주요 섹션 렌더 실패 시 Error Boundary로 전체 앱 대신 해당 영역만 보호
+- `File Insights > File Types`는 Recharts 대신 정적 리스트/바 UI로 렌더하여 재스캔 후 렌더 안정성을 우선
 
 ### 16. 설정
 
@@ -420,6 +427,8 @@ npm run test:watch
 - 중복 파일 찾기 (3단계 해시: 크기 → 샘플 → 전체)
 - 오래된 파일 탐색 (File Insights > Old Files)
 - File Insights 항목 휴지통 이동 + 확인 다이얼로그
+- 삭제 후 파일 목록 즉시 반영 + 스캔 캐시 무효화
+- 삭제 후 백그라운드 재스캔으로 스캔 요약/대용량 파일/확장자 통계 자동 갱신
 - 전체 프로세스 목록 + 검색/필터/정렬 (Activity > Processes)
 - Top Resource Consumers — CPU/Memory/GPU 통합 위젯 (Overview 대시보드)
 - Port Finder — 포트 조회, Local/Remote 범위 검색, 상태 필터 연동 (Activity > Ports)
@@ -445,6 +454,7 @@ npm run test:watch
 - 날짜별 로그 파일 분리 (`systemscope-YYYY-MM-DD.log`)
 - 로그 포맷 통일 (`[scope]` + message + metadata)
 - 로그 보관 기간 10일 자동 정리
+- APFS 컨테이너 정보 조회 실패 시 세션당 1회만 fallback 로그 기록
 - 패키징 스크립트 (pack / dist / dist:mac / dist:win)
 
 아직 포함되지 않음:
