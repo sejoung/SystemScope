@@ -535,4 +535,6 @@ export const KO_MESSAGES = {
   '3. Clean up unused volumes and build cache': '3. 미사용 볼륨과 빌드 캐시 정리',
   'You can additionally reclaim {volumes} unused volume(s) and {cache} of build cache.': '미사용 볼륨 {volumes}개와 빌드 캐시 {cache}를 추가로 회수할 수 있습니다.',
   'Analyzing folder sizes... (the first run may take a few seconds)': '폴더 크기 분석 중... (첫 실행 시 수 초 걸릴 수 있습니다)',
+  'Warning (%)': '경고 (%)',
+  'Critical (%)': '위험 (%)',
   } as const

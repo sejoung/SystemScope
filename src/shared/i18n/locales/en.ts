@@ -535,4 +535,6 @@ export const EN_MESSAGES = {
   '3. Clean up unused volumes and build cache': '3. Clean up unused volumes and build cache',
   'You can additionally reclaim {volumes} unused volume(s) and {cache} of build cache.': 'You can additionally reclaim {volumes} unused volume(s) and {cache} of build cache.',
   'Analyzing folder sizes... (the first run may take a few seconds)': 'Analyzing folder sizes... (the first run may take a few seconds)',
+  'Warning (%)': 'Warning (%)',
+  'Critical (%)': 'Critical (%)',
   } as const

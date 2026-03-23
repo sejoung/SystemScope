@@ -432,6 +432,8 @@ function ThresholdGroup({
   onWarningChange: (v: string) => void
   onCriticalChange: (v: string) => void
 }) {
+  const { tk } = useI18n()
+
   return (
     <div>
       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -440,7 +442,7 @@ function ThresholdGroup({
       <div style={{ display: 'flex', gap: '16px' }}>
         <div>
           <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            Warning (%)
+            {tk('settings.alerts.warning')}
           </label>
           <input
             type="number"
@@ -453,7 +455,7 @@ function ThresholdGroup({
         </div>
         <div>
           <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            Critical (%)
+            {tk('settings.alerts.critical')}
           </label>
           <input
             type="number"

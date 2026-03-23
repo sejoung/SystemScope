@@ -152,6 +152,8 @@ export const MESSAGE_KEYS = {
   'settings.alerts.storage': 'Storage',
   'settings.alerts.memory': 'Memory',
   'settings.alerts.gpu_memory': 'GPU Memory',
+  'settings.alerts.warning': 'Warning (%)',
+  'settings.alerts.critical': 'Critical (%)',
   'settings.app_data.description': 'This is where app data such as settings, snapshots, and logs is stored.',
   'settings.app_data.open_failed': 'Unable to open the app data folder.',
   'settings.app_data.config': 'config.json — alert thresholds and theme settings',
