@@ -10,7 +10,7 @@ type ConfidenceFilter = 'all' | 'high' | 'medium' | 'low'
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show)
-  const { tk } = useI18n()
+  const { t, tk } = useI18n()
   const locale = useSettingsStore((state) => state.locale)
   const [activeTab, setActiveTab] = useState<AppsTab>('installed')
   const [apps, setApps] = useState<InstalledApp[]>([])
@@ -137,7 +137,7 @@ export function AppsPage() {
     const result = res.data as AppRemovalResult
     if (result.cancelled) return
 
-    showToast(result.message ?? (result.completed ? tk('apps.toast.removed') : tk('apps.toast.uninstaller_started')))
+    showToast(result.message ? t(result.message) : (result.completed ? tk('apps.toast.removed') : tk('apps.toast.uninstaller_started')))
     await loadApps()
     await loadLeftovers()
   }
@@ -344,7 +344,7 @@ export function AppsPage() {
                           )}
                         </div>
                         {entry.protectedReason && (
-                          <div style={{ marginTop: '4px', color: 'var(--text-muted)' }}>{entry.protectedReason}</div>
+                          <div style={{ marginTop: '4px', color: 'var(--text-muted)' }}>{t(entry.protectedReason)}</div>
                         )}
                       </td>
                       <td style={tdStyle}>{entry.version ?? '-'}</td>
@@ -538,10 +538,10 @@ export function AppsPage() {
                         </div>
                         <div style={{ display: 'grid', gap: '6px', marginTop: '10px' }}>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            <strong style={{ color: 'var(--text-primary)' }}>{tk('apps.reason.why')}</strong> {item.reason}
+                            <strong style={{ color: 'var(--text-primary)' }}>{tk('apps.reason.why')}</strong> {t(item.reason)}
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            <strong style={{ color: 'var(--text-primary)' }}>{tk('apps.reason.risk')}</strong> {item.risk}
+                            <strong style={{ color: 'var(--text-primary)' }}>{tk('apps.reason.risk')}</strong> {t(item.risk)}
                           </div>
                         </div>
                       </div>
