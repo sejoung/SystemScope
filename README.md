@@ -57,6 +57,12 @@
 - npm
 - macOS 또는 Windows
 
+권장 환경:
+
+- Node.js 20+
+- Docker 기능을 사용할 경우 `docker` CLI와 Docker Desktop 또는 Docker Engine
+- Windows 앱 관리 기능을 사용할 경우 일반적인 `reg.exe` 사용이 가능한 환경
+
 ### 설치 및 실행
 
 ```bash
@@ -73,6 +79,17 @@ npm run build
 npm run preview
 ```
 
+### 외부 의존성 / 우아한 실패
+
+SystemScope는 일부 기능에서 OS 또는 외부 명령에 의존합니다.
+
+- Docker 페이지: `docker` CLI와 daemon 상태가 필요합니다.
+- 디스크 용량 측정: macOS/Linux에서는 `du`를 우선 사용하고, 없거나 실패하면 재귀 스캔으로 fallback 합니다.
+- macOS APFS 보정: `diskutil` 정보를 우선 사용하고, 불가할 경우 기본 파일시스템 정보로 fallback 합니다.
+- Windows 앱 목록: `reg query` 기반으로 조회합니다.
+
+외부 명령이 없거나 실행에 실패하더라도 가능한 범위에서 graceful fallback 하도록 구현되어 있습니다.
+
 ### 패키징
 
 ```bash
@@ -85,8 +102,12 @@ npm run dist:win    # Windows .exe
 ```bash
 npm test            # 테스트 실행
 npm run test:watch  # 감시 모드
+npm run test:e2e    # Electron + Playwright E2E
+npm run test:e2e:debug
 npm run check       # typecheck → lint → test → build 전체 검증
 ```
+
+E2E 테스트는 앱을 production build 한 뒤 Playwright로 실행합니다.
 
 ## 프로젝트 구조
 
@@ -98,6 +119,8 @@ src/
   shared/     IPC 채널, 공용 타입, 상수
 tests/
   unit/       단위 테스트
+  integration/ 통합 테스트
+  e2e/        Playwright 기반 Electron E2E
 ```
 
 ## 기술 스택
@@ -111,7 +134,7 @@ tests/
 | 차트 | Recharts |
 | 시스템 정보 | systeminformation |
 | 설정 저장 | electron-store |
-| 테스트 | Vitest |
+| 테스트 | Vitest, Playwright |
 
 ## 보안 모델
 
@@ -120,6 +143,15 @@ Renderer는 Node API에 직접 접근하지 않습니다.
 - `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`
 - preload의 `contextBridge`를 통해 필요한 IPC API만 노출
 - 파일 삭제는 홈 디렉토리 하위만 허용하며 휴지통으로만 이동
+
+## 플랫폼 메모
+
+- macOS와 Windows를 모두 지원합니다.
+- macOS에서는 APFS, unified memory, 메뉴바 트레이 UX에 맞춘 보정을 포함합니다.
+- Windows에서는 Quick Scan, 앱 제거, Explorer 열기, 시스템 트레이 동작을 별도 경로/정책에 맞춰 처리합니다.
+- 일부 시스템 경로는 보안 정책상 앱이 직접 삭제하지 않고, 열기 또는 휴지통 이동만 허용합니다.
+
+더 자세한 기능/플랫폼 차이는 [docs/features.md](docs/features.md)를 참고하세요.
 
 ## 기여
 

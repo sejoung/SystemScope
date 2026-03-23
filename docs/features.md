@@ -62,6 +62,12 @@
 
 각 항목은 경로, 설명, 추정 크기, 카테고리, 정리 가능 여부를 포함하며 선택 항목을 휴지통으로 이동할 수 있습니다.
 
+참고:
+
+- 경로 열기는 보안상 앱이 허용한 루트 범위에서만 동작합니다.
+- Windows에서는 `Temp`, `Recycle Bin`, `Windows Update cache` 같은 시스템 경로도 Explorer에서 열 수 있도록 별도 허용 경로를 적용합니다.
+- 크기 측정은 빠른 시스템 명령을 우선 사용하고, 불가능하면 JS 재귀 스캔으로 fallback 합니다.
+
 ## 5. Docker 정리
 
 `Docker` 메뉴에서 Docker 자원을 파일 정리와 분리해 관리할 수 있습니다.
@@ -80,6 +86,7 @@
 - 사용 중인 자원은 삭제 버튼 비활성화
 - 개별 삭제 / 다중 선택 삭제 + 확인 다이얼로그
 - Docker 미설치 상태와 daemon 미실행 상태를 구분해 안내
+- Docker CLI가 없거나 daemon에 연결할 수 없으면 사용자 메시지를 유지한 채 안전하게 실패
 
 ## 6. Growth View (폴더 성장 추세)
 
@@ -125,6 +132,10 @@
 
 홈 디렉터리 기준 주요 폴더(Documents, Downloads, Desktop 등)의 용량을 한눈에 보여줍니다.
 
+- macOS/Linux: `du` 우선, 실패 시 fallback
+- Windows: 시스템 드라이브 기준 파일시스템 용량을 우선 계산
+- 접근 불가 경로는 건너뜀
+
 ## 10. 프로세스 모니터링
 
 - 전체 프로세스 목록 (CPU 또는 메모리 사용량 > 0)
@@ -141,6 +152,7 @@
 - 상태별 필터: All / Listening / Established / Other
 - TCP 전체 상태 지원, 상태별 색상 뱃지
 - 포트 점유 PID 기준 프로세스 종료 지원
+- Windows 경로(`.exe`)와 macOS 앱 번들(`.app`)을 표시 이름으로 정규화
 
 ## 12. 포트 모니터링
 
@@ -176,6 +188,12 @@
 - **Snapshots**: 15분 ~ 6시간 주기 선택
 - **App Data / Logs**: 저장 경로 확인 및 Finder / Explorer에서 열기
 - 로그: `userData/logs/systemscope-YYYY-MM-DD.log`, 10일 자동 보관
+
+## 테스트
+
+- Unit / Integration: Vitest
+- E2E: Playwright 기반 Electron 실행
+- 주요 IPC 경로, Docker 상태 분기, 외부 명령 fallback, 앱 관리 흐름을 테스트로 커버
 
 ## macOS 동작 보정
 
