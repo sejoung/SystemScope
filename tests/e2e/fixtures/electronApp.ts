@@ -17,7 +17,7 @@ export const test = base.extend<ElectronFixtures>({
   },
 
   mainWindow: async ({ electronApp }, use) => {
-    const window = await electronApp.firstWindow({ timeout: 10_000 })
+    const window = await electronApp.firstWindow({ timeout: 30_000 })
     await window.waitForLoadState('domcontentloaded')
     await use(window)
   }

@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SystemScope - Download</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #080c14;
+      --bg-surface: #0d1321;
+      --bg-card: #131a2e;
+      --bg-card-hover: #1a2340;
+      --accent: #00e5c8;
+      --accent-dim: rgba(0, 229, 200, 0.12);
+      --accent-glow: rgba(0, 229, 200, 0.3);
+      --text: #e8ecf4;
+      --text-dim: #7a8ba8;
+      --text-muted: #4a5872;
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(0, 229, 200, 0.25);
+      --danger: #ff4d6a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg-layer::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: -20%;
+      width: 80%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(0, 229, 200, 0.04) 0%, transparent 70%);
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+
+    .bg-layer::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -20%;
+      width: 70%;
+      height: 70%;
+      background: radial-gradient(ellipse, rgba(0, 100, 200, 0.05) 0%, transparent 70%);
+      animation: drift 25s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes drift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(60px, 40px) rotate(3deg); }
+    }
+
+    /* Grid noise overlay */
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M0 60V0h1v60zm15 0V0h1v60zm15 0V0h1v60zm15 0V0h1v60zM0 0h60v1H0zm0 15h60v1H0zm0 15h60v1H0zm0 15h60v1H0z' fill='%23fff'/%3E%3C/svg%3E");
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+      width: 100%;
+    }
+
+    /* Header */
+    header {
+      padding: 20px 0;
+      position: relative;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+    }
+
+    .logo-text {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-link {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .header-link svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .lang-toggle {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .lang-toggle:hover {
+      border-color: var(--border-hover);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 72px 0 48px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      border: 1px solid rgba(0, 229, 200, 0.15);
+      animation: fadeInUp 0.6s ease both;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 14px;
+      animation: fadeInUp 0.6s ease 0.1s both;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--accent), #00a5ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-tagline {
+      font-size: 1.15rem;
+      color: var(--text);
+      font-weight: 600;
+      max-width: 540px;
+      margin: 0 auto 8px;
+      animation: fadeInUp 0.6s ease 0.15s both;
+    }
+
+    .hero p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 540px;
+      margin: 0 auto;
+      animation: fadeInUp 0.6s ease 0.25s both;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Download Section */
+    .download-section {
+      padding: 0 0 48px;
+      animation: fadeInUp 0.6s ease 0.3s both;
+    }
+
+    .primary-download {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .primary-download:hover {
+      border-color: var(--border-hover);
+    }
+
+    .primary-download::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+    }
+
+    .os-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      margin-bottom: 20px;
+    }
+
+    .os-badge svg {
+      width: 22px;
+      height: 22px;
+      color: var(--text);
+    }
+
+    .os-badge .os-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .primary-download h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .primary-download .version-info {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: var(--bg-deep);
+      text-decoration: none;
+      padding: 14px 36px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      transition: all 0.25s;
+      letter-spacing: -0.01em;
+      box-shadow: 0 0 24px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px var(--accent-glow), 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-download:active {
+      transform: translateY(0);
+    }
+
+    .btn-download svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .file-meta {
+      display: block;
+      margin-top: 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* Other Downloads */
+      .other-downloads {
+        margin-top: 8px;
+      }
+
+      .variant-downloads {
+        margin-top: 22px;
+      }
+
+    .other-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+      .download-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+    .download-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: all 0.2s;
+    }
+
+    .download-item:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-card-hover);
+    }
+
+    .download-item .info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .download-item .os-icon-small {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .download-item .os-icon-small svg {
+      width: 18px;
+      height: 18px;
+      color: var(--text-dim);
+    }
+
+    .download-item .name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .download-item .meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 18px;
+      text-decoration: none;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    /* Notice */
+    .notice-section {
+      padding: 0 0 24px;
+      animation: fadeInUp 0.6s ease 0.35s both;
+    }
+
+    .notice-card {
+      background: rgba(255, 200, 50, 0.06);
+      border: 1px solid rgba(255, 200, 50, 0.15);
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .notice-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      color: #f0c040;
+      margin-top: 2px;
+    }
+
+    .notice-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .notice-title {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #f0c040;
+      margin-bottom: 4px;
+    }
+
+    .notice-body {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.55;
+    }
+
+    .notice-body strong {
+      color: var(--text);
+    }
+
+    /* Docs Section */
+    .docs-section {
+      padding: 0 0 64px;
+      animation: fadeInUp 0.6s ease 0.4s both;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+    .docs-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .doc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .doc-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-card-hover);
+    }
+
+    .doc-card .doc-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--accent-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doc-card .doc-icon svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent);
+    }
+
+    .doc-card .doc-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 3px;
+    }
+
+    .doc-card .doc-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding: 24px 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    footer a:hover { color: var(--accent); }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-dim);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 14px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading p { font-size: 0.9rem; }
+    .loading a { color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .hero { padding: 48px 0 32px; }
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 0.95rem; }
+      .primary-download { padding: 28px 20px; }
+      .primary-download h2 { font-size: 1.2rem; }
+      .btn-download { padding: 12px 28px; font-size: 0.95rem; }
+      .docs-grid { grid-template-columns: 1fr; }
+      .download-item {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .download-item .btn-outline {
+        align-self: stretch;
+        text-align: center;
+      }
+      .footer-inner {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<div class="noise"></div>
+
+<div class="page-wrapper">
+
+  <header>
+    <div class="container header-inner">
+      <a href="./" class="logo">
+        <img class="logo-icon" src="https://raw.githubusercontent.com/sejoung/SystemScope/main/resources/systemscope_icon.svg" alt="SystemScope">
+        <span class="logo-text">System<span>Scope</span></span>
+      </a>
+      <div class="header-links">
+        <a class="header-link" href="https://github.com/sejoung/SystemScope" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <button class="lang-toggle" onclick="toggleLang()" id="langBtn">한국어</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-badge" id="heroBadge">FREE</div>
+      <h1 id="heroTitle"><span class="gradient-text">SystemScope</span> Download</h1>
+      <p class="hero-tagline" id="heroTagline">Real-time system insights for developers</p>
+      <p id="heroDesc">Monitor CPU, memory, GPU, and disk in real time, then move into disk analysis, Docker cleanup, and process management from one app.</p>
+    </section>
+
+    <section class="download-section">
+      <div id="downloadContent">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p id="loadingText">Loading latest release...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="notice-section" id="osNotice" style="display:none">
+      <div class="notice-card">
+        <div class="notice-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <div class="notice-title" id="osNoticeTitle"></div>
+          <div class="notice-body" id="osNoticeBody"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="docs-section">
+      <div class="section-label" id="docsTitle">Documentation</div>
+      <div class="docs-grid" id="docsGrid"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+    <span id="footerText">
+      <a href="https://github.com/sejoung/SystemScope" target="_blank" rel="noopener noreferrer">SystemScope</a> &mdash; open source under Apache License 2.0
+    </span>
+      <div class="footer-links">
+        <a href="https://github.com/sejoung/SystemScope/issues" target="_blank" rel="noopener noreferrer" id="footerIssues">Report issue</a>
+        <a href="https://github.com/sejoung/SystemScope/releases" target="_blank" rel="noopener noreferrer" id="footerReleases">All releases</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const SVG_ICONS = {
+    windows: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12V6.5l8-1.1V12H3zm0 .5V18l8 1.1V12.5H3zm9-1.6V5.3l9-1.3v8.5h-9zm0 2.1v6.7l9 1.3v-8h-9z"/></svg>',
+    apple: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>',
+    linux: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.868.065 1.157-.29 1.275-.89.199-.96-.124-1.48-.199-2.514 0-.134.032-.2.03-.397-.004-.266.462-.543.93-.735.27-.087.559-.167.785-.32.226-.168.41-.437.468-.831.039-.465-.172-.77-.574-.935-.244-.15-.462-.25-.642-.385-.174-.135-.293-.267-.332-.406-.146-.527-.413-.781-.73-1.082-.086-.207-.175-.396-.279-.604-.104-.21-.228-.432-.39-.677-.487-.734-.65-1.49-.767-2.243-.101-.752-.124-1.48-.37-2.144-.405-1.079-.774-2.23-1.614-2.952-.84-.733-2.065-.928-3.28-.928zm.596 2.27c.949.019 1.67.49 2.233 1.098.655.721.964 1.7 1.336 2.699.21.565.228 1.222.321 1.924.093.694.22 1.428.636 2.087.142.213.252.41.338.593l-.012.013c-.005.002-.01.007-.012.013-.495.292-1.07.592-1.613.738-.543.149-1.043.14-1.583-.14-.597-.33-.979-.596-1.406-.633-.426-.036-.902.14-1.582.547-.258.147-.473.19-.661.159-.188-.034-.352-.14-.527-.313-.371-.356-.674-.867-.784-1.363-.101-.368-.028-.77.144-1.22.172-.45.439-.922.665-1.385.228-.458.427-.905.494-1.3.047-.27.034-.517-.02-.735l-.002-.002c-.002-.003-.002-.005-.002-.008-.153-.575-.177-1.108.014-1.647.191-.535.56-1.032 1.073-1.471-.027-.07-.005-.137.014-.206.014-.068.023-.203.023-.203s.43-.136.86-.127z"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  };
+
+      const RELEASES_URL = 'https://github.com/sejoung/SystemScope/releases';
+
+      const i18n = {
+    en: {
+      heroBadge: 'FREE',
+      heroTitle: '<span class="gradient-text">SystemScope</span> Download',
+      heroTagline: 'Real-time system insights for developers',
+      heroDesc: 'Monitor CPU, memory, GPU, and disk in real time, then move into disk analysis, Docker cleanup, and process management from one app.',
+      langBtn: '한국어',
+      loadingText: 'Loading latest release...',
+      errorText: 'Failed to load release info.',
+      errorLink: 'Download from GitHub Releases',
+      recommended: 'Recommended for your system',
+      downloadFor: 'Download for',
+      otherDownloads: 'Other platforms',
+      docsTitle: 'Documentation',
+      macVariantsTitle: 'Mac builds',
+      footerText: '<a href="https://github.com/sejoung/SystemScope" target="_blank" rel="noopener noreferrer">SystemScope</a> &mdash; open source under Apache License 2.0',
+      footerIssues: 'Report issue',
+      footerReleases: 'All releases',
+      download: 'Download',
+      version: 'Version',
+      macNoticeTitle: 'macOS Security Notice',
+      macNoticeBody: 'SystemScope is not signed with an Apple Developer certificate, so macOS may block it on first launch.<br><strong>1.</strong> Right-click the app and select <strong>Open</strong>, then click <strong>Open</strong> again.<br><strong>2.</strong> If still blocked, go to <strong>System Settings &gt; Privacy &amp; Security</strong>, scroll down and click <strong>Open Anyway</strong> next to the SystemScope message.<br>This is only required once.',
+      winNoticeTitle: 'Windows SmartScreen Notice',
+      winNoticeBody: 'When you run SystemScope for the first time, Windows SmartScreen may show a warning. Click <strong>More info</strong>, then click <strong>Run anyway</strong> to proceed. This only appears on the first launch.',
+      docs: [
+        { title: 'Documentation', desc: 'Read the project guide', url: 'https://github.com/sejoung/SystemScope/blob/main/README.md' }
+      ]
+    },
+    ko: {
+      heroBadge: '무료',
+      heroTitle: '<span class="gradient-text">SystemScope</span> 다운로드',
+      heroTagline: '개발자를 위한 실시간 시스템 통계 도구',
+      heroDesc: 'CPU, 메모리, GPU, 디스크 상태를 실시간으로 모니터링하고 디스크 분석, Docker 정리, 프로세스 관리까지 하나의 앱에서 해결하세요.',
+      langBtn: 'English',
+      loadingText: '최신 릴리즈 불러오는 중...',
+      errorText: '릴리즈 정보를 불러오지 못했습니다.',
+      errorLink: 'GitHub Releases에서 다운로드',
+      recommended: '현재 시스템에 권장',
+      downloadFor: '다운로드:',
+      otherDownloads: '다른 플랫폼',
+      docsTitle: '문서',
+      macVariantsTitle: 'Mac 빌드',
+      footerText: '<a href="https://github.com/sejoung/SystemScope" target="_blank" rel="noopener noreferrer">SystemScope</a> &mdash; Apache License 2.0 오픈소스',
+      footerIssues: '문제 신고',
+      footerReleases: '전체 릴리즈',
+      download: '다운로드',
+      version: '버전',
+      macNoticeTitle: 'macOS 보안 안내',
+      macNoticeBody: 'SystemScope은 Apple 개발자 인증서로 서명되지 않아 처음 실행 시 macOS가 차단할 수 있습니다.<br><strong>1.</strong> 앱을 <strong>우클릭</strong> &gt; <strong>열기</strong>를 선택한 후 다시 <strong>열기</strong>를 클릭하세요.<br><strong>2.</strong> 그래도 안 되면 <strong>시스템 설정 &gt; 개인정보 보호 및 보안</strong>에서 SystemScope 옆의 <strong>확인 없이 열기</strong>를 클릭하세요.<br>최초 1회만 필요합니다.',
+      winNoticeTitle: 'Windows SmartScreen 안내',
+      winNoticeBody: '처음 실행 시 Windows SmartScreen 경고가 나타날 수 있습니다. <strong>추가 정보</strong>를 클릭한 후 <strong>실행</strong>을 누르면 됩니다. 최초 1회만 표시됩니다.',
+      docs: [
+        { title: '사용 설명서', desc: '프로젝트 가이드 읽기', url: 'https://github.com/sejoung/SystemScope/blob/main/README.ko.md' }
+      ]
+    }
+  };
+
+  let currentLang = navigator.language.startsWith('ko') ? 'ko' : 'en';
+  let releaseData = null;
+
+  function t(key) { return i18n[currentLang][key]; }
+
+  function toggleLang() {
+    currentLang = currentLang === 'en' ? 'ko' : 'en';
+    updateUI();
+  }
+
+      function detectOS() {
+        const ua = navigator.userAgent;
+        if (ua.includes('Win')) return 'windows';
+        if (ua.includes('Mac')) {
+          try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl');
+            if (!gl) return 'mac-unknown';
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            if (!debugInfo) return 'mac-unknown';
+            const renderer = String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '');
+            const lowerRenderer = renderer.toLowerCase();
+            if (lowerRenderer.includes('apple m') || lowerRenderer.includes('apple gpu')) {
+              return 'mac-arm';
+            }
+            if (
+              lowerRenderer.includes('amd') ||
+              lowerRenderer.includes('intel') ||
+              lowerRenderer.includes('radeon') ||
+              lowerRenderer.includes('iris')
+            ) {
+              return 'mac-intel';
+            }
+            return 'mac-unknown';
+          } catch (e) {
+            return 'mac-unknown';
+          }
+        }
+        if (ua.includes('Linux')) return 'linux';
+        return 'unknown';
+      }
+
+      function categorizeAssets(assets) {
+        const categories = {
+          'windows': [],
+          'mac-intel': [],
+          'mac-arm': [],
+          'mac-universal': [],
+          'linux': []
+        };
+        for (const asset of assets) {
+          const name = asset.name.toLowerCase();
+          if (name.endsWith('.blockmap') || name.endsWith('.yml')) continue;
+          if (name.endsWith('.exe')) {
+            if (name.includes('-setup-') || categories['windows'].length === 0) {
+              categories['windows'].unshift(asset);
+            } else {
+              categories['windows'].push(asset);
+            }
+          } else if (name.endsWith('.dmg')) {
+            if (name.includes('arm64') || name.includes('aarch64') || name.includes('apple-silicon')) {
+              categories['mac-arm'].push(asset);
+            } else if (name.includes('x64') || name.includes('x86_64') || name.includes('intel')) {
+              categories['mac-intel'].push(asset);
+            } else if (name.includes('universal')) {
+              categories['mac-universal'].push(asset);
+            }
+          } else if (name.endsWith('.appimage') || name.endsWith('.deb') || name.endsWith('.rpm') || name.endsWith('.snap')) {
+            categories['linux'].push(asset);
+          }
+        }
+        return categories;
+  }
+
+      const osInfo = {
+        'windows': { icon: 'windows', name: 'Windows' },
+        'mac-intel': { icon: 'apple', name: 'macOS (Intel)' },
+        'mac-arm': { icon: 'apple', name: 'macOS (Apple Silicon)' },
+        'mac-universal': { icon: 'apple', name: 'macOS (Universal)' },
+        'linux': { icon: 'linux', name: 'Linux' },
+      };
+
+  function formatSize(bytes) {
+    if (!bytes) return '';
+    const mb = bytes / (1024 * 1024);
+    return mb.toFixed(1) + ' MB';
+  }
+
+      function renderDownloads() {
+        if (!releaseData) return;
+        const { tag_name, assets } = releaseData;
+        const categories = categorizeAssets(assets);
+        const userOS = detectOS();
+        
+        // Determine primaryOS: prefer exact match, fall back to universal mac build for macOS, otherwise show chooser.
+        let primaryOS = null;
+        if (categories[userOS]?.length > 0) {
+          primaryOS = userOS;
+        } else if (userOS.startsWith('mac-') && categories['mac-universal']?.length > 0) {
+          primaryOS = 'mac-universal';
+        } else if (userOS.startsWith('mac-')) {
+          if (categories['mac-arm']?.length > 0) primaryOS = 'mac-arm';
+          else if (categories['mac-intel']?.length > 0) primaryOS = 'mac-intel';
+        } else if (userOS === 'windows' && categories['windows']?.length > 0) {
+          primaryOS = 'windows';
+        } else if (userOS === 'linux' && categories['linux']?.length > 0) {
+          primaryOS = 'linux';
+        }
+
+        const primaryAsset = primaryOS ? categories[primaryOS]?.[0] : null;
+
+        let html = '';
+
+        if (primaryAsset) {
+          const os = osInfo[primaryOS];
+      html += `
+      <div class="primary-download">
+        <div class="os-badge">
+          ${SVG_ICONS[os.icon]}
+          <span class="os-name">${os.name}</span>
+        </div>
+        <h2>${t('downloadFor')} ${os.name}</h2>
+        <div class="version-info">${t('version')} ${tag_name} &middot; ${t('recommended')}</div>
+        <a class="btn-download" href="${primaryAsset.browser_download_url}">
+          ${SVG_ICONS.download}
+          ${primaryAsset.name}
+        </a>
+        <span class="file-meta">${formatSize(primaryAsset.size)}</span>
+      </div>
+	    `;
+        } else {
+          html += `
+	      <div class="primary-download">
+	        <div class="os-badge">
+	          ${SVG_ICONS.download}
+	          <span class="os-name">${t('otherDownloads')}</span>
+	        </div>
+	        <h2>${currentLang === 'ko' ? '플랫폼을 선택하세요' : 'Choose your platform'}</h2>
+	        <div class="version-info">${t('version')} ${tag_name}</div>
+	        <a class="btn-download" href="${RELEASES_URL}" target="_blank" rel="noopener noreferrer">
+	          ${SVG_ICONS.download}
+	          ${currentLang === 'ko' ? '전체 릴리즈 보기' : 'Browse all releases'}
+	        </a>
+	      </div>
+	    `;
+        }
+
+        const macVariantEntries = ['mac-arm', 'mac-intel', 'mac-universal']
+          .filter((os) => categories[os] && categories[os].length > 0)
+          .filter((os) => os !== primaryOS);
+
+        if (userOS.startsWith('mac-') && macVariantEntries.length > 0) {
+          html += `<div class="variant-downloads"><div class="other-title">${t('macVariantsTitle')}</div><div class="download-grid">`;
+          for (const os of macVariantEntries) {
+            const asset = categories[os][0];
+            const info = osInfo[os];
+            html += `
+              <div class="download-item">
+                <div class="info">
+                  <div class="os-icon-small">${SVG_ICONS[info.icon]}</div>
+                  <div>
+                    <div class="name">${info.name}</div>
+                    <div class="meta">${asset.name} &middot; ${formatSize(asset.size)}</div>
+                  </div>
+                </div>
+                <a class="btn-outline" href="${asset.browser_download_url}">${t('download')}</a>
+              </div>
+            `;
+          }
+          html += `</div></div>`;
+        }
+
+        const otherEntries = Object.entries(categories)
+          .filter(([os, list]) => os !== primaryOS && !macVariantEntries.includes(os) && list.length > 0);
+
+    if (otherEntries.length > 0) {
+      html += `<div class="other-downloads"><div class="other-title">${t('otherDownloads')}</div><div class="download-grid">`;
+      for (const [os, list] of otherEntries) {
+        const asset = list[0]; 
+        const info = osInfo[os];
+        html += `
+          <div class="download-item">
+            <div class="info">
+              <div class="os-icon-small">${SVG_ICONS[info.icon]}</div>
+              <div>
+                <div class="name">${info.name}</div>
+                <div class="meta">${asset.name} &middot; ${formatSize(asset.size)}</div>
+              </div>
+            </div>
+            <a class="btn-outline" href="${asset.browser_download_url}">${t('download')}</a>
+          </div>
+        `;
+      }
+      html += `</div></div>`;
+    }
+
+    document.getElementById('downloadContent').innerHTML = html;
+  }
+
+  function updateUI() {
+    document.getElementById('heroBadge').textContent = t('heroBadge');
+    document.getElementById('heroTitle').innerHTML = t('heroTitle');
+    document.getElementById('heroTagline').textContent = t('heroTagline');
+    document.getElementById('heroDesc').textContent = t('heroDesc');
+    document.getElementById('langBtn').textContent = t('langBtn');
+    document.getElementById('docsTitle').textContent = t('docsTitle');
+    document.getElementById('footerText').innerHTML = t('footerText');
+    document.getElementById('footerIssues').textContent = t('footerIssues');
+    document.getElementById('footerReleases').textContent = t('footerReleases');
+    document.documentElement.lang = currentLang;
+
+    const docIcon = SVG_ICONS.book;
+    document.getElementById('docsGrid').innerHTML = t('docs').map(doc => `
+    <a class="doc-card" href="${doc.url}" target="_blank" rel="noopener noreferrer">
+      <div class="doc-icon">${docIcon}</div>
+      <div>
+        <div class="doc-title">${doc.title}</div>
+        <div class="doc-desc">${doc.desc}</div>
+      </div>
+    </a>
+  `).join('');
+
+    const ua = navigator.userAgent;
+    const osNotice = document.getElementById('osNotice');
+    if (ua.includes('Mac')) {
+      osNotice.style.display = '';
+      document.getElementById('osNoticeTitle').textContent = t('macNoticeTitle');
+      document.getElementById('osNoticeBody').innerHTML = t('macNoticeBody');
+    } else if (ua.includes('Win')) {
+      osNotice.style.display = '';
+      document.getElementById('osNoticeTitle').textContent = t('winNoticeTitle');
+      document.getElementById('osNoticeBody').innerHTML = t('winNoticeBody');
+    } else {
+      osNotice.style.display = 'none';
+    }
+
+    if (releaseData) renderDownloads();
+  }
+
+  async function fetchRelease() {
+    try {
+      const res = await fetch('https://api.github.com/repos/sejoung/SystemScope/releases/latest');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      releaseData = await res.json();
+      renderDownloads();
+    } catch (e) {
+      document.getElementById('downloadContent').innerHTML = `
+      <div class="loading">
+        <p>${t('errorText')}<br><a href="https://github.com/sejoung/SystemScope/releases" target="_blank" rel="noopener noreferrer">${t('errorLink')}</a></p>
+      </div>
+    `;
+    }
+  }
+
+  updateUI();
+  fetchRelease();
+</script>
+
+</body>
+</html>

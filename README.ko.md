@@ -14,6 +14,10 @@
 </p>
 
 <p align="center">
+  <a href="https://sejoung.github.io/SystemScope/">다운로드 페이지</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue" alt="Platform" />
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License" />
   <img src="https://img.shields.io/badge/electron-41-blueviolet" alt="Electron" />
