@@ -18,6 +18,18 @@
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License" />
   <img src="https://img.shields.io/badge/electron-41-blueviolet" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61dafb" alt="React" />
+  <a href="https://github.com/sejoung/SystemScope/actions/workflows/ci.yml">
+    <img src="https://github.com/sejoung/SystemScope/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <a href="https://github.com/sejoung/SystemScope/releases">
+    <img src="https://img.shields.io/github/v/release/sejoung/SystemScope" alt="Latest Release" />
+  </a>
+  <a href="https://github.com/sejoung/SystemScope/releases">
+    <img src="https://img.shields.io/github/release-date/sejoung/SystemScope" alt="Release Date" />
+  </a>
+  <a href="https://github.com/sejoung/SystemScope/releases">
+    <img src="https://img.shields.io/github/downloads/sejoung/SystemScope/total" alt="Downloads" />
+  </a>
 </p>
 
 <!-- 스크린샷이 준비되면 아래 주석을 해제하세요
@@ -40,7 +52,7 @@
 - **트레이 상주 UX**
 - **다크 / 라이트 테마**
 
-상세 동작은 [docs/features.md](docs/features.md)를 참고하세요.
+상세 동작은 [docs/features.ko.md](docs/features.ko.md)를 참고하세요.
 
 ## 화면 구성
 
@@ -171,7 +183,7 @@ Renderer는 Node API에 직접 접근하지 않습니다.
 - Windows에서는 Quick Scan, 앱 제거, Explorer 열기, 트레이 동작에 대한 별도 처리를 포함합니다.
 - 일부 시스템 경로는 안전을 위해 열기만 허용되거나 휴지통 이동만 허용됩니다.
 
-플랫폼별 세부 동작은 [docs/features.md](docs/features.md)를 참고하세요.
+플랫폼별 세부 동작은 [docs/features.ko.md](docs/features.ko.md)를 참고하세요.
 
 ## 기여
 
