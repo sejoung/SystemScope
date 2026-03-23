@@ -10,6 +10,8 @@
     "start": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "electron-vite build && npx playwright test",
+    "test:e2e:debug": "electron-vite build && npx playwright test --headed --debug",
     "lint": "eslint src/",
     "typecheck": "tsc -b",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
