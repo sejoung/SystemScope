@@ -125,3 +125,22 @@ input:focus {
     transform: rotate(360deg);
   }
 }
+
+/* Dashboard Layout */
+.dashboard-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-section {
+  margin-bottom: 16px;
+}
+
+.dashboard-grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}

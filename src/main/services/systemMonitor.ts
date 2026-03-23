@@ -8,14 +8,62 @@ import { logDebug, logWarn } from './logging'
 const execFileAsync = promisify(execFile)
 let hasLoggedApfsContainerFallback = false
 
+let lastDiskStats: DriveInfo[] | null = null
+let lastDiskFetchTime = 0
+const DISK_CACHE_TTL = 30 * 1000 // 30초 캐시
+
 export async function getSystemStats(): Promise<SystemStats> {
-  const [cpuLoad, cpuInfo, mem, gpu, disks] = await Promise.all([
+  const [cpuLoad, cpuInfo, mem, gpu] = await Promise.all([
     si.currentLoad(),
     si.cpu(),
     si.mem(),
-    si.graphics(),
-    si.fsSize()
+    si.graphics()
   ])
+
+  // 디스크 정보: 캐시가 유효하면 캐시 사용, 아니면 새로 가져옴
+  const now = Date.now()
+  let drives: DriveInfo[]
+
+  if (lastDiskStats && now - lastDiskFetchTime < DISK_CACHE_TTL) {
+    drives = lastDiskStats
+  } else {
+    try {
+      const disks = await si.fsSize()
+      const apfsInfo = platform() === 'darwin' ? await getApfsContainerInfo() : null
+
+      drives = disks.map((d) => {
+        let purgeable: number | null = null
+        let realUsage: number | null = null
+
+        if (apfsInfo && d.mount === '/') {
+          const containerUsed = apfsInfo.size - apfsInfo.free
+          purgeable = containerUsed - d.used
+          if (purgeable < 0) purgeable = 0
+          const realUsed = d.used
+          realUsage = Math.round((realUsed / apfsInfo.size) * 10000) / 100
+        }
+
+        return {
+          fs: d.fs,
+          type: d.type,
+          size: apfsInfo && d.mount === '/' ? apfsInfo.size : d.size,
+          used: d.used,
+          available: apfsInfo && d.mount === '/' ? apfsInfo.free : d.available,
+          usage: apfsInfo && d.mount === '/'
+            ? Math.round(((apfsInfo.size - apfsInfo.free) / apfsInfo.size) * 10000) / 100
+            : Math.round(d.use * 100) / 100,
+          mount: d.mount,
+          purgeable,
+          realUsage
+        }
+      })
+      lastDiskStats = drives
+      lastDiskFetchTime = now
+    } catch (err) {
+      logWarn('system-monitor', '디스크 정보를 가져오는데 실패했습니다', { error: err })
+      drives = lastDiskStats || []
+    }
+  }
 
   const cpu: CpuInfo = {
     usage: Math.round(cpuLoad.currentLoad * 100) / 100,
@@ -65,40 +113,6 @@ export async function getSystemStats(): Promise<SystemStats> {
         temperature: null
       }
 
-  // macOS APFS: purgeable space 계산
-  const apfsInfo = platform() === 'darwin' ? await getApfsContainerInfo() : null
-
-  const drives: DriveInfo[] = disks.map((d) => {
-    let purgeable: number | null = null
-    let realUsage: number | null = null
-
-    if (apfsInfo && d.mount === '/') {
-      // purgeable = 컨테이너 전체 사용량에서 df가 보여주는 사용량을 뺀 값
-      // 즉, OS가 필요 시 자동 반환 가능한 공간 (스냅샷, iCloud 캐시 등)
-      const containerUsed = apfsInfo.size - apfsInfo.free
-      purgeable = containerUsed - d.used
-      if (purgeable < 0) purgeable = 0
-
-      // 실제 사용률 = purgeable 제외
-      const realUsed = d.used
-      realUsage = Math.round((realUsed / apfsInfo.size) * 10000) / 100
-    }
-
-    return {
-      fs: d.fs,
-      type: d.type,
-      size: apfsInfo && d.mount === '/' ? apfsInfo.size : d.size,
-      used: d.used,
-      available: apfsInfo && d.mount === '/' ? apfsInfo.free : d.available,
-      usage: apfsInfo && d.mount === '/'
-        ? Math.round(((apfsInfo.size - apfsInfo.free) / apfsInfo.size) * 10000) / 100
-        : Math.round(d.use * 100) / 100,
-      mount: d.mount,
-      purgeable,
-      realUsage
-    }
-  })
-
   return {
     cpu,
     memory,
@@ -109,21 +123,24 @@ export async function getSystemStats(): Promise<SystemStats> {
 }
 
 // macOS APFS 컨테이너 정보 가져오기
-// diskutil info -plist / → APFSContainerSize, APFSContainerFree
+// diskutil info -plist / 결과를 JSON으로 변환하여 안전하게 파싱
 async function getApfsContainerInfo(): Promise<{ size: number; free: number } | null> {
   try {
-    const { stdout } = await execFileAsync('diskutil', ['info', '-plist', '/'])
-    const sizeMatch = stdout.match(/<key>APFSContainerSize<\/key>\s*<integer>(\d+)<\/integer>/)
-    const freeMatch = stdout.match(/<key>APFSContainerFree<\/key>\s*<integer>(\d+)<\/integer>/)
-    if (sizeMatch && freeMatch) {
-      const size = parseInt(sizeMatch[1], 10)
-      const free = parseInt(freeMatch[1], 10)
-      if (isNaN(size) || isNaN(free)) {
-        logWarn('system-monitor', 'diskutil에서 가져온 APFS 크기가 유효하지 않습니다', { sizeMatch: sizeMatch[1], freeMatch: freeMatch[1] })
-        return null
-      }
+    // diskutil의 XML 출력을 plutil을 이용해 JSON으로 변환
+    const { stdout } = await execFileAsync('bash', [
+      '-c',
+      'diskutil info -plist / | plutil -convert json -o - -- -'
+    ])
+
+    const data = JSON.parse(stdout)
+    const size = data.APFSContainerSize
+    const free = data.APFSContainerFree
+
+    if (typeof size === 'number' && typeof free === 'number') {
       return { size, free }
     }
+
+    logWarn('system-monitor', 'diskutil JSON 데이터에 유효한 APFS 크기 정보가 없습니다', { data })
   } catch (err) {
     if (!hasLoggedApfsContainerFallback) {
       hasLoggedApfsContainerFallback = true

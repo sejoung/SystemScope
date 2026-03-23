@@ -13,6 +13,8 @@ export async function scanFolder(
   const start = Date.now()
   let fileCount = 0
   let folderCount = 0
+  let lastProgressTime = 0
+  const PROGRESS_THROTTLE_MS = 100
 
   async function walk(dirPath: string, depth: number): Promise<FolderNode> {
     if (signal?.aborted) {
@@ -75,7 +77,11 @@ export async function scanFolder(
           try {
             if (entry.isSymbolicLink()) return null
             if (entry.isDirectory()) {
-              onProgress?.(fullPath, fileCount)
+              const now = Date.now()
+              if (now - lastProgressTime > PROGRESS_THROTTLE_MS) {
+                onProgress?.(fullPath, fileCount)
+                lastProgressTime = now
+              }
               return walk(fullPath, depth + 1)
             }
             if (entry.isFile()) {

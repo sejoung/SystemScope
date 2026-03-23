@@ -16,19 +16,19 @@ export function DashboardPage() {
       <AlertBanner />
 
       {/* Top: Gauges */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+      <div className="dashboard-grid-3">
         <CpuWidget />
         <MemoryWidget />
         <GpuWidget />
       </div>
 
       {/* Middle: Realtime chart */}
-      <div style={{ marginBottom: '16px' }}>
+      <div className="dashboard-section">
         <RealtimeChart />
       </div>
 
       {/* Bottom row 1: Storage + Growth */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+      <div className="dashboard-grid-responsive">
         <YourStorage onFolderClick={() => setCurrentPage('disk')} />
         <GrowthView />
       </div>
