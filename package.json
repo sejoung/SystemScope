@@ -32,6 +32,9 @@
     "url": "https://github.com/sejoung/SystemScope/issues"
   },
   "homepage": "https://github.com/sejoung/SystemScope#readme",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "d3-hierarchy": "^3.1.2",
     "electron-log": "^5.4.3",

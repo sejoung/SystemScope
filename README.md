@@ -66,6 +66,7 @@ Recommended:
 - Node.js 20+
 - `docker` CLI plus Docker Desktop or Docker Engine for Docker features
 - A standard Windows environment with `reg.exe` available for Windows app management
+- `.nvmrc` is included and pins the project to Node 20
 
 ### Install and Run
 
