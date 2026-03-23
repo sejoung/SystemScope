@@ -1,12 +1,12 @@
 import { useSettingsStore } from '../stores/useSettingsStore'
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: '⊞' },
-  { id: 'disk', label: 'Disk', icon: '⊚' },
+  { id: 'dashboard', label: 'Overview', icon: '⊞' },
+  { id: 'disk', label: 'Storage', icon: '⊚' },
   { id: 'docker', label: 'Docker', icon: '◈' },
-  { id: 'process', label: 'Process', icon: '⊡' },
-  { id: 'apps', label: 'Apps', icon: '◫' },
-  { id: 'settings', label: 'Settings', icon: '⊙' }
+  { id: 'process', label: 'Activity', icon: '⊡' },
+  { id: 'apps', label: 'Applications', icon: '◫' },
+  { id: 'settings', label: 'Preferences', icon: '⊙' }
 ] as const
 
 export function Sidebar() {
