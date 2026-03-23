@@ -17,6 +17,7 @@
       "@shared/*": ["src/shared/*"]
     }
   },
+  "exclude": ["tests/e2e/**/*"],
   "references": [
     { "path": "./tsconfig.node.json" },
     { "path": "./tsconfig.web.json" }

@@ -4,6 +4,7 @@ export interface FolderNode {
   size: number
   children: FolderNode[]
   isFile: boolean
+  modified?: number
 }
 
 export interface LargeFile {
@@ -110,6 +111,7 @@ export interface TrashResult {
   totalSize: number
   trashedPaths: string[]
   errors: string[]
+  cancelled: boolean
 }
 
 export interface DockerImageSummary {

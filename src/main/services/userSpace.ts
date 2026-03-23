@@ -35,9 +35,8 @@ function getHomeFolders(): { name: string; rel: string; icon: string }[] {
   ]
 }
 
-// macOS: 홈 디렉토리 전체를 한 번에 스캔
-// -d 0: 각 인자의 총 크기만 출력 (내부 탐색은 하되 하위 목록은 안 줌)
-async function getDirSizesBatchMac(paths: string[]): Promise<Map<string, number>> {
+// macOS/Linux: du -sk 명령으로 여러 폴더 크기를 한 번에 측정
+async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>> {
   const result = new Map<string, number>()
   try {
     // du -sk path1 path2 path3... → 한 프로세스로 전부 측정
@@ -126,7 +125,7 @@ export async function getUserSpaceInfo(): Promise<UserSpaceInfo> {
   if (platform() === 'darwin' || platform() === 'linux') {
     // 한 번의 du 호출로 모든 폴더 크기 측정
     const paths = existingFolders.map((f) => f.fullPath)
-    const sizes = await getDirSizesBatchMac(paths)
+    const sizes = await getDirSizesBatchDu(paths)
 
     entries = existingFolders
       .map((f) => ({

@@ -18,6 +18,18 @@ import type { AlertThresholds, Alert, ShutdownState, SystemStats } from '@shared
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { useState } from 'react'
 
+function isSystemStats(data: unknown): data is SystemStats {
+  return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
+}
+
+function isAlertArray(data: unknown): data is Alert[] {
+  return Array.isArray(data) && data.every(item => typeof item === 'object' && item !== null && 'id' in item && 'type' in item)
+}
+
+function isShutdownState(data: unknown): data is ShutdownState {
+  return data !== null && typeof data === 'object' && 'phase' in data && 'message' in data
+}
+
 function App() {
   const currentPage = useSettingsStore((s) => s.currentPage)
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
@@ -38,13 +50,13 @@ function App() {
       window.systemScope.getActiveAlerts()
     ]).then(([settingsRes, alertsRes]) => {
       if (settingsRes.ok && settingsRes.data) {
-        const settings = settingsRes.data as { theme?: 'dark' | 'light'; thresholds?: AlertThresholds }
-        if (settings.theme) setTheme(settings.theme)
-        if (settings.thresholds) setThresholds(settings.thresholds)
+        const settings = settingsRes.data as Record<string, unknown>
+        if (settings.theme === 'dark' || settings.theme === 'light') setTheme(settings.theme)
+        if (settings.thresholds && typeof settings.thresholds === 'object') setThresholds(settings.thresholds as AlertThresholds)
       }
 
-      if (alertsRes.ok && alertsRes.data) {
-        setAlerts(alertsRes.data as Alert[])
+      if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
+        setAlerts(alertsRes.data)
       }
     })
   }, [setAlerts, setTheme, setThresholds])
@@ -78,7 +90,7 @@ function App() {
 
   const handleSystemUpdate = useCallback(
     (data: unknown) => {
-      pushStats(data as SystemStats)
+      if (isSystemStats(data)) pushStats(data)
     },
     [pushStats]
   )
@@ -86,7 +98,7 @@ function App() {
 
   const handleAlertFired = useCallback(
     (data: unknown) => {
-      addAlerts(data as Alert[])
+      if (isAlertArray(data)) addAlerts(data)
     },
     [addAlerts]
   )
@@ -94,7 +106,7 @@ function App() {
 
   const handleShutdownState = useCallback(
     (data: unknown) => {
-      setShutdownState(data as ShutdownState)
+      if (isShutdownState(data)) setShutdownState(data)
     },
     []
   )

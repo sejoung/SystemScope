@@ -24,10 +24,9 @@ export function isSystemSubscriber(webContentsId: number): boolean {
 
 export function retainSystemSubscribers(activeIds: number[]): number {
   const activeSet = new Set(activeIds)
-  for (const id of subscribers) {
-    if (!activeSet.has(id)) {
-      subscribers.delete(id)
-    }
+  const toDelete = Array.from(subscribers).filter(id => !activeSet.has(id))
+  for (const id of toDelete) {
+    subscribers.delete(id)
   }
   return subscribers.size
 }

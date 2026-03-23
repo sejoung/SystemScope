@@ -94,7 +94,8 @@ export async function scanFolder(
                 path: fullPath,
                 size: stat.size,
                 children: [],
-                isFile: true
+                isFile: true,
+                modified: stat.mtimeMs
               } satisfies FolderNode
             }
           } catch {
@@ -144,7 +145,7 @@ export function findLargeFiles(
         name: node.name,
         path: node.path,
         size: node.size,
-        modified: 0
+        modified: node.modified ?? 0
       })
     }
     for (const child of node.children) {

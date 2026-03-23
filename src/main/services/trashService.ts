@@ -33,7 +33,7 @@ export async function trashItemsWithConfirm(
   }
 
   if (validPaths.length === 0) {
-    return { successCount: 0, failCount: filePaths.length, totalSize: 0, trashedPaths: [], errors: ['삭제할 수 있는 파일이 없습니다.'] }
+    return { successCount: 0, failCount: filePaths.length, totalSize: 0, trashedPaths: [], errors: ['삭제할 수 있는 파일이 없습니다.'], cancelled: false }
   }
 
   const totalSize = validPaths.reduce((acc, f) => acc + f.size, 0)
@@ -41,7 +41,7 @@ export async function trashItemsWithConfirm(
   // 확인 다이얼로그
   const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
   if (!win || win.isDestroyed()) {
-    return { successCount: 0, failCount: filePaths.length, totalSize: 0, trashedPaths: [], errors: ['활성 창을 찾을 수 없습니다.'] }
+    return { successCount: 0, failCount: filePaths.length, totalSize: 0, trashedPaths: [], errors: ['활성 창을 찾을 수 없습니다.'], cancelled: false }
   }
 
   const fileList = validPaths.length <= 5
@@ -60,7 +60,7 @@ export async function trashItemsWithConfirm(
   })
 
   if (result.response === 0) {
-    return { successCount: 0, failCount: 0, totalSize: 0, trashedPaths: [], errors: [] }
+    return { successCount: 0, failCount: 0, totalSize: 0, trashedPaths: [], errors: [], cancelled: true }
   }
 
   // 휴지통으로 이동
@@ -94,6 +94,7 @@ export async function trashItemsWithConfirm(
     failCount: validPaths.length - successCount + invalidPaths.length,
     totalSize: trashedSize,
     trashedPaths,
-    errors
+    errors,
+    cancelled: false
   }
 }
