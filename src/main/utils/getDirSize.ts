@@ -1,11 +1,8 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { platform } from 'os'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
 import { logDebug } from '../services/logging'
-
-const execFileAsync = promisify(execFile)
+import { isExternalCommandError, runExternalCommand } from '../services/externalCommand'
 
 /** 플랫폼에 따라 최적의 방법으로 디렉토리 크기를 측정 */
 export async function getDirSize(dirPath: string): Promise<number> {
@@ -18,20 +15,24 @@ export async function getDirSize(dirPath: string): Promise<number> {
 /** macOS/Linux: du -sk 명령어로 빠르게 디렉토리 크기 측정 */
 async function getDirSizeDu(dirPath: string): Promise<number> {
   try {
-    const { stdout } = await execFileAsync('du', ['-sk', dirPath], {
+    const { stdout } = await runExternalCommand('du', ['-sk', dirPath], {
       timeout: 30000,
       env: { ...process.env, LANG: 'C' }
     })
     const kb = parseInt(stdout.split('\t')[0], 10)
     return isNaN(kb) ? 0 : kb * 1024
   } catch (err) {
-    const errObj = err as { stdout?: string }
-    if (errObj.stdout) {
-      const kb = parseInt(errObj.stdout.split('\t')[0], 10)
+    const stdout = isExternalCommandError(err) ? err.stdout : ''
+    if (stdout) {
+      const kb = parseInt(stdout.split('\t')[0], 10)
       return isNaN(kb) ? 0 : kb * 1024
     }
+    if (isExternalCommandError(err) && err.kind === 'command_not_found') {
+      logDebug('dir-size', 'du is unavailable, falling back to recursive directory scan', { dirPath })
+      return getDirSizeRecursive(dirPath, 4)
+    }
     logDebug('dir-size', 'Failed to measure directory size with du', { dirPath, error: err })
-    return 0
+    return getDirSizeRecursive(dirPath, 4)
   }
 }
 

@@ -1,13 +1,10 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform } from 'os'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
 import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
 import { logDebug, logWarn } from './logging'
 import { getDirSizeRecursive } from '../utils/getDirSize'
-
-const execFileAsync = promisify(execFile)
+import { isExternalCommandError, runExternalCommand } from './externalCommand'
 let hasLoggedUserSpaceApfsFallback = false
 
 function getHomeFolders(): { name: string; rel: string; icon: string }[] {
@@ -40,7 +37,7 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
   const result = new Map<string, number>()
   try {
     // du -sk path1 path2 path3... → 한 프로세스로 전부 측정
-    const { stdout } = await execFileAsync('du', ['-sk', ...paths], {
+    const { stdout } = await runExternalCommand('du', ['-sk', ...paths], {
       timeout: 60000,
       env: { ...process.env, LANG: 'C' },
       maxBuffer: 1024 * 1024
@@ -55,16 +52,27 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
   } catch (err) {
     // 권한 오류로 인해 stderr에 부분 결과가 있을 수 있음
     // du는 접근 가능한 경로의 크기는 여전히 출력함
-    const errObj = err as { stdout?: string }
-    if (errObj.stdout) {
-      for (const line of errObj.stdout.trim().split('\n')) {
+    const stdout = isExternalCommandError(err) ? err.stdout : ''
+    if (stdout) {
+      for (const line of stdout.trim().split('\n')) {
         const tabIdx = line.indexOf('\t')
         if (tabIdx === -1) continue
         const kb = parseInt(line.substring(0, tabIdx), 10)
         const p = line.substring(tabIdx + 1)
         if (!isNaN(kb)) result.set(p, kb * 1024)
       }
-    } else {
+    }
+
+    if (isExternalCommandError(err) && err.kind === 'command_not_found') {
+      logDebug('user-space', 'du is unavailable, falling back to recursive directory scans', { paths })
+      const fallbackEntries = await Promise.all(paths.map(async (targetPath) => [targetPath, await getDirSizeRecursive(targetPath)] as const))
+      for (const [targetPath, size] of fallbackEntries) {
+        result.set(targetPath, size)
+      }
+      return result
+    }
+
+    if (!stdout) {
       logDebug('user-space', 'Failed to measure user-space folders in bulk with du', { paths, error: err })
     }
   }
@@ -75,7 +83,7 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
 async function getDiskInfo(): Promise<{ total: number; available: number; purgeable: number | null }> {
   if (platform() === 'darwin') {
     try {
-      const { stdout } = await execFileAsync('diskutil', ['info', '-plist', '/'])
+      const { stdout } = await runExternalCommand('diskutil', ['info', '-plist', '/'])
       const sizeMatch = stdout.match(/<key>APFSContainerSize<\/key>\s*<integer>(\d+)<\/integer>/)
       const freeMatch = stdout.match(/<key>APFSContainerFree<\/key>\s*<integer>(\d+)<\/integer>/)
       if (sizeMatch && freeMatch) {

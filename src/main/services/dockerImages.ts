@@ -1,4 +1,3 @@
-import { execFile } from 'child_process'
 import type {
   DockerActionResult,
   DockerBuildCacheScanResult,
@@ -15,6 +14,7 @@ import type {
 } from '@shared/types'
 import { logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
+import { isExternalCommandError, runExternalCommand } from './externalCommand'
 
 interface DockerImageRow {
   ID?: string
@@ -370,19 +370,7 @@ async function runDockerJsonLines<T>(args: string[]): Promise<
 }
 
 function runDockerCommand(args: string[]): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    execFile('docker', args, (error, stdout, stderr) => {
-      if (error) {
-        reject(Object.assign(error, { stdout, stderr }))
-        return
-      }
-
-      resolve({
-        stdout: stdout ?? '',
-        stderr: stderr ?? ''
-      })
-    })
-  })
+  return runExternalCommand('docker', args)
 }
 
 function toDockerImageSummary(row: DockerImageRow, containersByImageId: Map<string, string[]>): DockerImageSummary | null {
@@ -502,6 +490,10 @@ function parseReclaimedLabel(stdout: string): string {
 }
 
 function detectDockerStatus(error: unknown): 'not_installed' | 'daemon_unavailable' {
+  if (isExternalCommandError(error) && error.kind === 'command_not_found') {
+    return 'not_installed'
+  }
+
   const message = normalizeDockerError(error, '').toLowerCase()
   if (message.includes('enoent') || message.includes('not found') || message.includes('is not recognized')) {
     return 'not_installed'

@@ -1,11 +1,8 @@
 import si from 'systeminformation'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
 import { platform } from 'os'
 import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo } from '@shared/types'
 import { logDebug, logWarn } from './logging'
-
-const execFileAsync = promisify(execFile)
+import { isExternalCommandError, runExternalCommand } from './externalCommand'
 let hasLoggedApfsContainerFallback = false
 
 let lastDiskStats: DriveInfo[] | null = null
@@ -127,7 +124,7 @@ export async function getSystemStats(): Promise<SystemStats> {
 async function getApfsContainerInfo(): Promise<{ size: number; free: number } | null> {
   try {
     // diskutil의 XML 출력을 plutil을 이용해 JSON으로 변환
-    const { stdout } = await execFileAsync('bash', [
+    const { stdout } = await runExternalCommand('bash', [
       '-c',
       'diskutil info -plist / | plutil -convert json -o - -- -'
     ])
@@ -144,7 +141,10 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
   } catch (err) {
     if (!hasLoggedApfsContainerFallback) {
       hasLoggedApfsContainerFallback = true
-      logDebug('system-monitor', 'APFS container information unavailable, falling back to fsSize data', { error: err })
+      logDebug('system-monitor', 'APFS container information unavailable, falling back to fsSize data', {
+        reason: isExternalCommandError(err) ? err.kind : 'execution_failed',
+        error: err
+      })
     }
   }
   return null

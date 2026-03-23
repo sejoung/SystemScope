@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { AppUninstallRequest, TrashItemsRequest } from '@shared/types'
+import type { SystemScopeApi } from '@shared/contracts/systemScope'
 
 type Callback = (data: unknown) => void
 
@@ -14,7 +15,7 @@ function createListener(channel: string) {
   }
 }
 
-const api = {
+const api: SystemScopeApi = {
   // 앱
   logRendererError: (scope: string, message: string, details?: unknown) =>
     ipcRenderer.invoke(IPC_CHANNELS.APP_LOG_RENDERER_ERROR, { scope, message, details }),
@@ -88,7 +89,7 @@ const api = {
 
   // 설정
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
-  setSettings: (settings: Record<string, unknown>) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, settings),
+  setSettings: (settings) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, settings),
   getDataPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DATA_PATH),
   getLogPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_LOG_PATH),
 
@@ -102,4 +103,4 @@ const api = {
 
 contextBridge.exposeInMainWorld('systemScope', api)
 
-export type SystemScopeApi = typeof api
+export type { SystemScopeApi } from '@shared/contracts/systemScope'

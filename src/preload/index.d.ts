@@ -1,4 +1,4 @@
-import type { SystemScopeApi } from './index'
+import type { SystemScopeApi } from '@shared/contracts/systemScope'
 
 declare global {
   interface Window {

@@ -100,6 +100,27 @@ describe('docker disk IPC', () => {
     expect(result.data).toEqual({ status: 'ready', images: [], message: 'Docker 이미지가 없습니다.' })
   })
 
+  it('should surface not-installed docker guidance when listing images', async () => {
+    listDockerImages.mockResolvedValue({
+      status: 'not_installed',
+      images: [],
+      message: 'Docker is not installed. Install Docker Desktop or Docker Engine and try again.'
+    })
+
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_IMAGES)
+    const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
+
+    expect(result.ok).toBe(true)
+    expect(result.data).toEqual({
+      status: 'not_installed',
+      images: [],
+      message: 'Docker is not installed. Install Docker Desktop or Docker Engine and try again.'
+    })
+  })
+
   it('should refuse deleting in-use images', async () => {
     listDockerImages.mockResolvedValue({
       status: 'ready',
@@ -118,6 +139,25 @@ describe('docker disk IPC', () => {
     const result = await handler?.({}, ['sha256:a']) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('PERMISSION_DENIED')
+  })
+
+  it('should stop image deletion early when docker daemon is unavailable', async () => {
+    listDockerImages.mockResolvedValue({
+      status: 'daemon_unavailable',
+      images: [],
+      message: 'Docker is installed but not currently running. Start Docker Desktop or Docker Engine and try again.'
+    })
+
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_IMAGES)
+    const result = await handler?.({}, ['sha256:a']) as { ok: boolean; error?: { code: string; message: string } }
+
+    expect(result.ok).toBe(false)
+    expect(result.error?.code).toBe('UNKNOWN_ERROR')
+    expect(result.error?.message).toContain('Docker')
+    expect(removeDockerImages).not.toHaveBeenCalled()
   })
 
   it('should delete selected docker images after confirmation', async () => {
