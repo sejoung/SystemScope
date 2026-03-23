@@ -104,10 +104,10 @@ export function registerAppsIpc(): void {
     const relatedDataIds = Array.isArray(request.relatedDataIds) ? request.relatedDataIds.filter((id) => typeof id === 'string' && id.trim()) : []
     const relatedDataCount = relatedDataIds.length
     const detailLines = [
-      target.version ? `Version: ${target.version}` : null,
-      target.publisher ? `Publisher: ${target.publisher}` : null,
-      target.installLocation ? `Location: ${target.installLocation}` : null,
-      relatedDataCount > 0 ? `Related Data: ${relatedDataCount} item(s)` : null,
+      target.version ? `${tk('apps.table.version')}: ${target.version}` : null,
+      target.publisher ? `${tk('apps.table.publisher')}: ${target.publisher}` : null,
+      target.installLocation ? `${tk('apps.table.location')}: ${target.installLocation}` : null,
+      relatedDataCount > 0 ? tk('main.apps.confirm.related_count', { count: relatedDataCount }) : null,
       '',
       target.platform === 'mac'
         ? tk('main.apps.confirm.move_detail')
@@ -117,7 +117,7 @@ export function registerAppsIpc(): void {
 
     const confirm = await dialog.showMessageBox(win ?? undefined, {
       type: 'warning',
-      buttons: ['Cancel', actionLabel],
+      buttons: [tk('window.unsaved.cancel'), actionLabel],
       defaultId: 0,
       cancelId: 0,
       title: target.platform === 'mac' ? tk('main.apps.confirm.move_title') : tk('main.apps.confirm.uninstall_title'),

@@ -2,6 +2,7 @@ import { Fragment, startTransition, useEffect, useMemo, useState } from 'react'
 import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, InstalledApp } from '@shared/types'
 import { useToast } from '../components/Toast'
 import { useI18n } from '../i18n/useI18n'
+import { useSettingsStore } from '../stores/useSettingsStore'
 
 type PlatformFilter = 'all' | 'mac' | 'windows'
 type AppsTab = 'installed' | 'leftover'
@@ -10,6 +11,7 @@ type ConfidenceFilter = 'all' | 'high' | 'medium' | 'low'
 export function AppsPage() {
   const showToast = useToast((s) => s.show)
   const { tk } = useI18n()
+  const locale = useSettingsStore((state) => state.locale)
   const [activeTab, setActiveTab] = useState<AppsTab>('installed')
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
@@ -62,7 +64,7 @@ export function AppsPage() {
 
   useEffect(() => {
     void refreshCurrentTab()
-  }, [activeTab])
+  }, [activeTab, locale])
 
   const filteredApps = useMemo(() => {
     const normalizedQuery = installedAppliedSearch.trim().toLowerCase()

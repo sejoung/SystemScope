@@ -296,6 +296,7 @@ export const MESSAGE_KEYS = {
   'main.apps.confirm.move_detail': 'The app bundle will be moved to the trash.',
   'main.apps.confirm.uninstall_detail': 'The registered uninstaller will be launched. The rest of the flow continues outside the app.',
   'main.apps.confirm.related_detail': 'Selected related data will also be moved to the trash.',
+  'main.apps.confirm.related_count': 'Related Data: {count} item(s)',
   'main.process.error.invalid_limit': 'Invalid limit value.',
   'main.process.error.fetch_processes': 'Unable to fetch process information.',
   'main.process.error.fetch_ports': 'Unable to fetch port information.',
