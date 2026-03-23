@@ -584,6 +584,26 @@
       animation: riseIn 0.7s ease 0.34s both;
     }
 
+    .permission-section {
+      padding: 0 0 24px;
+      animation: riseIn 0.7s ease 0.32s both;
+    }
+
+    .permission-note {
+      border-radius: 20px;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid var(--line);
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+
+    .permission-note strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
     .section-label {
       font-size: 0.76rem;
       color: var(--ink-muted);
@@ -827,6 +847,10 @@
       </div>
     </section>
 
+    <section class="permission-section">
+      <div class="permission-note" id="permissionNote"></div>
+    </section>
+
     <section class="docs-section">
       <div class="section-label" id="docsTitle">Documentation</div>
       <div class="docs-grid" id="docsGrid"></div>
@@ -872,6 +896,7 @@
       downloadFor: 'Download for',
       otherDownloads: 'Other platforms',
       docsTitle: 'Documentation',
+      permissionNote: '<strong>Note:</strong> Some disk analysis features on macOS may ask for Full Disk Access.',
       macVariantsTitle: 'Mac builds',
       footerText: '<a href="https://github.com/sejoung/SystemScope" target="_blank" rel="noopener noreferrer">SystemScope</a> &mdash; open source under Apache License 2.0',
       footerIssues: 'Report issue',
@@ -899,6 +924,7 @@
       downloadFor: '다운로드:',
       otherDownloads: '다른 플랫폼',
       docsTitle: '문서',
+      permissionNote: '<strong>안내:</strong> macOS에서는 일부 디스크 분석 기능에 전체 디스크 접근 권한이 필요할 수 있습니다.',
       macVariantsTitle: 'Mac 빌드',
       footerText: '<a href="https://github.com/sejoung/SystemScope" target="_blank" rel="noopener noreferrer">SystemScope</a> &mdash; Apache License 2.0 오픈소스',
       footerIssues: '문제 신고',
@@ -1121,6 +1147,7 @@
     document.getElementById('heroDesc').textContent = t('heroDesc');
     document.getElementById('langBtn').textContent = t('langBtn');
     document.getElementById('docsTitle').textContent = t('docsTitle');
+    document.getElementById('permissionNote').innerHTML = t('permissionNote');
     document.getElementById('footerText').innerHTML = t('footerText');
     document.getElementById('footerIssues').textContent = t('footerIssues');
     document.getElementById('footerReleases').textContent = t('footerReleases');
