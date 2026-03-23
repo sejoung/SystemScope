@@ -114,6 +114,19 @@ npm run check       # typecheck -> lint -> test -> build
 
 E2E 테스트는 앱을 먼저 build한 뒤 Playwright로 실행합니다.
 
+## 릴리즈 플로우
+
+권장 릴리즈 절차:
+
+```bash
+npm run release:patch   # 또는 release:minor / release:major
+git push origin main
+git push origin --tags
+```
+
+릴리즈 스크립트는 먼저 전체 로컬 검증을 수행한 뒤 `npm version`으로 버전 커밋과 태그를 생성합니다.
+`v*` 태그를 push하면 release workflow가 실행되어 플랫폼별 산출물을 빌드하고 draft GitHub Release를 만듭니다.
+
 ## 프로젝트 구조
 
 ```text

@@ -114,6 +114,19 @@ npm run check       # typecheck -> lint -> test -> build
 
 E2E tests build the app first, then launch it through Playwright.
 
+## Release Flow
+
+Recommended release flow:
+
+```bash
+npm run release:patch   # or release:minor / release:major
+git push origin main
+git push origin --tags
+```
+
+The release scripts run the full local validation flow first, then create the version commit and tag with `npm version`.
+Pushing a `v*` tag triggers the release workflow, which builds platform artifacts and creates a draft GitHub Release.
+
 ## Project Structure
 
 ```text
