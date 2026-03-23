@@ -57,7 +57,7 @@ describe('installedApps helpers', () => {
     expect(parsed[1]).toMatchObject({
       name: 'SystemScope',
       protected: true,
-      protectedReason: '현재 실행 중인 SystemScope는 제거할 수 없습니다.'
+      protectedReason: 'You cannot remove the currently running SystemScope app.'
     })
   })
 

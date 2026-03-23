@@ -175,23 +175,23 @@ export function SettingsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-        <Accordion title={tk('settings.section.appearance')} defaultOpen badge={appearanceDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
+        <Accordion title={tk('settings.section.language')} defaultOpen badge={languageDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.theme.description')}
+              {tk('settings.language.description')}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[
-                { value: 'dark', label: tk('settings.theme.dark') },
-                { value: 'light', label: tk('settings.theme.light') }
+                { value: 'en' as const, label: tk('settings.language.english') },
+                { value: 'ko' as const, label: tk('settings.language.korean') }
               ].map((option) => {
-                const active = localTheme === option.value
+                const active = localLocale === option.value
                 return (
                   <button
                     key={option.value}
                     onClick={() => {
                       hasEditedRef.current = true
-                      setLocalTheme(option.value as 'dark' | 'light')
+                      setLocalLocale(option.value)
                     }}
                     style={{
                       padding: '8px 18px',
@@ -212,23 +212,23 @@ export function SettingsPage() {
           </div>
         </Accordion>
 
-        <Accordion title={tk('settings.section.language')} defaultOpen badge={languageDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
+        <Accordion title={tk('settings.section.appearance')} defaultOpen badge={appearanceDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.language.description')}
+              {tk('settings.theme.description')}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[
-                { value: 'ko' as const, label: tk('settings.language.korean') },
-                { value: 'en' as const, label: tk('settings.language.english') }
+                { value: 'dark', label: tk('settings.theme.dark') },
+                { value: 'light', label: tk('settings.theme.light') }
               ].map((option) => {
-                const active = localLocale === option.value
+                const active = localTheme === option.value
                 return (
                   <button
                     key={option.value}
                     onClick={() => {
                       hasEditedRef.current = true
-                      setLocalLocale(option.value)
+                      setLocalTheme(option.value as 'dark' | 'light')
                     }}
                     style={{
                       padding: '8px 18px',

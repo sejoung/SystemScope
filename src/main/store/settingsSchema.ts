@@ -15,7 +15,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   thresholds: DEFAULT_THRESHOLDS,
   theme: 'dark',
-  locale: 'ko',
+  locale: 'en',
   snapshotIntervalMin: 60
 }
 

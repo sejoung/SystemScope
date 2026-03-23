@@ -119,7 +119,7 @@ describe('disk scan flow integration', () => {
       IPC_CHANNELS.JOB_PROGRESS,
       expect.objectContaining({
         id: startResult.data?.jobId,
-        currentStep: '스캔 중: file-a (2개 파일)'
+        currentStep: 'Scanning: file-a (2 files)'
       })
     )
 

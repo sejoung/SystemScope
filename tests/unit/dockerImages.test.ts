@@ -23,7 +23,7 @@ describe('dockerImages service', () => {
 
     expect(result.status).toBe('not_installed')
     expect(result.images).toEqual([])
-    expect(result.message).toContain('Docker가 설치되어 있지 않습니다')
+    expect(result.message).toContain('Docker is not installed')
   })
 
   it('should return a friendly message when docker daemon is unavailable', async () => {
@@ -37,7 +37,7 @@ describe('dockerImages service', () => {
 
     expect(result.status).toBe('daemon_unavailable')
     expect(result.images).toEqual([])
-    expect(result.message).toContain('현재 실행 중이 아닙니다')
+    expect(result.message).toContain('not currently running')
   })
 
   it('should parse images and mark in-use containers', async () => {

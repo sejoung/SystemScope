@@ -5,9 +5,9 @@ export function getCurrentLocale(): AppLocale {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getSettings } = require('./store/settingsStore') as typeof import('./store/settingsStore')
     const locale = getSettings().locale
-    return locale === 'en' ? 'en' : 'ko'
+    return locale === 'ko' ? 'ko' : 'en'
   } catch {
-    return 'ko'
+    return 'en'
   }
 }
 

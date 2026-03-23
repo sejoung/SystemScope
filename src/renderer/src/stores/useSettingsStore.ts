@@ -21,7 +21,7 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>((set) => ({
   thresholds: DEFAULT_THRESHOLDS,
   theme: 'dark',
-  locale: 'ko',
+  locale: 'en',
   currentPage: 'dashboard',
   hasUnsavedSettings: false,
 
