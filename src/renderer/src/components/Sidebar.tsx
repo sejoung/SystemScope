@@ -29,6 +29,9 @@ export function Sidebar() {
       <div
         className="titlebar-drag"
         style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
           padding: '18px 12px 22px',
           fontSize: '17px',
           fontWeight: 800,
@@ -36,7 +39,15 @@ export function Sidebar() {
           color: 'var(--text-primary)'
         }}
       >
-        <span style={{ color: 'var(--accent-cyan)' }}>System</span>Scope
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="28" height="28" style={{ flexShrink: 0 }}>
+          <rect x="16" y="16" width="224" height="224" rx="56" fill="#0b0f14"/>
+          <circle cx="128" cy="128" r="64" fill="none" stroke="#22c55e" strokeWidth="10"/>
+          <circle cx="128" cy="128" r="6" fill="#22c55e"/>
+          <line x1="128" y1="128" x2="176" y2="96" stroke="#22c55e" strokeWidth="10" strokeLinecap="round"/>
+          <circle cx="170" cy="110" r="4" fill="#22c55e"/>
+          <circle cx="110" cy="160" r="3" fill="#22c55e" opacity="0.7"/>
+        </svg>
+        <span><span style={{ color: 'var(--accent-cyan)' }}>System</span>Scope</span>
       </div>
 
       <nav className="titlebar-no-drag" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 2px' }}>
