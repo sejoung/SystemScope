@@ -21,7 +21,7 @@
     "format": "prettier --write src/",
     "pack": "electron-vite build && electron-builder --dir",
     "dist": "electron-vite build && electron-builder",
-    "dist:mac": "electron-vite build && electron-builder --mac --publish never",
+    "dist:mac": "electron-vite build && electron-builder --mac --x64 --arm64 --publish never",
     "dist:win": "electron-vite build && electron-builder --win --publish never",
     "postinstall": "electron-builder install-app-deps"
   },
@@ -89,6 +89,7 @@
     ],
     "mac": {
       "target": "dmg",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
       "category": "public.app-category.developer-tools",
       "icon": "resources/icon.icns"
     },

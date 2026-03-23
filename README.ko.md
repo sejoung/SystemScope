@@ -114,7 +114,7 @@ npm run preview
 ### 패키징
 
 ```bash
-npm run dist:mac    # macOS .dmg
+npm run dist:mac    # macOS .dmg (Intel + Apple Silicon)
 npm run dist:win    # Windows .exe
 ```
 

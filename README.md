@@ -114,7 +114,7 @@ Where possible, SystemScope degrades gracefully instead of failing hard when the
 ### Packaging
 
 ```bash
-npm run dist:mac    # macOS .dmg
+npm run dist:mac    # macOS .dmg (Intel + Apple Silicon)
 npm run dist:win    # Windows .exe
 ```
 
