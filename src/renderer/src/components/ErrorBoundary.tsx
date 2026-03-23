@@ -1,4 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { translateLiteral } from '@shared/i18n'
+import { useSettingsStore } from '../stores/useSettingsStore'
 
 interface ErrorBoundaryProps {
   title: string
@@ -9,6 +11,10 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean
+}
+
+function tr(text: string): string {
+  return translateLiteral(useSettingsStore.getState().locale, text)
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -24,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     try {
       void window.systemScope.logRendererError(
         'error-boundary',
-        `섹션 렌더링 실패: ${this.props.title}`,
+        `Section render failed: ${this.props.title}`,
         {
           error: {
             name: error.name,
@@ -60,7 +66,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             {this.props.title}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            {this.props.message ?? '이 섹션을 렌더링하지 못했습니다. 다른 기능은 계속 사용할 수 있습니다.'}
+            {this.props.message ?? tr('이 섹션을 렌더링하지 못했습니다. 다른 기능은 계속 사용할 수 있습니다.')}
           </div>
         </div>
       )

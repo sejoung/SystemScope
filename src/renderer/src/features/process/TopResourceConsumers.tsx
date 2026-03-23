@@ -2,11 +2,13 @@ import { useProcessStore } from '../../stores/useProcessStore'
 import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
+import { useI18n } from '../../i18n/useI18n'
 
 export function TopResourceConsumers() {
   const cpuProcesses = useProcessStore((s) => s.cpuProcesses)
   const memoryProcesses = useProcessStore((s) => s.memoryProcesses)
   const gpu = useSystemStore((s) => s.current?.gpu)
+  const { tk } = useI18n()
 
   const topCpu = cpuProcesses.slice(0, 3)
   const topMem = memoryProcesses.slice(0, 3)
@@ -14,13 +16,13 @@ export function TopResourceConsumers() {
   const hasData = topCpu.length > 0
 
   return (
-    <Accordion title="Top Resource Consumers" defaultOpen>
+    <Accordion title={tk('process.top_resources.title')} defaultOpen>
       {!hasData ? (
-        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>데이터 로딩 중...</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{tk('process.top_resources.loading')}</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* CPU */}
-          <Section icon="var(--accent-blue)" label="CPU">
+          <Section icon="var(--accent-blue)" label={tk('process.top_resources.cpu')}>
             {topCpu.map((p) => (
               <ProcessRow
                 key={p.pid}
@@ -33,7 +35,7 @@ export function TopResourceConsumers() {
           </Section>
 
           {/* Memory */}
-          <Section icon="var(--accent-green)" label="Memory">
+          <Section icon="var(--accent-green)" label={tk('process.top_resources.memory')}>
             {topMem.map((p) => (
               <ProcessRow
                 key={p.pid}
@@ -46,11 +48,11 @@ export function TopResourceConsumers() {
           </Section>
 
           {/* GPU */}
-          <Section icon="var(--accent-purple)" label="GPU">
+          <Section icon="var(--accent-purple)" label={tk('process.top_resources.gpu')}>
             {gpu?.available && gpu.memoryUsed !== null && gpu.memoryTotal !== null ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{gpu.model ?? 'GPU'}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{gpu.model ?? tk('process.top_resources.gpu')}</span>
                   <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent-purple)' }}>
                     {formatBytes(gpu.memoryUsed)} / {formatBytes(gpu.memoryTotal)}
                   </span>
@@ -66,7 +68,7 @@ export function TopResourceConsumers() {
                 </div>
                 {gpu.usage !== null && (
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Utilization: {gpu.usage}%
+                    {tk('process.top_resources.utilization')}: {gpu.usage}%
                     {gpu.temperature !== null && ` / ${gpu.temperature}°C`}
                   </div>
                 )}
@@ -75,11 +77,11 @@ export function TopResourceConsumers() {
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
                 {gpu.model}
                 <br />
-                <span style={{ fontSize: '11px' }}>통합 메모리 — 별도 GPU 모니터링 불가</span>
+                <span style={{ fontSize: '11px' }}>{tk('process.top_resources.gpu_unavailable')}</span>
               </div>
             ) : (
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                GPU를 감지할 수 없습니다
+                {tk('process.top_resources.gpu_missing')}
               </div>
             )}
           </Section>

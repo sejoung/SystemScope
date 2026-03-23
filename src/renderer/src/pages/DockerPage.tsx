@@ -5,30 +5,32 @@ import { DockerContainers } from '../features/docker/DockerContainers'
 import { DockerVolumes } from '../features/docker/DockerVolumes'
 import { DockerBuildCache } from '../features/docker/DockerBuildCache'
 import { DockerImages } from '../features/disk/DockerImages'
+import { useI18n } from '../i18n/useI18n'
 
 type DockerTab = 'overview' | 'containers' | 'images' | 'volumes' | 'build-cache'
 
 export function DockerPage() {
   const [tab, setTab] = useState<DockerTab>('overview')
   const [refreshToken, setRefreshToken] = useState(0)
+  const { tk } = useI18n()
 
   const handleChanged = () => setRefreshToken((prev) => prev + 1)
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Docker</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{tk('docker.page.title')}</h2>
         <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
-          <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</PageTab>
-          <PageTab active={tab === 'containers'} onClick={() => setTab('containers')}>Containers</PageTab>
-          <PageTab active={tab === 'images'} onClick={() => setTab('images')}>Images</PageTab>
-          <PageTab active={tab === 'volumes'} onClick={() => setTab('volumes')}>Volumes</PageTab>
-          <PageTab active={tab === 'build-cache'} onClick={() => setTab('build-cache')}>Build Cache</PageTab>
+          <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>{tk('docker.tab.overview')}</PageTab>
+          <PageTab active={tab === 'containers'} onClick={() => setTab('containers')}>{tk('docker.tab.containers')}</PageTab>
+          <PageTab active={tab === 'images'} onClick={() => setTab('images')}>{tk('docker.tab.images')}</PageTab>
+          <PageTab active={tab === 'volumes'} onClick={() => setTab('volumes')}>{tk('docker.tab.volumes')}</PageTab>
+          <PageTab active={tab === 'build-cache'} onClick={() => setTab('build-cache')}>{tk('docker.tab.build_cache')}</PageTab>
         </div>
       </div>
 
       {tab === 'overview' && (
-        <ErrorBoundary title="Docker Overview">
+        <ErrorBoundary title={tk('docker.section.overview')}>
           <DockerOverview
             refreshToken={refreshToken}
             onOpenContainers={() => setTab('containers')}
@@ -40,7 +42,7 @@ export function DockerPage() {
       )}
 
       {tab === 'containers' && (
-        <ErrorBoundary title="Docker Containers">
+        <ErrorBoundary title={tk('docker.section.containers')}>
           <DockerContainers
             refreshToken={refreshToken}
             onChanged={handleChanged}
@@ -50,7 +52,7 @@ export function DockerPage() {
       )}
 
       {tab === 'images' && (
-        <ErrorBoundary title="Docker Images">
+        <ErrorBoundary title={tk('docker.section.images')}>
           <DockerImages
             refreshToken={refreshToken}
             onChanged={handleChanged}
@@ -60,7 +62,7 @@ export function DockerPage() {
       )}
 
       {tab === 'volumes' && (
-        <ErrorBoundary title="Docker Volumes">
+        <ErrorBoundary title={tk('docker.section.volumes')}>
           <DockerVolumes
             refreshToken={refreshToken}
             onChanged={handleChanged}
@@ -69,7 +71,7 @@ export function DockerPage() {
       )}
 
       {tab === 'build-cache' && (
-        <ErrorBoundary title="Docker Build Cache">
+        <ErrorBoundary title={tk('docker.section.build_cache')}>
           <DockerBuildCache
             refreshToken={refreshToken}
             onChanged={handleChanged}

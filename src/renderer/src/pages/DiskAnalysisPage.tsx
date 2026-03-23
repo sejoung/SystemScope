@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast'
 import { YourStorage } from '../features/disk/YourStorage'
 import { GrowthView } from '../features/disk/GrowthView'
 import type { DiskScanResult } from '@shared/types'
+import { useI18n } from '../i18n/useI18n'
 
 const TreemapChart = lazy(async () => import('../features/disk/TreemapChart').then((mod) => ({ default: mod.TreemapChart })))
 const FileInsights = lazy(async () => import('../features/disk/FileInsights').then((mod) => ({ default: mod.FileInsights })))
@@ -17,6 +18,7 @@ const RecentGrowth = lazy(async () => import('../features/disk/RecentGrowth').th
 type StorageTab = 'overview' | 'scan' | 'cleanup'
 
 export function DiskAnalysisPage() {
+  const { t, tk } = useI18n()
   const {
     scanResult, largeFiles, extensions,
     isScanning, scanJobId, scanProgress, selectedFolder,
@@ -59,8 +61,8 @@ export function DiskAnalysisPage() {
         setScanning(true, (res.data as { jobId: string }).jobId)
       } else {
         setScanning(false)
-        setScanProgress(res.error?.message ?? '스캔 실패')
-        showToast(res.error?.message ?? '폴더 스캔을 시작하지 못했습니다.')
+        setScanProgress(res.error?.message ?? tk('disk.scan.failed'))
+        showToast(res.error?.message ?? tk('disk.scan.start_failed'))
       }
     },
     [clearScan, setSelectedFolder, setScanning, setScanProgress, showToast]
@@ -69,7 +71,7 @@ export function DiskAnalysisPage() {
   const tryScan = useCallback(
     (folderPath: string) => {
       if (isScanning) {
-        showToast('스캔이 진행 중입니다. 완료 후 다시 시도해주세요.')
+        showToast(tk('disk.scan.in_progress'))
         return
       }
       startScan(folderPath)
@@ -86,7 +88,7 @@ export function DiskAnalysisPage() {
 
   const handleSelectFolder = useCallback(async () => {
     if (isScanning) {
-      showToast('스캔이 진행 중입니다. 완료 후 다시 시도해주세요.')
+      showToast(tk('disk.scan.in_progress'))
       return
     }
     const res = await window.systemScope.selectFolder()
@@ -102,7 +104,7 @@ export function DiskAnalysisPage() {
     }
 
     setScanning(true)
-    setScanProgress('삭제 후 스캔 결과를 새로고침하는 중...')
+    setScanProgress(tk('disk.scan.refreshing_after_delete'))
 
     const res = await window.systemScope.scanFolder(folderPath)
     if (res.ok && res.data) {
@@ -111,9 +113,9 @@ export function DiskAnalysisPage() {
     }
 
     setScanning(false)
-    setScanProgress(res.error?.message ?? '새로고침 실패')
-    showToast(res.error?.message ?? '삭제 후 스캔 결과를 새로고침하지 못했습니다.')
-  }, [isScanning, setScanning, setScanProgress, showToast])
+    setScanProgress(res.error?.message ?? tk('disk.scan.refresh_failed_short'))
+    showToast(res.error?.message ?? tk('disk.scan.refresh_failed'))
+  }, [isScanning, setScanning, setScanProgress, showToast, tk])
 
   // --- IPC listeners ---
   const handleJobProgress = useCallback(
@@ -168,15 +170,15 @@ export function DiskAnalysisPage() {
     <div>
       {/* Header + Tabs */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Storage</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{tk('disk.page.title')}</h2>
         <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
-          <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>Overview</PageTab>
+          <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>{tk('disk.tab.overview')}</PageTab>
           <PageTab active={tab === 'scan'} onClick={() => setTab('scan')}>
-            Scan
+            {tk('disk.tab.scan')}
             {isScanning && <span style={{ marginLeft: '4px', color: 'var(--accent-yellow)' }}>●</span>}
             {!isScanning && scanResult && <span style={{ marginLeft: '4px', color: 'var(--accent-green)' }}>✓</span>}
           </PageTab>
-          <PageTab active={tab === 'cleanup'} onClick={() => setTab('cleanup')}>Cleanup</PageTab>
+          <PageTab active={tab === 'cleanup'} onClick={() => setTab('cleanup')}>{tk('disk.tab.cleanup')}</PageTab>
         </div>
       </div>
 
@@ -219,12 +221,13 @@ export function DiskAnalysisPage() {
 // ─── Overview Tab ───
 
 function OverviewTab({ tryScan }: { tryScan: (path: string) => void }) {
+  const { tk } = useI18n()
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px' }}>
-      <ErrorBoundary title="Home Storage">
+      <ErrorBoundary title={tk('disk.section.home_storage')}>
         <YourStorage onFolderClick={tryScan} />
       </ErrorBoundary>
-      <ErrorBoundary title="Storage Growth">
+      <ErrorBoundary title={tk('disk.section.storage_growth')}>
         <GrowthView />
       </ErrorBoundary>
     </div>
@@ -250,6 +253,7 @@ function ScanTab({
   onSelectFolder: () => void
   onCancelScan: () => void
 }) {
+  const { tk } = useI18n()
   return (
     <div>
       {/* Scan controls */}
@@ -259,9 +263,7 @@ function ScanTab({
         background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border)'
       }}>
-        <button onClick={onSelectFolder} disabled={isScanning} style={btnStyle}>
-          Browse Folder
-        </button>
+        <button onClick={onSelectFolder} disabled={isScanning} style={btnStyle}>{tk('disk.scan.browse_folder')}</button>
         {selectedFolder && (
           <>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -271,13 +273,13 @@ function ScanTab({
               onClick={() => window.systemScope.showInFolder(selectedFolder)}
               style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
             >
-              Open
+              {tk('disk.scan.open')}
             </button>
           </>
         )}
         {isScanning && (
           <button onClick={onCancelScan} style={{ ...btnStyle, background: 'var(--accent-red)' }}>
-            Cancel
+            {tk('disk.scan.cancel')}
           </button>
         )}
       </div>
@@ -298,7 +300,7 @@ function ScanTab({
             animation: 'spin 0.8s linear infinite'
           }} />
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {scanProgress || '스캔 준비 중...'}
+            {scanProgress || tk('disk.scan.preparing')}
           </span>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
@@ -310,7 +312,7 @@ function ScanTab({
           textAlign: 'center', padding: '60px 20px',
           color: 'var(--text-muted)', fontSize: '13px'
         }}>
-          폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.
+          {tk('disk.scan.empty')}
         </div>
       )}
 
@@ -322,16 +324,16 @@ function ScanTab({
             padding: '10px 16px', background: 'var(--bg-card)',
             borderRadius: 'var(--radius)', border: '1px solid var(--border)'
           }}>
-            <Stat label="Total" value={formatBytes(scanResult.totalSize)} />
-            <Stat label="Files" value={scanResult.fileCount.toLocaleString()} />
-            <Stat label="Folders" value={scanResult.folderCount.toLocaleString()} />
-            <Stat label="Duration" value={`${(scanResult.scanDuration / 1000).toFixed(1)}s`} />
+            <Stat label={tk('disk.scan.total')} value={formatBytes(scanResult.totalSize)} />
+            <Stat label={tk('disk.scan.files')} value={scanResult.fileCount.toLocaleString()} />
+            <Stat label={tk('disk.scan.folders')} value={scanResult.folderCount.toLocaleString()} />
+            <Stat label={tk('disk.scan.duration')} value={`${(scanResult.scanDuration / 1000).toFixed(1)}s`} />
           </div>
 
           <div ref={treemapRef} style={{ marginBottom: '16px' }}>
-            <ErrorBoundary title="Folder Map" resetKey={sectionResetKey}>
-              <Suspense fallback={<SectionFallback title="Folder Map" />}>
-                <Accordion title="Folder Map" defaultOpen>
+            <ErrorBoundary title={tk('disk.section.folder_map')} resetKey={sectionResetKey}>
+              <Suspense fallback={<SectionFallback title={tk('disk.section.folder_map')} />}>
+                <Accordion title={tk('disk.section.folder_map')} defaultOpen>
                   <TreemapChart data={scanResult.tree} width={safeTreemapWidth} height={300} />
                 </Accordion>
               </Suspense>
@@ -339,8 +341,8 @@ function ScanTab({
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <ErrorBoundary title="File Insights" resetKey={sectionResetKey}>
-              <Suspense fallback={<SectionFallback title="File Insights" />}>
+            <ErrorBoundary title={tk('disk.section.file_insights')} resetKey={sectionResetKey}>
+              <Suspense fallback={<SectionFallback title={tk('disk.section.file_insights')} />}>
                 <FileInsights
                   extensions={extensions}
                   largeFiles={largeFiles}
@@ -352,8 +354,8 @@ function ScanTab({
             </ErrorBoundary>
           </div>
 
-          <ErrorBoundary title="Recent Growth" resetKey={sectionResetKey}>
-            <Suspense fallback={<SectionFallback title="Recent Growth" />}>
+          <ErrorBoundary title={tk('disk.section.recent_growth')} resetKey={sectionResetKey}>
+            <Suspense fallback={<SectionFallback title={tk('disk.section.recent_growth')} />}>
               <RecentGrowth folderPath={selectedFolder!} />
             </Suspense>
           </ErrorBoundary>
@@ -374,25 +376,26 @@ function CleanupTab({ tryScan, sectionResetKey, scanResult, largeFiles, selected
   onFilesRemoved: (paths: string[]) => void
   onRefreshRequested: () => void
 }) {
+  const { tk } = useI18n()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Quick Cleanup — 항상 표시 */}
-      <ErrorBoundary title="Quick Cleanup" resetKey={sectionResetKey}>
-        <Suspense fallback={<SectionFallback title="Quick Cleanup" />}>
+      <ErrorBoundary title={tk('disk.section.quick_cleanup')} resetKey={sectionResetKey}>
+        <Suspense fallback={<SectionFallback title={tk('disk.section.quick_cleanup')} />}>
           <QuickScan onFolderClick={tryScan} />
         </Suspense>
       </ErrorBoundary>
 
       {/* 스캔 결과 기반 삭제 대상 — 스캔 완료 시에만 표시 */}
       {scanResult && selectedFolder ? (
-        <ErrorBoundary title="File Cleanup" resetKey={sectionResetKey}>
-          <Suspense fallback={<SectionFallback title="File Cleanup" />}>
+        <ErrorBoundary title={tk('disk.section.file_cleanup')} resetKey={sectionResetKey}>
+          <Suspense fallback={<SectionFallback title={tk('disk.section.file_cleanup')} />}>
             <FileInsights
               extensions={[]}
               largeFiles={largeFiles}
               folderPath={selectedFolder}
               defaultTab="largest"
-              title="File Cleanup"
+              title={tk('disk.section.file_cleanup')}
               hiddenTabs={['types']}
               onFilesRemoved={onFilesRemoved}
               onRefreshRequested={onRefreshRequested}
@@ -406,10 +409,10 @@ function CleanupTab({ tryScan, sectionResetKey, scanResult, largeFiles, selected
           border: '1px solid var(--border)'
         }}>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            폴더를 스캔하면 대용량 파일, 오래된 파일, 중복 파일을 정리할 수 있습니다.
+            {tk('disk.cleanup.empty_title')}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Scan 탭에서 폴더를 스캔하거나, 위 Quick Cleanup에서 폴더를 선택하세요.
+            {tk('disk.cleanup.empty_detail')}
           </div>
         </div>
       )}
@@ -450,6 +453,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function SectionFallback({ title }: { title: string }) {
+  const { tk } = useI18n()
   return (
     <div style={{
       background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -458,7 +462,7 @@ function SectionFallback({ title }: { title: string }) {
       <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         {title}
       </div>
-      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>로딩 중...</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{tk('disk.common.loading')}</div>
     </div>
   )
 }

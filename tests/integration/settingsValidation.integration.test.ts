@@ -15,6 +15,7 @@ const storeState = vi.hoisted(() => ({
     gpuMemoryCritical: 90
   },
   theme: 'dark' as 'dark' | 'light',
+  locale: 'ko' as 'ko' | 'en',
   snapshotIntervalMin: 60
 }))
 

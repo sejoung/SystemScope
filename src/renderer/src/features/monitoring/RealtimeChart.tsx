@@ -2,10 +2,12 @@ import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
+import { useI18n } from '../../i18n/useI18n'
 
 export function RealtimeChart() {
   const history = useSystemStore((s) => s.history)
   const [ref, width] = useContainerWidth(600)
+  const { tk } = useI18n()
 
   const data = history.map((h, i) => ({
     idx: i,
@@ -15,7 +17,7 @@ export function RealtimeChart() {
   }))
 
   return (
-    <Accordion title="Live Usage" defaultOpen>
+    <Accordion title={tk('monitoring.live_usage.title')} defaultOpen>
       <div ref={ref} style={{ minHeight: '260px' }}>
       {data.length < 2 ? (
         <div
@@ -28,7 +30,7 @@ export function RealtimeChart() {
             height: '200px'
           }}
         >
-          데이터 수집 중...
+          {tk('monitoring.collecting')}
         </div>
       ) : width > 0 ? (
           <LineChart data={data} width={width} height={220}>
@@ -63,9 +65,9 @@ export function RealtimeChart() {
               }}
             />
             <Legend wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)' }} />
-            <Line type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name="CPU" />
-            <Line type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name="Memory" />
-            <Line type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name="GPU" />
+            <Line type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name={tk('monitoring.cpu.title')} />
+            <Line type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name={tk('settings.alerts.memory')} />
+            <Line type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name={tk('monitoring.gpu.title')} />
           </LineChart>
       ) : null}
       </div>

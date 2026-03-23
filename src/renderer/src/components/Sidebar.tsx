@@ -1,18 +1,19 @@
 import { useSettingsStore } from '../stores/useSettingsStore'
-
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Overview', icon: '⊞' },
-  { id: 'disk', label: 'Storage', icon: '⊚' },
-  { id: 'docker', label: 'Docker', icon: '◈' },
-  { id: 'process', label: 'Activity', icon: '⊡' },
-  { id: 'apps', label: 'Applications', icon: '◫' },
-  { id: 'settings', label: 'Preferences', icon: '⊙' }
-] as const
+import { useI18n } from '../i18n/useI18n'
 
 export function Sidebar() {
   const currentPage = useSettingsStore((s) => s.currentPage)
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
+  const { tk } = useI18n()
+  const navItems = [
+    { id: 'dashboard', label: tk('nav.overview'), icon: '⊞' },
+    { id: 'disk', label: tk('nav.storage'), icon: '⊚' },
+    { id: 'docker', label: tk('nav.docker'), icon: '◈' },
+    { id: 'process', label: tk('nav.activity'), icon: '⊡' },
+    { id: 'apps', label: tk('nav.applications'), icon: '◫' },
+    { id: 'settings', label: tk('nav.preferences'), icon: '⊙' }
+  ] as const
 
   return (
     <aside
@@ -51,13 +52,13 @@ export function Sidebar() {
       </div>
 
       <nav className="titlebar-no-drag" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 2px' }}>
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => {
               if (item.id === currentPage) return
               if (currentPage === 'settings' && hasUnsavedSettings) {
-                const confirmed = window.confirm('저장하지 않은 설정 변경사항이 있습니다. 저장하지 않고 이동하시겠습니까?')
+                const confirmed = window.confirm(tk('confirm.unsaved_settings_leave'))
                 if (!confirmed) return
               }
               setCurrentPage(item.id)

@@ -5,6 +5,7 @@ import type { GrowthFolder, GrowthViewResult } from '@shared/types'
 import { saveSnapshot, getSnapshotsInRange, type Snapshot, type FolderSnapshot } from './snapshotStore'
 import { logError, logInfo } from './logging'
 import { getDirSize } from '../utils/getDirSize'
+import { t } from '../i18n'
 
 const PERIODS: Record<string, number> = {
   '1h': 60 * 60 * 1000,
@@ -55,7 +56,7 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   }
 
   await saveSnapshot(snapshot)
-  logInfo('snapshot', '스냅샷 저장 완료', { folderCount: folders.length, totalSize: snapshot.totalSize })
+  logInfo('snapshot', 'Snapshot saved', { folderCount: folders.length, totalSize: snapshot.totalSize })
   return snapshot
 }
 
@@ -129,11 +130,11 @@ export function startSnapshotScheduler(intervalMs: number = 60 * 60 * 1000): voi
   if (snapshotInterval) return
 
   // 앱 시작 시 즉시 1회 스냅샷
-  takeSnapshot().catch((err) => logError('snapshot', '초기 스냅샷 실패', err))
+  takeSnapshot().catch((err) => logError('snapshot', 'Initial snapshot failed', err))
 
   // 이후 설정된 주기마다
   snapshotInterval = setInterval(() => {
-    takeSnapshot().catch((err) => logError('snapshot', '예약된 스냅샷 실패', err))
+    takeSnapshot().catch((err) => logError('snapshot', 'Scheduled snapshot failed', err))
   }, intervalMs)
 }
 
@@ -152,7 +153,7 @@ export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<
   try {
     await Promise.race([
       snapshotInProgress,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('스냅샷 대기 시간 초과')), timeoutMs))
+      new Promise((_, reject) => setTimeout(() => reject(new Error(t('스냅샷 대기 시간이 초과되었습니다.'))), timeoutMs))
     ])
     return true
   } catch {

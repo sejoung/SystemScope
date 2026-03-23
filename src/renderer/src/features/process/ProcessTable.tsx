@@ -3,6 +3,7 @@ import type { ProcessInfo, ProcessKillResult } from '@shared/types'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useToast } from '../../components/Toast'
+import { useI18n } from '../../i18n/useI18n'
 
 type SortField = 'cpu' | 'memory' | 'name' | 'pid'
 type SortDir = 'asc' | 'desc'
@@ -13,6 +14,7 @@ interface ProcessTableProps {
 
 export function ProcessTable({ processes }: ProcessTableProps) {
   const showToast = useToast((s) => s.show)
+  const { tk } = useI18n()
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<SortField>('cpu')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -63,20 +65,20 @@ export function ProcessTable({ processes }: ProcessTableProps) {
       reason: 'Activity > Processes'
     })
     if (!res.ok) {
-      showToast(res.error?.message ?? '프로세스를 종료하지 못했습니다.')
+      showToast(res.error?.message ?? tk('process.table.kill_failed'))
       return
     }
 
     const result = res.data as ProcessKillResult
     if (result.cancelled) return
     if (result.killed) {
-      showToast(`"${result.name}" (PID ${result.pid}) 종료 요청을 보냈습니다.`)
+      showToast(tk('process.table.kill_sent', { name: result.name, pid: result.pid }))
     }
   }
 
   return (
     <Accordion
-      title={`All Processes (${filtered.length})`}
+      title={tk('process.table.title', { count: filtered.length })}
       defaultOpen
       badge={processes.length > 0 ? `${processes.length}` : undefined}
       badgeColor="var(--text-muted)"
@@ -85,7 +87,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search name, PID, command..."
+          placeholder={tk('process.table.search_placeholder')}
           onClick={(e) => e.stopPropagation()}
           style={searchStyle}
         />
@@ -99,22 +101,22 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                 PID{sortIcon('pid')}
               </SortHeader>
               <SortHeader field="name" current={sortField} onClick={handleSort}>
-                Name{sortIcon('name')}
+                {tk('process.table.name')}{sortIcon('name')}
               </SortHeader>
               <SortHeader field="cpu" current={sortField} onClick={handleSort} width="80px" align="right">
                 CPU %{sortIcon('cpu')}
               </SortHeader>
               <SortHeader field="memory" current={sortField} onClick={handleSort} width="90px" align="right">
-                Memory{sortIcon('memory')}
+                {tk('process.table.memory')}{sortIcon('memory')}
               </SortHeader>
-              <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>Action</th>
+              <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>{tk('process.table.action')}</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                  {search ? `"${search}" 검색 결과 없음` : '프로세스 데이터 로딩 중...'}
+                  {search ? tk('process.table.empty_search', { query: search }) : tk('process.table.loading')}
                 </td>
               </tr>
             )}
@@ -142,7 +144,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                   {formatBytes(p.memoryBytes)}
                 </td>
                 <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                  <button onClick={() => void handleKill(p)} style={killBtnStyle}>Kill</button>
+                  <button onClick={() => void handleKill(p)} style={killBtnStyle}>{tk('process.table.kill')}</button>
                 </td>
               </tr>
             ))}

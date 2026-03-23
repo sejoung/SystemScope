@@ -30,7 +30,7 @@ async function getDirSizeDu(dirPath: string): Promise<number> {
       const kb = parseInt(errObj.stdout.split('\t')[0], 10)
       return isNaN(kb) ? 0 : kb * 1024
     }
-    logDebug('dir-size', '디렉토리 크기 측정 실패 (du)', { dirPath, error: err })
+    logDebug('dir-size', 'Failed to measure directory size with du', { dirPath, error: err })
     return 0
   }
 }

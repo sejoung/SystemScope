@@ -60,7 +60,7 @@ export async function getSystemStats(): Promise<SystemStats> {
       lastDiskStats = drives
       lastDiskFetchTime = now
     } catch (err) {
-      logWarn('system-monitor', '디스크 정보를 가져오는데 실패했습니다', { error: err })
+      logWarn('system-monitor', 'Failed to load disk information', { error: err })
       drives = lastDiskStats || []
     }
   }
@@ -77,7 +77,7 @@ export async function getSystemStats(): Promise<SystemStats> {
     const temp = await si.cpuTemperature()
     cpu.temperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
   } catch (err) {
-    logDebug('system-monitor', 'CPU 온도 정보를 가져올 수 없습니다', { error: err })
+    logDebug('system-monitor', 'CPU temperature information is unavailable', { error: err })
   }
 
   // macOS: mem.used에는 파일 캐시(inactive)가 포함되어 항상 높은 값을 보여줌
@@ -140,11 +140,11 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
       return { size, free }
     }
 
-    logWarn('system-monitor', 'diskutil JSON 데이터에 유효한 APFS 크기 정보가 없습니다', { data })
+    logWarn('system-monitor', 'diskutil JSON data does not contain valid APFS size information', { data })
   } catch (err) {
     if (!hasLoggedApfsContainerFallback) {
       hasLoggedApfsContainerFallback = true
-      logDebug('system-monitor', 'APFS 컨테이너 정보를 가져올 수 없어 fsSize 데이터로 대체합니다', { error: err })
+      logDebug('system-monitor', 'APFS container information unavailable, falling back to fsSize data', { error: err })
     }
   }
   return null

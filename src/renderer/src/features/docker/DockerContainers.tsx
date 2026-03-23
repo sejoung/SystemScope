@@ -3,6 +3,7 @@ import { Accordion } from '../../components/Accordion'
 import { useToast } from '../../components/Toast'
 import { formatBytes } from '../../utils/format'
 import type { DockerActionResult, DockerContainerSummary, DockerContainersScanResult, DockerRemoveResult } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 export function DockerContainers({
   refreshToken = 0,
@@ -14,10 +15,11 @@ export function DockerContainers({
   onOpenImages?: () => void
 }) {
   const showToast = useToast((s) => s.show)
+  const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [containers, setContainers] = useState<DockerContainerSummary[]>([])
   const [status, setStatus] = useState<DockerContainersScanResult['status']>('ready')
-  const [message, setMessage] = useState<string | null>('Docker 컨테이너를 조회해보세요.')
+  const [message, setMessage] = useState<string | null>(t('Docker 컨테이너를 조회해보세요.'))
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const removableContainers = useMemo(() => containers.filter((container) => !container.running), [containers])
@@ -34,7 +36,7 @@ export function DockerContainers({
     if (!res.ok || !res.data) {
       setStatus('daemon_unavailable')
       setContainers([])
-      setMessage(res.error?.message ?? 'Docker 컨테이너를 조회하지 못했습니다.')
+      setMessage(res.error?.message ?? t('Docker 컨테이너를 조회하지 못했습니다.'))
       setLoading(false)
       return
     }
@@ -54,7 +56,7 @@ export function DockerContainers({
   const handleDelete = async (ids: string[]) => {
     const res = await window.systemScope.removeDockerContainers(ids)
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? 'Docker 컨테이너를 삭제하지 못했습니다.')
+      showToast(res.error?.message ?? t('Docker 컨테이너를 삭제하지 못했습니다.'))
       return
     }
 
@@ -62,7 +64,7 @@ export function DockerContainers({
     if (result.cancelled) return
 
     if (result.deletedIds.length > 0) {
-      showToast(`${result.deletedIds.length}개 Docker 컨테이너를 삭제했습니다.`)
+      showToast(t('{count}개 Docker 컨테이너를 삭제했습니다.', { count: result.deletedIds.length }))
       setContainers((prev) => prev.filter((container) => !result.deletedIds.includes(container.id)))
       setSelectedIds((prev) => {
         const next = new Set(prev)
@@ -72,14 +74,14 @@ export function DockerContainers({
       onChanged?.()
     }
     if (result.failCount > 0 && result.errors.length > 0) {
-      showToast(`일부 실패: ${result.errors[0]}`)
+      showToast(t('일부 실패: {message}', { message: result.errors[0] }))
     }
   }
 
   const handleStop = async (ids: string[]) => {
     const res = await window.systemScope.stopDockerContainers(ids)
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? 'Docker 컨테이너를 중지하지 못했습니다.')
+      showToast(res.error?.message ?? t('Docker 컨테이너를 중지하지 못했습니다.'))
       return
     }
 
@@ -87,7 +89,7 @@ export function DockerContainers({
     if (result.cancelled) return
 
     if (result.affectedIds.length > 0) {
-      showToast(`${result.affectedIds.length}개 Docker 컨테이너를 중지했습니다.`)
+      showToast(t('{count}개 Docker 컨테이너를 중지했습니다.', { count: result.affectedIds.length }))
       setContainers((prev) =>
         prev.map((container) =>
           result.affectedIds.includes(container.id)
@@ -98,51 +100,51 @@ export function DockerContainers({
       onChanged?.()
     }
     if (result.failCount > 0 && result.errors.length > 0) {
-      showToast(`일부 실패: ${result.errors[0]}`)
+      showToast(t('일부 실패: {message}', { message: result.errors[0] }))
     }
   }
 
   return (
     <Accordion
-      title="Containers"
+      title={t('Containers')}
       defaultOpen
-      badge={status === 'ready' && containers.length > 0 ? `${containers.length} containers` : undefined}
+      badge={status === 'ready' && containers.length > 0 ? t('{count} containers', { count: containers.length }) : undefined}
       badgeColor="var(--accent-cyan)"
       actions={
         <>
           <button onClick={() => void scanContainers()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? t('Refreshing...') : t('Refresh')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedIds))}
             disabled={loading || selectedRemovableCount === 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            Remove Selected
+            {t('Remove Selected')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? 'Docker가 설치되어 있지 않습니다.' : 'Docker daemon에 연결할 수 없습니다.'}
-          detail={message ?? 'Docker Desktop 또는 Docker Engine 상태를 확인하세요.'}
+          title={status === 'not_installed' ? t('Docker가 설치되어 있지 않습니다.') : t('Docker daemon에 연결할 수 없습니다.')}
+          detail={message ?? t('Docker Desktop 또는 Docker Engine 상태를 확인하세요.')}
         />
       ) : containers.length === 0 ? (
         <EmptyState
-          title={message ?? '정리할 Docker 컨테이너가 없습니다.'}
-          detail="종료된 컨테이너가 있으면 여기서 먼저 정리한 뒤 Images 탭으로 이동하세요."
+          title={message ?? t('정리할 Docker 컨테이너가 없습니다.')}
+          detail={t('종료된 컨테이너가 있으면 여기서 먼저 정리한 뒤 Images 탭으로 이동하세요.')}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            종료된 컨테이너를 먼저 정리하면 Images 탭에서 참조 중으로 막힌 이미지 삭제가 가능해집니다.
+            {t('종료된 컨테이너를 먼저 정리하면 Images 탭에서 참조 중으로 막힌 이미지 삭제가 가능해집니다.')}
             {runningContainers.length > 0 && (
               <button
                 onClick={() => void handleStop(runningContainers.map((container) => container.id))}
                 style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
               >
-                running {runningContainers.length}개 중지
+                {t('running {count}개 중지', { count: runningContainers.length })}
               </button>
             )}
             {onOpenImages && (
@@ -150,7 +152,7 @@ export function DockerContainers({
                 onClick={onOpenImages}
                 style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
               >
-                Images 보기
+                {t('Images 보기')}
               </button>
             )}
           </div>
@@ -172,12 +174,12 @@ export function DockerContainers({
                       }}
                     />
                   </th>
-                  <th style={thStyle}>Container</th>
-                  <th style={thStyle}>Image</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Ports</th>
-                  <th style={{ ...thStyle, textAlign: 'right' }}>Writable</th>
-                  <th style={{ ...thStyle, width: '160px', textAlign: 'center' }}>Action</th>
+                  <th style={thStyle}>{t('Container')}</th>
+                  <th style={thStyle}>{t('Image')}</th>
+                  <th style={thStyle}>{t('Status')}</th>
+                  <th style={thStyle}>{t('Ports')}</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>{t('Writable')}</th>
+                  <th style={{ ...thStyle, width: '160px', textAlign: 'center' }}>{t('Action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,7 +214,7 @@ export function DockerContainers({
                     </td>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        <Badge text={container.running ? 'running' : 'stopped'} color={container.running ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
+                        <Badge text={container.running ? t('running') : t('stopped')} color={container.running ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{container.status}</div>
                     </td>

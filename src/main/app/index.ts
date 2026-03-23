@@ -32,7 +32,7 @@ app.whenReady().then(() => {
     }
   })
 }).catch((err) => {
-  logError('app', '앱 초기화 실패', err)
+  logError('app', 'App initialization failed', err)
   app.quit()
 })
 

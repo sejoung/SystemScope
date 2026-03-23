@@ -1,6 +1,7 @@
 import { Fragment, startTransition, useEffect, useMemo, useState } from 'react'
 import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, InstalledApp } from '@shared/types'
 import { useToast } from '../components/Toast'
+import { useI18n } from '../i18n/useI18n'
 
 type PlatformFilter = 'all' | 'mac' | 'windows'
 type AppsTab = 'installed' | 'leftover'
@@ -8,6 +9,7 @@ type ConfidenceFilter = 'all' | 'high' | 'medium' | 'low'
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show)
+  const { tk } = useI18n()
   const [activeTab, setActiveTab] = useState<AppsTab>('installed')
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
@@ -33,7 +35,7 @@ export function AppsPage() {
     if (res.ok && res.data) {
       setApps(res.data as InstalledApp[])
     } else {
-      showToast(res.error?.message ?? '설치 앱 목록을 불러오지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.load_installed'))
     }
   }
 
@@ -44,7 +46,7 @@ export function AppsPage() {
       setLeftoverItems(items)
       setSelectedLeftoverIds((current) => current.filter((itemId) => items.some((entry) => entry.id === itemId)))
     } else {
-      showToast(res.error?.message ?? '잔여 앱 데이터를 불러오지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.load_leftover'))
     }
   }
 
@@ -126,14 +128,14 @@ export function AppsPage() {
     setBusyAppId(null)
 
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? '앱 제거를 시작하지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.uninstall_start'))
       return
     }
 
     const result = res.data as AppRemovalResult
     if (result.cancelled) return
 
-    showToast(result.message ?? (result.completed ? '앱을 제거했습니다.' : '제거 프로그램을 시작했습니다.'))
+    showToast(result.message ?? (result.completed ? tk('apps.toast.removed') : tk('apps.toast.uninstaller_started')))
     await loadApps()
     await loadLeftovers()
   }
@@ -153,7 +155,7 @@ export function AppsPage() {
     setLeftoverBusy(false)
 
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? '잔여 앱 데이터를 이동하지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.remove_leftover'))
       return
     }
 
@@ -161,8 +163,11 @@ export function AppsPage() {
     setSelectedLeftoverIds([])
     showToast(
       result.failedPaths.length === 0
-        ? `잔여 데이터 ${result.deletedPaths.length}개를 휴지통으로 이동했습니다.`
-        : `잔여 데이터 ${result.deletedPaths.length}개 이동, ${result.failedPaths.length}개 실패`
+        ? tk('apps.toast.leftover_all', { count: result.deletedPaths.length })
+        : tk('apps.toast.leftover_partial', {
+          deletedCount: result.deletedPaths.length,
+          failedCount: result.failedPaths.length
+        })
     )
     await loadLeftovers()
   }
@@ -170,7 +175,7 @@ export function AppsPage() {
   const handleOpenLeftoverPath = async (targetPath: string) => {
     const res = await window.systemScope.openPath(targetPath)
     if (!res.ok) {
-      showToast(res.error?.message ?? '경로를 열지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.open_path'))
     }
   }
 
@@ -190,7 +195,7 @@ export function AppsPage() {
     setRelatedLoadingAppId(null)
 
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? '관련 데이터 목록을 불러오지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.load_related'))
       return
     }
 
@@ -218,14 +223,14 @@ export function AppsPage() {
   const handleOpenLocation = async (appId: string) => {
     const res = await window.systemScope.openAppLocation(appId)
     if (!res.ok) {
-      showToast(res.error?.message ?? '설치 위치를 열지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.open_location'))
     }
   }
 
   const handleOpenSystemSettings = async () => {
     const res = await window.systemScope.openSystemUninstallSettings()
     if (!res.ok) {
-      showToast(res.error?.message ?? '시스템 제거 설정을 열지 못했습니다.')
+      showToast(res.error?.message ?? tk('apps.error.open_system_settings'))
     }
   }
 
@@ -233,10 +238,10 @@ export function AppsPage() {
     <div>
       <div style={stickyHeaderStyle}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Apps</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{tk('apps.page.title')}</h2>
         <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
-          <PageTab active={activeTab === 'installed'} onClick={() => setActiveTab('installed')}>Installed</PageTab>
-          <PageTab active={activeTab === 'leftover'} onClick={() => setActiveTab('leftover')}>Leftover Data</PageTab>
+          <PageTab active={activeTab === 'installed'} onClick={() => setActiveTab('installed')}>{tk('apps.tab.installed')}</PageTab>
+          <PageTab active={activeTab === 'leftover'} onClick={() => setActiveTab('leftover')}>{tk('apps.tab.leftover')}</PageTab>
         </div>
       </div>
 
@@ -248,38 +253,38 @@ export function AppsPage() {
       }}>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
           {activeTab === 'installed'
-            ? 'macOS는 앱 번들을 휴지통으로 이동하고, Windows는 등록된 제거 프로그램을 실행합니다. 펼친 항목에서 관련 데이터도 함께 선택할 수 있습니다.'
-            : '앱 본체가 없어도 남아 있는 관련 데이터 후보를 따로 정리할 수 있습니다.'}
+            ? tk('apps.description.installed')
+            : tk('apps.description.leftover')}
         </span>
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          {activeTab === 'installed' ? `${filteredApps.length} apps` : `${filteredLeftovers.length} items`}
+          {activeTab === 'installed' ? tk('apps.count.apps', { count: filteredApps.length }) : tk('apps.count.items', { count: filteredLeftovers.length })}
         </span>
         {activeTab === 'installed' && installedAppliedSearch && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Search: <strong style={{ color: 'var(--text-primary)' }}>{installedAppliedSearch}</strong>
+            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{installedAppliedSearch}</strong>
           </span>
         )}
         {activeTab === 'leftover' && leftoverAppliedSearch && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Search: <strong style={{ color: 'var(--text-primary)' }}>{leftoverAppliedSearch}</strong>
+            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{leftoverAppliedSearch}</strong>
           </span>
         )}
       </div>
       </div>
 
       {loading ? (
-        <div style={emptyStyle}>{activeTab === 'installed' ? '설치 앱 목록을 불러오는 중입니다.' : '잔여 앱 데이터를 불러오는 중입니다.'}</div>
+        <div style={emptyStyle}>{activeTab === 'installed' ? tk('apps.loading.installed') : tk('apps.loading.leftover')}</div>
       ) : activeTab === 'installed' ? (
         filteredApps.length === 0 ? (
-          <div style={emptyStyle}>표시할 설치 앱이 없습니다.</div>
+          <div style={emptyStyle}>{tk('apps.empty.installed')}</div>
         ) : (
           <div>
             <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
-              <button onClick={() => void loadApps()} style={btnStyle}>Refresh</button>
+              <button onClick={() => void loadApps()} style={btnStyle}>{tk('apps.action.refresh')}</button>
               {isWindows && (
                 <button onClick={() => void handleOpenSystemSettings()} style={{ ...btnStyle, background: 'var(--bg-card-hover)', color: 'var(--text-primary)' }}>
-                  Open System Settings
+                  {tk('apps.action.open_system_settings')}
                 </button>
               )}
               <input
@@ -288,19 +293,19 @@ export function AppsPage() {
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') applyInstalledSearch()
                 }}
-                placeholder="Search installed apps"
+                placeholder={tk('apps.search.installed_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
-              <button onClick={applyInstalledSearch} style={btnStyle}>Search</button>
+              <button onClick={applyInstalledSearch} style={btnStyle}>{tk('common.search')}</button>
               <button
                 onClick={clearInstalledSearch}
                 disabled={!installedDraftSearch && !installedAppliedSearch}
                 style={secondaryBtnStyle(!installedDraftSearch && !installedAppliedSearch)}
               >
-                Clear
+                {tk('common.clear')}
               </button>
               <select value={installedPlatformFilter} onChange={(e) => setInstalledPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
-                <option value="all">All Platforms</option>
+                <option value="all">{tk('apps.platform.all')}</option>
                 <option value="mac">macOS</option>
                 <option value="windows">Windows</option>
               </select>
@@ -308,21 +313,21 @@ export function AppsPage() {
             </div>
             <div style={infoBarStyle}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.
+                {tk('apps.helper.installed')}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                {filteredApps.length} installed apps
+                {tk('apps.count.installed_summary', { count: filteredApps.length })}
               </span>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                  <th style={thStyle}>Name</th>
-                  <th style={thStyle}>Version</th>
-                  <th style={thStyle}>Publisher</th>
-                  <th style={thStyle}>Platform</th>
-                  <th style={thStyle}>Location</th>
-                  <th style={{ ...thStyle, width: '210px', textAlign: 'right' }}>Actions</th>
+                  <th style={thStyle}>{tk('apps.table.name')}</th>
+                  <th style={thStyle}>{tk('apps.table.version')}</th>
+                  <th style={thStyle}>{tk('apps.table.publisher')}</th>
+                  <th style={thStyle}>{tk('apps.table.platform')}</th>
+                  <th style={thStyle}>{tk('apps.table.location')}</th>
+                  <th style={{ ...thStyle, width: '210px', textAlign: 'right' }}>{tk('apps.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,7 +338,7 @@ export function AppsPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{entry.name}</span>
                           {entry.protected && (
-                            <span style={protectedBadgeStyle}>Protected</span>
+                            <span style={protectedBadgeStyle}>{tk('apps.badge.protected')}</span>
                           )}
                         </div>
                         {entry.protectedReason && (
@@ -356,10 +361,10 @@ export function AppsPage() {
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <button onClick={() => void handleToggleRelatedData(entry)} style={openBtn}>
-                          {expandedAppId === entry.id ? 'Hide Data' : 'Related Data'}
+                          {expandedAppId === entry.id ? tk('apps.action.hide_data') : tk('apps.action.related_data')}
                         </button>
                         <button onClick={() => void handleOpenLocation(entry.id)} style={openBtn}>
-                          Open
+                          {tk('apps.action.open')}
                         </button>
                         <button
                           onClick={() => void handleUninstall(entry)}
@@ -370,7 +375,7 @@ export function AppsPage() {
                             cursor: entry.protected || busyAppId === entry.id ? 'default' : 'pointer'
                           }}
                         >
-                          {busyAppId === entry.id ? 'Working...' : entry.platform === 'mac' ? 'Move to Trash' : 'Uninstall'}
+                          {busyAppId === entry.id ? tk('apps.action.working') : entry.platform === 'mac' ? tk('apps.action.move_to_trash') : tk('apps.action.uninstall')}
                         </button>
                       </td>
                     </tr>
@@ -380,20 +385,20 @@ export function AppsPage() {
                           <div style={relatedPanelStyle}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
                               <div>
-                                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>Related Data</div>
+                                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{tk('apps.related.title')}</div>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                                  선택한 경로만 앱 제거와 함께 휴지통으로 이동합니다.
+                                  {tk('apps.related.description')}
                                 </div>
                               </div>
                               <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                {(selectedRelatedIdsByAppId[entry.id] ?? []).length} selected
+                                {tk('common.selected', { count: (selectedRelatedIdsByAppId[entry.id] ?? []).length })}
                               </div>
                             </div>
 
                             {relatedLoadingAppId === entry.id ? (
-                              <div style={relatedEmptyStyle}>관련 데이터 후보를 찾는 중입니다.</div>
+                              <div style={relatedEmptyStyle}>{tk('apps.related.loading')}</div>
                             ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
-                              <div style={relatedEmptyStyle}>감지된 관련 데이터 경로가 없습니다.</div>
+                              <div style={relatedEmptyStyle}>{tk('apps.related.empty')}</div>
                             ) : (
                               <div style={{ display: 'grid', gap: '8px' }}>
                                 {(relatedDataByAppId[entry.id] ?? []).map((item) => {
@@ -426,48 +431,48 @@ export function AppsPage() {
         )
       ) : (
         filteredLeftovers.length === 0 ? (
-          <div style={emptyStyle}>표시할 잔여 앱 데이터가 없습니다.</div>
+          <div style={emptyStyle}>{tk('apps.empty.leftover')}</div>
         ) : (
           <div style={{ display: 'grid', gap: '12px' }}>
             <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
-              <button onClick={() => void loadLeftovers()} style={btnStyle}>Refresh</button>
+              <button onClick={() => void loadLeftovers()} style={btnStyle}>{tk('apps.action.refresh')}</button>
               <input
                 value={leftoverDraftSearch}
                 onChange={(e) => setLeftoverDraftSearch(e.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') applyLeftoverSearch()
                 }}
-                placeholder="Search leftover data"
+                placeholder={tk('apps.search.leftover_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
-              <button onClick={applyLeftoverSearch} style={btnStyle}>Search</button>
+              <button onClick={applyLeftoverSearch} style={btnStyle}>{tk('common.search')}</button>
               <button
                 onClick={clearLeftoverSearch}
                 disabled={!leftoverDraftSearch && !leftoverAppliedSearch}
                 style={secondaryBtnStyle(!leftoverDraftSearch && !leftoverAppliedSearch)}
               >
-                Clear
+                {tk('common.clear')}
               </button>
               <select value={leftoverPlatformFilter} onChange={(e) => setLeftoverPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
-                <option value="all">All Platforms</option>
+                <option value="all">{tk('apps.platform.all')}</option>
                 <option value="mac">macOS</option>
                 <option value="windows">Windows</option>
               </select>
               <select value={leftoverConfidenceFilter} onChange={(e) => setLeftoverConfidenceFilter(e.target.value as ConfidenceFilter)} style={inputStyle}>
-                <option value="all">All Confidence</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="all">{tk('apps.confidence.all')}</option>
+                <option value="high">{tk('apps.confidence.high')}</option>
+                <option value="medium">{tk('apps.confidence.medium')}</option>
+                <option value="low">{tk('apps.confidence.low')}</option>
               </select>
             </div>
             </div>
             <div style={infoBarStyle}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 각 카드의 근거와 위험도를 보고 직접 선택하세요.
+                {tk('apps.helper.leftover')}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                {selectedFilteredLeftoverCount} selected
+                {tk('common.selected', { count: selectedFilteredLeftoverCount })}
               </span>
             </div>
             <div style={bulkToggleRowStyle}>
@@ -488,7 +493,7 @@ export function AppsPage() {
                     }
                   }}
                 />
-                <span>{filteredLeftovers.length} leftover items</span>
+                <span>{tk('apps.count.leftover_summary', { count: filteredLeftovers.length })}</span>
               </label>
             </div>
             <div style={{ display: 'grid', gap: '10px', paddingBottom: '84px' }}>
@@ -512,7 +517,7 @@ export function AppsPage() {
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
                               <Badge text={item.platform === 'mac' ? 'macOS' : 'Windows'} color={item.platform === 'mac' ? 'var(--accent-cyan)' : 'var(--accent-yellow)'} />
                               <Badge text={item.label} color="var(--accent-green)" />
-                              <Badge text={getConfidenceLabel(item.confidence)} color={getConfidenceColor(item.confidence)} />
+                              <Badge text={getConfidenceLabel(item.confidence, tk)} color={getConfidenceColor(item.confidence)} />
                             </div>
                           </div>
                           <button
@@ -523,7 +528,7 @@ export function AppsPage() {
                             }}
                             style={{ ...openBtn, marginRight: 0 }}
                           >
-                            Open
+                            {tk('apps.action.open')}
                           </button>
                         </div>
                         <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
@@ -531,10 +536,10 @@ export function AppsPage() {
                         </div>
                         <div style={{ display: 'grid', gap: '6px', marginTop: '10px' }}>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            <strong style={{ color: 'var(--text-primary)' }}>Why:</strong> {item.reason}
+                            <strong style={{ color: 'var(--text-primary)' }}>{tk('apps.reason.why')}</strong> {item.reason}
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            <strong style={{ color: 'var(--text-primary)' }}>Risk:</strong> {item.risk}
+                            <strong style={{ color: 'var(--text-primary)' }}>{tk('apps.reason.risk')}</strong> {item.risk}
                           </div>
                         </div>
                       </div>
@@ -545,7 +550,7 @@ export function AppsPage() {
             </div>
             <div style={stickyActionBarStyle}>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                {selectedFilteredLeftoverCount} selected
+                {tk('common.selected', { count: selectedFilteredLeftoverCount })}
               </div>
               <button
                 onClick={() => void handleRemoveSelectedLeftovers()}
@@ -557,7 +562,7 @@ export function AppsPage() {
                   cursor: leftoverBusy || selectedLeftoverIds.length === 0 ? 'default' : 'pointer'
                 }}
               >
-                {leftoverBusy ? 'Working...' : 'Move Selected to Trash'}
+                {leftoverBusy ? tk('apps.action.working') : tk('apps.action.move_selected_to_trash')}
               </button>
             </div>
           </div>
@@ -577,14 +582,17 @@ function formatPathPreview(targetPath: string): string {
   return `${head} ... ${tail}`
 }
 
-function getConfidenceLabel(confidence: AppLeftoverDataItem['confidence']): string {
+function getConfidenceLabel(
+  confidence: AppLeftoverDataItem['confidence'],
+  tk: (key: 'apps.confidence.high' | 'apps.confidence.medium' | 'apps.confidence.low') => string
+): string {
   switch (confidence) {
     case 'high':
-      return 'High confidence'
+      return tk('apps.confidence.high')
     case 'medium':
-      return 'Medium confidence'
+      return tk('apps.confidence.medium')
     default:
-      return 'Low confidence'
+      return tk('apps.confidence.low')
   }
 }
 

@@ -6,6 +6,7 @@ import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
 import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, AppUninstallRequest, InstalledApp } from '@shared/types'
 import { logDebug, logError, logInfo, logWarn } from './logging'
+import { tk } from '../i18n'
 
 const execFileAsync = promisify(execFile)
 const installedAppsCache = new Map<string, InstalledApp>()
@@ -33,7 +34,7 @@ export function getInstalledAppById(appId: string): InstalledApp | null {
 export async function getInstalledAppRelatedData(appId: string): Promise<AppRelatedDataItem[]> {
   const target = installedAppsCache.get(appId)
   if (!target) {
-    throw new Error('설치 앱 정보를 찾을 수 없습니다.')
+    throw new Error(tk('main.apps.error.not_found'))
   }
 
   return listRelatedDataForApp(target)
@@ -79,7 +80,7 @@ export async function removeLeftoverAppData(itemIds: string[]): Promise<{ delete
 export async function openInstalledAppLocation(appId: string): Promise<void> {
   const target = installedAppsCache.get(appId)
   if (!target) {
-    throw new Error('설치 앱 정보를 찾을 수 없습니다.')
+    throw new Error(tk('main.apps.error.not_found'))
   }
 
   const targetPath = target.platform === 'mac'
@@ -87,7 +88,7 @@ export async function openInstalledAppLocation(appId: string): Promise<void> {
     : target.installLocation || target.launchPath
 
   if (!targetPath) {
-    throw new Error('열 수 있는 설치 경로가 없습니다.')
+    throw new Error(tk('main.apps.error.no_install_path'))
   }
 
   const openResult = await shell.openPath(targetPath)
@@ -98,7 +99,7 @@ export async function openInstalledAppLocation(appId: string): Promise<void> {
 
 export async function openSystemUninstallSettings(): Promise<void> {
   if (getPlatform() !== 'win32') {
-    throw new Error('현재 운영체제에서는 지원되지 않습니다.')
+    throw new Error(tk('main.apps.error.unsupported_os'))
   }
 
   await shell.openExternal('ms-settings:appsfeatures')
@@ -107,16 +108,16 @@ export async function openSystemUninstallSettings(): Promise<void> {
 export async function uninstallInstalledApp(request: AppUninstallRequest): Promise<AppRemovalResult> {
   const target = installedAppsCache.get(request.appId)
   if (!target) {
-    throw new Error('설치 앱 정보를 찾을 수 없습니다.')
+    throw new Error(tk('main.apps.error.not_found'))
   }
 
   if (target.protected) {
-    throw new Error(target.protectedReason ?? '보호된 항목은 제거할 수 없습니다.')
+    throw new Error(target.protectedReason ?? tk('main.apps.error.protected'))
   }
 
   if (target.platform === 'mac') {
     if (!target.launchPath) {
-      throw new Error('삭제할 앱 경로를 찾을 수 없습니다.')
+      throw new Error(tk('main.apps.error.no_app_path'))
     }
 
     await trashPathWithFallback(target.launchPath, 'mac-app', {
@@ -138,14 +139,14 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
       started: true,
       completed: true,
       cancelled: false,
-      message: buildRemovalMessage('앱을 휴지통으로 이동했습니다.', relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
+      message: buildRemovalMessage(tk('main.apps.message.moved_to_trash'), relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
       relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
       relatedDataFailedPaths: relatedCleanup.failedPaths
     }
   }
 
   if (!target.uninstallCommand) {
-    throw new Error('실행 가능한 제거 명령이 없습니다.')
+    throw new Error(tk('main.apps.error.no_uninstall_command'))
   }
 
   await launchWindowsUninstaller(target.uninstallCommand)
@@ -162,7 +163,7 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
     started: true,
     completed: false,
     cancelled: false,
-    message: buildRemovalMessage('제거 프로그램을 시작했습니다.', relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
+    message: buildRemovalMessage(tk('main.apps.message.started_uninstaller'), relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
     relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
     relatedDataFailedPaths: relatedCleanup.failedPaths
   }
@@ -209,7 +210,7 @@ export function parseWindowsRegistryOutput(raw: string): InstalledApp[] {
       platform: 'windows',
       uninstallKind: uninstallCommand ? 'uninstall_command' : 'open_settings',
       protected: isProtected,
-      protectedReason: isProtected ? '현재 실행 중인 SystemScope는 제거할 수 없습니다.' : undefined
+      protectedReason: isProtected ? tk('main.apps.protected.current_app') : undefined
     }
 
     const dedupeKey = `${appRecord.name}::${appRecord.version ?? ''}::${appRecord.publisher ?? ''}`
@@ -251,7 +252,7 @@ async function listMacInstalledApps(): Promise<InstalledApp[]> {
         platform: 'mac',
         uninstallKind: 'trash_app',
         protected: protectedApp,
-        protectedReason: protectedApp ? '시스템 앱 또는 현재 실행 중인 앱은 삭제할 수 없습니다.' : undefined
+        protectedReason: protectedApp ? tk('main.apps.protected.system_app') : undefined
       })
     }
   }
@@ -445,10 +446,14 @@ function buildRemovalMessage(baseMessage: string, deletedCount: number, failedCo
   }
 
   if (failedCount === 0) {
-    return `${baseMessage} 관련 데이터 ${deletedCount}개도 함께 휴지통으로 이동했습니다.`
+    return tk('main.apps.message.with_related_all', { baseMessage, deletedCount })
   }
 
-  return `${baseMessage} 관련 데이터 ${deletedCount}개를 함께 이동했고 ${failedCount}개는 이동하지 못했습니다.`
+  return tk('main.apps.message.with_related_partial', {
+    baseMessage,
+    deletedCount,
+    failedCount
+  })
 }
 
 export function getMacRelatedDataCandidates(
@@ -639,8 +644,8 @@ function getMacLeftoverGuidance(
   if (label === 'Container' || label === 'Saved State') {
     return {
       confidence: 'high',
-      reason: `표준 macOS ${label.toLowerCase()} 경로에 있고 설치된 앱 번들과 일치 항목이 없습니다.`,
-      risk: '앱을 더 이상 쓰지 않는다면 지워도 될 가능성이 높지만, 로그인 상태나 샌드박스 데이터가 사라질 수 있습니다.'
+      reason: tk('main.apps.leftover.mac.container_reason', { label: label.toLowerCase() }),
+      risk: tk('main.apps.leftover.mac.container_risk')
     }
   }
 
@@ -648,24 +653,24 @@ function getMacLeftoverGuidance(
     return {
       confidence: appName.includes('.') ? 'high' : 'medium',
       reason: appName.includes('.')
-        ? 'bundle id 형태의 환경설정 파일이며 설치된 앱과 일치 항목이 없습니다.'
-        : '환경설정 파일이지만 이름 기반으로만 추정했습니다.',
-      risk: '설정값만 지워질 가능성이 높지만, 앱 재설치 후 기존 설정을 복구하지 못할 수 있습니다.'
+        ? tk('main.apps.leftover.mac.pref_bundle_reason')
+        : tk('main.apps.leftover.mac.pref_name_reason'),
+      risk: tk('main.apps.leftover.mac.pref_risk')
     }
   }
 
   if (label === 'Application Support') {
     return {
       confidence: 'medium',
-      reason: '표준 앱 데이터 경로에 있지만 이름 기반으로 분류된 항목입니다.',
-      risk: '앱 데이터, 다운로드, 내부 DB가 포함될 수 있어 삭제 전 경로 확인이 필요합니다.'
+      reason: tk('main.apps.leftover.mac.support_reason'),
+      risk: tk('main.apps.leftover.mac.support_risk')
     }
   }
 
   return {
     confidence: 'medium',
-    reason: `표준 ${label.toLowerCase()} 경로에 있는 항목이지만 이름 기반 후보입니다.`,
-    risk: '캐시/로그 성격일 가능성이 높지만 일부 재사용 데이터가 섞여 있을 수 있습니다.'
+    reason: tk('main.apps.leftover.mac.default_reason', { label: label.toLowerCase() }),
+    risk: tk('main.apps.leftover.mac.default_risk')
   }
 }
 
@@ -675,22 +680,22 @@ function getWindowsLeftoverGuidance(
   if (label === 'ProgramData') {
     return {
       confidence: 'medium',
-      reason: '공용 프로그램 데이터 경로에 있고 설치된 프로그램 목록과 일치 항목이 없습니다.',
-      risk: '공용 설정이나 서비스 데이터가 남아 있을 수 있어 삭제 전 확인이 필요합니다.'
+      reason: tk('main.apps.leftover.win.programdata_reason'),
+      risk: tk('main.apps.leftover.win.programdata_risk')
     }
   }
 
   if (label === 'Local Programs') {
     return {
       confidence: 'high',
-      reason: '사용자 로컬 프로그램 경로에 있지만 설치 목록과 일치 항목이 없습니다.',
-      risk: '앱을 더 이상 쓰지 않는다면 삭제해도 될 가능성이 높지만 휴대용 앱일 수도 있습니다.'
+      reason: tk('main.apps.leftover.win.local_programs_reason'),
+      risk: tk('main.apps.leftover.win.local_programs_risk')
     }
   }
 
   return {
     confidence: 'medium',
-    reason: `표준 ${label} 경로에 있지만 설치 목록과 이름 기반으로만 비교된 항목입니다.`,
-    risk: '캐시나 설정일 수 있지만 일부 앱은 재설치 시 재사용할 데이터가 포함될 수 있습니다.'
+    reason: tk('main.apps.leftover.win.default_reason', { label }),
+    risk: tk('main.apps.leftover.win.default_risk')
   }
 }

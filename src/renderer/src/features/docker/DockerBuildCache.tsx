@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { useToast } from '../../components/Toast'
 import type { DockerBuildCacheScanResult, DockerPruneResult } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 export function DockerBuildCache({
   refreshToken = 0,
@@ -11,10 +12,11 @@ export function DockerBuildCache({
   onChanged?: () => void
 }) {
   const showToast = useToast((s) => s.show)
+  const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<DockerBuildCacheScanResult['status']>('ready')
   const [summary, setSummary] = useState<DockerBuildCacheScanResult['summary']>(null)
-  const [message, setMessage] = useState<string | null>('Docker build cache를 조회해보세요.')
+  const [message, setMessage] = useState<string | null>(t('Docker build cache를 조회해보세요.'))
 
   const scanBuildCache = async () => {
     setLoading(true)
@@ -22,7 +24,7 @@ export function DockerBuildCache({
     if (!res.ok || !res.data) {
       setStatus('daemon_unavailable')
       setSummary(null)
-      setMessage(res.error?.message ?? 'Docker build cache를 조회하지 못했습니다.')
+      setMessage(res.error?.message ?? t('Docker build cache를 조회하지 못했습니다.'))
       setLoading(false)
       return
     }
@@ -41,51 +43,51 @@ export function DockerBuildCache({
   const handlePrune = async () => {
     const res = await window.systemScope.pruneDockerBuildCache()
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? 'Docker build cache를 정리하지 못했습니다.')
+      showToast(res.error?.message ?? t('Docker build cache를 정리하지 못했습니다.'))
       return
     }
 
     const result = res.data as DockerPruneResult
     if (result.cancelled) return
-    showToast(`Docker build cache 정리 완료: ${result.reclaimedLabel}`)
+    showToast(t('Docker build cache 정리 완료: {label}', { label: result.reclaimedLabel }))
     onChanged?.()
     await scanBuildCache()
   }
 
   return (
     <Accordion
-      title="Build Cache"
+      title={t('Build Cache')}
       defaultOpen
       badge={status === 'ready' && summary ? summary.reclaimableLabel : undefined}
       badgeColor="var(--accent-cyan)"
       actions={
         <>
           <button onClick={() => void scanBuildCache()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading ? t('Refreshing...') : t('Refresh')}
           </button>
           <button
             onClick={() => void handlePrune()}
             disabled={loading || !summary || summary.reclaimableBytes <= 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            Prune Cache
+            {t('Prune Cache')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? 'Docker가 설치되어 있지 않습니다.' : 'Docker daemon에 연결할 수 없습니다.'}
-          detail={message ?? 'Docker Desktop 또는 Docker Engine 상태를 확인하세요.'}
+          title={status === 'not_installed' ? t('Docker가 설치되어 있지 않습니다.') : t('Docker daemon에 연결할 수 없습니다.')}
+          detail={message ?? t('Docker Desktop 또는 Docker Engine 상태를 확인하세요.')}
         />
       ) : !summary ? (
-        <EmptyState title={message ?? 'Docker build cache 정보가 없습니다.'} detail="Refresh로 다시 시도하세요." />
+        <EmptyState title={message ?? t('Docker build cache 정보가 없습니다.')} detail={t('Refresh로 다시 시도하세요.')} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-          <MetricCard label="Cache Entries" value={String(summary.totalCount)} />
-          <MetricCard label="Active" value={String(summary.activeCount)} />
-          <MetricCard label="Total Size" value={summary.sizeLabel} />
-          <MetricCard label="Reclaimable" value={summary.reclaimableLabel} accent />
+          <MetricCard label={t('Cache Entries')} value={String(summary.totalCount)} />
+          <MetricCard label={t('Active')} value={String(summary.activeCount)} />
+          <MetricCard label={t('Total Size')} value={summary.sizeLabel} />
+          <MetricCard label={t('Reclaimable')} value={summary.reclaimableLabel} accent />
         </div>
       )}
     </Accordion>

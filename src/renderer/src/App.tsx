@@ -17,6 +17,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import type { AlertThresholds, Alert, ShutdownState, SystemStats } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { useState } from 'react'
+import { useI18n } from './i18n/useI18n'
 
 function isSystemStats(data: unknown): data is SystemStats {
   return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
@@ -34,6 +35,7 @@ function App() {
   const currentPage = useSettingsStore((s) => s.currentPage)
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const theme = useSettingsStore((s) => s.theme)
+  const setLocale = useSettingsStore((s) => s.setLocale)
   const setTheme = useSettingsStore((s) => s.setTheme)
   const setThresholds = useSettingsStore((s) => s.setThresholds)
   const setCpuProcesses = useProcessStore((s) => s.setCpuProcesses)
@@ -43,6 +45,7 @@ function App() {
   const addAlerts = useAlertStore((s) => s.addAlerts)
   const setAlerts = useAlertStore((s) => s.setAlerts)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
+  const { tk } = useI18n()
 
   useEffect(() => {
     void Promise.all([
@@ -52,6 +55,7 @@ function App() {
       if (settingsRes.ok && settingsRes.data) {
         const settings = settingsRes.data as Record<string, unknown>
         if (settings.theme === 'dark' || settings.theme === 'light') setTheme(settings.theme)
+        if (settings.locale === 'ko' || settings.locale === 'en') setLocale(settings.locale)
         if (settings.thresholds && typeof settings.thresholds === 'object') setThresholds(settings.thresholds as AlertThresholds)
       }
 
@@ -59,7 +63,7 @@ function App() {
         setAlerts(alertsRes.data)
       }
     })
-  }, [setAlerts, setTheme, setThresholds])
+  }, [setAlerts, setLocale, setTheme, setThresholds])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -131,8 +135,8 @@ function App() {
     <>
       <Layout>
         <ErrorBoundary
-          title="페이지 렌더링 실패"
-          message="현재 페이지를 렌더링하지 못했습니다. 다른 메뉴로 이동한 뒤 다시 시도해주세요."
+          title={tk('app.error_boundary.title')}
+          message={tk('app.error_boundary.message')}
           resetKey={currentPage}
         >
           {currentPage === 'dashboard' && <DashboardPage />}
@@ -143,7 +147,7 @@ function App() {
           {currentPage === 'settings' && <SettingsPage />}
         </ErrorBoundary>
       </Layout>
-      {shutdownState && <ShutdownOverlay state={shutdownState} />}
+      {shutdownState && <ShutdownOverlay state={shutdownState} title={tk('app.shutdown.title')} />}
       <ToastContainer />
     </>
   )
@@ -151,12 +155,12 @@ function App() {
 
 export default App
 
-function ShutdownOverlay({ state }: { state: ShutdownState }) {
+function ShutdownOverlay({ state, title }: { state: ShutdownState; title: string }) {
   return (
     <div style={overlayStyle}>
       <div style={overlayCardStyle}>
         <div style={spinnerStyle} />
-        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>SystemScope를 종료하는 중</div>
+        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</div>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{state.message}</div>
       </div>
     </div>

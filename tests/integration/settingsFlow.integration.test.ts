@@ -13,6 +13,7 @@ const storeState = vi.hoisted(() => ({
     gpuMemoryCritical: 90
   },
   theme: 'dark' as 'dark' | 'light',
+  locale: 'ko' as 'ko' | 'en',
   snapshotIntervalMin: 60
 }))
 
@@ -42,6 +43,7 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   setSettings: (settings: Partial<typeof storeState>) => {
     if (settings.thresholds) storeState.thresholds = settings.thresholds
     if (settings.theme) storeState.theme = settings.theme
+    if (settings.locale) storeState.locale = settings.locale
     if (settings.snapshotIntervalMin) storeState.snapshotIntervalMin = settings.snapshotIntervalMin
   }
 }))
@@ -66,6 +68,7 @@ describe('settings flow integration', () => {
       gpuMemoryCritical: 90
     }
     storeState.theme = 'dark'
+    storeState.locale = 'ko'
     storeState.snapshotIntervalMin = 60
   })
 
@@ -91,6 +94,7 @@ describe('settings flow integration', () => {
         gpuMemoryCritical: 80
       },
       theme: 'light' as const,
+      locale: 'en' as const,
       snapshotIntervalMin: 30 as const
     }
 

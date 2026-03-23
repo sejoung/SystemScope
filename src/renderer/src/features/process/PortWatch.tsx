@@ -6,6 +6,7 @@ import { usePortWatchStore } from '../../stores/usePortWatchStore'
 import { getStateStyle } from './portStateStyles'
 import type { PortInfo } from '@shared/types'
 import { formatPortAddress, matchWatchPorts, parseWatchPattern } from './portWatchUtils'
+import { useI18n } from '../../i18n/useI18n'
 
 const POLL_OPTIONS = [
   { value: 1000, label: '1s' },
@@ -23,6 +24,7 @@ const DISPLAY_LIMIT = 100
 
 export function PortWatch() {
   const showToast = useToast((s) => s.show)
+  const { tk } = useI18n()
   const {
     watches, statuses, history, monitoring, pollInterval, expandedWatch, watchFilters,
     addWatch: storeAddWatch, removeWatch, setStatuses, addHistory, clearHistory,
@@ -36,7 +38,7 @@ export function PortWatch() {
     const entry = parseWatchPattern(input, watchScope)
     if (!entry) return
     if (watches.some((w) => w.pattern === entry.pattern)) {
-      showToast(`"${entry.pattern}"은 이미 등록되어 있습니다.`)
+      showToast(tk('process.port_watch.duplicate', { pattern: entry.pattern }))
       return
     }
     storeAddWatch(entry)
@@ -74,7 +76,9 @@ export function PortWatch() {
           event: matched ? 'connected' : 'disconnected', process: proc, detail
         })
 
-        showToast(matched ? `${watch.pattern} 연결 감지됨 (${proc})` : `${watch.pattern} 연결 해제됨`)
+        showToast(matched
+          ? tk('process.port_watch.connected', { pattern: watch.pattern, process: proc })
+          : tk('process.port_watch.disconnected', { pattern: watch.pattern }))
       }
 
       setPrevMatched(watch.id, matched)
@@ -92,9 +96,9 @@ export function PortWatch() {
 
   return (
     <Accordion
-      title="Port Watch"
+      title={tk('process.port_watch.title')}
       defaultOpen
-      badge={monitoring && watches.length > 0 ? `${watches.length} watching` : undefined}
+      badge={monitoring && watches.length > 0 ? tk('process.port_watch.badge', { count: watches.length }) : undefined}
       badgeColor="var(--accent-cyan)"
     >
       {/* Input */}
@@ -114,16 +118,16 @@ export function PortWatch() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleAddWatch() }}
-          placeholder={watchScope === 'local' ? 'Local port or address' : watchScope === 'remote' ? 'Remote port or address' : 'Port, IP, or IP:Port'}
+          placeholder={watchScope === 'local' ? tk('process.port_watch.placeholder_local') : watchScope === 'remote' ? tk('process.port_watch.placeholder_remote') : tk('process.port_watch.placeholder_all')}
           style={inputStyle}
         />
-        <button onClick={handleAddWatch} style={btnStyle}>Add Watch</button>
+        <button onClick={handleAddWatch} style={btnStyle}>{tk('process.port_watch.add')}</button>
         {watches.length > 0 && (
           <button
             onClick={() => setMonitoring(!monitoring)}
             style={{ ...btnStyle, background: monitoring ? 'var(--accent-red)' : 'var(--accent-green)' }}
           >
-            {monitoring ? 'Pause' : 'Resume'}
+            {monitoring ? tk('common.pause') : tk('common.resume')}
           </button>
         )}
         {watches.length > 0 && (
@@ -145,19 +149,19 @@ export function PortWatch() {
           </div>
         )}
         {monitoring && watches.length > 0 && (
-          <span style={{ fontSize: '11px', color: 'var(--accent-green)' }}>● Monitoring</span>
+          <span style={{ fontSize: '11px', color: 'var(--accent-green)' }}>● {tk('process.port_watch.monitoring')}</span>
         )}
       </div>
 
       {watches.length === 0 ? (
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
-          포트 번호, IP 주소, 또는 IP:Port를 등록하면 실시간으로 연결 상태를 감시합니다.
+          {tk('process.port_watch.description')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Watch list */}
           <div>
-            <div style={sectionTitle}>Watch List</div>
+            <div style={sectionTitle}>{tk('process.port_watch.list')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {watches.map((watch) => {
                 const status = statuses.get(watch.id)
@@ -213,7 +217,7 @@ export function PortWatch() {
                       {connCount > 0 && (
                         <button onClick={() => toggleExpanded(watch.id)}
                           style={{ ...detailsBtn, color: isOpen ? 'var(--accent-cyan)' : 'var(--text-muted)' }}>
-                          {isOpen ? '▼ Hide' : '▶ Details'}
+                          {isOpen ? `▼ ${tk('process.port_watch.hide')}` : `▶ ${tk('process.port_watch.details')}`}
                         </button>
                       )}
                       <button onClick={() => removeWatch(watch.id)} style={removeBtnStyle}>×</button>
@@ -224,18 +228,22 @@ export function PortWatch() {
                       <div style={{ borderTop: '1px solid var(--border)', padding: '6px 10px' }}>
                         {activeFilter !== 'all' && (
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                            Filtered: {activeFilter === 'LISTEN' ? 'Listening' : activeFilter === 'ESTABLISHED' ? 'Established' : 'Other'} ({filtered.length})
+                            {activeFilter === 'LISTEN'
+                              ? tk('process.port_watch.filtered_listening', { count: filtered.length })
+                              : activeFilter === 'ESTABLISHED'
+                                ? tk('process.port_watch.filtered_established', { count: filtered.length })
+                                : tk('process.port_watch.filtered_other', { count: filtered.length })}
                           </div>
                         )}
                         <div style={{ maxHeight: '250px', overflow: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
                             <thead>
                               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                <th style={thStyle}>Proto</th>
-                                <th style={thStyle}>Local</th>
-                                <th style={thStyle}>Remote</th>
-                                <th style={thStyle}>Process</th>
-                                <th style={thStyle}>State</th>
+                                <th style={thStyle}>{tk('process.port_watch.proto')}</th>
+                                <th style={thStyle}>{tk('process.port_watch.local')}</th>
+                                <th style={thStyle}>{tk('process.port_watch.remote')}</th>
+                                <th style={thStyle}>{tk('process.port_watch.process')}</th>
+                                <th style={thStyle}>{tk('process.port_watch.state')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -253,7 +261,7 @@ export function PortWatch() {
                         </div>
                         {hidden > 0 && (
                           <div style={{ padding: '6px 0', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                            +{hidden.toLocaleString()} more (showing first {DISPLAY_LIMIT})
+                            {tk('process.port_watch.more', { count: hidden.toLocaleString(), limit: DISPLAY_LIMIT })}
                           </div>
                         )}
                       </div>
@@ -268,8 +276,8 @@ export function PortWatch() {
           {history.length > 0 && (
             <div>
               <div style={{ ...sectionTitle, display: 'flex', justifyContent: 'space-between' }}>
-                <span>History</span>
-                <button onClick={clearHistory} style={removeBtnStyle}>Clear</button>
+                <span>{tk('process.port_watch.history')}</span>
+                <button onClick={clearHistory} style={removeBtnStyle}>{tk('process.port_watch.clear')}</button>
               </div>
               <div style={{ maxHeight: '200px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {history.map((entry, i) => (
@@ -290,7 +298,7 @@ export function PortWatch() {
                       color: entry.event === 'connected' ? 'var(--accent-green)' : 'var(--accent-red)',
                       flexShrink: 0
                     }}>
-                      {entry.event === 'connected' ? 'CONNECTED' : 'DISCONNECTED'}
+                      {entry.event === 'connected' ? tk('process.port_watch.connected_label') : tk('process.port_watch.disconnected_label')}
                     </span>
                     <span style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {entry.process}{entry.detail ? ` — ${entry.detail}` : ''}
@@ -311,6 +319,7 @@ export function PortWatch() {
 function StateCount({ label, count, color, active, onClick }: {
   label: string; count: number; color: string; active: boolean; onClick: () => void
 }) {
+  const { tk } = useI18n()
   if (count === 0) return null
   return (
     <button
@@ -322,7 +331,13 @@ function StateCount({ label, count, color, active, onClick }: {
         borderRadius: '4px', background: active ? `${color}20` : 'transparent',
         color, cursor: 'pointer'
       }}
-      title={`${label === 'L' ? 'Listening' : label === 'E' ? 'Established' : 'Other'} — click to filter`}
+      title={tk('process.port_watch.state_filter_title', {
+        label: label === 'L'
+          ? tk('process.port_watch.state.listening')
+          : label === 'E'
+            ? tk('process.port_watch.state.established')
+            : tk('process.port_watch.state.other')
+      })}
     >
       {label}:{count.toLocaleString()}
     </button>

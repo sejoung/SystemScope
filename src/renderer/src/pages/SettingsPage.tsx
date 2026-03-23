@@ -3,16 +3,21 @@ import { useSettingsStore } from '../stores/useSettingsStore'
 import { Accordion } from '../components/Accordion'
 import { useToast } from '../components/Toast'
 import type { AlertThresholds } from '@shared/types'
+import { useI18n } from '../i18n/useI18n'
+import type { AppLocale } from '@shared/i18n'
 
 export function SettingsPage() {
   const thresholds = useSettingsStore((s) => s.thresholds)
   const setThresholds = useSettingsStore((s) => s.setThresholds)
   const theme = useSettingsStore((s) => s.theme)
+  const locale = useSettingsStore((s) => s.locale)
+  const setLocale = useSettingsStore((s) => s.setLocale)
   const setTheme = useSettingsStore((s) => s.setTheme)
   const setHasUnsavedSettings = useSettingsStore((s) => s.setHasUnsavedSettings)
   const [local, setLocal] = useState<AlertThresholds>(thresholds)
   const [snapshotInterval, setSnapshotInterval] = useState(60)
   const [localTheme, setLocalTheme] = useState<'dark' | 'light'>(theme)
+  const [localLocale, setLocalLocale] = useState<AppLocale>(locale)
   const [saved, setSaved] = useState(false)
   const [dataPath, setDataPath] = useState<string | null>(null)
   const [logPath, setLogPath] = useState<string | null>(null)
@@ -23,21 +28,27 @@ export function SettingsPage() {
     thresholds: AlertThresholds
     snapshotInterval: number
     theme: 'dark' | 'light'
+    locale: AppLocale
   }>({
     thresholds,
     snapshotInterval: 60,
-    theme
+    theme,
+    locale
   })
   const showToast = useToast((s) => s.show)
+  const { tk } = useI18n()
 
   useEffect(() => {
     window.systemScope.getSettings().then((res) => {
       if (res.ok && res.data) {
-        const s = res.data as { thresholds: AlertThresholds; snapshotIntervalMin?: number; theme?: 'dark' | 'light' }
+        const s = res.data as { thresholds: AlertThresholds; snapshotIntervalMin?: number; theme?: 'dark' | 'light'; locale?: AppLocale }
         persistedRef.current.thresholds = s.thresholds
         persistedRef.current.snapshotInterval = s.snapshotIntervalMin ?? 60
         if (s.theme) {
           persistedRef.current.theme = s.theme
+        }
+        if (s.locale) {
+          persistedRef.current.locale = s.locale
         }
 
         if (!hasEditedRef.current) {
@@ -46,11 +57,17 @@ export function SettingsPage() {
           if (s.theme) {
             setLocalTheme(s.theme)
           }
+          if (s.locale) {
+            setLocalLocale(s.locale)
+          }
         }
 
         setThresholds(s.thresholds)
         if (s.theme) {
           setTheme(s.theme)
+        }
+        if (s.locale) {
+          setLocale(s.locale)
         }
       }
     })
@@ -68,15 +85,16 @@ export function SettingsPage() {
       }
       setHasUnsavedSettings(false)
     }
-  }, [setHasUnsavedSettings, setTheme, setThresholds])
+  }, [setHasUnsavedSettings, setLocale, setTheme, setThresholds])
 
   const appearanceDirty = localTheme !== persistedRef.current.theme
+  const languageDirty = localLocale !== persistedRef.current.locale
   const alertsDirty = useMemo(
     () => JSON.stringify(local) !== JSON.stringify(persistedRef.current.thresholds),
     [local]
   )
   const snapshotsDirty = snapshotInterval !== persistedRef.current.snapshotInterval
-  const isDirty = appearanceDirty || alertsDirty || snapshotsDirty
+  const isDirty = appearanceDirty || languageDirty || alertsDirty || snapshotsDirty
 
   useEffect(() => {
     setHasUnsavedSettings(isDirty)
@@ -92,17 +110,20 @@ export function SettingsPage() {
       const res = await window.systemScope.setSettings({
         thresholds: local,
         theme: localTheme,
+        locale: localLocale,
         snapshotIntervalMin: snapshotInterval
       })
       if (res.ok) {
         persistedRef.current = {
           thresholds: local,
           snapshotInterval,
-          theme: localTheme
+          theme: localTheme,
+          locale: localLocale
         }
         hasEditedRef.current = false
         setThresholds(local)
         setTheme(localTheme)
+        setLocale(localLocale)
         setSaved(true)
         if (savedTimerRef.current) {
           clearTimeout(savedTimerRef.current)
@@ -112,7 +133,7 @@ export function SettingsPage() {
           savedTimerRef.current = null
         }, 2000)
       } else {
-        showToast(res.error?.message ?? '설정을 저장하지 못했습니다.')
+        showToast(res.error?.message ?? tk('settings.error.save_failed'))
       }
     } finally {
       setIsSaving(false)
@@ -138,7 +159,7 @@ export function SettingsPage() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Preferences</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{tk('settings.page.title')}</h2>
         <span
           style={{
             fontSize: '12px',
@@ -149,20 +170,20 @@ export function SettingsPage() {
             color: isDirty ? 'var(--accent-yellow)' : 'var(--accent-green)'
           }}
         >
-          {isSaving ? 'Saving...' : saved ? 'Saved' : isDirty ? 'Unsaved changes' : 'All changes saved'}
+          {isSaving ? tk('settings.status.saving') : saved ? tk('settings.status.saved') : isDirty ? tk('settings.status.unsaved_changes') : tk('settings.status.all_changes_saved')}
         </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-        <Accordion title="Appearance" defaultOpen badge={appearanceDirty ? 'Edited' : undefined} badgeColor="var(--accent-yellow)">
+        <Accordion title={tk('settings.section.appearance')} defaultOpen badge={appearanceDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              앱 전체 색상 테마를 선택합니다.
+              {tk('settings.theme.description')}
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[
-                { value: 'dark', label: 'Dark' },
-                { value: 'light', label: 'Light' }
+                { value: 'dark', label: tk('settings.theme.dark') },
+                { value: 'light', label: tk('settings.theme.light') }
               ].map((option) => {
                 const active = localTheme === option.value
                 return (
@@ -191,25 +212,62 @@ export function SettingsPage() {
           </div>
         </Accordion>
 
+        <Accordion title={tk('settings.section.language')} defaultOpen badge={languageDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              {tk('settings.language.description')}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { value: 'ko' as const, label: tk('settings.language.korean') },
+                { value: 'en' as const, label: tk('settings.language.english') }
+              ].map((option) => {
+                const active = localLocale === option.value
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      hasEditedRef.current = true
+                      setLocalLocale(option.value)
+                    }}
+                    style={{
+                      padding: '8px 18px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      borderRadius: 'var(--radius)',
+                      border: active ? '1px solid transparent' : '1px solid var(--border)',
+                      background: active ? 'var(--accent-blue)' : 'var(--bg-card)',
+                      color: active ? 'var(--text-on-accent)' : 'var(--text-primary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </Accordion>
+
         {/* Alert Thresholds */}
-        <Accordion title="Alerts" defaultOpen badge={alertsDirty ? 'Edited' : undefined} badgeColor="var(--accent-yellow)">
+        <Accordion title={tk('settings.section.alerts')} defaultOpen badge={alertsDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <ThresholdGroup
-              label="Disk"
+              label={tk('settings.alerts.storage')}
               warning={local.diskWarning}
               critical={local.diskCritical}
               onWarningChange={(v) => updateField('diskWarning', v)}
               onCriticalChange={(v) => updateField('diskCritical', v)}
             />
             <ThresholdGroup
-              label="Memory"
+              label={tk('settings.alerts.memory')}
               warning={local.memoryWarning}
               critical={local.memoryCritical}
               onWarningChange={(v) => updateField('memoryWarning', v)}
               onCriticalChange={(v) => updateField('memoryCritical', v)}
             />
             <ThresholdGroup
-              label="GPU Memory"
+              label={tk('settings.alerts.gpu_memory')}
               warning={local.gpuMemoryWarning}
               critical={local.gpuMemoryCritical}
               onWarningChange={(v) => updateField('gpuMemoryWarning', v)}
@@ -219,18 +277,18 @@ export function SettingsPage() {
         </Accordion>
 
         {/* Snapshot Settings */}
-        <Accordion title="Snapshots" defaultOpen badge={snapshotsDirty ? 'Edited' : undefined} badgeColor="var(--accent-yellow)">
+        <Accordion title={tk('settings.section.snapshots')} defaultOpen badge={snapshotsDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Growth View에서 폴더 크기 변화를 추적하기 위한 스냅샷 주기입니다.
+              {tk('settings.snapshots.description')}
             </div>
             <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               {[
-                { value: 15, label: '15분' },
-                { value: 30, label: '30분' },
-                { value: 60, label: '1시간' },
-                { value: 120, label: '2시간' },
-                { value: 360, label: '6시간' }
+                { value: 15, label: tk('settings.snapshots.option_15m') },
+                { value: 30, label: tk('settings.snapshots.option_30m') },
+                { value: 60, label: tk('settings.snapshots.option_1h') },
+                { value: 120, label: tk('settings.snapshots.option_2h') },
+                { value: 360, label: tk('settings.snapshots.option_6h') }
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -254,17 +312,16 @@ export function SettingsPage() {
               ))}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              현재: <strong style={{ color: 'var(--text-primary)' }}>{snapshotInterval}분</strong> 간격 /
-              최대 보관: <strong style={{ color: 'var(--text-primary)' }}>168개</strong> (약 {Math.round((168 * snapshotInterval) / 60 / 24)}일분)
+              {tk('settings.snapshots.current', { interval: snapshotInterval, days: Math.round((168 * snapshotInterval) / 60 / 24) })}
             </div>
           </div>
         </Accordion>
 
         {/* Data Storage */}
-        <Accordion title="App Data" defaultOpen>
+        <Accordion title={tk('settings.section.app_data')} defaultOpen>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              설정, 스냅샷, 로그 등 앱 데이터가 저장되는 경로입니다.
+              {tk('settings.app_data.description')}
             </div>
             {dataPath && (
               <div style={{
@@ -282,25 +339,25 @@ export function SettingsPage() {
                   {dataPath}
                 </span>
                 <button
-                  onClick={() => void handleOpenPath(dataPath, '앱 데이터 폴더를 열지 못했습니다.')}
+                  onClick={() => void handleOpenPath(dataPath, tk('settings.app_data.open_failed'))}
                   style={btnStyle}
                 >
-                  Open
+                  {tk('common.open')}
                 </button>
               </div>
             )}
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-              <div>config.json — 알림 임계치, 테마 설정</div>
-              <div>window-state.json — 창 크기/위치</div>
-              <div>snapshots/growth.json — 폴더 크기 스냅샷 (Growth View용)</div>
+              <div>{tk('settings.app_data.config')}</div>
+              <div>{tk('settings.app_data.window_state')}</div>
+              <div>{tk('settings.app_data.snapshots')}</div>
             </div>
           </div>
         </Accordion>
 
-        <Accordion title="Logs" defaultOpen>
+        <Accordion title={tk('settings.section.logs')} defaultOpen>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              앱 로그는 날짜별 파일로 저장되며 최근 10일치만 유지됩니다.
+              {tk('settings.logs.description')}
             </div>
             {logPath && (
               <div style={{
@@ -318,16 +375,16 @@ export function SettingsPage() {
                   {logPath}
                 </span>
                 <button
-                  onClick={() => void handleOpenPath(logPath, '로그 폴더를 열지 못했습니다.')}
+                  onClick={() => void handleOpenPath(logPath, tk('settings.logs.open_failed'))}
                   style={btnStyle}
                 >
-                  Open Logs
+                  {tk('common.open')}
                 </button>
               </div>
             )}
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-              <div>파일명 형식 — systemscope-YYYY-MM-DD.log</div>
-              <div>보관 기간 — 최근 10일</div>
+              <div>{tk('settings.logs.filename')}</div>
+              <div>{tk('settings.logs.retention')}</div>
             </div>
           </div>
         </Accordion>
@@ -349,13 +406,13 @@ export function SettingsPage() {
             cursor: !isDirty || isSaving ? 'default' : 'pointer'
           }}
         >
-          {isSaving ? 'Saving...' : isDirty ? 'Save All' : 'Saved'}
+          {isSaving ? tk('settings.status.saving') : isDirty ? tk('settings.save.save_all') : tk('settings.status.saved')}
         </button>
         <span style={{ fontSize: '12px', color: saved ? 'var(--accent-green)' : isDirty ? 'var(--accent-yellow)' : 'var(--text-muted)' }}>
-          {saved ? '모든 변경사항이 저장되었습니다.' : isDirty ? '저장하지 않은 변경사항이 있습니다.' : '현재 표시 중인 설정은 저장된 상태입니다.'}
+          {saved ? tk('settings.footer.saved') : isDirty ? tk('settings.footer.unsaved') : tk('settings.footer.current_saved')}
         </span>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-          테마, 알림 임계치, 스냅샷 주기를 함께 저장합니다
+          {tk('settings.footer.description')}
         </span>
       </div>
     </div>

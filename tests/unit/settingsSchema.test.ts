@@ -10,7 +10,8 @@ describe('settingsSchema', () => {
   it('should sanitize malformed persisted settings with safe defaults', () => {
     const sanitized = sanitizeAppSettings({
       thresholds: { diskWarning: 80 },
-      theme: 'broken'
+      theme: 'broken',
+      locale: 'jp'
     })
 
     expect(sanitized).toEqual(DEFAULT_SETTINGS)
@@ -18,8 +19,10 @@ describe('settingsSchema', () => {
 
   it('should allow valid partial settings payloads only', () => {
     expect(validatePartialSettings({ theme: 'light' })).toBe(true)
+    expect(validatePartialSettings({ locale: 'en' })).toBe(true)
     expect(validatePartialSettings({ thresholds: DEFAULT_THRESHOLDS })).toBe(true)
     expect(validatePartialSettings({ theme: 'blue' })).toBe(false)
+    expect(validatePartialSettings({ locale: 'jp' })).toBe(false)
     expect(validatePartialSettings({ thresholds: { ...DEFAULT_THRESHOLDS, memoryWarning: -1 } })).toBe(false)
     expect(validatePartialSettings({ thresholds: { diskWarning: 80 } })).toBe(false)
   })

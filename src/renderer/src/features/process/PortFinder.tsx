@@ -4,9 +4,11 @@ import { useToast } from '../../components/Toast'
 import { usePortFinderStore } from '../../stores/usePortFinderStore'
 import { getStateStyle } from './portStateStyles'
 import type { PortInfo, ProcessKillResult } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 export function PortFinder() {
   const showToast = useToast((s) => s.show)
+  const { tk } = useI18n()
   const { ports, loading, scanned, stateFilter, setStateFilter, fetchPorts } = usePortFinderStore()
   const [search, setSearch] = useState('')
   const [searchScope, setSearchScope] = useState<'local' | 'remote' | 'all'>('local')
@@ -47,22 +49,22 @@ export function PortFinder() {
       reason: 'Activity > Ports'
     })
     if (!res.ok) {
-      showToast(res.error?.message ?? '프로세스를 종료하지 못했습니다.')
+      showToast(res.error?.message ?? tk('process.port_finder.kill_failed'))
       return
     }
 
     const result = res.data as ProcessKillResult
     if (result.cancelled) return
     if (result.killed) {
-      showToast(`"${result.name}" (PID ${result.pid}) 종료 요청을 보냈습니다.`)
+      showToast(tk('process.port_finder.kill_sent', { name: result.name, pid: result.pid }))
       await fetchPorts()
     }
   }
 
   return (
     <Accordion
-      title="Port Finder"
-      badge={scanned ? `${listenCount} listening` : undefined}
+      title={tk('process.port_finder.title')}
+      badge={scanned ? tk('process.port_finder.badge', { count: listenCount }) : undefined}
       badgeColor="var(--accent-cyan)"
       defaultOpen
       forceOpen={scanned && filtered.length > 0}
@@ -83,53 +85,53 @@ export function PortFinder() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            placeholder={searchScope === 'local' ? 'Local port, address, process...' : searchScope === 'remote' ? 'Remote port, address, process...' : 'Port, address, process...'}
+            placeholder={searchScope === 'local' ? tk('process.port_finder.search_local') : searchScope === 'remote' ? tk('process.port_finder.search_remote') : tk('process.port_finder.search_all')}
             style={searchStyle}
           />
           <button onClick={() => fetchPorts()} disabled={loading} style={btnStyle}>
-            {loading ? 'Scanning...' : scanned ? 'Refresh' : 'Scan Ports'}
+            {loading ? 'Scanning...' : scanned ? tk('apps.action.refresh') : tk('process.port_finder.scan')}
           </button>
         </>
       }
     >
       {!scanned ? (
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
-          현재 사용 중인 네트워크 포트와 점유 프로세스를 조회합니다
+          {tk('process.port_finder.description')}
         </div>
       ) : (
         <div>
           {/* State filter tabs */}
           <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
             <FilterBtn active={stateFilter === 'all'} onClick={() => setStateFilter('all')}>
-              All ({searchFiltered.length})
+              {tk('process.port_finder.filter.all', { count: searchFiltered.length })}
             </FilterBtn>
             <FilterBtn active={stateFilter === 'LISTEN'} onClick={() => setStateFilter('LISTEN')}>
-              Listening ({listenCount})
+              {tk('process.port_finder.filter.listening', { count: listenCount })}
             </FilterBtn>
             <FilterBtn active={stateFilter === 'ESTABLISHED'} onClick={() => setStateFilter('ESTABLISHED')}>
-              Established ({searchFiltered.filter((p) => p.state === 'ESTABLISHED').length})
+              {tk('process.port_finder.filter.established', { count: searchFiltered.filter((p) => p.state === 'ESTABLISHED').length })}
             </FilterBtn>
             <FilterBtn active={stateFilter === 'other'} onClick={() => setStateFilter('other')}>
-              Other ({searchFiltered.filter((p) => p.state !== 'LISTEN' && p.state !== 'ESTABLISHED').length})
+              {tk('process.port_finder.filter.other', { count: searchFiltered.filter((p) => p.state !== 'LISTEN' && p.state !== 'ESTABLISHED').length })}
             </FilterBtn>
           </div>
 
           {filtered.length === 0 ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px 0' }}>
-              {search ? `"${search}" 검색 결과 없음` : '해당 상태의 포트가 없습니다'}
+              {search ? tk('process.port_finder.empty_search', { query: search }) : tk('process.port_finder.empty_state')}
             </div>
           ) : (
             <div style={{ maxHeight: '400px', overflow: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
-                    <th style={thStyle}>Proto</th>
-                    <th style={thStyle}>Local Port</th>
-                    <th style={thStyle}>Process</th>
+                    <th style={thStyle}>{tk('process.port_finder.proto')}</th>
+                    <th style={thStyle}>{tk('process.port_finder.local_port')}</th>
+                    <th style={thStyle}>{tk('process.port_finder.process')}</th>
                     <th style={thStyle}>PID</th>
-                    <th style={thStyle}>Remote</th>
-                    <th style={thStyle}>State</th>
-                    <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>Action</th>
+                    <th style={thStyle}>{tk('process.port_finder.remote')}</th>
+                    <th style={thStyle}>{tk('process.port_finder.state')}</th>
+                    <th style={{ ...thStyle, textAlign: 'center', width: '92px' }}>{tk('process.port_finder.action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -154,7 +156,7 @@ export function PortFinder() {
                         <StateBadge state={p.state} />
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        <button onClick={() => void handleKill(p)} style={killBtnStyle}>Kill PID</button>
+                        <button onClick={() => void handleKill(p)} style={killBtnStyle}>{tk('process.port_finder.kill')}</button>
                       </td>
                     </tr>
                   ))}

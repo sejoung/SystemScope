@@ -5,6 +5,7 @@ import { getSystemStats } from '../services/systemMonitor'
 import { checkAlerts } from '../services/alertManager'
 import { success, failure } from '@shared/types'
 import { logError } from '../services/logging'
+import { t } from '../i18n'
 import {
   addSystemSubscriber,
   removeSystemSubscriber,
@@ -23,8 +24,8 @@ export function registerSystemIpc(): void {
       const stats = await getSystemStats()
       return success(stats)
     } catch (err) {
-      logError('system-ipc', '시스템 정보를 가져올 수 없습니다', err)
-      return failure('UNKNOWN_ERROR', '시스템 정보를 가져올 수 없습니다.')
+      logError('system-ipc', 'Failed to load system information', err)
+      return failure('UNKNOWN_ERROR', t('시스템 정보를 가져올 수 없습니다.'))
     }
   })
 
@@ -80,7 +81,7 @@ async function scheduleNextUpdate(): Promise<void> {
       }
     }
   } catch (err) {
-    logError('system-ipc', '실시간 업데이트 실패', err)
+    logError('system-ipc', 'Realtime update failed', err)
   }
 
   if (isRunning) {

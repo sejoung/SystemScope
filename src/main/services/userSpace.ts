@@ -65,7 +65,7 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
         if (!isNaN(kb)) result.set(p, kb * 1024)
       }
     } else {
-      logDebug('user-space', 'du 명령으로 사용자 공간 폴더 일괄 측정 실패', { paths, error: err })
+      logDebug('user-space', 'Failed to measure user-space folders in bulk with du', { paths, error: err })
     }
   }
   return result
@@ -86,7 +86,7 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
     } catch {
       if (!hasLoggedUserSpaceApfsFallback) {
         hasLoggedUserSpaceApfsFallback = true
-        logDebug('user-space', 'APFS 컨테이너 정보 읽기 실패, statfs로 대체합니다')
+        logDebug('user-space', 'Failed to read APFS container information, falling back to statfs')
       }
       // 대체 방식 사용
     }
@@ -98,7 +98,7 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
     const available = stats.bavail * stats.bsize
     return { total, available, purgeable: null }
   } catch {
-    logWarn('user-space', '사용자 공간 보기를 위한 파일시스템 용량 확인 실패')
+    logWarn('user-space', 'Failed to determine filesystem capacity for user-space view')
     return { total: 0, available: 0, purgeable: null }
   }
 }

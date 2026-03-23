@@ -46,13 +46,13 @@ export function loadSnapshots(): Snapshot[] {
     const raw = fs.readFileSync(filePath, 'utf-8')
     const data = parseSnapshotData(raw)
     if (!data) {
-      logWarn('snapshot-store', '유효하지 않은 스냅샷 파일 감지, 백업 후 새로 시작합니다')
+      logWarn('snapshot-store', 'Invalid snapshot file detected, backing it up and starting fresh')
       backupCorruptSnapshotFile(filePath)
       return []
     }
     return data.snapshots
   } catch (err) {
-    logWarn('snapshot-store', '스냅샷 로드 실패, 새로 시작합니다', err)
+    logWarn('snapshot-store', 'Failed to load snapshots, starting fresh', err)
     backupCorruptSnapshotFile(filePath)
     return []
   }
@@ -84,7 +84,7 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
       await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 })
       await fsp.rename(tempPath, filePath)
     } catch (err) {
-      logError('snapshot-store', '스냅샷 저장 실패', err)
+      logError('snapshot-store', 'Failed to save snapshot', err)
       throw err
     } finally {
       await fsp.rm(tempPath, { force: true }).catch(() => undefined)
@@ -136,9 +136,9 @@ function backupCorruptSnapshotFile(filePath: string): void {
     if (!fs.existsSync(filePath)) return
     const backupPath = `${filePath}.corrupt-${Date.now()}`
     fs.renameSync(filePath, backupPath)
-    logWarn('snapshot-store', '손상된 스냅샷 파일 백업 완료', { backupPath })
+    logWarn('snapshot-store', 'Backed up corrupt snapshot file', { backupPath })
   } catch (backupErr) {
-    logWarn('snapshot-store', '손상된 스냅샷 파일 백업 실패', backupErr)
+    logWarn('snapshot-store', 'Failed to back up corrupt snapshot file', backupErr)
   }
 }
 

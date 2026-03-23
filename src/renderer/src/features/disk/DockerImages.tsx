@@ -3,6 +3,7 @@ import { Accordion } from '../../components/Accordion'
 import { useToast } from '../../components/Toast'
 import { formatBytes } from '../../utils/format'
 import type { DockerImageSummary, DockerImagesScanResult, DockerRemoveResult } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 export function DockerImages({
   refreshToken = 0,
@@ -14,10 +15,11 @@ export function DockerImages({
   onOpenContainers?: () => void
 }) {
   const showToast = useToast((s) => s.show)
+  const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState<DockerImageSummary[]>([])
   const [status, setStatus] = useState<DockerImagesScanResult['status']>('ready')
-  const [message, setMessage] = useState<string | null>('Docker 이미지를 조회해보세요.')
+  const [message, setMessage] = useState<string | null>(t('Docker 이미지를 조회해보세요.'))
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const selectableImages = useMemo(() => images.filter((image) => !image.inUse), [images])
@@ -33,7 +35,7 @@ export function DockerImages({
     if (!res.ok || !res.data) {
       setStatus('daemon_unavailable')
       setImages([])
-      setMessage(res.error?.message ?? 'Docker 이미지를 조회하지 못했습니다.')
+      setMessage(res.error?.message ?? t('Docker 이미지를 조회하지 못했습니다.'))
       setLoading(false)
       return
     }
@@ -53,7 +55,7 @@ export function DockerImages({
   const handleDelete = async (ids: string[]) => {
     const res = await window.systemScope.removeDockerImages(ids)
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? 'Docker 이미지를 삭제하지 못했습니다.')
+      showToast(res.error?.message ?? t('Docker 이미지를 삭제하지 못했습니다.'))
       return
     }
 
@@ -61,7 +63,7 @@ export function DockerImages({
     if (result.cancelled) return
 
     if (result.deletedIds.length > 0) {
-      showToast(`${result.deletedIds.length}개 Docker 이미지를 삭제했습니다.`)
+      showToast(t('{count}개 Docker 이미지를 삭제했습니다.', { count: result.deletedIds.length }))
       setImages((prev) => prev.filter((image) => !result.deletedIds.includes(image.id)))
       setSelectedIds((prev) => {
         const next = new Set(prev)
@@ -71,39 +73,39 @@ export function DockerImages({
       onChanged?.()
     }
     if (result.failCount > 0 && result.errors.length > 0) {
-      showToast(`일부 실패: ${result.errors[0]}`)
+      showToast(t('일부 실패: {message}', { message: result.errors[0] }))
     }
   }
 
   return (
     <Accordion
-      title="Docker Images"
+      title={t('Docker Images')}
       defaultOpen
-      badge={status === 'ready' && images.length > 0 ? `${images.length} images` : undefined}
+      badge={status === 'ready' && images.length > 0 ? t('{count} images', { count: images.length }) : undefined}
       badgeColor="var(--accent-cyan)"
       actions={
         <>
           <button onClick={() => void scanImages()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Scanning...' : images.length > 0 || message ? 'Refresh' : 'Scan Images'}
+            {loading ? t('Scanning...') : images.length > 0 || message ? t('Refresh') : t('Scan Images')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedIds))}
             disabled={loading || selectedSelectableCount === 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            Delete Selected
+            {t('Delete Selected')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
-        <EmptyState title={status === 'not_installed' ? 'Docker가 설치되어 있지 않습니다.' : 'Docker daemon에 연결할 수 없습니다.'} detail={message ?? 'Docker Desktop 또는 Docker Engine 상태를 확인하세요.'} />
+        <EmptyState title={status === 'not_installed' ? t('Docker가 설치되어 있지 않습니다.') : t('Docker daemon에 연결할 수 없습니다.')} detail={message ?? t('Docker Desktop 또는 Docker Engine 상태를 확인하세요.')} />
       ) : images.length === 0 ? (
-        <EmptyState title={message ?? 'Docker 이미지가 없습니다.'} detail="Docker가 설치되어 있다면 Scan Images로 다시 확인할 수 있습니다." />
+        <EmptyState title={message ?? t('Docker 이미지가 없습니다.')} detail={t('Docker가 설치되어 있다면 Scan Images로 다시 확인할 수 있습니다.')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            사용 중인 이미지는 먼저 Containers 탭에서 참조 컨테이너를 정리해야 합니다. Untagged (&lt;none&gt;) 이미지는 repository 또는 tag가 끊어진 고아 이미지입니다.
+            {t('사용 중인 이미지는 먼저 Containers 탭에서 참조 컨테이너를 정리해야 합니다. Untagged (<none>) 이미지는 repository 또는 tag가 끊어진 고아 이미지입니다.')}
           </div>
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -123,12 +125,12 @@ export function DockerImages({
                       }}
                     />
                   </th>
-                  <th style={thStyle}>Repository</th>
-                  <th style={thStyle}>Tag</th>
-                  <th style={{ ...thStyle, textAlign: 'right' }}>Size</th>
-                  <th style={thStyle}>Created</th>
-                  <th style={thStyle}>Status</th>
-                  <th style={{ ...thStyle, width: '92px', textAlign: 'center' }}>Action</th>
+                  <th style={thStyle}>{t('Repository')}</th>
+                  <th style={thStyle}>{t('Tag')}</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>{t('Size')}</th>
+                  <th style={thStyle}>{t('Created')}</th>
+                  <th style={thStyle}>{t('Status')}</th>
+                  <th style={{ ...thStyle, width: '92px', textAlign: 'center' }}>{t('Action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,9 +162,9 @@ export function DockerImages({
                       <td style={tdStyle}>{image.createdSince}</td>
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                          {image.inUse && <Badge text="in use" color="var(--accent-yellow)" />}
-                          {!image.inUse && <Badge text="unused" color="var(--accent-green)" />}
-                          {image.dangling && <Badge text="untagged (<none>)" color="var(--accent-red)" />}
+                          {image.inUse && <Badge text={t('in use')} color="var(--accent-yellow)" />}
+                          {!image.inUse && <Badge text={t('unused')} color="var(--accent-green)" />}
+                          {image.dangling && <Badge text={t('untagged (<none>)')} color="var(--accent-red)" />}
                         </div>
                         {image.containers.length > 0 && (
                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -181,7 +183,7 @@ export function DockerImages({
                                   fontWeight: 600
                                 }}
                               >
-                                Containers 보기
+                                {t('Containers 보기')}
                               </button>
                             )}
                           </div>
@@ -198,7 +200,7 @@ export function DockerImages({
                             cursor: image.inUse ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          Delete
+                          {t('Delete')}
                         </button>
                       </td>
                     </tr>

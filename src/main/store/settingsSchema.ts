@@ -1,5 +1,6 @@
 import type { AlertThresholds } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
+import type { AppLocale } from '@shared/i18n'
 
 export const SNAPSHOT_INTERVAL_OPTIONS = [15, 30, 60, 120, 360] as const
 export type SnapshotIntervalMin = (typeof SNAPSHOT_INTERVAL_OPTIONS)[number]
@@ -7,12 +8,14 @@ export type SnapshotIntervalMin = (typeof SNAPSHOT_INTERVAL_OPTIONS)[number]
 export interface AppSettings {
   thresholds: AlertThresholds
   theme: 'dark' | 'light'
+  locale: AppLocale
   snapshotIntervalMin: SnapshotIntervalMin
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   thresholds: DEFAULT_THRESHOLDS,
   theme: 'dark',
+  locale: 'ko',
   snapshotIntervalMin: 60
 }
 
@@ -31,6 +34,10 @@ const THRESHOLD_KEYS = [
 
 function isTheme(value: unknown): value is AppSettings['theme'] {
   return value === 'dark' || value === 'light'
+}
+
+function isLocale(value: unknown): value is AppLocale {
+  return value === 'ko' || value === 'en'
 }
 
 function isAlertThresholds(value: unknown): value is AlertThresholds {
@@ -55,6 +62,7 @@ export function sanitizeAppSettings(value: unknown): AppSettings {
   return {
     thresholds: isAlertThresholds(raw.thresholds) ? raw.thresholds : DEFAULT_THRESHOLDS,
     theme: isTheme(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme,
+    locale: isLocale(raw.locale) ? raw.locale : DEFAULT_SETTINGS.locale,
     snapshotIntervalMin: isSnapshotInterval(raw.snapshotIntervalMin) ? raw.snapshotIntervalMin : DEFAULT_SETTINGS.snapshotIntervalMin
   }
 }
@@ -67,6 +75,9 @@ export function validatePartialSettings(value: unknown): value is Partial<AppSet
     return false
   }
   if ('theme' in raw && !isTheme(raw.theme)) {
+    return false
+  }
+  if ('locale' in raw && !isLocale(raw.locale)) {
     return false
   }
   if ('snapshotIntervalMin' in raw && !isSnapshotInterval(raw.snapshotIntervalMin)) {
