@@ -5,8 +5,12 @@
 <h1 align="center">SystemScope</h1>
 
 <p align="center">
-  개발자를 위한 올인원 시스템 모니터링 & 정리 도구<br/>
-  CPU, 메모리, GPU, 디스크를 실시간으로 확인하고 — 디스크 분석, Docker 정리, 프로세스 관리까지 한 앱에서.
+  An all-in-one system monitoring and cleanup tool for developers.<br/>
+  Monitor CPU, memory, GPU, and disk in real time, then move into disk analysis, Docker cleanup, and process management from one app.
+</p>
+
+<p align="center">
+  <a href="./README.md">English</a> | <a href="./README.ko.md">한국어</a>
 </p>
 
 <p align="center">
@@ -16,151 +20,153 @@
   <img src="https://img.shields.io/badge/react-19-61dafb" alt="React" />
 </p>
 
-<!-- 스크린샷이 준비되면 아래 주석을 해제하세요
+<!-- Uncomment when screenshots are ready
 <p align="center">
   <img src="docs/screenshots/dashboard.png" width="800" alt="Dashboard Screenshot" />
 </p>
 -->
 
-## 주요 기능
+## Highlights
 
-- **실시간 모니터링** — CPU, 메모리, GPU, 디스크 사용량을 1초 간격으로 갱신하고 실시간 차트로 표시
-- **알림** — 디스크/메모리/GPU 사용률이 임계치를 넘으면 경고 알림 (임계치 커스터마이징 가능)
-- **디스크 분석** — 폴더 스캔, 트리맵 시각화, 대용량 파일 탐색, 확장자별 분포, 중복 파일 찾기
-- **빠른 정리** — 캐시, 로그, 빌드 산출물 등 자주 커지는 경로를 자동 탐색하고 휴지통으로 정리
-- **Docker 관리** — 컨테이너, 이미지, 볼륨, 빌드 캐시를 한눈에 보고 정리
-- **프로세스 관리** — 전체 프로세스 목록 검색/정렬, 프로세스 종료
-- **포트 모니터링** — 네트워크 포트 조회 + 특정 포트/IP 실시간 감시
-- **앱 관리** — 설치된 앱 제거, 잔여 데이터 탐색 및 정리
-- **성장 추세** — 스냅샷 기반으로 홈 폴더 용량 변화를 1시간/24시간/7일 단위로 추적
-- **트레이 상주** — 창을 닫아도 메뉴바/시스템 트레이에서 빠르게 복원
-- **다크 / 라이트 테마** 지원
+- **Real-time monitoring**: CPU, memory, GPU, and disk metrics with live charts
+- **Alerts**: configurable disk / memory / GPU usage alerts
+- **Disk analysis**: folder scan, treemap, large files, extension breakdown, duplicate detection
+- **Quick cleanup**: scan common cache, log, build, and temp locations
+- **Docker management**: inspect and clean up containers, images, volumes, and build cache
+- **Process tools**: search, inspect, and terminate processes
+- **Port tools**: inspect active ports and monitor specific ports/IPs
+- **Application cleanup**: uninstall installed apps and review leftover app data
+- **Growth tracking**: snapshot-based folder growth analysis over 1 hour / 24 hours / 7 days
+- **Tray resident UX**: restore the app from the menu bar or system tray
+- **Dark / light themes**
 
-> 각 기능의 상세 동작은 [docs/features.md](docs/features.md)를 참고하세요.
+For more detailed behavior, see [docs/features.md](docs/features.md).
 
-## 화면 구성
+## Pages
 
-| 페이지 | 설명 |
-|--------|------|
-| **Overview** | 실시간 게이지, 차트, 알림, 스토리지 요약, Top Consumers |
-| **Storage** | 폴더 스캔 & 트리맵, 파일 인사이트, 빠른 정리, 파일 삭제 |
-| **Docker** | 컨테이너 / 이미지 / 볼륨 / 빌드 캐시 관리 |
-| **Activity** | 프로세스 목록, 포트 조회, 포트 실시간 감시 |
-| **Applications** | 설치 앱 관리, 잔여 데이터 정리 |
-| **Preferences** | 테마, 알림 임계치, 스냅샷 주기, 데이터/로그 경로 |
+| Page | Description |
+|------|------|
+| **Overview** | Live gauges, charts, alerts, storage summary, top consumers |
+| **Storage** | Folder scan, treemap, file insights, quick cleanup, file deletion |
+| **Docker** | Containers / images / volumes / build cache management |
+| **Activity** | Processes, ports, and live port watch |
+| **Applications** | Installed apps and leftover app data cleanup |
+| **Preferences** | Theme, alert thresholds, snapshot interval, app data/log paths |
 
-## 시작하기
+## Getting Started
 
-### 요구 사항
+### Requirements
 
 - Node.js
 - npm
-- macOS 또는 Windows
+- macOS or Windows
 
-권장 환경:
+Recommended:
 
 - Node.js 20+
-- Docker 기능을 사용할 경우 `docker` CLI와 Docker Desktop 또는 Docker Engine
-- Windows 앱 관리 기능을 사용할 경우 일반적인 `reg.exe` 사용이 가능한 환경
+- `docker` CLI plus Docker Desktop or Docker Engine for Docker features
+- A standard Windows environment with `reg.exe` available for Windows app management
 
-### 설치 및 실행
+### Install and Run
 
 ```bash
-# 의존성 설치
+# install dependencies
 npm install
 
-# 개발 모드
+# development mode
 npm run dev
 
-# 프로덕션 빌드
+# production build
 npm run build
 
-# 빌드 프리뷰
+# preview built app
 npm run preview
 ```
 
-### 외부 의존성 / 우아한 실패
+### External Dependencies and Graceful Failure
 
-SystemScope는 일부 기능에서 OS 또는 외부 명령에 의존합니다.
+Some features depend on OS tools or external commands.
 
-- Docker 페이지: `docker` CLI와 daemon 상태가 필요합니다.
-- 디스크 용량 측정: macOS/Linux에서는 `du`를 우선 사용하고, 없거나 실패하면 재귀 스캔으로 fallback 합니다.
-- macOS APFS 보정: `diskutil` 정보를 우선 사용하고, 불가할 경우 기본 파일시스템 정보로 fallback 합니다.
-- Windows 앱 목록: `reg query` 기반으로 조회합니다.
+- Docker pages require the `docker` CLI and a running Docker daemon.
+- Disk size measurement prefers `du` on macOS/Linux and falls back to recursive scanning if unavailable.
+- APFS disk correction on macOS prefers `diskutil` and falls back to standard filesystem information.
+- Windows app discovery uses `reg query`.
 
-외부 명령이 없거나 실행에 실패하더라도 가능한 범위에서 graceful fallback 하도록 구현되어 있습니다.
+Where possible, SystemScope degrades gracefully instead of failing hard when these commands are unavailable.
 
-### 패키징
+### Packaging
 
 ```bash
 npm run dist:mac    # macOS .dmg
 npm run dist:win    # Windows .exe
 ```
 
-## 테스트
+## Testing
 
 ```bash
-npm test            # 테스트 실행
-npm run test:watch  # 감시 모드
+npm test            # unit/integration tests
+npm run test:watch
 npm run test:e2e    # Electron + Playwright E2E
 npm run test:e2e:debug
-npm run check       # typecheck → lint → test → build 전체 검증
+npm run check       # typecheck -> lint -> test -> build
 ```
 
-E2E 테스트는 앱을 production build 한 뒤 Playwright로 실행합니다.
+E2E tests build the app first, then launch it through Playwright.
 
-## 프로젝트 구조
+## Project Structure
 
 ```text
 src/
-  main/       Electron 메인 프로세스, IPC, 시스템 수집, 서비스
-  preload/    contextBridge 기반 renderer API 노출
-  renderer/   React UI, 페이지, 스토어, 컴포넌트
-  shared/     IPC 채널, 공용 타입, 상수
+  main/        Electron main process, IPC, services, system collection
+  preload/     contextBridge API exposed to the renderer
+  renderer/    React UI, pages, stores, components
+  shared/      IPC channels, shared types, constants, contracts
 tests/
-  unit/       단위 테스트
-  integration/ 통합 테스트
-  e2e/        Playwright 기반 Electron E2E
+  unit/        unit tests
+  integration/ integration tests
+  e2e/         Playwright-based Electron E2E tests
 ```
 
-## 기술 스택
+## Tech Stack
 
-| 분류 | 기술 |
+| Area | Tech |
 |------|------|
-| 프레임워크 | Electron 41, React 19 |
-| 언어 | TypeScript |
-| 빌드 | Vite / electron-vite |
-| 상태 관리 | Zustand |
-| 차트 | Recharts |
-| 시스템 정보 | systeminformation |
-| 설정 저장 | electron-store |
-| 테스트 | Vitest, Playwright |
+| Framework | Electron 41, React 19 |
+| Language | TypeScript |
+| Build | Vite / electron-vite |
+| State | Zustand |
+| Charts | Recharts |
+| System info | systeminformation |
+| Settings | electron-store |
+| Testing | Vitest, Playwright |
 
-## 보안 모델
+## Security Model
 
-Renderer는 Node API에 직접 접근하지 않습니다.
+The renderer does not access Node APIs directly.
 
-- `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`
-- preload의 `contextBridge`를 통해 필요한 IPC API만 노출
-- 파일 삭제는 홈 디렉토리 하위만 허용하며 휴지통으로만 이동
+- `contextIsolation: true`
+- `sandbox: true`
+- `nodeIntegration: false`
+- only explicit IPC APIs are exposed through `contextBridge`
+- deletion paths are constrained and items are moved to Trash instead of being hard-deleted
 
-## 플랫폼 메모
+## Platform Notes
 
-- macOS와 Windows를 모두 지원합니다.
-- macOS에서는 APFS, unified memory, 메뉴바 트레이 UX에 맞춘 보정을 포함합니다.
-- Windows에서는 Quick Scan, 앱 제거, Explorer 열기, 시스템 트레이 동작을 별도 경로/정책에 맞춰 처리합니다.
-- 일부 시스템 경로는 보안 정책상 앱이 직접 삭제하지 않고, 열기 또는 휴지통 이동만 허용합니다.
+- SystemScope supports both macOS and Windows.
+- macOS includes APFS and unified-memory related corrections.
+- Windows includes platform-specific handling for Quick Scan, app uninstall flows, Explorer opening, and tray behavior.
+- Some system paths are intentionally restricted to open-only or trash-only flows for safety.
 
-더 자세한 기능/플랫폼 차이는 [docs/features.md](docs/features.md)를 참고하세요.
+See [docs/features.md](docs/features.md) for more platform-specific details.
 
-## 기여
+## Contributing
 
-이슈와 PR을 환영합니다. 기여 전에 아래 명령으로 전체 검증을 통과하는지 확인해주세요.
+Issues and pull requests are welcome. Before opening a PR, please make sure the full validation flow passes:
 
 ```bash
 npm run check
 ```
 
-## 라이선스
+## License
 
 [Apache License 2.0](LICENSE)
