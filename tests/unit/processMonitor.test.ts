@@ -75,4 +75,25 @@ describe('processMonitor.getNetworkPorts', () => {
     })
     expect(ports[1].process).toBe('Code')
   })
+
+  it('should normalize Windows executable paths to a display name', async () => {
+    networkConnections.mockResolvedValue([
+      {
+        protocol: 'tcp',
+        localAddress: '127.0.0.1',
+        localPort: 5173,
+        peerAddress: '',
+        peerPort: '*',
+        state: 'LISTEN',
+        pid: 1200,
+        process: 'C:\\Program Files\\nodejs\\node.exe'
+      }
+    ])
+
+    const { getNetworkPorts } = await import('../../src/main/services/processMonitor')
+    const ports = await getNetworkPorts()
+
+    expect(ports).toHaveLength(1)
+    expect(ports[0].process).toBe('node')
+  })
 })

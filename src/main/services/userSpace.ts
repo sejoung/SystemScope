@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform } from 'os'
+import si from 'systeminformation'
 import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
 import { logDebug, logWarn } from './logging'
 import { getDirSizeRecursive } from '../utils/getDirSize'
@@ -81,6 +82,28 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
 
 // macOS APFS 컨테이너 정보
 async function getDiskInfo(): Promise<{ total: number; available: number; purgeable: number | null }> {
+  if (platform() === 'win32') {
+    try {
+      const systemDrive = (process.env.SystemDrive || path.parse(homedir()).root || 'C:').replace(/[\\/]+$/, '').toUpperCase()
+      const disks = await si.fsSize()
+      const systemDisk = disks.find((disk) => {
+        const mount = String(disk.mount ?? '').replace(/[\\/]+$/, '').toUpperCase()
+        const fsRoot = String(disk.fs ?? '').replace(/[\\/]+$/, '').toUpperCase()
+        return mount === systemDrive || fsRoot === systemDrive
+      }) ?? disks[0]
+
+      if (systemDisk) {
+        return {
+          total: systemDisk.size,
+          available: systemDisk.available,
+          purgeable: null
+        }
+      }
+    } catch (error) {
+      logDebug('user-space', 'Failed to read Windows filesystem capacity with systeminformation, falling back to statfs', { error })
+    }
+  }
+
   if (platform() === 'darwin') {
     try {
       const { stdout } = await runExternalCommand('diskutil', ['info', '-plist', '/'])
@@ -101,7 +124,8 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
   }
 
   try {
-    const stats = await fs.statfs('/')
+    const statTarget = platform() === 'win32' ? homedir() : '/'
+    const stats = await fs.statfs(statTarget)
     const total = stats.blocks * stats.bsize
     const available = stats.bavail * stats.bsize
     return { total, available, purgeable: null }

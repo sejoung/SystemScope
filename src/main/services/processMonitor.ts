@@ -1,4 +1,5 @@
 import si from 'systeminformation'
+import path from 'path'
 import type { ProcessInfo, PortInfo } from '@shared/types'
 
 // si.processes() 중복 호출 방지를 위한 TTL 캐시 (500ms)
@@ -58,11 +59,21 @@ export async function getNetworkPorts(): Promise<PortInfo[]> {
         peerPort: String(c.peerPort ?? '*'),
         state: c.state,
         pid: c.pid,
-        process: c.process ? c.process.split('/').pop()?.replace('.app', '') ?? c.process : `PID ${c.pid}`,
+        process: getProcessDisplayName(c.process, c.pid),
         localPortNum
       }
     })
     .sort((a, b) => a.localPortNum - b.localPortNum)
+}
+
+function getProcessDisplayName(processPath: string | undefined, pid: number): string {
+  if (!processPath) return `PID ${pid}`
+
+  const normalized = processPath.replace(/[\\/]+/g, path.sep)
+  const baseName = path.basename(normalized)
+  if (!baseName) return processPath
+
+  return baseName.replace(/\.app$/i, '').replace(/\.exe$/i, '')
 }
 
 function toNum(v: string | number | undefined | null): number {

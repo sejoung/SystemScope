@@ -1,6 +1,7 @@
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
+import { tmpdir } from 'os'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { getSettings, setSettings } from '../store/settingsStore'
 import { validatePartialSettings } from '../store/settingsSchema'
@@ -101,12 +102,20 @@ export function registerSettingsIpc(): void {
     }
 
     const resolved = path.resolve(targetPath)
+    const windowsSystemRoots = process.platform === 'win32'
+      ? [
+          tmpdir(),
+          process.env.SystemRoot ? path.join(process.env.SystemRoot, 'SoftwareDistribution') : undefined,
+          process.env.SystemDrive ? path.join(process.env.SystemDrive, '$Recycle.Bin') : undefined
+        ]
+      : []
     const allowedRoots = [
       app.getPath('home'),
       app.getPath('userData'),
       process.env.APPDATA,
       process.env.LOCALAPPDATA,
-      process.env.ProgramData
+      process.env.ProgramData,
+      ...windowsSystemRoots
     ]
 
     if (!isPathInsideAnyParent(resolved, allowedRoots)) {
