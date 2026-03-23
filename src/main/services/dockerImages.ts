@@ -14,7 +14,7 @@ import type {
   DockerVolumeSummary
 } from '@shared/types'
 import { logInfo, logWarn } from './logging'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 
 interface DockerImageRow {
   ID?: string
@@ -80,7 +80,7 @@ export async function listDockerImages(): Promise<DockerImagesScanResult> {
   return {
     status: 'ready',
     images,
-    message: images.length === 0 ? t('Docker 이미지가 없습니다.') : null
+    message: images.length === 0 ? tk('main.docker.images.empty') : null
   }
 }
 
@@ -98,7 +98,7 @@ export async function removeDockerImages(imageIds: string[]): Promise<DockerRemo
   for (const imageId of imageIds) {
     if (!validateDockerId(imageId)) {
       logWarn('docker-images', 'Skipping invalid Docker image ID', { imageId })
-      errors.push(t('이미지 {id}: 유효하지 않은 ID입니다.', { id: imageId }))
+      errors.push(tk('main.docker.images.invalid_id', { id: imageId }))
       continue
     }
     try {
@@ -106,7 +106,7 @@ export async function removeDockerImages(imageIds: string[]): Promise<DockerRemo
       deletedIds.push(imageId)
     } catch (error) {
       logWarn('docker-images', 'Failed to remove Docker image', { imageId, error })
-      errors.push(normalizeDockerError(error, t('이미지 {id} 삭제에 실패했습니다.', { id: imageId })))
+      errors.push(normalizeDockerError(error, tk('main.docker.images.delete_failed', { id: imageId })))
     }
   }
 
@@ -153,7 +153,7 @@ export async function listDockerContainers(): Promise<DockerContainersScanResult
   return {
     status: 'ready',
     containers,
-    message: containers.length === 0 ? t('정리할 Docker 컨테이너가 없습니다.') : null
+    message: containers.length === 0 ? tk('main.docker.containers.empty') : null
   }
 }
 
@@ -164,7 +164,7 @@ export async function removeDockerContainers(containerIds: string[]): Promise<Do
   for (const containerId of containerIds) {
     if (!validateDockerId(containerId)) {
       logWarn('docker-containers', 'Skipping invalid Docker container ID', { containerId })
-      errors.push(t('컨테이너 {id}: 유효하지 않은 ID입니다.', { id: containerId }))
+      errors.push(tk('main.docker.containers.invalid_id', { id: containerId }))
       continue
     }
     try {
@@ -172,7 +172,7 @@ export async function removeDockerContainers(containerIds: string[]): Promise<Do
       deletedIds.push(containerId)
     } catch (error) {
       logWarn('docker-containers', 'Failed to remove Docker container', { containerId, error })
-      errors.push(normalizeDockerError(error, t('컨테이너 {id} 삭제에 실패했습니다.', { id: containerId })))
+      errors.push(normalizeDockerError(error, tk('main.docker.containers.delete_failed', { id: containerId })))
     }
   }
 
@@ -197,7 +197,7 @@ export async function stopDockerContainers(containerIds: string[]): Promise<Dock
   for (const containerId of containerIds) {
     if (!validateDockerId(containerId)) {
       logWarn('docker-containers', 'Skipping invalid Docker container ID', { containerId })
-      errors.push(t('컨테이너 {id}: 유효하지 않은 ID입니다.', { id: containerId }))
+      errors.push(tk('main.docker.containers.invalid_id', { id: containerId }))
       continue
     }
     try {
@@ -205,7 +205,7 @@ export async function stopDockerContainers(containerIds: string[]): Promise<Dock
       affectedIds.push(containerId)
     } catch (error) {
       logWarn('docker-containers', 'Failed to stop Docker container', { containerId, error })
-      errors.push(normalizeDockerError(error, t('컨테이너 {id} 중지에 실패했습니다.', { id: containerId })))
+      errors.push(normalizeDockerError(error, tk('main.docker.containers.stop_failed', { id: containerId })))
     }
   }
 
@@ -262,7 +262,7 @@ export async function listDockerVolumes(): Promise<DockerVolumesScanResult> {
   return {
     status: 'ready',
     volumes,
-    message: volumes.length === 0 ? t('Docker 볼륨이 없습니다.') : null
+    message: volumes.length === 0 ? tk('main.docker.volumes.empty') : null
   }
 }
 
@@ -273,7 +273,7 @@ export async function removeDockerVolumes(volumeNames: string[]): Promise<Docker
   for (const volumeName of volumeNames) {
     if (!validateDockerId(volumeName)) {
       logWarn('docker-volumes', 'Skipping invalid Docker volume name', { volumeName })
-      errors.push(t('볼륨 {name}: 유효하지 않은 이름입니다.', { name: volumeName }))
+      errors.push(tk('main.docker.volumes.invalid_name', { name: volumeName }))
       continue
     }
     try {
@@ -281,7 +281,7 @@ export async function removeDockerVolumes(volumeNames: string[]): Promise<Docker
       deletedIds.push(volumeName)
     } catch (error) {
       logWarn('docker-volumes', 'Failed to remove Docker volume', { volumeName, error })
-      errors.push(normalizeDockerError(error, t('볼륨 {name} 삭제에 실패했습니다.', { name: volumeName })))
+      errors.push(normalizeDockerError(error, tk('main.docker.volumes.delete_failed', { name: volumeName })))
     }
   }
 
@@ -322,7 +322,7 @@ export async function getDockerBuildCache(): Promise<DockerBuildCacheScanResult>
   return {
     status: 'ready',
     summary,
-    message: summary.totalCount === 0 ? t('정리할 Docker build cache가 없습니다.') : null
+    message: summary.totalCount === 0 ? tk('main.docker.build_cache.empty') : null
   }
 }
 
@@ -511,10 +511,10 @@ function detectDockerStatus(error: unknown): 'not_installed' | 'daemon_unavailab
 
 function getDockerStatusMessage(status: 'not_installed' | 'daemon_unavailable'): string {
   if (status === 'not_installed') {
-    return t('Docker가 설치되어 있지 않습니다. Docker Desktop 또는 Docker Engine을 설치한 뒤 다시 시도하세요.')
+    return tk('main.docker.status.not_installed')
   }
 
-  return t('Docker는 설치되어 있지만 현재 실행 중이 아닙니다. Docker Desktop 또는 Docker Engine을 시작한 뒤 다시 시도하세요.')
+  return tk('main.docker.status.daemon_unavailable')
 }
 
 function normalizeDockerError(error: unknown, fallback: string): string {

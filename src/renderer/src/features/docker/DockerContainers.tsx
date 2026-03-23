@@ -15,11 +15,11 @@ export function DockerContainers({
   onOpenImages?: () => void
 }) {
   const showToast = useToast((s) => s.show)
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
   const [containers, setContainers] = useState<DockerContainerSummary[]>([])
   const [status, setStatus] = useState<DockerContainersScanResult['status']>('ready')
-  const [message, setMessage] = useState<string | null>(t('Docker 컨테이너를 조회해보세요.'))
+  const [message, setMessage] = useState<string | null>(tk('docker.containers.initial'))
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const removableContainers = useMemo(() => containers.filter((container) => !container.running), [containers])
@@ -36,7 +36,7 @@ export function DockerContainers({
     if (!res.ok || !res.data) {
       setStatus('daemon_unavailable')
       setContainers([])
-      setMessage(res.error?.message ?? t('Docker 컨테이너를 조회하지 못했습니다.'))
+      setMessage(res.error?.message ?? tk('docker.containers.load_failed'))
       setLoading(false)
       return
     }
@@ -56,7 +56,7 @@ export function DockerContainers({
   const handleDelete = async (ids: string[]) => {
     const res = await window.systemScope.removeDockerContainers(ids)
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? t('Docker 컨테이너를 삭제하지 못했습니다.'))
+      showToast(res.error?.message ?? tk('docker.containers.delete_failed'))
       return
     }
 
@@ -64,7 +64,7 @@ export function DockerContainers({
     if (result.cancelled) return
 
     if (result.deletedIds.length > 0) {
-      showToast(t('{count}개 Docker 컨테이너를 삭제했습니다.', { count: result.deletedIds.length }))
+      showToast(tk('docker.containers.deleted', { count: result.deletedIds.length }))
       setContainers((prev) => prev.filter((container) => !result.deletedIds.includes(container.id)))
       setSelectedIds((prev) => {
         const next = new Set(prev)
@@ -74,14 +74,14 @@ export function DockerContainers({
       onChanged?.()
     }
     if (result.failCount > 0 && result.errors.length > 0) {
-      showToast(t('일부 실패: {message}', { message: result.errors[0] }))
+      showToast(tk('docker.containers.partial', { message: result.errors[0] }))
     }
   }
 
   const handleStop = async (ids: string[]) => {
     const res = await window.systemScope.stopDockerContainers(ids)
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? t('Docker 컨테이너를 중지하지 못했습니다.'))
+      showToast(res.error?.message ?? tk('docker.containers.stop_failed'))
       return
     }
 
@@ -89,7 +89,7 @@ export function DockerContainers({
     if (result.cancelled) return
 
     if (result.affectedIds.length > 0) {
-      showToast(t('{count}개 Docker 컨테이너를 중지했습니다.', { count: result.affectedIds.length }))
+      showToast(tk('docker.containers.stopped', { count: result.affectedIds.length }))
       setContainers((prev) =>
         prev.map((container) =>
           result.affectedIds.includes(container.id)
@@ -100,51 +100,51 @@ export function DockerContainers({
       onChanged?.()
     }
     if (result.failCount > 0 && result.errors.length > 0) {
-      showToast(t('일부 실패: {message}', { message: result.errors[0] }))
+      showToast(tk('docker.containers.partial', { message: result.errors[0] }))
     }
   }
 
   return (
     <Accordion
-      title={t('Containers')}
+      title={tk('docker.containers.title')}
       defaultOpen
-      badge={status === 'ready' && containers.length > 0 ? t('{count} containers', { count: containers.length }) : undefined}
+      badge={status === 'ready' && containers.length > 0 ? tk('docker.containers.badge', { count: containers.length }) : undefined}
       badgeColor="var(--accent-cyan)"
       actions={
         <>
           <button onClick={() => void scanContainers()} disabled={loading} style={actionBtnStyle}>
-            {loading ? t('Refreshing...') : t('Refresh')}
+            {loading ? 'Refreshing...' : tk('apps.action.refresh')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedIds))}
             disabled={loading || selectedRemovableCount === 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            {t('Remove Selected')}
+            {tk('docker.containers.remove_selected')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? t('Docker가 설치되어 있지 않습니다.') : t('Docker daemon에 연결할 수 없습니다.')}
-          detail={message ?? t('Docker Desktop 또는 Docker Engine 상태를 확인하세요.')}
+          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'}
+          detail={message ?? 'Check Docker Desktop or Docker Engine status.'}
         />
       ) : containers.length === 0 ? (
         <EmptyState
-          title={message ?? t('정리할 Docker 컨테이너가 없습니다.')}
-          detail={t('종료된 컨테이너가 있으면 여기서 먼저 정리한 뒤 Images 탭으로 이동하세요.')}
+          title={message ?? tk('docker.containers.empty_title')}
+          detail={tk('docker.containers.empty_detail')}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {t('종료된 컨테이너를 먼저 정리하면 Images 탭에서 참조 중으로 막힌 이미지 삭제가 가능해집니다.')}
+            {tk('docker.containers.helper')}
             {runningContainers.length > 0 && (
               <button
                 onClick={() => void handleStop(runningContainers.map((container) => container.id))}
                 style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
               >
-                {t('running {count}개 중지', { count: runningContainers.length })}
+                {tk('docker.containers.stop_running', { count: runningContainers.length })}
               </button>
             )}
             {onOpenImages && (
@@ -152,7 +152,7 @@ export function DockerContainers({
                 onClick={onOpenImages}
                 style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
               >
-                {t('Images 보기')}
+                {tk('docker.containers.open_images')}
               </button>
             )}
           </div>
@@ -174,12 +174,12 @@ export function DockerContainers({
                       }}
                     />
                   </th>
-                  <th style={thStyle}>{t('Container')}</th>
-                  <th style={thStyle}>{t('Image')}</th>
-                  <th style={thStyle}>{t('Status')}</th>
-                  <th style={thStyle}>{t('Ports')}</th>
-                  <th style={{ ...thStyle, textAlign: 'right' }}>{t('Writable')}</th>
-                  <th style={{ ...thStyle, width: '160px', textAlign: 'center' }}>{t('Action')}</th>
+                  <th style={thStyle}>{tk('docker.containers.table.container')}</th>
+                  <th style={thStyle}>{tk('docker.containers.table.image')}</th>
+                  <th style={thStyle}>{tk('docker.containers.table.status')}</th>
+                  <th style={thStyle}>{tk('docker.containers.table.ports')}</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}>{tk('docker.containers.table.writable')}</th>
+                  <th style={{ ...thStyle, width: '160px', textAlign: 'center' }}>{tk('process.port_finder.action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,7 +214,7 @@ export function DockerContainers({
                     </td>
                     <td style={tdStyle}>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        <Badge text={container.running ? t('running') : t('stopped')} color={container.running ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
+                        <Badge text={container.running ? tk('docker.containers.running') : tk('docker.containers.stopped_label')} color={container.running ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{container.status}</div>
                     </td>

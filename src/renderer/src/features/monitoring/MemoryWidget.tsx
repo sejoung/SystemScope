@@ -6,12 +6,12 @@ import { useI18n } from '../../i18n/useI18n'
 
 export function MemoryWidget() {
   const memory = useSystemStore((s) => s.current?.memory)
-  const { t } = useI18n()
+  const { tk } = useI18n()
 
   if (!memory) {
     return (
-      <Accordion title={t('Memory')} defaultOpen>
-        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{t('데이터 로딩 중...')}</div>
+      <Accordion title={tk('monitoring.memory.title')} defaultOpen>
+        <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{tk('monitoring.loading')}</div>
       </Accordion>
     )
   }
@@ -19,15 +19,15 @@ export function MemoryWidget() {
   const color = memory.usage > 90 ? 'var(--accent-red)' : memory.usage > 70 ? 'var(--accent-yellow)' : 'var(--accent-green)'
 
   return (
-    <Accordion title={t('Memory')} defaultOpen>
-      <GaugeChart value={memory.usage} label={t('Pressure')} color={color} subtitle={t('실제 메모리 압박도')} />
+    <Accordion title={tk('monitoring.memory.title')} defaultOpen>
+      <GaugeChart value={memory.usage} label={tk('monitoring.memory.pressure')} color={color} subtitle={tk('monitoring.memory.real_pressure')} />
       <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <InfoRow label={t('Active')} value={formatBytes(memory.active)} color="var(--accent-blue)" />
-        <InfoRow label={t('Cached')} value={formatBytes(memory.cached)} color="var(--text-muted)" />
-        <InfoRow label={t('Available')} value={formatBytes(memory.available)} color="var(--accent-green)" />
-        <InfoRow label={t('Total')} value={formatBytes(memory.total)} />
+        <InfoRow label={tk('monitoring.memory.active')} value={formatBytes(memory.active)} color="var(--accent-blue)" />
+        <InfoRow label={tk('monitoring.memory.cached')} value={formatBytes(memory.cached)} color="var(--text-muted)" />
+        <InfoRow label={tk('monitoring.memory.available')} value={formatBytes(memory.available)} color="var(--accent-green)" />
+        <InfoRow label={tk('monitoring.memory.total')} value={formatBytes(memory.total)} />
         {memory.swapTotal > 0 && (
-          <InfoRow label={t('Swap')} value={`${formatBytes(memory.swapUsed)} / ${formatBytes(memory.swapTotal)}`} />
+          <InfoRow label={tk('monitoring.memory.swap')} value={`${formatBytes(memory.swapUsed)} / ${formatBytes(memory.swapTotal)}`} />
         )}
       </div>
     </Accordion>

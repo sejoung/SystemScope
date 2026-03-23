@@ -12,11 +12,11 @@ export function DockerBuildCache({
   onChanged?: () => void
 }) {
   const showToast = useToast((s) => s.show)
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<DockerBuildCacheScanResult['status']>('ready')
   const [summary, setSummary] = useState<DockerBuildCacheScanResult['summary']>(null)
-  const [message, setMessage] = useState<string | null>(t('Docker build cache를 조회해보세요.'))
+  const [message, setMessage] = useState<string | null>(tk('docker.build_cache.initial'))
 
   const scanBuildCache = async () => {
     setLoading(true)
@@ -24,7 +24,7 @@ export function DockerBuildCache({
     if (!res.ok || !res.data) {
       setStatus('daemon_unavailable')
       setSummary(null)
-      setMessage(res.error?.message ?? t('Docker build cache를 조회하지 못했습니다.'))
+      setMessage(res.error?.message ?? tk('docker.build_cache.load_failed'))
       setLoading(false)
       return
     }
@@ -43,51 +43,51 @@ export function DockerBuildCache({
   const handlePrune = async () => {
     const res = await window.systemScope.pruneDockerBuildCache()
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? t('Docker build cache를 정리하지 못했습니다.'))
+      showToast(res.error?.message ?? tk('docker.build_cache.prune_failed'))
       return
     }
 
     const result = res.data as DockerPruneResult
     if (result.cancelled) return
-    showToast(t('Docker build cache 정리 완료: {label}', { label: result.reclaimedLabel }))
+    showToast(tk('docker.build_cache.pruned', { label: result.reclaimedLabel }))
     onChanged?.()
     await scanBuildCache()
   }
 
   return (
     <Accordion
-      title={t('Build Cache')}
+      title={tk('docker.build_cache.title')}
       defaultOpen
       badge={status === 'ready' && summary ? summary.reclaimableLabel : undefined}
       badgeColor="var(--accent-cyan)"
       actions={
         <>
           <button onClick={() => void scanBuildCache()} disabled={loading} style={actionBtnStyle}>
-            {loading ? t('Refreshing...') : t('Refresh')}
+            {loading ? 'Refreshing...' : tk('apps.action.refresh')}
           </button>
           <button
             onClick={() => void handlePrune()}
             disabled={loading || !summary || summary.reclaimableBytes <= 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            {t('Prune Cache')}
+            {tk('docker.build_cache.prune')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? t('Docker가 설치되어 있지 않습니다.') : t('Docker daemon에 연결할 수 없습니다.')}
-          detail={message ?? t('Docker Desktop 또는 Docker Engine 상태를 확인하세요.')}
+          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'}
+          detail={message ?? 'Check Docker Desktop or Docker Engine status.'}
         />
       ) : !summary ? (
-        <EmptyState title={message ?? t('Docker build cache 정보가 없습니다.')} detail={t('Refresh로 다시 시도하세요.')} />
+        <EmptyState title={message ?? tk('docker.build_cache.empty_info')} detail={'Try again with Refresh.'} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-          <MetricCard label={t('Cache Entries')} value={String(summary.totalCount)} />
-          <MetricCard label={t('Active')} value={String(summary.activeCount)} />
-          <MetricCard label={t('Total Size')} value={summary.sizeLabel} />
-          <MetricCard label={t('Reclaimable')} value={summary.reclaimableLabel} accent />
+          <MetricCard label={tk('docker.build_cache.entries')} value={String(summary.totalCount)} />
+          <MetricCard label={tk('docker.build_cache.active')} value={String(summary.activeCount)} />
+          <MetricCard label={tk('docker.build_cache.total_size')} value={summary.sizeLabel} />
+          <MetricCard label={tk('docker.build_cache.reclaimable')} value={summary.reclaimableLabel} accent />
         </div>
       )}
     </Accordion>

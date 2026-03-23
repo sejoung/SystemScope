@@ -5,7 +5,7 @@ import { getSystemStats } from '../services/systemMonitor'
 import { checkAlerts } from '../services/alertManager'
 import { success, failure } from '@shared/types'
 import { logError } from '../services/logging'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 import {
   addSystemSubscriber,
   removeSystemSubscriber,
@@ -25,7 +25,7 @@ export function registerSystemIpc(): void {
       return success(stats)
     } catch (err) {
       logError('system-ipc', 'Failed to load system information', err)
-      return failure('UNKNOWN_ERROR', t('시스템 정보를 가져올 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('main.system.error.fetch'))
     }
   })
 

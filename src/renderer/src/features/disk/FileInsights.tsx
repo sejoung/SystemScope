@@ -31,7 +31,7 @@ interface DeleteTarget {
 
 export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true, onFilesRemoved, onRefreshRequested }: FileInsightsProps) {
   const showToast = useToast((s) => s.show)
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const [tab, setTab] = useState<Tab>(defaultTab)
   const [oldFiles, setOldFiles] = useState<LargeFile[]>([])
   const [oldFilesLoading, setOldFilesLoading] = useState(false)
@@ -52,7 +52,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       setOldFiles(res.data as LargeFile[])
     } else {
       setOldFiles([])
-      setOldFilesError(res.error?.message ?? t('오래된 파일 탐색에 실패했습니다.'))
+      setOldFilesError(res.error?.message ?? tk('disk.file_insights.old_scan_failed'))
     }
     setOldFilesLoading(false)
     setOldFilesScanned(true)
@@ -66,7 +66,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       setDuplicates(res.data as DuplicateGroup[])
     } else {
       setDuplicates([])
-      setDupError(res.error?.message ?? t('중복 파일 탐색에 실패했습니다.'))
+      setDupError(res.error?.message ?? tk('disk.file_insights.dup_scan_failed'))
     }
     setDupLoading(false)
     setDupScanned(true)
@@ -78,7 +78,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
 
   const handleTrash = async (targets: DeleteTarget[], description: string, onDone?: (trashedPaths: Set<string>) => void) => {
     if (targets.length === 0) {
-      showToast(t('삭제할 항목 정보를 찾지 못했습니다.'))
+      showToast(tk('disk.file_insights.delete_info_missing'))
       return
     }
 
@@ -89,7 +89,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
     if (res.ok && res.data) {
       const result = res.data as TrashResult
       if (result.successCount > 0) {
-        showToast(t('{count}개 항목 ({size})을 휴지통으로 이동했습니다', {
+        showToast(tk('disk.file_insights.trash_success', {
           count: result.successCount,
           size: formatBytes(result.totalSize)
         }))
@@ -100,15 +100,15 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
           onRefreshRequested?.()
         })
         if (result.failCount > 0 && result.errors.length > 0) {
-          showToast(t('일부 실패: {message}', { message: result.errors[0] }))
+          showToast(tk('disk.file_insights.partial', { message: result.errors[0] }))
         }
       } else if (result.successCount === 0 && result.failCount === 0) {
         // 사용자가 Cancel 클릭
       } else {
-        showToast(t('삭제 실패: {message}', { message: result.errors[0] ?? t('알 수 없는 오류') }))
+        showToast(tk('disk.file_insights.delete_failed', { message: result.errors[0] ?? tk('disk.file_insights.unknown_error') }))
       }
     } else {
-      showToast(res.error?.message ?? t('휴지통 이동에 실패했습니다.'))
+      showToast(res.error?.message ?? tk('disk.file_insights.trash_failed'))
     }
   }
 
@@ -128,10 +128,10 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
     >
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '14px', flexWrap: 'wrap' }}>
-        {!hiddenTabs.includes('types') && <TabBtn active={tab === 'types'} onClick={() => setTab('types')}>{t('File Types')}</TabBtn>}
-        {!hiddenTabs.includes('largest') && <TabBtn active={tab === 'largest'} onClick={() => setTab('largest')}>{t('Largest')}</TabBtn>}
-        {!hiddenTabs.includes('old') && <TabBtn active={tab === 'old'} onClick={() => setTab('old')}>{t('Old Files')}</TabBtn>}
-        {!hiddenTabs.includes('duplicates') && <TabBtn active={tab === 'duplicates'} onClick={() => setTab('duplicates')}>{t('Duplicates')}</TabBtn>}
+        {!hiddenTabs.includes('types') && <TabBtn active={tab === 'types'} onClick={() => setTab('types')}>{tk('disk.file_insights.tab.types')}</TabBtn>}
+        {!hiddenTabs.includes('largest') && <TabBtn active={tab === 'largest'} onClick={() => setTab('largest')}>{tk('disk.file_insights.tab.largest')}</TabBtn>}
+        {!hiddenTabs.includes('old') && <TabBtn active={tab === 'old'} onClick={() => setTab('old')}>{tk('disk.file_insights.tab.old')}</TabBtn>}
+        {!hiddenTabs.includes('duplicates') && <TabBtn active={tab === 'duplicates'} onClick={() => setTab('duplicates')}>{tk('disk.file_insights.tab.duplicates')}</TabBtn>}
       </div>
 
       {/* Tab content */}
@@ -140,7 +140,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
         <LargestTab
           files={largeFiles}
           showDelete={showDelete}
-          onTrash={(targets) => handleTrash(targets, t('대용량 파일 삭제'))}
+          onTrash={(targets) => handleTrash(targets, tk('disk.file_insights.delete_large'))}
         />
       )}
       {tab === 'old' && (
@@ -152,7 +152,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
           days={oldDays}
           onDaysChange={setOldDays}
           onScan={handleOldFileScan}
-          onTrash={(targets) => handleTrash(targets, t('오래된 파일 삭제'), (trashed) => {
+          onTrash={(targets) => handleTrash(targets, tk('disk.file_insights.delete_old'), (trashed) => {
             setOldFiles((prev) => prev.filter((f) => !trashed.has(f.path)))
           })}
         />
@@ -173,7 +173,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
           }}
           onScan={handleDupScan}
           totalWaste={totalWaste}
-          onTrash={(targets) => handleTrash(targets, t('중복 파일 삭제'), (trashed) => {
+          onTrash={(targets) => handleTrash(targets, tk('disk.file_insights.delete_duplicates'), (trashed) => {
             setDuplicates((prev) => prev.map((g) => ({
               ...g,
               files: g.files.filter((f) => !trashed.has(f.path)),
@@ -192,8 +192,8 @@ function TypesTab({ data }: { data: ExtensionGroup[] }) {
   const top10 = data.slice(0, 10)
   const maxSize = top10[0]?.totalSize ?? 0
 
-  const { t } = useI18n()
-  if (top10.length === 0) return <Empty>{t('데이터가 없습니다')}</Empty>
+  const { tk } = useI18n()
+  if (top10.length === 0) return <Empty>{tk('disk.file_insights.no_data')}</Empty>
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -206,7 +206,7 @@ function TypesTab({ data }: { data: ExtensionGroup[] }) {
                 {entry.extension || '(none)'}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {t('{count} files', { count: entry.count })}
+                {tk('disk.file_insights.files', { count: entry.count })}
               </span>
               <span style={{ marginLeft: 'auto', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 {formatBytes(entry.totalSize)}
@@ -232,16 +232,16 @@ function TypesTab({ data }: { data: ExtensionGroup[] }) {
 // ─── Largest Tab ───
 
 function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[]; showDelete?: boolean; onTrash: (targets: DeleteTarget[]) => void }) {
-  const { t } = useI18n()
-  if (files.length === 0) return <Empty>{t('대용량 파일이 없습니다')}</Empty>
+  const { tk } = useI18n()
+  if (files.length === 0) return <Empty>{tk('disk.file_insights.large_empty')}</Empty>
 
   return (
     <div style={{ maxHeight: '300px', overflow: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
-            <th style={thStyle}>{t('Name')}</th>
-            <th style={{ ...thStyle, textAlign: 'right' }}>{t('Size')}</th>
+            <th style={thStyle}>{tk('disk.file_insights.name')}</th>
+            <th style={{ ...thStyle, textAlign: 'right' }}>{tk('disk.file_insights.size')}</th>
             <th style={{ ...thStyle, width: '50px' }}></th>
           </tr>
         </thead>
@@ -256,9 +256,9 @@ function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[];
                 {formatBytes(f.size)}
               </td>
               <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>{t('Open')}</button>
+                <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>{tk('common.open')}</button>
                 {showDelete && f.deletionKey && (
-                  <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{t('Delete')}</button>
+                  <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{'Delete'}</button>
                 )}
               </td>
             </tr>
@@ -281,43 +281,43 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
   onScan: () => void
   onTrash: (targets: DeleteTarget[]) => void
 }) {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const totalSize = files.reduce((acc, f) => acc + f.size, 0)
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <select value={days} onChange={(e) => onDaysChange(Number(e.target.value))} style={selectStyle}>
-          <option value={90}>{t('90일')}</option>
-          <option value={180}>{t('180일')}</option>
-          <option value={365}>{t('1년')}</option>
-          <option value={730}>{t('2년')}</option>
+          <option value={90}>{tk('disk.file_insights.days_90')}</option>
+          <option value={180}>{tk('disk.file_insights.days_180')}</option>
+          <option value={365}>{tk('disk.file_insights.days_365')}</option>
+          <option value={730}>{tk('disk.file_insights.days_730')}</option>
         </select>
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('이상 미사용 / 1MB 이상')}</span>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tk('disk.file_insights.old_filter_hint')}</span>
         <button onClick={onScan} disabled={loading} style={actionBtnStyle}>
-          {loading ? t('Scanning...') : scanned ? t('Rescan') : t('Scan')}
+          {loading ? 'Scanning...' : scanned ? 'Rescan' : 'Scan'}
         </button>
         {scanned && totalSize > 0 && (
           <span style={{ fontSize: '12px', color: 'var(--accent-yellow)', fontWeight: 600, marginLeft: 'auto' }}>
-            {t('{count} files / {size}', { count: files.length, size: formatBytes(totalSize) })}
+            {tk('disk.file_insights.files_size', { count: files.length, size: formatBytes(totalSize) })}
           </span>
         )}
       </div>
 
       {!scanned ? (
-        <Empty>{t('오래된 파일을 찾으려면 Scan 버튼을 클릭하세요')}</Empty>
+        <Empty>{tk('disk.file_insights.old_empty_prompt')}</Empty>
       ) : error ? (
         <Empty>{error}</Empty>
       ) : files.length === 0 ? (
-        <Empty>{t('해당 기간 내 오래된 파일이 없습니다')}</Empty>
+        <Empty>{tk('disk.file_insights.old_empty')}</Empty>
       ) : (
         <div style={{ maxHeight: '300px', overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th style={thStyle}>{t('Name')}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>{t('Size')}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>{t('Last Modified')}</th>
+                <th style={thStyle}>{tk('disk.file_insights.name')}</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>{tk('disk.file_insights.size')}</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>{tk('disk.file_insights.last_modified')}</th>
                 <th style={{ ...thStyle, width: '50px' }}></th>
               </tr>
             </thead>
@@ -335,8 +335,8 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
                     {new Date(f.modified).toLocaleDateString()}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                    <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>{t('Open')}</button>
-                    {f.deletionKey && <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{t('Delete')}</button>}
+                    <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>{tk('common.open')}</button>
+                    {f.deletionKey && <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{'Delete'}</button>}
                   </td>
                 </tr>
               ))}
@@ -361,27 +361,27 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
   totalWaste: number
   onTrash: (targets: DeleteTarget[]) => void
 }) {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <button onClick={onScan} disabled={loading} style={{ ...actionBtnStyle, background: 'var(--accent-red)', color: 'var(--text-on-accent)' }}>
-          {loading ? t('Scanning...') : scanned ? t('Rescan') : t('Find Duplicates')}
+          {loading ? 'Scanning...' : scanned ? 'Rescan' : tk('disk.file_insights.find_duplicates')}
         </button>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('100KB 이상')}</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tk('disk.file_insights.dup_filter_hint')}</span>
         {scanned && groups.length > 0 && (
           <span style={{ fontSize: '12px', color: 'var(--accent-red)', fontWeight: 600, marginLeft: 'auto' }}>
-            {t('{count} groups / {size} wasted', { count: groups.length, size: formatBytes(totalWaste) })}
+            {tk('disk.file_insights.dup_summary', { count: groups.length, size: formatBytes(totalWaste) })}
           </span>
         )}
       </div>
 
       {!scanned ? (
-        <Empty>{t('중복 파일을 찾으려면 Find Duplicates 버튼을 클릭하세요')}</Empty>
+        <Empty>{tk('disk.file_insights.dup_empty_prompt')}</Empty>
       ) : error ? (
         <Empty>{error}</Empty>
       ) : groups.length === 0 ? (
-        <Empty>{t('중복 파일을 찾지 못했습니다')}</Empty>
+        <Empty>{tk('disk.file_insights.dup_empty')}</Empty>
       ) : (
         <div style={{ maxHeight: '350px', overflow: 'auto' }}>
           {groups.map((group) => {
@@ -403,7 +403,7 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
                     {group.files[0].name}
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', background: 'var(--alert-red-soft)', color: 'var(--accent-red)' }}>
-                    {t('{count} copies', { count: group.files.length })}
+                    {tk('disk.file_insights.copies', { count: group.files.length })}
                   </span>
                   <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--text-secondary)', width: '65px', textAlign: 'right' }}>
                     {formatBytes(group.size)}
@@ -418,15 +418,15 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
                       <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 10px', fontSize: '12px', borderLeft: '2px solid var(--border)' }}>
                         {fi === 0 && (
                           <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', background: 'var(--success-soft)', color: 'var(--accent-green)', fontWeight: 600, flexShrink: 0 }}>
-                            {t('KEEP')}
+                            {tk('disk.file_insights.keep')}
                           </span>
                         )}
                         <span style={{ color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {file.path}
                         </span>
-                        <button onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(file.path) }} style={openBtn}>{t('Open')}</button>
+                        <button onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(file.path) }} style={openBtn}>{tk('common.open')}</button>
                         {fi > 0 && file.deletionKey && (
-                          <button onClick={(e) => { e.stopPropagation(); onTrash([toDeleteTarget(file)!]) }} style={trashBtn}>{t('Delete')}</button>
+                          <button onClick={(e) => { e.stopPropagation(); onTrash([toDeleteTarget(file)!]) }} style={trashBtn}>{'Delete'}</button>
                         )}
                       </div>
                     ))}
@@ -439,7 +439,7 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
                           }}
                           style={{ ...trashBtn, padding: '4px 12px' }}
                         >
-                          {t('Delete all copies (keep first)')}
+                          {tk('disk.file_insights.delete_all_keep_first')}
                         </button>
                       </div>
                     )}

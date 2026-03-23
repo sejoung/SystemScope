@@ -4,32 +4,32 @@ import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
 import { logError, logInfo, logWarn } from '../services/logging'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 
 export function registerProcessIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_CPU, async (_event, limit: number = 10) => {
     if (typeof limit !== 'number' || limit < 1 || limit > 100) {
-      return failure('INVALID_INPUT', t('유효하지 않은 limit 값입니다.'))
+      return failure('INVALID_INPUT', tk('main.process.error.invalid_limit'))
     }
     try {
       const processes = await getTopCpuProcesses(limit)
       return success(processes)
     } catch (err) {
       logError('process-ipc', 'Failed to get CPU processes', err)
-      return failure('UNKNOWN_ERROR', t('프로세스 정보를 가져올 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY, async (_event, limit: number = 10) => {
     if (typeof limit !== 'number' || limit < 1 || limit > 100) {
-      return failure('INVALID_INPUT', t('유효하지 않은 limit 값입니다.'))
+      return failure('INVALID_INPUT', tk('main.process.error.invalid_limit'))
     }
     try {
       const processes = await getTopMemoryProcesses(limit)
       return success(processes)
     } catch (err) {
       logError('process-ipc', 'Failed to get memory processes', err)
-      return failure('UNKNOWN_ERROR', t('프로세스 정보를 가져올 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 
@@ -39,7 +39,7 @@ export function registerProcessIpc(): void {
       return success(processes)
     } catch (err) {
       logError('process-ipc', 'Failed to get all processes', err)
-      return failure('UNKNOWN_ERROR', t('프로세스 정보를 가져올 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 
@@ -49,25 +49,25 @@ export function registerProcessIpc(): void {
       return success(ports)
     } catch (err) {
       logError('process-ipc', 'Failed to get network ports', err)
-      return failure('UNKNOWN_ERROR', t('포트 정보를 가져올 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_ports'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.PROCESS_KILL, async (_event, request: ProcessKillRequest) => {
     if (!request || typeof request !== 'object' || !Number.isInteger(request.pid) || request.pid < 1) {
       logWarn('process-ipc', 'Process kill rejected due to invalid PID', { request })
-      return failure('INVALID_INPUT', t('유효하지 않은 PID입니다.'))
+      return failure('INVALID_INPUT', tk('main.process.error.invalid_pid'))
     }
 
     try {
       const target = await getProcessByPid(request.pid)
       if (!target) {
         logWarn('process-ipc', 'Process kill failed because target was not found', { pid: request.pid })
-        return failure('UNKNOWN_ERROR', t('프로세스를 찾을 수 없습니다.'))
+        return failure('UNKNOWN_ERROR', tk('main.process.error.not_found'))
       }
       if (isProtectedProcess(target)) {
         logWarn('process-ipc', 'Process kill blocked for protected target', { pid: target.pid, name: target.name })
-        return failure('PERMISSION_DENIED', t('앱 자신이나 보호된 프로세스는 종료할 수 없습니다.'))
+        return failure('PERMISSION_DENIED', tk('main.process.error.protected'))
       }
 
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
@@ -77,16 +77,16 @@ export function registerProcessIpc(): void {
         target.command ? `Command: ${target.command}` : null,
         request.reason ? `Reason: ${request.reason}` : null,
         '',
-        t('저장되지 않은 작업이 손실될 수 있습니다.')
+        tk('main.process.confirm.warning')
       ].filter(Boolean)
 
       const confirm = await dialog.showMessageBox(win ?? undefined, {
         type: 'warning',
-        buttons: [t('Cancel'), t('Kill')],
+        buttons: ['Cancel', 'Kill'],
         defaultId: 0,
         cancelId: 0,
-        title: t('Kill Process'),
-        message: t('"{name}" 프로세스를 종료하시겠습니까?', { name: target.name }),
+        title: tk('main.process.confirm.title'),
+        message: tk('main.process.confirm.message', { name: target.name }),
         detail: detailLines.join('\n')
       })
 
@@ -104,7 +104,7 @@ export function registerProcessIpc(): void {
       const confirmedTarget = await getProcessByPid(request.pid)
       if (!confirmedTarget || confirmedTarget.name !== target.name || confirmedTarget.command !== target.command) {
         logWarn('process-ipc', 'Process kill aborted because target changed before termination', { pid: request.pid })
-        return failure('UNKNOWN_ERROR', t('프로세스 상태가 변경되어 종료를 중단했습니다.'))
+        return failure('UNKNOWN_ERROR', tk('main.process.error.changed'))
       }
 
       process.kill(request.pid, 'SIGTERM')
@@ -119,7 +119,7 @@ export function registerProcessIpc(): void {
       return success(result)
     } catch (err) {
       logError('process-ipc', 'Failed to kill process', err)
-      return failure('UNKNOWN_ERROR', t('프로세스를 종료할 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.kill_failed'))
     }
   })
 }
