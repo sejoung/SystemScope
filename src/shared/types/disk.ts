@@ -26,6 +26,7 @@ export interface DiskScanResult {
   totalSize: number
   fileCount: number
   folderCount: number
+  inaccessibleCount: number
   scanDuration: number
 }
 

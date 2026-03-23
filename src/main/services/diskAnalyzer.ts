@@ -13,6 +13,7 @@ export async function scanFolder(
   const start = Date.now()
   let fileCount = 0
   let folderCount = 0
+  let inaccessibleCount = 0
   let lastProgressTime = 0
   const PROGRESS_THROTTLE_MS = 100
 
@@ -34,6 +35,7 @@ export async function scanFolder(
     try {
       entries = await fs.readdir(dirPath, { withFileTypes: true })
     } catch {
+      inaccessibleCount++
       return node
     }
 
@@ -53,7 +55,7 @@ export async function scanFolder(
               return getDirSize(fullPath)
             }
           } catch {
-            // 접근 불가 항목 건너뜀
+            inaccessibleCount++
           }
           return 0
         })
@@ -96,7 +98,7 @@ export async function scanFolder(
               } satisfies FolderNode
             }
           } catch {
-            // 접근 불가 항목 건너뜀
+            inaccessibleCount++
           }
           return null
         })
@@ -125,6 +127,7 @@ export async function scanFolder(
     totalSize: tree.size,
     fileCount,
     folderCount,
+    inaccessibleCount,
     scanDuration
   }
 }
