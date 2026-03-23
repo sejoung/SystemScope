@@ -70,15 +70,15 @@ export function registerAppsIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, async (_event, paths: string[]) => {
-    if (!Array.isArray(paths) || paths.some((entry) => typeof entry !== 'string' || !entry)) {
-      return failure('INVALID_INPUT', '유효하지 않은 경로 목록입니다.')
+  ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, async (_event, itemIds: string[]) => {
+    if (!Array.isArray(itemIds) || itemIds.length === 0 || itemIds.some((entry) => typeof entry !== 'string' || !entry.trim())) {
+      return failure('INVALID_INPUT', '유효하지 않은 항목 ID 목록입니다.')
     }
 
     try {
-      return success(await removeLeftoverAppData(paths))
+      return success(await removeLeftoverAppData(itemIds))
     } catch (error) {
-      logError('apps-ipc', 'Failed to remove leftover app data', { paths, error })
+      logError('apps-ipc', 'Failed to remove leftover app data', { itemIds, error })
       return failure('UNKNOWN_ERROR', '잔여 앱 데이터를 휴지통으로 이동하지 못했습니다.')
     }
   })
@@ -100,7 +100,8 @@ export function registerAppsIpc(): void {
 
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     const actionLabel = target.platform === 'mac' ? '휴지통으로 이동' : '제거 프로그램 실행'
-    const relatedDataCount = Array.isArray(request.relatedDataPaths) ? request.relatedDataPaths.length : 0
+    const relatedDataIds = Array.isArray(request.relatedDataIds) ? request.relatedDataIds.filter((id) => typeof id === 'string' && id.trim()) : []
+    const relatedDataCount = relatedDataIds.length
     const detailLines = [
       target.version ? `Version: ${target.version}` : null,
       target.publisher ? `Publisher: ${target.publisher}` : null,
@@ -138,7 +139,7 @@ export function registerAppsIpc(): void {
     try {
       const result = await uninstallInstalledApp({
         appId,
-        relatedDataPaths: Array.isArray(request.relatedDataPaths) ? request.relatedDataPaths : []
+        relatedDataIds
       })
       return success(result)
     } catch (error) {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useToast } from '../../components/Toast'
-import type { LargeFile, ExtensionGroup, DuplicateGroup, TrashResult } from '@shared/types'
+import type { DuplicateFileEntry, LargeFile, ExtensionGroup, DuplicateGroup, TrashResult } from '@shared/types'
 
 type Tab = 'types' | 'largest' | 'old' | 'duplicates'
 
@@ -21,6 +21,11 @@ interface FileInsightsProps {
   showDelete?: boolean
   onFilesRemoved?: (paths: string[]) => void
   onRefreshRequested?: () => void
+}
+
+interface DeleteTarget {
+  id: string
+  path: string
 }
 
 export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true, onFilesRemoved, onRefreshRequested }: FileInsightsProps) {
@@ -69,8 +74,16 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
   const totalWaste = duplicates.reduce((acc, r) => acc + r.totalWaste, 0)
   const oldTotalSize = oldFiles.reduce((acc, f) => acc + f.size, 0)
 
-  const handleTrash = async (paths: string[], description: string, onDone?: (trashedPaths: Set<string>) => void) => {
-    const res = await window.systemScope.trashItems(paths, description)
+  const handleTrash = async (targets: DeleteTarget[], description: string, onDone?: (trashedPaths: Set<string>) => void) => {
+    if (targets.length === 0) {
+      showToast('삭제할 항목 정보를 찾지 못했습니다.')
+      return
+    }
+
+    const res = await window.systemScope.trashDiskItems({
+      itemIds: targets.map((target) => target.id),
+      description
+    })
     if (res.ok && res.data) {
       const result = res.data as TrashResult
       if (result.successCount > 0) {
@@ -122,7 +135,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
         <LargestTab
           files={largeFiles}
           showDelete={showDelete}
-          onTrash={(paths) => handleTrash(paths, '대용량 파일 삭제')}
+          onTrash={(targets) => handleTrash(targets, '대용량 파일 삭제')}
         />
       )}
       {tab === 'old' && (
@@ -134,7 +147,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
           days={oldDays}
           onDaysChange={setOldDays}
           onScan={handleOldFileScan}
-          onTrash={(paths) => handleTrash(paths, '오래된 파일 삭제', (trashed) => {
+          onTrash={(targets) => handleTrash(targets, '오래된 파일 삭제', (trashed) => {
             setOldFiles((prev) => prev.filter((f) => !trashed.has(f.path)))
           })}
         />
@@ -155,7 +168,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
           }}
           onScan={handleDupScan}
           totalWaste={totalWaste}
-          onTrash={(paths) => handleTrash(paths, '중복 파일 삭제', (trashed) => {
+          onTrash={(targets) => handleTrash(targets, '중복 파일 삭제', (trashed) => {
             setDuplicates((prev) => prev.map((g) => ({
               ...g,
               files: g.files.filter((f) => !trashed.has(f.path)),
@@ -212,7 +225,7 @@ function TypesTab({ data }: { data: ExtensionGroup[] }) {
 
 // ─── Largest Tab ───
 
-function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[]; showDelete?: boolean; onTrash: (paths: string[]) => void }) {
+function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[]; showDelete?: boolean; onTrash: (targets: DeleteTarget[]) => void }) {
   if (files.length === 0) return <Empty>대용량 파일이 없습니다</Empty>
 
   return (
@@ -237,7 +250,9 @@ function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[];
               </td>
               <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>Open</button>
-                {showDelete && <button onClick={() => onTrash([f.path])} style={trashBtn}>Delete</button>}
+                {showDelete && f.deletionKey && (
+                  <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>Delete</button>
+                )}
               </td>
             </tr>
           ))}
@@ -257,7 +272,7 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
   days: number
   onDaysChange: (d: number) => void
   onScan: () => void
-  onTrash: (paths: string[]) => void
+  onTrash: (targets: DeleteTarget[]) => void
 }) {
   const totalSize = files.reduce((acc, f) => acc + f.size, 0)
 
@@ -313,7 +328,7 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                     <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>Open</button>
-                    <button onClick={() => onTrash([f.path])} style={trashBtn}>Delete</button>
+                    {f.deletionKey && <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>Delete</button>}
                   </td>
                 </tr>
               ))}
@@ -336,7 +351,7 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
   onToggle: (hash: string) => void
   onScan: () => void
   totalWaste: number
-  onTrash: (paths: string[]) => void
+  onTrash: (targets: DeleteTarget[]) => void
 }) {
   return (
     <div>
@@ -401,15 +416,18 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
                           {file.path}
                         </span>
                         <button onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(file.path) }} style={openBtn}>Open</button>
-                        {fi > 0 && (
-                          <button onClick={(e) => { e.stopPropagation(); onTrash([file.path]) }} style={trashBtn}>Delete</button>
+                        {fi > 0 && file.deletionKey && (
+                          <button onClick={(e) => { e.stopPropagation(); onTrash([toDeleteTarget(file)!]) }} style={trashBtn}>Delete</button>
                         )}
                       </div>
                     ))}
                     {group.files.length > 2 && (
                       <div style={{ padding: '6px 10px' }}>
                         <button
-                          onClick={(e) => { e.stopPropagation(); onTrash(group.files.slice(1).map((f) => f.path)) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onTrash(group.files.slice(1).map(toDeleteTarget).filter((target): target is DeleteTarget => target !== null))
+                          }}
                           style={{ ...trashBtn, padding: '4px 12px' }}
                         >
                           Delete all copies (keep first)
@@ -425,6 +443,10 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
       )}
     </div>
   )
+}
+
+function toDeleteTarget(file: LargeFile | DuplicateFileEntry): DeleteTarget | null {
+  return file.deletionKey ? { id: file.deletionKey, path: file.path } : null
 }
 
 // ─── Shared ───

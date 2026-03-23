@@ -19,6 +19,7 @@ export const IPC_CHANNELS = {
   DISK_FIND_DUPLICATES: 'disk:findDuplicates',
   DISK_GROWTH_VIEW: 'disk:growthView',
   DISK_FIND_OLD_FILES: 'disk:findOldFiles',
+  DISK_TRASH_ITEMS: 'disk:trashItems',
   DISK_LIST_DOCKER_IMAGES: 'disk:listDockerImages',
   DISK_REMOVE_DOCKER_IMAGES: 'disk:removeDockerImages',
   DISK_LIST_DOCKER_CONTAINERS: 'disk:listDockerContainers',
@@ -67,7 +68,6 @@ export const IPC_CHANNELS = {
   // Shell (Finder / Explorer)
   SHELL_SHOW_IN_FOLDER: 'shell:showInFolder',
   SHELL_OPEN_PATH: 'shell:openPath',
-  SHELL_TRASH_ITEMS: 'shell:trashItems',
 
   // Real-time events (main → renderer)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',

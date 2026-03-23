@@ -13,6 +13,9 @@ const getDockerBuildCache = vi.hoisted(() => vi.fn())
 const pruneDockerBuildCache = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
+const trashItemsWithConfirm = vi.hoisted(() => vi.fn())
+const scanFolder = vi.hoisted(() => vi.fn())
+const findLargeFiles = vi.hoisted(() => vi.fn())
 
 const mockWindow = vi.hoisted(() => ({
   isDestroyed: vi.fn(() => false),
@@ -36,6 +39,12 @@ vi.mock('electron', () => ({
   }
 }))
 
+vi.mock('fs/promises', () => ({
+  default: {},
+  access: vi.fn(() => Promise.resolve()),
+  constants: { R_OK: 4 }
+}))
+
 vi.mock('electron-log', () => ({
   default: {
     error: logError,
@@ -57,8 +66,8 @@ vi.mock('../../src/main/services/dockerImages', () => ({
 }))
 
 vi.mock('../../src/main/services/diskAnalyzer', () => ({
-  scanFolder: vi.fn(),
-  findLargeFiles: vi.fn(),
+  scanFolder,
+  findLargeFiles,
   getExtensionBreakdown: vi.fn()
 }))
 vi.mock('../../src/main/services/quickScan', () => ({ runQuickScan: vi.fn() }))
@@ -72,6 +81,9 @@ vi.mock('../../src/main/jobs/jobManager', () => ({
   sendJobProgress: vi.fn(),
   sendJobCompleted: vi.fn(),
   sendJobFailed: vi.fn()
+}))
+vi.mock('../../src/main/services/trashService', () => ({
+  trashItemsWithConfirm
 }))
 
 describe('docker disk IPC', () => {
@@ -89,6 +101,9 @@ describe('docker disk IPC', () => {
     pruneDockerBuildCache.mockReset()
     showMessageBox.mockReset()
     logError.mockReset()
+    trashItemsWithConfirm.mockReset()
+    scanFolder.mockReset()
+    findLargeFiles.mockReset()
   })
 
   it('should return docker images scan result', async () => {
@@ -103,6 +118,54 @@ describe('docker disk IPC', () => {
     const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
     expect(result.ok).toBe(true)
     expect(result.data).toEqual({ status: 'ready', images: [], message: 'Docker 이미지가 없습니다.' })
+  })
+
+  it('should return deletion keys for large files and only trash registered items', async () => {
+    const scanResult = {
+      rootPath: '/Users/test/Downloads',
+      tree: { name: 'Downloads', path: '/Users/test/Downloads', size: 10, children: [], isFile: false },
+      totalSize: 10,
+      fileCount: 1,
+      folderCount: 1,
+      scanDuration: 1
+    }
+    scanFolder.mockResolvedValue(scanResult)
+    findLargeFiles.mockReturnValue([
+      { name: 'large.zip', path: '/Users/test/Downloads/large.zip', size: 10, modified: 1 }
+    ])
+    trashItemsWithConfirm.mockResolvedValue({
+      successCount: 1,
+      failCount: 0,
+      totalSize: 10,
+      trashedPaths: ['/Users/test/Downloads/large.zip'],
+      errors: []
+    })
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const listHandler = handlers.get(IPC_CHANNELS.DISK_GET_LARGE_FILES)
+    const trashHandler = handlers.get(IPC_CHANNELS.DISK_TRASH_ITEMS)
+    expect(listHandler).toBeTypeOf('function')
+    expect(trashHandler).toBeTypeOf('function')
+
+    const listResult = await listHandler?.({}, '/Users/test/Downloads', 10) as { ok: boolean; data?: Array<{ deletionKey?: string }> }
+    expect(listResult.ok).toBe(true)
+    expect(listResult.data?.[0]?.deletionKey).toBeTypeOf('string')
+
+    const invalidTrash = await trashHandler?.({}, { itemIds: ['forged-id'], description: '대용량 파일 삭제' }) as { ok: boolean; error?: { code: string } }
+    expect(invalidTrash.ok).toBe(false)
+    expect(invalidTrash.error?.code).toBe('INVALID_INPUT')
+
+    const deletionKey = listResult.data?.[0]?.deletionKey
+    expect(deletionKey).toBeTypeOf('string')
+
+    const validTrash = await trashHandler?.({}, {
+      itemIds: [deletionKey as string],
+      description: '대용량 파일 삭제'
+    }) as { ok: boolean; data?: unknown }
+    expect(validTrash.ok).toBe(true)
+    expect(trashItemsWithConfirm).toHaveBeenCalledWith(['/Users/test/Downloads/large.zip'], '대용량 파일 삭제')
   })
 
   it('should refuse deleting in-use images', async () => {

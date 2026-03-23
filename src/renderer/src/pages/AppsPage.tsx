@@ -24,8 +24,8 @@ export function AppsPage() {
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null)
   const [relatedLoadingAppId, setRelatedLoadingAppId] = useState<string | null>(null)
   const [relatedDataByAppId, setRelatedDataByAppId] = useState<Record<string, AppRelatedDataItem[]>>({})
-  const [selectedRelatedPathsByAppId, setSelectedRelatedPathsByAppId] = useState<Record<string, string[]>>({})
-  const [selectedLeftoverPaths, setSelectedLeftoverPaths] = useState<string[]>([])
+  const [selectedRelatedIdsByAppId, setSelectedRelatedIdsByAppId] = useState<Record<string, string[]>>({})
+  const [selectedLeftoverIds, setSelectedLeftoverIds] = useState<string[]>([])
   const isWindows = navigator.userAgent.includes('Windows')
 
   const loadApps = async () => {
@@ -42,7 +42,7 @@ export function AppsPage() {
     if (res.ok && res.data) {
       const items = res.data as AppLeftoverDataItem[]
       setLeftoverItems(items)
-      setSelectedLeftoverPaths((current) => current.filter((item) => items.some((entry) => entry.path === item)))
+      setSelectedLeftoverIds((current) => current.filter((itemId) => items.some((entry) => entry.id === itemId)))
     } else {
       showToast(res.error?.message ?? '잔여 앱 데이터를 불러오지 못했습니다.')
     }
@@ -86,8 +86,8 @@ export function AppsPage() {
     })
   }, [leftoverAppliedSearch, leftoverConfidenceFilter, leftoverItems, leftoverPlatformFilter])
   const selectedFilteredLeftoverCount = useMemo(
-    () => filteredLeftovers.filter((item) => selectedLeftoverPaths.includes(item.path)).length,
-    [filteredLeftovers, selectedLeftoverPaths]
+    () => filteredLeftovers.filter((item) => selectedLeftoverIds.includes(item.id)).length,
+    [filteredLeftovers, selectedLeftoverIds]
   )
   const allFilteredLeftoversChecked = filteredLeftovers.length > 0 && selectedFilteredLeftoverCount === filteredLeftovers.length
 
@@ -121,7 +121,7 @@ export function AppsPage() {
     setBusyAppId(app.id)
     const res = await window.systemScope.uninstallApp({
       appId: app.id,
-      relatedDataPaths: selectedRelatedPathsByAppId[app.id] ?? []
+      relatedDataIds: selectedRelatedIdsByAppId[app.id] ?? []
     })
     setBusyAppId(null)
 
@@ -138,18 +138,18 @@ export function AppsPage() {
     await loadLeftovers()
   }
 
-  const handleToggleLeftoverPath = (targetPath: string) => {
-    setSelectedLeftoverPaths((current) => current.includes(targetPath)
-      ? current.filter((item) => item !== targetPath)
-      : [...current, targetPath]
+  const handleToggleLeftoverId = (itemId: string) => {
+    setSelectedLeftoverIds((current) => current.includes(itemId)
+      ? current.filter((entry) => entry !== itemId)
+      : [...current, itemId]
     )
   }
 
   const handleRemoveSelectedLeftovers = async () => {
-    if (selectedLeftoverPaths.length === 0) return
+    if (selectedLeftoverIds.length === 0) return
 
     setLeftoverBusy(true)
-    const res = await window.systemScope.removeLeftoverAppData(selectedLeftoverPaths)
+    const res = await window.systemScope.removeLeftoverAppData(selectedLeftoverIds)
     setLeftoverBusy(false)
 
     if (!res.ok || !res.data) {
@@ -158,7 +158,7 @@ export function AppsPage() {
     }
 
     const result = res.data as { deletedPaths: string[]; failedPaths: string[] }
-    setSelectedLeftoverPaths([])
+    setSelectedLeftoverIds([])
     showToast(
       result.failedPaths.length === 0
         ? `잔여 데이터 ${result.deletedPaths.length}개를 휴지통으로 이동했습니다.`
@@ -196,16 +196,16 @@ export function AppsPage() {
 
     const items = res.data as AppRelatedDataItem[]
     setRelatedDataByAppId((current) => ({ ...current, [app.id]: items }))
-    setSelectedRelatedPathsByAppId((current) => ({ ...current, [app.id]: items.map((item) => item.path) }))
+    setSelectedRelatedIdsByAppId((current) => ({ ...current, [app.id]: items.map((item) => item.id) }))
   }
 
-  const handleToggleRelatedPath = (appId: string, targetPath: string) => {
-    setSelectedRelatedPathsByAppId((current) => {
+  const handleToggleRelatedId = (appId: string, itemId: string) => {
+    setSelectedRelatedIdsByAppId((current) => {
       const selected = new Set(current[appId] ?? [])
-      if (selected.has(targetPath)) {
-        selected.delete(targetPath)
+      if (selected.has(itemId)) {
+        selected.delete(itemId)
       } else {
-        selected.add(targetPath)
+        selected.add(itemId)
       }
 
       return {
@@ -386,7 +386,7 @@ export function AppsPage() {
                                 </div>
                               </div>
                               <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                {(selectedRelatedPathsByAppId[entry.id] ?? []).length} selected
+                                {(selectedRelatedIdsByAppId[entry.id] ?? []).length} selected
                               </div>
                             </div>
 
@@ -397,13 +397,13 @@ export function AppsPage() {
                             ) : (
                               <div style={{ display: 'grid', gap: '8px' }}>
                                 {(relatedDataByAppId[entry.id] ?? []).map((item) => {
-                                  const checked = (selectedRelatedPathsByAppId[entry.id] ?? []).includes(item.path)
+                                  const checked = (selectedRelatedIdsByAppId[entry.id] ?? []).includes(item.id)
                                   return (
                                     <label key={item.id} style={relatedItemStyle}>
                                       <input
                                         type="checkbox"
                                         checked={checked}
-                                        onChange={() => handleToggleRelatedPath(entry.id, item.path)}
+                                        onChange={() => handleToggleRelatedId(entry.id, item.id)}
                                       />
                                       <div style={{ display: 'grid', gap: '3px' }}>
                                         <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</span>
@@ -478,13 +478,13 @@ export function AppsPage() {
                   disabled={filteredLeftovers.length === 0}
                   onChange={(event) => {
                     if (event.target.checked) {
-                      setSelectedLeftoverPaths((current) => {
+                      setSelectedLeftoverIds((current) => {
                         const next = new Set(current)
-                        filteredLeftovers.forEach((item) => next.add(item.path))
+                        filteredLeftovers.forEach((item) => next.add(item.id))
                         return [...next]
                       })
                     } else {
-                      setSelectedLeftoverPaths((current) => current.filter((path) => !filteredLeftovers.some((item) => item.path === path)))
+                      setSelectedLeftoverIds((current) => current.filter((itemId) => !filteredLeftovers.some((item) => item.id === itemId)))
                     }
                   }}
                 />
@@ -493,14 +493,14 @@ export function AppsPage() {
             </div>
             <div style={{ display: 'grid', gap: '10px', paddingBottom: '84px' }}>
               {filteredLeftovers.map((item) => {
-                const checked = selectedLeftoverPaths.includes(item.path)
+                const checked = selectedLeftoverIds.includes(item.id)
                 return (
                   <label key={item.id} style={leftoverCardStyle}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                       <input
                         type="checkbox"
                         checked={checked}
-                        onChange={() => handleToggleLeftoverPath(item.path)}
+                        onChange={() => handleToggleLeftoverId(item.id)}
                         style={{ marginTop: '3px' }}
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -549,12 +549,12 @@ export function AppsPage() {
               </div>
               <button
                 onClick={() => void handleRemoveSelectedLeftovers()}
-                disabled={leftoverBusy || selectedLeftoverPaths.length === 0}
+                disabled={leftoverBusy || selectedLeftoverIds.length === 0}
                 style={{
                   ...actionBtnStyle,
                   minWidth: '170px',
-                  opacity: leftoverBusy || selectedLeftoverPaths.length === 0 ? 0.55 : 1,
-                  cursor: leftoverBusy || selectedLeftoverPaths.length === 0 ? 'default' : 'pointer'
+                  opacity: leftoverBusy || selectedLeftoverIds.length === 0 ? 0.55 : 1,
+                  cursor: leftoverBusy || selectedLeftoverIds.length === 0 ? 'default' : 'pointer'
                 }}
               >
                 {leftoverBusy ? 'Working...' : 'Move Selected to Trash'}

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
+import type { AppUninstallRequest, TrashItemsRequest } from '@shared/types'
 
 type Callback = (data: unknown) => void
 
@@ -43,6 +44,7 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.DISK_GROWTH_VIEW, period),
   findOldFiles: (folderPath: string, olderThanDays: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_OLD_FILES, folderPath, olderThanDays),
+  trashDiskItems: (request: TrashItemsRequest) => ipcRenderer.invoke(IPC_CHANNELS.DISK_TRASH_ITEMS, request),
   listDockerImages: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES),
   removeDockerImages: (imageIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES, imageIds),
   listDockerContainers: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS),
@@ -65,8 +67,8 @@ const api = {
   listInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_LIST_INSTALLED),
   getAppRelatedData: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_GET_RELATED_DATA, appId),
   listLeftoverAppData: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA),
-  removeLeftoverAppData: (paths: string[]) => ipcRenderer.invoke(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, paths),
-  uninstallApp: (request: { appId: string; relatedDataPaths?: string[] }) => ipcRenderer.invoke(IPC_CHANNELS.APPS_UNINSTALL, request),
+  removeLeftoverAppData: (itemIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, itemIds),
+  uninstallApp: (request: AppUninstallRequest) => ipcRenderer.invoke(IPC_CHANNELS.APPS_UNINSTALL, request),
   openAppLocation: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_LOCATION, appId),
   openSystemUninstallSettings: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS),
 
@@ -93,9 +95,7 @@ const api = {
 
   // Shell — Finder / Explorer에서 열기
   showInFolder: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, targetPath),
-  openPath: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath),
-  trashItems: (filePaths: string[], description: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SHELL_TRASH_ITEMS, filePaths, description)
+  openPath: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath)
 }
 
 contextBridge.exposeInMainWorld('systemScope', api)

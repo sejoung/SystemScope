@@ -49,25 +49,27 @@ export async function listLeftoverAppData(): Promise<AppLeftoverDataItem[]> {
 
   leftoverAppDataCache.clear()
   for (const item of leftovers) {
-    leftoverAppDataCache.set(item.path, item)
+    leftoverAppDataCache.set(item.id, item)
   }
 
   return leftovers.sort((a, b) => a.appName.localeCompare(b.appName) || a.path.localeCompare(b.path))
 }
 
-export async function removeLeftoverAppData(pathsToTrash: string[]): Promise<{ deletedPaths: string[]; failedPaths: string[] }> {
-  const uniquePaths = [...new Set(pathsToTrash)].filter((candidate) => leftoverAppDataCache.has(candidate))
+export async function removeLeftoverAppData(itemIds: string[]): Promise<{ deletedPaths: string[]; failedPaths: string[] }> {
+  const uniqueItems = [...new Set(itemIds)]
+    .map((itemId) => leftoverAppDataCache.get(itemId))
+    .filter((item): item is AppLeftoverDataItem => item !== undefined)
   const deletedPaths: string[] = []
   const failedPaths: string[] = []
 
-  for (const targetPath of uniquePaths) {
+  for (const item of uniqueItems) {
     try {
-      await trashPathWithFallback(targetPath, 'leftover')
-      leftoverAppDataCache.delete(targetPath)
-      deletedPaths.push(targetPath)
+      await trashPathWithFallback(item.path, 'leftover')
+      leftoverAppDataCache.delete(item.id)
+      deletedPaths.push(item.path)
     } catch (error) {
-      failedPaths.push(targetPath)
-      logWarn('apps', 'Failed to trash leftover app data', { targetPath, error })
+      failedPaths.push(item.path)
+      logWarn('apps', 'Failed to trash leftover app data', { targetPath: item.path, itemId: item.id, error })
     }
   }
 
@@ -121,7 +123,7 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
       appId: request.appId,
       name: target.name
     })
-    const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataPaths ?? [])
+    const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataIds ?? [])
     installedAppsCache.delete(request.appId)
     logInfo('apps', 'Moved macOS app bundle to trash', {
       appId: request.appId,
@@ -147,7 +149,7 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
   }
 
   await launchWindowsUninstaller(target.uninstallCommand)
-  const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataPaths ?? [])
+    const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataIds ?? [])
   logInfo('apps', 'Started Windows uninstall command', {
     appId: request.appId,
     name: target.name,
@@ -400,29 +402,37 @@ async function listRelatedDataForApp(target: InstalledApp): Promise<AppRelatedDa
 
 async function trashRelatedDataForApp(
   target: InstalledApp,
-  selectedPaths: string[]
+  selectedIds: string[]
 ): Promise<{ deletedPaths: string[]; failedPaths: string[] }> {
-  if (selectedPaths.length === 0) {
+  if (selectedIds.length === 0) {
     return { deletedPaths: [], failedPaths: [] }
   }
 
   const available = await listRelatedDataForApp(target)
-  const allowedPaths = new Set(available.map((item) => item.path))
-  const uniqueSelectedPaths = [...new Set(selectedPaths.filter((candidate) => allowedPaths.has(candidate)))]
+  const availableById = new Map(available.map((item) => [item.id, item]))
+  const uniqueSelectedItems = [...new Set(selectedIds)]
+    .map((itemId) => availableById.get(itemId))
+    .filter((item): item is AppRelatedDataItem => item !== undefined)
 
   const deletedPaths: string[] = []
   const failedPaths: string[] = []
 
-  for (const relatedPath of uniqueSelectedPaths) {
+  for (const item of uniqueSelectedItems) {
     try {
-      await trashPathWithFallback(relatedPath, 'related-data', {
+      await trashPathWithFallback(item.path, 'related-data', {
         appId: target.id,
         name: target.name
       })
-      deletedPaths.push(relatedPath)
+      deletedPaths.push(item.path)
     } catch (error) {
-      failedPaths.push(relatedPath)
-      logWarn('apps', 'Failed to trash related app data', { appId: target.id, name: target.name, relatedPath, error })
+      failedPaths.push(item.path)
+      logWarn('apps', 'Failed to trash related app data', {
+        appId: target.id,
+        name: target.name,
+        relatedPath: item.path,
+        relatedItemId: item.id,
+        error
+      })
     }
   }
 

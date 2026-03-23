@@ -1,6 +1,7 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs/promises'
+import { randomUUID } from 'crypto'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { scanFolder, findLargeFiles, getExtensionBreakdown } from '../services/diskAnalyzer'
 import { runQuickScan } from '../services/quickScan'
@@ -21,11 +22,13 @@ import {
 } from '../services/dockerImages'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
-import type { DiskScanResult, DockerRemoveResult } from '@shared/types'
+import type { DiskScanResult, DockerRemoveResult, DuplicateGroup, LargeFile, TrashItemsRequest } from '@shared/types'
 import { logError } from '../services/logging'
+import { trashItemsWithConfirm } from '../services/trashService'
 
 // Cache last scan result for large files / extension queries
 let lastScanResult: DiskScanResult | null = null
+const registeredTrashTargets = new Map<string, { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate' }>()
 
 export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_SCAN_FOLDER, async (_event, folderPath: string) => {
@@ -89,6 +92,7 @@ export function registerDiskIpc(): void {
     if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
       lastScanResult = null
     }
+    clearTrashTargetsForRootPath(resolved)
 
     return success(true)
   })
@@ -101,12 +105,12 @@ export function registerDiskIpc(): void {
       return failure('INVALID_INPUT', '유효하지 않은 limit 값입니다.')
     }
 
-    // If we have a cached result for this path, use it
-    if (lastScanResult && lastScanResult.rootPath === folderPath) {
-      return success(findLargeFiles(lastScanResult.tree, limit))
-    }
-
     const resolved = path.resolve(folderPath)
+
+    // If we have a cached result for this path, use it
+    if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
+      return success(registerLargeFileTrashTargets(findLargeFiles(lastScanResult.tree, limit), resolved, 'large'))
+    }
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
@@ -116,7 +120,7 @@ export function registerDiskIpc(): void {
     try {
       const result = await scanFolder(resolved)
       lastScanResult = result
-      return success(findLargeFiles(result.tree, limit))
+      return success(registerLargeFileTrashTargets(findLargeFiles(result.tree, limit), resolved, 'large'))
     } catch (err) {
       logError('disk-ipc', 'Large file scan failed', err)
       return failure('SCAN_FAILED', '대용량 파일 탐색에 실패했습니다.')
@@ -128,11 +132,10 @@ export function registerDiskIpc(): void {
       return failure('INVALID_INPUT', '유효하지 않은 경로입니다.')
     }
 
-    if (lastScanResult && lastScanResult.rootPath === folderPath) {
+    const resolved = path.resolve(folderPath)
+    if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
       return success(getExtensionBreakdown(lastScanResult.tree))
     }
-
-    const resolved = path.resolve(folderPath)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
@@ -205,7 +208,7 @@ export function registerDiskIpc(): void {
       return failure('PERMISSION_DENIED', '폴더에 접근할 수 없습니다.')
     }
     try {
-      const results = await findDuplicates(resolved, minSizeKB * 1024)
+      const results = registerDuplicateTrashTargets(await findDuplicates(resolved, minSizeKB * 1024), resolved)
       return success(results)
     } catch (err) {
       logError('disk-ipc', 'Duplicate scan failed', err)
@@ -240,11 +243,52 @@ export function registerDiskIpc(): void {
       return failure('PERMISSION_DENIED', '폴더에 접근할 수 없습니다.')
     }
     try {
-      const results = await findOldFiles(resolved, olderThanDays)
+      const results = registerLargeFileTrashTargets(await findOldFiles(resolved, olderThanDays), resolved, 'old')
       return success(results)
     } catch (err) {
       logError('disk-ipc', 'Old file scan failed', err)
       return failure('SCAN_FAILED', '오래된 파일 탐색에 실패했습니다.')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DISK_TRASH_ITEMS, async (_event, request: TrashItemsRequest) => {
+    if (
+      !request ||
+      typeof request !== 'object' ||
+      !Array.isArray(request.itemIds) ||
+      request.itemIds.length === 0 ||
+      request.itemIds.some((itemId) => typeof itemId !== 'string' || !itemId.trim())
+    ) {
+      return failure('INVALID_INPUT', '유효하지 않은 삭제 요청입니다.')
+    }
+
+    const uniqueIds = [...new Set(request.itemIds)]
+    const targets = uniqueIds.map((itemId) => registeredTrashTargets.get(itemId))
+
+    if (targets.some((target) => !target)) {
+      return failure('INVALID_INPUT', '현재 스캔 결과에 없는 항목은 삭제할 수 없습니다.')
+    }
+    const resolvedTargets = targets.filter((target): target is { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate' } => Boolean(target))
+
+    try {
+      const result = await trashItemsWithConfirm(
+        resolvedTargets.map((target) => target.path),
+        request.description || '파일 삭제'
+      )
+
+      if (result.trashedPaths.length > 0) {
+        const trashedPathSet = new Set(result.trashedPaths.map((targetPath) => path.resolve(targetPath)))
+        for (const [itemId, target] of registeredTrashTargets) {
+          if (trashedPathSet.has(path.resolve(target.path))) {
+            registeredTrashTargets.delete(itemId)
+          }
+        }
+      }
+
+      return success(result)
+    } catch (err) {
+      logError('disk-ipc', 'Disk item trash failed', err)
+      return failure('UNKNOWN_ERROR', '파일 삭제에 실패했습니다.')
     }
   })
 
@@ -565,6 +609,47 @@ export function registerDiskIpc(): void {
     }
     return success(true)
   })
+}
+
+function clearTrashTargetsForScope(rootPath: string, scope: 'large' | 'old' | 'duplicate'): void {
+  for (const [itemId, target] of registeredTrashTargets) {
+    if (target.rootPath === rootPath && target.scope === scope) {
+      registeredTrashTargets.delete(itemId)
+    }
+  }
+}
+
+function clearTrashTargetsForRootPath(rootPath: string): void {
+  for (const [itemId, target] of registeredTrashTargets) {
+    if (target.rootPath === rootPath) {
+      registeredTrashTargets.delete(itemId)
+    }
+  }
+}
+
+function registerLargeFileTrashTargets(
+  files: LargeFile[],
+  rootPath: string,
+  scope: 'large' | 'old'
+): LargeFile[] {
+  clearTrashTargetsForScope(rootPath, scope)
+  return files.map((file) => {
+    const deletionKey = randomUUID()
+    registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope })
+    return { ...file, deletionKey }
+  })
+}
+
+function registerDuplicateTrashTargets(groups: DuplicateGroup[], rootPath: string): DuplicateGroup[] {
+  clearTrashTargetsForScope(rootPath, 'duplicate')
+  return groups.map((group) => ({
+    ...group,
+    files: group.files.map((file) => {
+      const deletionKey = randomUUID()
+      registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope: 'duplicate' })
+      return { ...file, deletionKey }
+    })
+  }))
 }
 
 function formatDockerBytes(bytes: number): string {

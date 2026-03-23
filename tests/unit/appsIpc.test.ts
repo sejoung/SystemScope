@@ -142,7 +142,7 @@ describe('registerAppsIpc', () => {
     registerAppsIpc()
 
     const handler = handlers.get(IPC_CHANNELS.APPS_UNINSTALL)
-    const result = await handler?.({}, { appId: 'app-1', relatedDataPaths: ['/tmp/data'] }) as { ok: boolean; data?: { cancelled: boolean } }
+    const result = await handler?.({}, { appId: 'app-1', relatedDataIds: ['related:1'] }) as { ok: boolean; data?: { cancelled: boolean } }
 
     expect(result.ok).toBe(true)
     expect(result.data?.cancelled).toBe(true)
@@ -171,13 +171,13 @@ describe('registerAppsIpc', () => {
     registerAppsIpc()
 
     const handler = handlers.get(IPC_CHANNELS.APPS_UNINSTALL)
-    const result = await handler?.({}, { appId: 'app-1', relatedDataPaths: ['C:\\Users\\me\\AppData\\Roaming\\Example'] }) as { ok: boolean; data?: { started: boolean } }
+    const result = await handler?.({}, { appId: 'app-1', relatedDataIds: ['win:appdata-roaming:C:\\Users\\me\\AppData\\Roaming\\Example'] }) as { ok: boolean; data?: { started: boolean } }
 
     expect(result.ok).toBe(true)
     expect(result.data?.started).toBe(true)
     expect(uninstallInstalledAppMock).toHaveBeenCalledWith({
       appId: 'app-1',
-      relatedDataPaths: ['C:\\Users\\me\\AppData\\Roaming\\Example']
+      relatedDataIds: ['win:appdata-roaming:C:\\Users\\me\\AppData\\Roaming\\Example']
     })
   })
 })

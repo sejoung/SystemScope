@@ -7,6 +7,7 @@ export interface FolderNode {
 }
 
 export interface LargeFile {
+  deletionKey?: string
   name: string
   path: string
   size: number
@@ -83,10 +84,22 @@ export interface GrowthViewResult {
   totalAddedFiles: number
 }
 
+export interface DuplicateFileEntry {
+  deletionKey?: string
+  name: string
+  path: string
+  modified: number
+}
+
+export interface TrashItemsRequest {
+  itemIds: string[]
+  description: string
+}
+
 export interface DuplicateGroup {
   hash: string
   size: number
-  files: { name: string; path: string; modified: number }[]
+  files: DuplicateFileEntry[]
   totalWaste: number
 }
 

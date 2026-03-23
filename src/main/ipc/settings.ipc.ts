@@ -121,23 +121,4 @@ export function registerSettingsIpc(): void {
     }
   })
 
-  // Shell: 파일을 휴지통으로 이동 (확인 다이얼로그 포함)
-  // 가이드라인 3.3: 실패를 기본 시나리오로 본다
-  // 가이드라인 8.2: 원본 파일을 직접 수정하지 않는다 → 휴지통 이동 (복구 가능)
-  ipcMain.handle(IPC_CHANNELS.SHELL_TRASH_ITEMS, async (_event, filePaths: string[], description: string) => {
-    if (!Array.isArray(filePaths) || filePaths.length === 0) {
-      return failure('INVALID_INPUT', '삭제할 파일 목록이 비어있습니다.')
-    }
-    if (filePaths.some((p) => typeof p !== 'string' || !p)) {
-      return failure('INVALID_INPUT', '유효하지 않은 경로가 포함되어 있습니다.')
-    }
-    try {
-      const { trashItemsWithConfirm } = await import('../services/trashService')
-      const result = await trashItemsWithConfirm(filePaths, description || '파일 삭제')
-      return success(result)
-    } catch (err) {
-      logError('settings-ipc', 'Trash items failed', err)
-      return failure('UNKNOWN_ERROR', '파일 삭제에 실패했습니다.')
-    }
-  })
 }

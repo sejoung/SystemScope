@@ -35,7 +35,7 @@ export interface AppLeftoverDataItem extends AppRelatedDataItem {
 
 export interface AppUninstallRequest {
   appId: string
-  relatedDataPaths?: string[]
+  relatedDataIds?: string[]
 }
 
 export interface AppRemovalResult {

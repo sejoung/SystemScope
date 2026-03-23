@@ -194,7 +194,9 @@ describe('disk scan flow integration', () => {
 
     const firstResult = await largeFilesHandler?.({}, '/Users/test/Downloads', 50) as { ok: boolean; data?: unknown }
     expect(firstResult.ok).toBe(true)
-    expect(firstResult.data).toEqual([{ name: 'before.zip', path: '/Users/test/Downloads/before.zip', size: 200, modified: 1 }])
+    expect(firstResult.data).toEqual([
+      expect.objectContaining({ name: 'before.zip', path: '/Users/test/Downloads/before.zip', size: 200, modified: 1 })
+    ])
     expect(scanFolderMock).toHaveBeenCalledTimes(1)
 
     const invalidateResult = await invalidateHandler?.({}, '/Users/test/Downloads') as { ok: boolean; data?: boolean }
@@ -202,7 +204,9 @@ describe('disk scan flow integration', () => {
 
     const secondResult = await largeFilesHandler?.({}, '/Users/test/Downloads', 50) as { ok: boolean; data?: unknown }
     expect(secondResult.ok).toBe(true)
-    expect(secondResult.data).toEqual([{ name: 'after.zip', path: '/Users/test/Downloads/after.zip', size: 120, modified: 2 }])
+    expect(secondResult.data).toEqual([
+      expect.objectContaining({ name: 'after.zip', path: '/Users/test/Downloads/after.zip', size: 120, modified: 2 })
+    ])
     expect(scanFolderMock).toHaveBeenCalledTimes(2)
     expect(findLargeFilesMock).toHaveBeenLastCalledWith(refreshedScanResult.tree, 50)
   })
