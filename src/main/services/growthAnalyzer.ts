@@ -5,7 +5,7 @@ import type { GrowthFolder, GrowthViewResult } from '@shared/types'
 import { saveSnapshot, getSnapshotsInRange, type Snapshot, type FolderSnapshot } from './snapshotStore'
 import { logError, logInfo } from './logging'
 import { getDirSize } from '../utils/getDirSize'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 
 const PERIODS: Record<string, number> = {
   '1h': 60 * 60 * 1000,
@@ -153,7 +153,7 @@ export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<
   try {
     await Promise.race([
       snapshotInProgress,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(t('스냅샷 대기 시간이 초과되었습니다.'))), timeoutMs))
+      new Promise((_, reject) => setTimeout(() => reject(new Error(tk('growth.wait_timeout'))), timeoutMs))
     ])
     return true
   } catch {

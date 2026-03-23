@@ -6,7 +6,7 @@ import { destroyTray } from './tray'
 import { cancelAllJobs, getActiveJobCount } from '../jobs/jobManager'
 import { stopSnapshotScheduler, waitForPendingSnapshot } from '../services/growthAnalyzer'
 import { logError, logInfo, shutdownLogging } from '../services/logging'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 
 let shutdownPromise: Promise<void> | null = null
 let shutdownCompleted = false
@@ -58,20 +58,20 @@ export async function executeGracefulShutdown(reason: string): Promise<void> {
 }
 
 async function doGracefulShutdown(reason: string): Promise<void> {
-  broadcastShutdownState('starting', t('SystemScope를 종료하는 중...'))
+  broadcastShutdownState('starting', tk('shutdown.starting'))
   logInfo('shutdown', 'Graceful shutdown started', {
     reason,
     activeJobs: getActiveJobCount()
   })
 
-  broadcastShutdownState('cancelling_jobs', t('진행 중인 작업을 취소하는 중...'))
+  broadcastShutdownState('cancelling_jobs', tk('shutdown.cancelling_jobs'))
   cleanupSystemIpc()
 
   const cancelledJobs = cancelAllJobs()
   stopSnapshotScheduler()
-  broadcastShutdownState('waiting_snapshot', t('스냅샷 작업 완료 대기 중...'))
+  broadcastShutdownState('waiting_snapshot', tk('shutdown.waiting_snapshot'))
   const snapshotFlushed = await waitForPendingSnapshot()
-  broadcastShutdownState('cleaning_up', t('백그라운드 서비스를 정리하는 중...'))
+  broadcastShutdownState('cleaning_up', tk('shutdown.cleaning_up'))
   destroyTray()
 
   logInfo('shutdown', 'Graceful shutdown completed', {
@@ -80,7 +80,7 @@ async function doGracefulShutdown(reason: string): Promise<void> {
     snapshotFlushed
   })
 
-  broadcastShutdownState('finishing', t('종료를 마무리하는 중...'))
+  broadcastShutdownState('finishing', tk('shutdown.finishing'))
   shutdownLogging()
 }
 

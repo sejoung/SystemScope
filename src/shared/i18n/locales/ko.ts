@@ -502,4 +502,13 @@ export const KO_MESSAGES = {
   'High confidence': '높은 신뢰도',
   'Medium confidence': '중간 신뢰도',
   'Low confidence': '낮은 신뢰도',
-} as const
+  'Delete Docker Images': 'Docker 이미지 삭제',
+  'Delete {count} Docker image(s)?': '{count}개의 Docker 이미지를 삭제하시겠습니까?',
+  'Delete Docker Containers': 'Docker 컨테이너 삭제',
+  'Delete {count} Docker container(s)?': '{count}개의 Docker 컨테이너를 삭제하시겠습니까?',
+  'Stop Docker Containers': 'Docker 컨테이너 중지',
+  'Stop {count} Docker container(s)?': '{count}개의 Docker 컨테이너를 중지하시겠습니까?',
+  'Delete {count} Docker volume(s)?': '{count}개의 Docker 볼륨을 삭제하시겠습니까?',
+  'Clean Up Docker Build Cache': 'Docker Build Cache 정리',
+  'Do you want to clean up Docker build cache?': 'Docker build cache를 정리하시겠습니까?',
+  } as const

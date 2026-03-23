@@ -502,4 +502,13 @@ export const EN_MESSAGES = {
   'High confidence': 'High confidence',
   'Medium confidence': 'Medium confidence',
   'Low confidence': 'Low confidence',
-} as const
+  'Delete Docker Images': 'Delete Docker Images',
+  'Delete {count} Docker image(s)?': 'Delete {count} Docker image(s)?',
+  'Delete Docker Containers': 'Delete Docker Containers',
+  'Delete {count} Docker container(s)?': 'Delete {count} Docker container(s)?',
+  'Stop Docker Containers': 'Stop Docker Containers',
+  'Stop {count} Docker container(s)?': 'Stop {count} Docker container(s)?',
+  'Delete {count} Docker volume(s)?': 'Delete {count} Docker volume(s)?',
+  'Clean Up Docker Build Cache': 'Clean Up Docker Build Cache',
+  'Do you want to clean up Docker build cache?': 'Do you want to clean up Docker build cache?',
+  } as const

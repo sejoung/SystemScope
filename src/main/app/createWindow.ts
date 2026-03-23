@@ -3,7 +3,7 @@ import { join } from 'path'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
 import { getSettings } from '../store/settingsStore'
 import { getUnsavedSettingsState, setUnsavedSettingsState } from './rendererState'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 
 let forceQuit = false
 let bypassUnsavedSettingsPrompt = false
@@ -56,14 +56,14 @@ export function createMainWindow(): BrowserWindow {
       e.preventDefault()
       const response = dialog.showMessageBoxSync(win, {
         type: 'warning',
-        buttons: [t('Cancel'), t('Discard Changes')],
+        buttons: [tk('window.unsaved.cancel'), tk('window.unsaved.discard')],
         defaultId: 0,
         cancelId: 0,
-        title: t('Unsaved Settings'),
-        message: t('저장하지 않은 설정 변경사항이 있습니다.'),
+        title: tk('window.unsaved.title'),
+        message: tk('window.unsaved.message'),
         detail: forceQuit
-          ? t('저장하지 않고 앱을 종료하시겠습니까?')
-          : t('저장하지 않고 창을 닫으면 변경사항이 사라집니다.')
+          ? tk('window.unsaved.quit_detail')
+          : tk('window.unsaved.close_detail')
       })
 
       if (response === 0) {

@@ -15,7 +15,7 @@ import { success, failure } from '@shared/types'
 import type { DiskScanResult, DuplicateGroup, LargeFile, TrashItemsRequest } from '@shared/types'
 import { logError } from '../services/logging'
 import { trashItemsWithConfirm } from '../services/trashService'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 
 // 대용량 파일 / 확장자 조회를 위한 마지막 스캔 결과 캐시
 let lastScanResult: DiskScanResult | null = null
@@ -24,19 +24,19 @@ const registeredTrashTargets = new Map<string, { path: string; rootPath: string;
 export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_SCAN_FOLDER, async (_event, folderPath: string) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
 
     const resolved = path.resolve(folderPath)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
-      return failure('PERMISSION_DENIED', t('폴더에 접근할 수 없습니다.'))
+      return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
 
     const win = BrowserWindow.getFocusedWindow()
     if (!win) {
-      return failure('UNKNOWN_ERROR', t('활성 창을 찾을 수 없습니다.'))
+      return failure('UNKNOWN_ERROR', tk('disk.error.no_active_window'))
     }
 
     const job = createJob('diskScan')
@@ -47,7 +47,7 @@ export function registerDiskIpc(): void {
       resolved,
       (current, fileCount) => {
         if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-          sendJobProgress(win, job, -1, t('스캔 중: {name} ({count}개 파일)', { name: path.basename(current), count: fileCount }))
+          sendJobProgress(win, job, -1, tk('disk.scan.progress', { name: path.basename(current), count: fileCount }))
         }
       },
       job.abortController.signal
@@ -61,12 +61,12 @@ export function registerDiskIpc(): void {
       .catch((err) => {
         if (err instanceof Error && err.message === 'Scan cancelled') {
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-            sendJobFailed(win, job, t('스캔이 취소되었습니다.'))
+            sendJobFailed(win, job, tk('disk.scan.cancelled'))
           }
         } else {
           logError('disk-ipc', 'Disk scan failed', err)
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-            sendJobFailed(win, job, t('디스크 스캔 중 오류가 발생했습니다.'))
+            sendJobFailed(win, job, tk('disk.scan.failed_runtime'))
           }
         }
       })
@@ -76,7 +76,7 @@ export function registerDiskIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.DISK_INVALIDATE_SCAN_CACHE, (_event, folderPath: string) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
 
     const resolved = path.resolve(folderPath)
@@ -90,10 +90,10 @@ export function registerDiskIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.DISK_GET_LARGE_FILES, async (_event, folderPath: string, limit: number) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
     if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
-      return failure('INVALID_INPUT', t('유효하지 않은 limit 값입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_limit'))
     }
 
     const resolved = path.resolve(folderPath)
@@ -105,7 +105,7 @@ export function registerDiskIpc(): void {
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
-      return failure('PERMISSION_DENIED', t('폴더에 접근할 수 없습니다.'))
+      return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
 
     try {
@@ -114,13 +114,13 @@ export function registerDiskIpc(): void {
       return success(registerLargeFileTrashTargets(findLargeFiles(result.tree, limit), resolved, 'large'))
     } catch (err) {
       logError('disk-ipc', 'Large file scan failed', err)
-      return failure('SCAN_FAILED', t('대용량 파일 탐색에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.large_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.DISK_GET_EXTENSIONS, async (_event, folderPath: string) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
 
     const resolved = path.resolve(folderPath)
@@ -130,7 +130,7 @@ export function registerDiskIpc(): void {
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
-      return failure('PERMISSION_DENIED', t('폴더에 접근할 수 없습니다.'))
+      return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
 
     try {
@@ -139,7 +139,7 @@ export function registerDiskIpc(): void {
       return success(getExtensionBreakdown(result.tree))
     } catch (err) {
       logError('disk-ipc', 'Extension analysis failed', err)
-      return failure('SCAN_FAILED', t('확장자 분석에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.extensions_failed'))
     }
   })
 
@@ -149,7 +149,7 @@ export function registerDiskIpc(): void {
       return success(results)
     } catch (err) {
       logError('disk-ipc', 'Quick scan failed', err)
-      return failure('SCAN_FAILED', t('빠른 스캔에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.quick_scan_failed'))
     }
   })
 
@@ -159,86 +159,86 @@ export function registerDiskIpc(): void {
       return success(info)
     } catch (err) {
       logError('disk-ipc', 'User-space scan failed', err)
-      return failure('SCAN_FAILED', t('사용자 공간 분석에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.user_space_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.DISK_RECENT_GROWTH, async (_event, folderPath: string, days: number = 7) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
     if (!Number.isInteger(days) || days < 1 || days > 365) {
-      return failure('INVALID_INPUT', t('유효하지 않은 기간입니다. (1~365일)'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_days_short'))
     }
     const resolved = path.resolve(folderPath)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
-      return failure('PERMISSION_DENIED', t('폴더에 접근할 수 없습니다.'))
+      return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
     try {
       const results = await findRecentGrowth(resolved, days)
       return success(results)
     } catch (err) {
       logError('disk-ipc', 'Recent growth scan failed', err)
-      return failure('SCAN_FAILED', t('최근 변경 분석에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.recent_growth_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.DISK_FIND_DUPLICATES, async (_event, folderPath: string, minSizeKB: number = 100) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
     if (!Number.isInteger(minSizeKB) || minSizeKB < 1 || minSizeKB > 1048576) {
-      return failure('INVALID_INPUT', t('유효하지 않은 최소 크기입니다. (1KB~1GB)'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_min_size'))
     }
     const resolved = path.resolve(folderPath)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
-      return failure('PERMISSION_DENIED', t('폴더에 접근할 수 없습니다.'))
+      return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
     try {
       const results = registerDuplicateTrashTargets(await findDuplicates(resolved, minSizeKB * 1024), resolved)
       return success(results)
     } catch (err) {
       logError('disk-ipc', 'Duplicate file scan failed', err)
-      return failure('SCAN_FAILED', t('중복 파일 탐색에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.duplicates_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.DISK_GROWTH_VIEW, async (_event, period: string = '7d') => {
     if (!['1h', '24h', '7d'].includes(period)) {
-      return failure('INVALID_INPUT', t('유효하지 않은 기간입니다. (1h, 24h, 7d)'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_growth_period'))
     }
     try {
       const result = await analyzeGrowth(period)
       return success(result)
     } catch (err) {
       logError('disk-ipc', 'Growth analysis failed', err)
-      return failure('SCAN_FAILED', t('성장 분석에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.growth_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.DISK_FIND_OLD_FILES, async (_event, folderPath: string, olderThanDays: number = 365) => {
     if (!folderPath || typeof folderPath !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 경로입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
     if (!Number.isInteger(olderThanDays) || olderThanDays < 1 || olderThanDays > 3650) {
-      return failure('INVALID_INPUT', t('유효하지 않은 기간입니다. (1~3650일)'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_old_days'))
     }
     const resolved = path.resolve(folderPath)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
-      return failure('PERMISSION_DENIED', t('폴더에 접근할 수 없습니다.'))
+      return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
     try {
       const results = registerLargeFileTrashTargets(await findOldFiles(resolved, olderThanDays), resolved, 'old')
       return success(results)
     } catch (err) {
       logError('disk-ipc', 'Old file scan failed', err)
-      return failure('SCAN_FAILED', t('오래된 파일 탐색에 실패했습니다.'))
+      return failure('SCAN_FAILED', tk('disk.error.old_files_failed'))
     }
   })
 
@@ -250,21 +250,21 @@ export function registerDiskIpc(): void {
       request.itemIds.length === 0 ||
       request.itemIds.some((itemId) => typeof itemId !== 'string' || !itemId.trim())
     ) {
-      return failure('INVALID_INPUT', t('유효하지 않은 삭제 요청입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_trash_request'))
     }
 
     const uniqueIds = [...new Set(request.itemIds)]
     const targets = uniqueIds.map((itemId) => registeredTrashTargets.get(itemId))
 
     if (targets.some((target) => !target)) {
-      return failure('INVALID_INPUT', t('현재 스캔 결과에 없는 항목은 삭제할 수 없습니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_trash_target'))
     }
     const resolvedTargets = targets.filter((target): target is { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate' } => Boolean(target))
 
     try {
       const result = await trashItemsWithConfirm(
         resolvedTargets.map((target) => target.path),
-        request.description || t('파일 삭제')
+        request.description || tk('disk.trash.description')
       )
 
       if (result.trashedPaths.length > 0) {
@@ -279,17 +279,17 @@ export function registerDiskIpc(): void {
       return success(result)
     } catch (err) {
       logError('disk-ipc', 'Failed to trash disk items', err)
-      return failure('UNKNOWN_ERROR', t('파일 삭제에 실패했습니다.'))
+      return failure('UNKNOWN_ERROR', tk('disk.error.trash_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.JOB_CANCEL, (_event, jobId: string) => {
     if (!jobId || typeof jobId !== 'string') {
-      return failure('INVALID_INPUT', t('유효하지 않은 작업 ID입니다.'))
+      return failure('INVALID_INPUT', tk('disk.error.invalid_job_id'))
     }
     const cancelled = cancelJob(jobId)
     if (!cancelled) {
-      return failure('JOB_NOT_FOUND', t('취소할 수 있는 작업을 찾을 수 없습니다.'))
+      return failure('JOB_NOT_FOUND', tk('disk.error.job_not_found'))
     }
     return success(true)
   })

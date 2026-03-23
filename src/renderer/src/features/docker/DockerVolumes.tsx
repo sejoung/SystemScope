@@ -12,11 +12,11 @@ export function DockerVolumes({
   onChanged?: () => void
 }) {
   const showToast = useToast((s) => s.show)
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
   const [volumes, setVolumes] = useState<DockerVolumeSummary[]>([])
   const [status, setStatus] = useState<DockerVolumesScanResult['status']>('ready')
-  const [message, setMessage] = useState<string | null>(t('Docker 볼륨을 조회해보세요.'))
+  const [message, setMessage] = useState<string | null>(tk('docker.volumes.initial'))
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set())
 
   const removableVolumes = useMemo(() => volumes.filter((volume) => !volume.inUse), [volumes])
@@ -32,7 +32,7 @@ export function DockerVolumes({
     if (!res.ok || !res.data) {
       setStatus('daemon_unavailable')
       setVolumes([])
-      setMessage(res.error?.message ?? t('Docker 볼륨을 조회하지 못했습니다.'))
+      setMessage(res.error?.message ?? tk('docker.volumes.load_failed'))
       setLoading(false)
       return
     }
@@ -52,7 +52,7 @@ export function DockerVolumes({
   const handleDelete = async (names: string[]) => {
     const res = await window.systemScope.removeDockerVolumes(names)
     if (!res.ok || !res.data) {
-      showToast(res.error?.message ?? t('Docker 볼륨을 삭제하지 못했습니다.'))
+      showToast(res.error?.message ?? tk('docker.volumes.delete_failed'))
       return
     }
 
@@ -60,7 +60,7 @@ export function DockerVolumes({
     if (result.cancelled) return
 
     if (result.deletedIds.length > 0) {
-      showToast(t('{count}개 Docker 볼륨을 삭제했습니다.', { count: result.deletedIds.length }))
+      showToast(tk('docker.volumes.deleted', { count: result.deletedIds.length }))
       setVolumes((prev) => prev.filter((volume) => !result.deletedIds.includes(volume.name)))
       setSelectedNames((prev) => {
         const next = new Set(prev)
@@ -70,45 +70,45 @@ export function DockerVolumes({
       onChanged?.()
     }
     if (result.failCount > 0 && result.errors.length > 0) {
-      showToast(t('일부 실패: {message}', { message: result.errors[0] }))
+      showToast(tk('docker.volumes.partial', { message: result.errors[0] }))
     }
   }
 
   return (
     <Accordion
-      title={t('Volumes')}
+      title={tk('docker.volumes.title')}
       defaultOpen
-      badge={status === 'ready' && volumes.length > 0 ? t('{count} volumes', { count: volumes.length }) : undefined}
+      badge={status === 'ready' && volumes.length > 0 ? tk('docker.volumes.badge', { count: volumes.length }) : undefined}
       badgeColor="var(--accent-cyan)"
       actions={
         <>
           <button onClick={() => void scanVolumes()} disabled={loading} style={actionBtnStyle}>
-            {loading ? t('Refreshing...') : t('Refresh')}
+            {loading ? 'Refreshing...' : tk('apps.action.refresh')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedNames))}
             disabled={loading || selectedRemovableCount === 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            {t('Delete Selected')}
+            {'Delete Selected'}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? t('Docker가 설치되어 있지 않습니다.') : t('Docker daemon에 연결할 수 없습니다.')}
-          detail={message ?? t('Docker Desktop 또는 Docker Engine 상태를 확인하세요.')}
+          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'}
+          detail={message ?? 'Check Docker Desktop or Docker Engine status.'}
         />
       ) : volumes.length === 0 ? (
         <EmptyState
-          title={message ?? t('Docker 볼륨이 없습니다.')}
-          detail={t('사용 중이 아닌 볼륨만 여기서 정리할 수 있습니다.')}
+          title={message ?? tk('main.docker.volumes.empty')}
+          detail={tk('docker.volumes.empty_detail')}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {t('컨테이너에서 붙잡고 있는 볼륨은 삭제할 수 없습니다.')}
+            {tk('docker.volumes.helper')}
           </div>
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -125,11 +125,11 @@ export function DockerVolumes({
                       }}
                     />
                   </th>
-                  <th style={thStyle}>{t('Name')}</th>
-                  <th style={thStyle}>{t('Driver')}</th>
-                  <th style={thStyle}>{t('Status')}</th>
-                  <th style={thStyle}>{t('Attached Containers')}</th>
-                  <th style={{ ...thStyle, width: '92px', textAlign: 'center' }}>{t('Action')}</th>
+                  <th style={thStyle}>{tk('apps.table.name')}</th>
+                  <th style={thStyle}>{tk('docker.volumes.table.driver')}</th>
+                  <th style={thStyle}>{tk('docker.images.status')}</th>
+                  <th style={thStyle}>{tk('docker.volumes.table.attached')}</th>
+                  <th style={{ ...thStyle, width: '92px', textAlign: 'center' }}>{tk('process.port_finder.action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,7 +156,7 @@ export function DockerVolumes({
                     </td>
                     <td style={tdStyle}>{volume.driver}</td>
                     <td style={tdStyle}>
-                      <Badge text={volume.inUse ? t('in use') : t('unused')} color={volume.inUse ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
+                      <Badge text={volume.inUse ? tk('docker.images.in_use') : tk('docker.images.unused')} color={volume.inUse ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
                     </td>
                     <td style={tdStyle}>{volume.containers.length > 0 ? volume.containers.join(', ') : '-'}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' }}>
@@ -170,7 +170,7 @@ export function DockerVolumes({
                           cursor: volume.inUse ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        {t('Delete')}
+                        {'Delete'}
                       </button>
                     </td>
                   </tr>
