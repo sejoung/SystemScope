@@ -7,7 +7,7 @@ import { validatePartialSettings } from '../store/settingsSchema'
 import { success, failure } from '@shared/types'
 import { restartSnapshotScheduler } from '../services/growthAnalyzer'
 import { setThresholds } from '../services/alertManager'
-import { didShellOpenPathFail, isPathInsideParent } from './settingsPathUtils'
+import { didShellOpenPathFail, isPathInsideAnyParent, isPathInsideParent } from './settingsPathUtils'
 import { getLogDir, logError, logWarn } from '../services/logging'
 import { tk } from '../i18n'
 
@@ -94,18 +94,23 @@ export function registerSettingsIpc(): void {
 
   // Shell: Finder / Explorer에서 파일/폴더 위치 열기
   // 가이드라인 6.3: 신뢰되지 않은 경로를 검증 없이 열지 않는다
-  // 허용 범위: 사용자 홈 디렉토리 이하 (스캔 결과, Quick Scan 등 앱이 탐색한 경로)
+  // 허용 범위: 앱이 탐색하거나 관리하는 사용자 영역 경로
   ipcMain.handle(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, (_event, targetPath: string) => {
     if (!targetPath || typeof targetPath !== 'string') {
       return failure('INVALID_INPUT', tk('main.settings.error.invalid_path'))
     }
 
     const resolved = path.resolve(targetPath)
-    const homePath = app.getPath('home')
+    const allowedRoots = [
+      app.getPath('home'),
+      app.getPath('userData'),
+      process.env.APPDATA,
+      process.env.LOCALAPPDATA,
+      process.env.ProgramData
+    ]
 
-    // 사용자 홈 디렉토리 하위만 허용
-    if (!isPathInsideParent(resolved, homePath)) {
-      logWarn('settings-ipc', 'Blocked showInFolder because path is outside home', { path: resolved })
+    if (!isPathInsideAnyParent(resolved, allowedRoots)) {
+      logWarn('settings-ipc', 'Blocked showInFolder because path is outside allowed roots', { path: resolved })
       return failure('PERMISSION_DENIED', tk('main.settings.error.permission_denied'))
     }
 

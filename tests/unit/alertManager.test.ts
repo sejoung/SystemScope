@@ -62,6 +62,7 @@ describe('AlertManager', () => {
     expect(alerts.length).toBeGreaterThan(0)
     expect(alerts[0].type).toBe('disk')
     expect(alerts[0].severity).toBe('warning')
+    expect(alerts[0].message).toContain('Disk / usage 85%')
   })
 
   it('should fire critical alert when disk usage exceeds critical threshold', async () => {

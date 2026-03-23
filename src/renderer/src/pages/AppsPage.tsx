@@ -175,7 +175,7 @@ export function AppsPage() {
   }
 
   const handleOpenLeftoverPath = async (targetPath: string) => {
-    const res = await window.systemScope.openPath(targetPath)
+    const res = await window.systemScope.showInFolder(targetPath)
     if (!res.ok) {
       showToast(res.error?.message ?? tk('apps.error.open_path'))
     }

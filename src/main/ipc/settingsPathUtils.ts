@@ -29,6 +29,12 @@ export function isPathInsideParent(targetPath: string, parentPath: string): bool
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))
 }
 
+export function isPathInsideAnyParent(targetPath: string, parentPaths: Array<string | undefined | null>): boolean {
+  return parentPaths
+    .filter((parentPath): parentPath is string => typeof parentPath === 'string' && parentPath.length > 0)
+    .some((parentPath) => isPathInsideParent(targetPath, parentPath))
+}
+
 export function didShellOpenPathFail(result: string): boolean {
   return result.trim().length > 0
 }

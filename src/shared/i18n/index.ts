@@ -44,11 +44,6 @@ export function getLocaleTag(locale: AppLocale): string {
   return locale === 'ko' ? 'ko-KR' : 'en-US'
 }
 
-export const LOCALE_MESSAGES = {
-  en: EN_LOOKUP,
-  ko: KO_LOOKUP
-} as const
-
 function resolveTranslationInput(input: string | TranslationKey): string {
   const keyed = (MESSAGE_KEYS as Record<string, string>)[input]
   return keyed ?? input

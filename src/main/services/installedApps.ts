@@ -91,10 +91,20 @@ export async function openInstalledAppLocation(appId: string): Promise<void> {
     throw new Error(tk('main.apps.error.no_install_path'))
   }
 
-  const openResult = await shell.openPath(targetPath)
-  if (openResult) {
-    throw new Error(openResult)
+  const stat = await fsp.stat(targetPath).catch(() => null)
+  if (!stat) {
+    throw new Error(tk('main.apps.error.no_install_path'))
   }
+
+  if (stat.isDirectory() && path.extname(targetPath).toLowerCase() !== '.app') {
+    const openResult = await shell.openPath(targetPath)
+    if (openResult) {
+      throw new Error(openResult)
+    }
+    return
+  }
+
+  shell.showItemInFolder(targetPath)
 }
 
 export async function openSystemUninstallSettings(): Promise<void> {

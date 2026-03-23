@@ -18,7 +18,7 @@ const RecentGrowth = lazy(async () => import('../features/disk/RecentGrowth').th
 type StorageTab = 'overview' | 'scan' | 'cleanup'
 
 export function DiskAnalysisPage() {
-  const { t, tk } = useI18n()
+  const { tk } = useI18n()
   const {
     scanResult, largeFiles, extensions,
     isScanning, scanJobId, scanProgress, selectedFolder,
