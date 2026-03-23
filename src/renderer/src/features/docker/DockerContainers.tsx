@@ -93,7 +93,7 @@ export function DockerContainers({
       setContainers((prev) =>
         prev.map((container) =>
           result.affectedIds.includes(container.id)
-            ? { ...container, running: false, status: 'Exited (stopped by SystemScope)' }
+            ? { ...container, running: false, status: tk('docker.containers.stopped_by_app') }
             : container
         )
       )
@@ -113,7 +113,7 @@ export function DockerContainers({
       actions={
         <>
           <button onClick={() => void scanContainers()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Refreshing...' : tk('apps.action.refresh')}
+            {loading ? tk('common.refreshing') : tk('apps.action.refresh')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedIds))}
@@ -127,8 +127,8 @@ export function DockerContainers({
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'}
-          detail={message ?? 'Check Docker Desktop or Docker Engine status.'}
+          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : tk('main.docker.status.daemon_unavailable')}
+          detail={message ?? tk('docker.common.check_status')}
         />
       ) : containers.length === 0 ? (
         <EmptyState

@@ -2,15 +2,7 @@ import { useState, useMemo } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import type { ScanCategory, QuickScanFolder } from '@shared/types'
-
-const CATEGORY_LABELS: Record<ScanCategory, string> = {
-  system: 'System',
-  homebrew: 'Homebrew',
-  devtools: 'Dev Tools',
-  packages: 'Package Managers',
-  containers: 'Containers',
-  browsers: 'Browsers'
-}
+import { useI18n } from '../../i18n/useI18n'
 
 const CATEGORY_ORDER: ScanCategory[] = ['system', 'homebrew', 'devtools', 'packages', 'containers', 'browsers']
 
@@ -26,6 +18,7 @@ interface QuickScanProps {
 }
 
 export function QuickScan({ onFolderClick }: QuickScanProps) {
+  const { tk } = useI18n()
   const [results, setResults] = useState<QuickScanFolder[]>([])
   const [scanning, setScanning] = useState(false)
   const [scanned, setScanned] = useState(false)
@@ -39,7 +32,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
       setResults(res.data as QuickScanFolder[])
     } else {
       setResults([])
-      setError(res.error?.message ?? '빠른 정리 후보 탐색에 실패했습니다.')
+      setError(res.error?.message ?? tk('disk.quick_cleanup.scan_failed'))
     }
     setScanning(false)
     setScanned(true)
@@ -53,7 +46,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
     return CATEGORY_ORDER
       .map((cat) => ({
         category: cat,
-        label: CATEGORY_LABELS[cat],
+        label: tk(`disk.quick_cleanup.category.${cat}` as const),
         items: results.filter((r) => r.category === cat).sort((a, b) => b.size - a.size),
         total: results.filter((r) => r.category === cat).reduce((acc, r) => acc + r.size, 0)
       }))
@@ -62,8 +55,8 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
 
   return (
     <Accordion
-      title="Quick Cleanup"
-      badge={scanned ? formatBytes(cleanableSize) + ' cleanable' : undefined}
+      title={tk('disk.section.quick_cleanup')}
+      badge={scanned ? tk('disk.quick_cleanup.badge', { size: formatBytes(cleanableSize) }) : undefined}
       badgeColor="var(--accent-green)"
       forceOpen={scanned}
       actions={
@@ -72,13 +65,13 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
           disabled={scanning}
           style={btnStyle}
         >
-          {scanning ? 'Scanning...' : scanned ? 'Rescan' : 'Quick Scan'}
+          {scanning ? tk('common.scanning') : scanned ? tk('common.rescan') : tk('disk.quick_cleanup.scan_action')}
         </button>
       }
     >
       {!scanned ? (
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
-          캐시, 로그, 다운로드 등 주요 폴더의 용량을 빠르게 확인합니다
+          {tk('disk.quick_cleanup.description')}
         </div>
       ) : error ? (
         <div style={{ fontSize: '12px', color: 'var(--accent-red)', padding: '4px 0' }}>
@@ -95,10 +88,10 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
             fontSize: '13px'
           }}>
             <span style={{ color: 'var(--text-muted)' }}>
-              Total: <strong style={{ color: 'var(--text-primary)' }}>{formatBytes(totalSize)}</strong>
+              {tk('disk.quick_cleanup.total')}: <strong style={{ color: 'var(--text-primary)' }}>{formatBytes(totalSize)}</strong>
             </span>
             <span style={{ color: 'var(--text-muted)' }}>
-              Cleanable: <strong style={{ color: 'var(--accent-green)' }}>{formatBytes(cleanableSize)}</strong>
+              {tk('disk.quick_cleanup.cleanable')}: <strong style={{ color: 'var(--accent-green)' }}>{formatBytes(cleanableSize)}</strong>
             </span>
           </div>
 
@@ -178,7 +171,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                         color: 'var(--accent-green)',
                         fontWeight: 600
                       }}>
-                        CLEANABLE
+                        {tk('disk.quick_cleanup.cleanable_label')}
                       </span>
                     )}
                   </div>
@@ -191,17 +184,17 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                 <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(folder.path) }}
-                    title="Open in Finder / Explorer"
+                    title={tk('disk.quick_cleanup.open_title')}
                     style={actionBtn}
                   >
-                    Open
+                    {tk('common.open')}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onFolderClick(folder.path) }}
-                    title="Scan this folder"
+                    title={tk('disk.quick_cleanup.scan_title')}
                     style={{ ...actionBtn, background: 'var(--accent-blue)', color: 'var(--text-on-accent)' }}
                   >
-                    Scan
+                    {tk('common.scan')}
                   </button>
                 </div>
               </div>

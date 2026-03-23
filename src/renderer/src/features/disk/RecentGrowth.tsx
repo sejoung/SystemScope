@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import type { RecentGrowthEntry } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 interface RecentGrowthProps {
   folderPath: string
 }
 
 export function RecentGrowth({ folderPath }: RecentGrowthProps) {
+  const { tk } = useI18n()
   const [results, setResults] = useState<RecentGrowthEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [scanned, setScanned] = useState(false)
@@ -22,7 +24,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
       setResults(res.data as RecentGrowthEntry[])
     } else {
       setResults([])
-      setError(res.error?.message ?? '최근 변경 분석에 실패했습니다.')
+      setError(res.error?.message ?? tk('disk.recent_growth.scan_failed'))
     }
     setLoading(false)
     setScanned(true)
@@ -32,8 +34,8 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
 
   return (
     <Accordion
-      title="Recent Growth"
-      badge={scanned && totalRecent > 0 ? `+${formatBytes(totalRecent)} in ${days}d` : undefined}
+      title={tk('disk.section.recent_growth')}
+      badge={scanned && totalRecent > 0 ? tk('disk.recent_growth.badge', { size: formatBytes(totalRecent), days }) : undefined}
       badgeColor="var(--accent-yellow)"
       forceOpen={scanned && results.length > 0}
       actions={
@@ -44,14 +46,14 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
             onClick={(e) => e.stopPropagation()}
             style={selectStyle}
           >
-            <option value={1}>1 day</option>
-            <option value={3}>3 days</option>
-            <option value={7}>7 days</option>
-            <option value={14}>14 days</option>
-            <option value={30}>30 days</option>
+            <option value={1}>{tk('disk.recent_growth.day_1')}</option>
+            <option value={3}>{tk('disk.recent_growth.day_3')}</option>
+            <option value={7}>{tk('disk.recent_growth.day_7')}</option>
+            <option value={14}>{tk('disk.recent_growth.day_14')}</option>
+            <option value={30}>{tk('disk.recent_growth.day_30')}</option>
           </select>
           <button onClick={() => handleScan()} disabled={loading} style={btnStyle}>
-            {loading ? 'Scanning...' : scanned ? 'Rescan' : 'Scan'}
+            {loading ? tk('common.scanning') : scanned ? tk('common.rescan') : tk('common.scan')}
           </button>
         </>
       }
@@ -65,7 +67,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
 
       {scanned && !error && results.length === 0 && (
         <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px 0' }}>
-          최근 {days}일 내 급격히 커진 폴더가 없습니다
+          {tk('disk.recent_growth.empty', { days })}
         </div>
       )}
 
@@ -103,7 +105,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
                 </span>
 
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', width: '50px', textAlign: 'right', flexShrink: 0 }}>
-                  {entry.recentFiles} files
+                  {tk('disk.recent_growth.files', { count: entry.recentFiles })}
                 </span>
               </div>
             )

@@ -83,22 +83,22 @@ export function DockerVolumes({
       actions={
         <>
           <button onClick={() => void scanVolumes()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Refreshing...' : tk('apps.action.refresh')}
+            {loading ? tk('common.refreshing') : tk('apps.action.refresh')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedNames))}
             disabled={loading || selectedRemovableCount === 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            {'Delete Selected'}
+            {tk('common.delete_selected')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'}
-          detail={message ?? 'Check Docker Desktop or Docker Engine status.'}
+          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : tk('main.docker.status.daemon_unavailable')}
+          detail={message ?? tk('docker.common.check_status')}
         />
       ) : volumes.length === 0 ? (
         <EmptyState
@@ -170,7 +170,7 @@ export function DockerVolumes({
                           cursor: volume.inUse ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        {'Delete'}
+                        {tk('common.delete')}
                       </button>
                     </td>
                   </tr>

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { FolderNode } from '@shared/types'
 import { formatBytes } from '../../utils/format'
+import { useI18n } from '../../i18n/useI18n'
 
 const COLORS = [
   '#3b82f6', '#22c55e', '#eab308', '#ef4444', '#a855f7',
@@ -54,12 +55,13 @@ function layoutTreemap(node: FolderNode, x: number, y: number, w: number, h: num
 }
 
 export function TreemapChart({ data, width, height }: TreemapChartProps) {
+  const { tk } = useI18n()
   const rects = useMemo(() => layoutTreemap(data, 0, 0, width, height), [data, width, height])
 
   if (rects.length === 0) {
     return (
       <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '40px' }}>
-        데이터가 없습니다
+        {tk('common.no_data')}
       </div>
     )
   }

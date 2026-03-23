@@ -5,6 +5,7 @@ import { useDiskStore } from '../../stores/useDiskStore'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { GrowthFolder } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 const PERIOD_LABELS: Record<string, string> = {
   '1h': '1 Hour',
@@ -15,6 +16,7 @@ const PERIOD_LABELS: Record<string, string> = {
 const BAR_COLORS = ['#eab308', '#f97316', '#ef4444', '#a855f7', '#3b82f6', '#22c55e', '#06b6d4', '#ec4899']
 
 export function GrowthView() {
+  const { tk } = useI18n()
   const result = useDiskStore((s) => s.growthView)
   const loading = useDiskStore((s) => s.growthViewLoading)
   const period = useDiskStore((s) => s.growthViewPeriod)
@@ -39,8 +41,8 @@ export function GrowthView() {
 
   return (
     <Accordion
-      title="Storage Growth"
-      badge={loading ? 'Analyzing...' : hasData ? `+${formatBytes(result!.totalAdded)} in ${PERIOD_LABELS[result!.period]}` : undefined}
+      title={tk('disk.section.storage_growth')}
+      badge={loading ? tk('common.analyzing') : hasData ? tk('disk.storage_growth.badge', { size: formatBytes(result!.totalAdded), period: PERIOD_LABELS[result!.period] }) : undefined}
       badgeColor={loading ? 'var(--text-muted)' : 'var(--accent-yellow)'}
       defaultOpen
       forceOpen={!!hasData || loading}
@@ -67,7 +69,7 @@ export function GrowthView() {
             ))}
           </div>
           <button onClick={() => fetchGrowthView()} disabled={loading} style={btnStyle}>
-            {loading ? 'Analyzing...' : result ? 'Refresh' : 'Analyze'}
+            {loading ? tk('common.analyzing') : result ? tk('apps.action.refresh') : tk('common.analyze')}
           </button>
         </>
       }
@@ -83,15 +85,15 @@ export function GrowthView() {
               animation: 'spin 0.8s linear infinite'
             }} />
           )}
-          {loading ? '홈 디렉토리 성장 추세 분석 중...' : '홈 디렉토리에서 최근 급격히 커진 폴더를 분석합니다'}
+          {loading ? tk('disk.storage_growth.loading') : tk('disk.storage_growth.description')}
           {loading && <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>}
         </div>
       ) : result.totalAdded === 0 ? (
         <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
-          최근 {PERIOD_LABELS[result.period]} 동안 변경이 감지되지 않았습니다.
+          {tk('disk.storage_growth.no_changes', { period: PERIOD_LABELS[result.period] })}
           <br />
           <span style={{ fontSize: '11px' }}>
-            스냅샷이 쌓이면 시간대별 증감을 비교할 수 있습니다. (1시간 간격으로 자동 기록)
+            {tk('disk.storage_growth.snapshots_hint')}
           </span>
         </div>
       ) : (
@@ -103,13 +105,13 @@ export function GrowthView() {
             flexWrap: 'wrap'
           }}>
             <span style={{ color: 'var(--text-muted)' }}>
-              Added: <strong style={{ color: 'var(--accent-yellow)' }}>+{formatBytes(result.totalAdded)}</strong>
+              {tk('disk.storage_growth.added')}: <strong style={{ color: 'var(--accent-yellow)' }}>+{formatBytes(result.totalAdded)}</strong>
             </span>
             <span style={{ color: 'var(--text-muted)' }}>
-              Files: <strong style={{ color: 'var(--text-primary)' }}>{result.totalAddedFiles.toLocaleString()}</strong>
+              {tk('disk.storage_growth.files')}: <strong style={{ color: 'var(--text-primary)' }}>{result.totalAddedFiles.toLocaleString()}</strong>
             </span>
             <span style={{ color: 'var(--text-muted)' }}>
-              Period: <strong style={{ color: 'var(--text-primary)' }}>{PERIOD_LABELS[result.period]}</strong>
+              {tk('disk.storage_growth.period')}: <strong style={{ color: 'var(--text-primary)' }}>{PERIOD_LABELS[result.period]}</strong>
             </span>
           </div>
 
@@ -118,7 +120,7 @@ export function GrowthView() {
             {/* Bar Chart */}
             <div ref={chartRef}>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                Fastest Growing TOP {Math.min(top5.length, 5)}
+                {tk('disk.storage_growth.top', { count: Math.min(top5.length, 5) })}
               </div>
               {chartWidth > 0 && (
                 <BarChart data={top5} layout="vertical" width={chartWidth} height={160} margin={{ left: 60, right: 10 }}>
@@ -148,7 +150,7 @@ export function GrowthView() {
                     }}
                     formatter={(value) => {
                       const numericValue = typeof value === 'number' ? value : 0
-                      return [`+${formatBytes(numericValue)}`, 'Added']
+                      return [`+${formatBytes(numericValue)}`, tk('disk.storage_growth.added')]
                     }}
                   />
                   <Bar dataKey="addedSize" radius={[0, 4, 4, 0]}>
@@ -163,7 +165,7 @@ export function GrowthView() {
             {/* Detail List */}
             <div>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-                All Folders
+                {tk('disk.storage_growth.all_folders')}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflow: 'auto' }}>
                 {result.folders.map((folder, i) => (

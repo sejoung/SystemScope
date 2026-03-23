@@ -29,7 +29,7 @@ interface DeleteTarget {
   path: string
 }
 
-export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title = 'File Insights', hiddenTabs = [], showDelete = true, onFilesRemoved, onRefreshRequested }: FileInsightsProps) {
+export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 'types', title, hiddenTabs = [], showDelete = true, onFilesRemoved, onRefreshRequested }: FileInsightsProps) {
   const showToast = useToast((s) => s.show)
   const { tk } = useI18n()
   const [tab, setTab] = useState<Tab>(defaultTab)
@@ -114,14 +114,14 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
 
   // Badge summary
   let badge: string | undefined
-  if (tab === 'types' && extensions.length > 0) badge = `${extensions.length} types`
-  else if (tab === 'largest' && largeFiles.length > 0) badge = `${largeFiles.length} files`
-  else if (tab === 'old' && oldFilesScanned) badge = oldFiles.length > 0 ? `${oldFiles.length} old / ${formatBytes(oldTotalSize)}` : 'none'
-  else if (tab === 'duplicates' && dupScanned) badge = duplicates.length > 0 ? `${formatBytes(totalWaste)} wasted` : 'none'
+  if (tab === 'types' && extensions.length > 0) badge = tk('disk.file_insights.types_badge', { count: extensions.length })
+  else if (tab === 'largest' && largeFiles.length > 0) badge = tk('disk.file_insights.files', { count: largeFiles.length })
+  else if (tab === 'old' && oldFilesScanned) badge = oldFiles.length > 0 ? tk('disk.file_insights.old_badge', { count: oldFiles.length, size: formatBytes(oldTotalSize) }) : tk('disk.file_insights.none')
+  else if (tab === 'duplicates' && dupScanned) badge = duplicates.length > 0 ? tk('disk.file_insights.dup_badge', { size: formatBytes(totalWaste) }) : tk('disk.file_insights.none')
 
   return (
     <Accordion
-      title={title}
+      title={title ?? tk('disk.file_insights.title')}
       defaultOpen
       badge={badge}
       badgeColor={tab === 'duplicates' && totalWaste > 0 ? 'var(--accent-red)' : tab === 'old' && oldTotalSize > 0 ? 'var(--accent-yellow)' : undefined}
@@ -258,7 +258,7 @@ function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[];
               <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                 <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>{tk('common.open')}</button>
                 {showDelete && f.deletionKey && (
-                  <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{'Delete'}</button>
+                  <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{tk('common.delete')}</button>
                 )}
               </td>
             </tr>
@@ -295,7 +295,7 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
         </select>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tk('disk.file_insights.old_filter_hint')}</span>
         <button onClick={onScan} disabled={loading} style={actionBtnStyle}>
-          {loading ? 'Scanning...' : scanned ? 'Rescan' : 'Scan'}
+          {loading ? tk('common.scanning') : scanned ? tk('common.rescan') : tk('common.scan')}
         </button>
         {scanned && totalSize > 0 && (
           <span style={{ fontSize: '12px', color: 'var(--accent-yellow)', fontWeight: 600, marginLeft: 'auto' }}>
@@ -336,7 +336,7 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
                     <button onClick={() => window.systemScope.showInFolder(f.path)} style={openBtn}>{tk('common.open')}</button>
-                    {f.deletionKey && <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{'Delete'}</button>}
+                    {f.deletionKey && <button onClick={() => onTrash([{ id: f.deletionKey!, path: f.path }])} style={trashBtn}>{tk('common.delete')}</button>}
                   </td>
                 </tr>
               ))}
@@ -366,7 +366,7 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <button onClick={onScan} disabled={loading} style={{ ...actionBtnStyle, background: 'var(--accent-red)', color: 'var(--text-on-accent)' }}>
-          {loading ? 'Scanning...' : scanned ? 'Rescan' : tk('disk.file_insights.find_duplicates')}
+          {loading ? tk('common.scanning') : scanned ? tk('common.rescan') : tk('disk.file_insights.find_duplicates')}
         </button>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tk('disk.file_insights.dup_filter_hint')}</span>
         {scanned && groups.length > 0 && (
@@ -426,7 +426,7 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
                         </span>
                         <button onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(file.path) }} style={openBtn}>{tk('common.open')}</button>
                         {fi > 0 && file.deletionKey && (
-                          <button onClick={(e) => { e.stopPropagation(); onTrash([toDeleteTarget(file)!]) }} style={trashBtn}>{'Delete'}</button>
+                          <button onClick={(e) => { e.stopPropagation(); onTrash([toDeleteTarget(file)!]) }} style={trashBtn}>{tk('common.delete')}</button>
                         )}
                       </div>
                     ))}

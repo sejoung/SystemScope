@@ -63,7 +63,7 @@ export function DockerBuildCache({
       actions={
         <>
           <button onClick={() => void scanBuildCache()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Refreshing...' : tk('apps.action.refresh')}
+            {loading ? tk('common.refreshing') : tk('apps.action.refresh')}
           </button>
           <button
             onClick={() => void handlePrune()}
@@ -77,11 +77,11 @@ export function DockerBuildCache({
     >
       {status !== 'ready' ? (
         <EmptyState
-          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'}
-          detail={message ?? 'Check Docker Desktop or Docker Engine status.'}
+          title={status === 'not_installed' ? tk('main.docker.status.not_installed') : tk('main.docker.status.daemon_unavailable')}
+          detail={message ?? tk('docker.common.check_status')}
         />
       ) : !summary ? (
-        <EmptyState title={message ?? tk('docker.build_cache.empty_info')} detail={'Try again with Refresh.'} />
+        <EmptyState title={message ?? tk('docker.build_cache.empty_info')} detail={tk('docker.build_cache.retry_refresh')} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
           <MetricCard label={tk('docker.build_cache.entries')} value={String(summary.totalCount)} />

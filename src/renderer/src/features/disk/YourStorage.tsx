@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useDiskStore } from '../../stores/useDiskStore'
 import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
+import { useI18n } from '../../i18n/useI18n'
 
 const BAR_COLORS = [
   '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#06b6d4',
@@ -13,6 +14,7 @@ interface YourStorageProps {
 }
 
 export function YourStorage({ onFolderClick }: YourStorageProps) {
+  const { tk } = useI18n()
   const info = useDiskStore((s) => s.userSpace)
   const loading = useDiskStore((s) => s.userSpaceLoading)
   const fetched = useDiskStore((s) => s.userSpaceFetched)
@@ -26,13 +28,13 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   if (!info && loading) {
     return (
-      <Accordion title="Home Storage" defaultOpen>
+      <Accordion title={tk('disk.section.home_storage')} defaultOpen>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0', justifyContent: 'center'
         }}>
           <Spinner />
-          폴더 크기 분석 중... (첫 실행 시 수 초 소요)
+          {tk('disk.home_storage.loading')}
         </div>
       </Accordion>
     )
@@ -40,14 +42,14 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   if (!info) {
     return (
-      <Accordion title="Home Storage" defaultOpen>
+      <Accordion title={tk('disk.section.home_storage')} defaultOpen>
         <div style={{
           color: 'var(--text-muted)',
           fontSize: '13px',
           padding: '16px 0',
           textAlign: 'center'
         }}>
-          홈 스토리지 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+          {tk('disk.home_storage.load_failed')}
         </div>
       </Accordion>
     )
@@ -57,16 +59,19 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   const diskUsedPercent = ((info.diskTotal - info.diskAvailable) / info.diskTotal) * 100
 
   return (
-    <Accordion title="Home Storage" defaultOpen>
+    <Accordion title={tk('disk.section.home_storage')} defaultOpen>
       {/* Disk capacity summary */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '13px' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-            Disk Capacity
+            {tk('disk.home_storage.disk_capacity')}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>
-              {formatBytes(info.diskTotal - info.diskAvailable)} used / {formatBytes(info.diskTotal)}
+              {tk('disk.home_storage.used_summary', {
+                used: formatBytes(info.diskTotal - info.diskAvailable),
+                total: formatBytes(info.diskTotal)
+              })}
             </span>
             <button
               onClick={() => fetchUserSpace()}
@@ -83,7 +88,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 opacity: loading ? 0.5 : 1
               }}
             >
-              {loading ? 'Scanning...' : 'Rescan'}
+              {loading ? tk('common.scanning') : tk('common.rescan')}
             </button>
           </div>
         </div>
@@ -102,7 +107,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
               backgroundColor: 'var(--disk-bar-system)',
               transition: 'width 0.5s'
             }}
-            title={`System: ${formatBytes(usedBySystem)}`}
+            title={tk('disk.home_storage.system') + `: ${formatBytes(usedBySystem)}`}
           />
           {/* Home folders */}
           {info.entries.map((entry, i) => {
@@ -127,10 +132,10 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
         {/* Legend */}
         <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
-          <LegendItem color="var(--disk-bar-system)" label="System" value={formatBytes(usedBySystem)} />
-          <LegendItem color="#22c55e" label="Available" value={formatBytes(info.diskAvailable)} />
+          <LegendItem color="var(--disk-bar-system)" label={tk('disk.home_storage.system')} value={formatBytes(usedBySystem)} />
+          <LegendItem color="#22c55e" label={tk('disk.home_storage.available')} value={formatBytes(info.diskAvailable)} />
           <span style={{ color: 'var(--text-primary)', fontWeight: 600, marginLeft: 'auto' }}>
-            {diskUsedPercent.toFixed(1)}% used
+            {tk('disk.home_storage.used_percent', { percent: diskUsedPercent.toFixed(1) })}
           </span>
         </div>
       </div>
@@ -139,10 +144,10 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Your Folders
+            {tk('disk.home_storage.your_folders')}
           </span>
           <span style={{ color: 'var(--text-secondary)' }}>
-            Total: <strong style={{ color: 'var(--text-primary)' }}>{formatBytes(info.homeSize)}</strong>
+            {tk('disk.home_storage.total', { value: formatBytes(info.homeSize) })}
           </span>
         </div>
 
@@ -209,7 +214,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                     flexShrink: 0
                   }}
                 >
-                  Open
+                  {tk('common.open')}
                 </button>
               </div>
             )

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Accordion } from '../../components/Accordion'
 import type { DockerBuildCacheScanResult, DockerContainersScanResult, DockerImagesScanResult, DockerVolumesScanResult } from '@shared/types'
+import { useI18n } from '../../i18n/useI18n'
 
 export function DockerOverview({
   refreshToken = 0,
@@ -15,6 +16,7 @@ export function DockerOverview({
   onOpenVolumes: () => void
   onOpenBuildCache: () => void
 }) {
+  const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
   const [imageScan, setImageScan] = useState<DockerImagesScanResult | null>(null)
   const [containerScan, setContainerScan] = useState<DockerContainersScanResult | null>(null)
@@ -34,22 +36,22 @@ export function DockerOverview({
     setImageScan(
       imagesRes.ok && imagesRes.data
         ? (imagesRes.data as DockerImagesScanResult)
-        : { status: 'daemon_unavailable', images: [], message: imagesRes.error?.message ?? 'Docker 이미지를 조회하지 못했습니다.' }
+        : { status: 'daemon_unavailable', images: [], message: imagesRes.error?.message ?? tk('docker.images.load_failed') }
     )
     setContainerScan(
       containersRes.ok && containersRes.data
         ? (containersRes.data as DockerContainersScanResult)
-        : { status: 'daemon_unavailable', containers: [], message: containersRes.error?.message ?? 'Docker 컨테이너를 조회하지 못했습니다.' }
+        : { status: 'daemon_unavailable', containers: [], message: containersRes.error?.message ?? tk('docker.containers.load_failed') }
     )
     setVolumeScan(
       volumesRes.ok && volumesRes.data
         ? (volumesRes.data as DockerVolumesScanResult)
-        : { status: 'daemon_unavailable', volumes: [], message: volumesRes.error?.message ?? 'Docker 볼륨을 조회하지 못했습니다.' }
+        : { status: 'daemon_unavailable', volumes: [], message: volumesRes.error?.message ?? tk('docker.volumes.load_failed') }
     )
     setBuildCacheScan(
       buildCacheRes.ok && buildCacheRes.data
         ? (buildCacheRes.data as DockerBuildCacheScanResult)
-        : { status: 'daemon_unavailable', summary: null, message: buildCacheRes.error?.message ?? 'Docker build cache를 조회하지 못했습니다.' }
+        : { status: 'daemon_unavailable', summary: null, message: buildCacheRes.error?.message ?? tk('docker.build_cache.load_failed') }
     )
     setLoading(false)
   }
@@ -78,23 +80,23 @@ export function DockerOverview({
 
   const statusTitle =
     dockerStatus === 'ready'
-      ? 'Docker Cleanup Summary'
-      : 'Docker Cleanup Summary (Partial)'
+      ? tk('docker.overview.status.ready')
+      : tk('docker.overview.status.partial')
 
   const statusDetail =
     dockerStatus === 'ready'
-      ? '이미지 정리 전에 종료된 컨테이너를 먼저 비우면 참조 때문에 막히는 삭제를 줄일 수 있습니다.'
-      : failureMessages[0] ?? '일부 Docker 리소스를 조회하지 못했습니다. Docker Desktop 또는 Docker Engine 상태를 확인하세요.'
+      ? tk('docker.overview.ready_detail')
+      : failureMessages[0] ?? tk('docker.overview.partial_detail')
 
   return (
     <Accordion
-      title="Overview"
+      title={tk('docker.tab.overview')}
       defaultOpen
-      badge={dockerStatus === 'ready' ? 'workflow' : 'partial'}
+      badge={dockerStatus === 'ready' ? tk('docker.overview.badge.workflow') : tk('docker.overview.badge.partial')}
       badgeColor={dockerStatus === 'ready' ? 'var(--accent-cyan)' : 'var(--accent-yellow)'}
       actions={
         <button onClick={() => void refresh()} disabled={loading} style={actionBtnStyle}>
-          {loading ? 'Refreshing...' : 'Refresh All'}
+          {loading ? tk('common.refreshing') : tk('common.refresh_all')}
         </button>
       }
     >
@@ -107,12 +109,12 @@ export function DockerOverview({
         {scans.length > 0 && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-              <SummaryCard title="Stopped Containers" value={String(stoppedCount)} tone="var(--accent-red)" actionLabel="Clean First" onClick={onOpenContainers} />
-              <SummaryCard title="Running Containers" value={String(runningCount)} tone="var(--accent-yellow)" actionLabel="View" onClick={onOpenContainers} />
-              <SummaryCard title="In-use Images" value={String(inUseImageCount)} tone="var(--accent-blue)" actionLabel="Inspect" onClick={onOpenImages} />
-              <SummaryCard title="Untagged Images (<none>)" value={String(danglingImageCount)} tone="var(--accent-green)" actionLabel="Review" onClick={onOpenImages} />
-              <SummaryCard title="Unused Volumes" value={String(unusedVolumeCount)} tone="var(--accent-cyan)" actionLabel="Review" onClick={onOpenVolumes} />
-              <SummaryCard title="Build Cache" value={reclaimableBuildCache} tone="var(--accent-red)" actionLabel="Prune" onClick={onOpenBuildCache} />
+              <SummaryCard title={tk('docker.overview.card.stopped_containers')} value={String(stoppedCount)} tone="var(--accent-red)" actionLabel={tk('docker.overview.action.clean_first')} onClick={onOpenContainers} />
+              <SummaryCard title={tk('docker.overview.card.running_containers')} value={String(runningCount)} tone="var(--accent-yellow)" actionLabel={tk('docker.overview.action.view')} onClick={onOpenContainers} />
+              <SummaryCard title={tk('docker.overview.card.in_use_images')} value={String(inUseImageCount)} tone="var(--accent-blue)" actionLabel={tk('docker.overview.action.inspect')} onClick={onOpenImages} />
+              <SummaryCard title={tk('docker.overview.card.untagged_images')} value={String(danglingImageCount)} tone="var(--accent-green)" actionLabel={tk('docker.overview.action.review')} onClick={onOpenImages} />
+              <SummaryCard title={tk('docker.overview.card.unused_volumes')} value={String(unusedVolumeCount)} tone="var(--accent-cyan)" actionLabel={tk('docker.overview.action.review')} onClick={onOpenVolumes} />
+              <SummaryCard title={tk('docker.overview.card.build_cache')} value={reclaimableBuildCache} tone="var(--accent-red)" actionLabel={tk('docker.overview.action.prune')} onClick={onOpenBuildCache} />
             </div>
 
             <div
@@ -123,24 +125,24 @@ export function DockerOverview({
                 background: 'var(--bg-secondary)'
               }}
             >
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Recommended Flow</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>{tk('docker.overview.flow.title')}</div>
               <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                1. 종료된 컨테이너 정리
+                {tk('docker.overview.flow.step1_title')}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                stopped container {stoppedCount}개를 먼저 제거하면 이미지 참조가 풀립니다.
+                {tk('docker.overview.flow.step1_detail', { count: stoppedCount })}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, marginTop: '10px' }}>
-                2. 사용하지 않는 이미지 정리
+                {tk('docker.overview.flow.step2_title')}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                현재 바로 정리 가능한 이미지 용량은 {formatCompactBytes(reclaimableImageBytes)} 입니다.
+                {tk('docker.overview.flow.step2_detail', { size: formatCompactBytes(reclaimableImageBytes) })}
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600, marginTop: '10px' }}>
-                3. 미사용 볼륨과 build cache 정리
+                {tk('docker.overview.flow.step3_title')}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                unused volume {unusedVolumeCount}개, build cache {reclaimableBuildCache}를 추가로 회수할 수 있습니다.
+                {tk('docker.overview.flow.step3_detail', { volumes: unusedVolumeCount, cache: reclaimableBuildCache })}
               </div>
             </div>
           </>

@@ -86,20 +86,20 @@ export function DockerImages({
       actions={
         <>
           <button onClick={() => void scanImages()} disabled={loading} style={actionBtnStyle}>
-            {loading ? 'Scanning...' : images.length > 0 || message ? tk('apps.action.refresh') : 'Scan Images'}
+            {loading ? tk('common.scanning') : images.length > 0 || message ? tk('apps.action.refresh') : tk('docker.images.scan_action')}
           </button>
           <button
             onClick={() => void handleDelete(Array.from(selectedIds))}
             disabled={loading || selectedSelectableCount === 0}
             style={{ ...actionBtnStyle, background: 'var(--accent-red)' }}
           >
-            {'Delete Selected'}
+            {tk('common.delete_selected')}
           </button>
         </>
       }
     >
       {status !== 'ready' ? (
-        <EmptyState title={status === 'not_installed' ? tk('main.docker.status.not_installed') : 'Docker daemon unavailable'} detail={message ?? 'Check Docker Desktop or Docker Engine status.'} />
+        <EmptyState title={status === 'not_installed' ? tk('main.docker.status.not_installed') : tk('main.docker.status.daemon_unavailable')} detail={message ?? tk('docker.common.check_status')} />
       ) : images.length === 0 ? (
         <EmptyState title={message ?? tk('main.docker.images.empty')} detail={tk('docker.images.empty_detail')} />
       ) : (
@@ -200,7 +200,7 @@ export function DockerImages({
                             cursor: image.inUse ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          {'Delete'}
+                          {tk('common.delete')}
                         </button>
                       </td>
                     </tr>
