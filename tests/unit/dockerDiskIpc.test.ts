@@ -13,9 +13,6 @@ const getDockerBuildCache = vi.hoisted(() => vi.fn())
 const pruneDockerBuildCache = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
-const trashItemsWithConfirm = vi.hoisted(() => vi.fn())
-const scanFolder = vi.hoisted(() => vi.fn())
-const findLargeFiles = vi.hoisted(() => vi.fn())
 
 const mockWindow = vi.hoisted(() => ({
   isDestroyed: vi.fn(() => false),
@@ -65,25 +62,11 @@ vi.mock('../../src/main/services/dockerImages', () => ({
   pruneDockerBuildCache
 }))
 
-vi.mock('../../src/main/services/diskAnalyzer', () => ({
-  scanFolder,
-  findLargeFiles,
-  getExtensionBreakdown: vi.fn()
-}))
-vi.mock('../../src/main/services/quickScan', () => ({ runQuickScan: vi.fn() }))
-vi.mock('../../src/main/services/userSpace', () => ({ getUserSpaceInfo: vi.fn() }))
-vi.mock('../../src/main/services/diskInsights', () => ({ findRecentGrowth: vi.fn(), findDuplicates: vi.fn() }))
-vi.mock('../../src/main/services/growthAnalyzer', () => ({ analyzeGrowth: vi.fn() }))
-vi.mock('../../src/main/services/oldFileFinder', () => ({ findOldFiles: vi.fn() }))
-vi.mock('../../src/main/jobs/jobManager', () => ({
-  createJob: vi.fn(),
-  cancelJob: vi.fn(),
-  sendJobProgress: vi.fn(),
-  sendJobCompleted: vi.fn(),
-  sendJobFailed: vi.fn()
-}))
-vi.mock('../../src/main/services/trashService', () => ({
-  trashItemsWithConfirm
+vi.mock('../../src/main/services/logging', () => ({
+  logError,
+  logInfo: vi.fn(),
+  logWarn: vi.fn(),
+  logDebug: vi.fn()
 }))
 
 describe('docker disk IPC', () => {
@@ -101,71 +84,20 @@ describe('docker disk IPC', () => {
     pruneDockerBuildCache.mockReset()
     showMessageBox.mockReset()
     logError.mockReset()
-    trashItemsWithConfirm.mockReset()
-    scanFolder.mockReset()
-    findLargeFiles.mockReset()
   })
 
   it('should return docker images scan result', async () => {
     listDockerImages.mockResolvedValue({ status: 'ready', images: [], message: 'Docker 이미지가 없습니다.' })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_IMAGES)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
     expect(result.ok).toBe(true)
     expect(result.data).toEqual({ status: 'ready', images: [], message: 'Docker 이미지가 없습니다.' })
-  })
-
-  it('should return deletion keys for large files and only trash registered items', async () => {
-    const scanResult = {
-      rootPath: '/Users/test/Downloads',
-      tree: { name: 'Downloads', path: '/Users/test/Downloads', size: 10, children: [], isFile: false },
-      totalSize: 10,
-      fileCount: 1,
-      folderCount: 1,
-      scanDuration: 1
-    }
-    scanFolder.mockResolvedValue(scanResult)
-    findLargeFiles.mockReturnValue([
-      { name: 'large.zip', path: '/Users/test/Downloads/large.zip', size: 10, modified: 1 }
-    ])
-    trashItemsWithConfirm.mockResolvedValue({
-      successCount: 1,
-      failCount: 0,
-      totalSize: 10,
-      trashedPaths: ['/Users/test/Downloads/large.zip'],
-      errors: []
-    })
-
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
-
-    const listHandler = handlers.get(IPC_CHANNELS.DISK_GET_LARGE_FILES)
-    const trashHandler = handlers.get(IPC_CHANNELS.DISK_TRASH_ITEMS)
-    expect(listHandler).toBeTypeOf('function')
-    expect(trashHandler).toBeTypeOf('function')
-
-    const listResult = await listHandler?.({}, '/Users/test/Downloads', 10) as { ok: boolean; data?: Array<{ deletionKey?: string }> }
-    expect(listResult.ok).toBe(true)
-    expect(listResult.data?.[0]?.deletionKey).toBeTypeOf('string')
-
-    const invalidTrash = await trashHandler?.({}, { itemIds: ['forged-id'], description: '대용량 파일 삭제' }) as { ok: boolean; error?: { code: string } }
-    expect(invalidTrash.ok).toBe(false)
-    expect(invalidTrash.error?.code).toBe('INVALID_INPUT')
-
-    const deletionKey = listResult.data?.[0]?.deletionKey
-    expect(deletionKey).toBeTypeOf('string')
-
-    const validTrash = await trashHandler?.({}, {
-      itemIds: [deletionKey as string],
-      description: '대용량 파일 삭제'
-    }) as { ok: boolean; data?: unknown }
-    expect(validTrash.ok).toBe(true)
-    expect(trashItemsWithConfirm).toHaveBeenCalledWith(['/Users/test/Downloads/large.zip'], '대용량 파일 삭제')
   })
 
   it('should refuse deleting in-use images', async () => {
@@ -177,10 +109,10 @@ describe('docker disk IPC', () => {
       ]
     })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_IMAGES)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, ['sha256:a']) as { ok: boolean; error?: { code: string } }
@@ -199,10 +131,10 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     removeDockerImages.mockResolvedValue({ deletedIds: ['sha256:a'], failCount: 0, errors: [], cancelled: false })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_IMAGES)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, ['sha256:a']) as { ok: boolean; data?: unknown }
@@ -214,10 +146,10 @@ describe('docker disk IPC', () => {
   it('should return docker containers scan result', async () => {
     listDockerContainers.mockResolvedValue({ status: 'ready', containers: [], message: '정리할 Docker 컨테이너가 없습니다.' })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_CONTAINERS)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
@@ -234,10 +166,10 @@ describe('docker disk IPC', () => {
       ]
     })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, ['container:a']) as { ok: boolean; error?: { code: string } }
@@ -256,10 +188,10 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     removeDockerContainers.mockResolvedValue({ deletedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, ['container:a']) as { ok: boolean; data?: unknown }
@@ -279,10 +211,10 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     stopDockerContainers.mockResolvedValue({ affectedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_STOP_CONTAINERS)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, ['container:a']) as { ok: boolean; data?: unknown }
@@ -294,10 +226,10 @@ describe('docker disk IPC', () => {
   it('should return docker volumes scan result', async () => {
     listDockerVolumes.mockResolvedValue({ status: 'ready', volumes: [], message: 'Docker 볼륨이 없습니다.' })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_VOLUMES)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }
@@ -312,10 +244,10 @@ describe('docker disk IPC', () => {
       volumes: [{ name: 'pgdata', driver: 'local', mountpoint: '/tmp/pgdata', inUse: true, containers: ['db'] }]
     })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, ['pgdata']) as { ok: boolean; error?: { code: string } }
@@ -332,10 +264,10 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     pruneDockerBuildCache.mockResolvedValue({ reclaimedBytes: 800, reclaimedLabel: '800 B', cancelled: false })
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
-    registerDiskIpc()
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    registerDockerIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE)
+    const handler = handlers.get(IPC_CHANNELS.DOCKER_PRUNE_BUILD_CACHE)
     expect(handler).toBeTypeOf('function')
 
     const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown }

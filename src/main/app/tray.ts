@@ -19,7 +19,7 @@ export function createTray(): void {
     const icon = getInitialTrayIcon()
     tray = new Tray(icon)
   } catch (err) {
-    logError('tray', 'Failed to create tray icon', err)
+    logError('tray', '트레이 아이콘 생성 실패', err)
     tray = null
     return
   }
@@ -111,7 +111,7 @@ async function refreshTrayIcon(): Promise<void> {
 
     tray.setToolTip(`SystemScope\nCPU ${roundedUsage}%`)
   } catch (error) {
-    logError('tray', 'Failed to refresh tray icon', error)
+    logError('tray', '트레이 아이콘 갱신 실패', error)
   }
 }
 

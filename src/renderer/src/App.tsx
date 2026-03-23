@@ -100,7 +100,9 @@ function App() {
   )
   useIpcListener(window.systemScope.onShutdownState, handleShutdownState)
 
-  // 프로세스 데이터 글로벌 폴링 — 어떤 페이지에 있든 갱신
+  // 프로세스 데이터 폴링 — 대시보드 또는 프로세스 페이지에서만 갱신
+  const shouldPollProcesses = currentPage === 'dashboard' || currentPage === 'process'
+
   useInterval(() => {
     void Promise.all([
       window.systemScope.getAllProcesses(),
@@ -111,13 +113,13 @@ function App() {
       if (cpuRes.ok && cpuRes.data) setCpuProcesses(cpuRes.data)
       if (memRes.ok && memRes.data) setMemoryProcesses(memRes.data)
     })
-  }, PROCESS_UPDATE_INTERVAL_MS)
+  }, shouldPollProcesses ? PROCESS_UPDATE_INTERVAL_MS : null)
 
   return (
     <>
       <Layout>
         <ErrorBoundary
-          title="Page Render Failed"
+          title="페이지 렌더링 실패"
           message="현재 페이지를 렌더링하지 못했습니다. 다른 메뉴로 이동한 뒤 다시 시도해주세요."
           resetKey={currentPage}
         >
@@ -142,7 +144,7 @@ function ShutdownOverlay({ state }: { state: ShutdownState }) {
     <div style={overlayStyle}>
       <div style={overlayCardStyle}>
         <div style={spinnerStyle} />
-        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Shutting down SystemScope</div>
+        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>SystemScope를 종료하는 중</div>
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{state.message}</div>
       </div>
     </div>

@@ -32,7 +32,7 @@ app.whenReady().then(() => {
     }
   })
 }).catch((err) => {
-  logError('app', 'Failed to initialize app', err)
+  logError('app', '앱 초기화 실패', err)
   app.quit()
 })
 
@@ -48,10 +48,6 @@ app.on('before-quit', (event) => {
   }
 
   setForceQuit(true)
-})
-
-app.on('will-quit', () => {
-  void executeGracefulShutdown('will-quit')
 })
 
 app.on('window-all-closed', () => {

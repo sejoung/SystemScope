@@ -4,14 +4,7 @@ import * as fs from 'fs'
 import { logError, logInfo } from './logging'
 import { isPathInsideParent } from '../ipc/settingsPathUtils'
 import type { TrashResult } from '@shared/types'
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
+import { formatBytes } from '@shared/utils/formatBytes'
 
 export async function trashItemsWithConfirm(
   filePaths: string[],
@@ -47,12 +40,16 @@ export async function trashItemsWithConfirm(
 
   // 확인 다이얼로그
   const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  if (!win || win.isDestroyed()) {
+    return { successCount: 0, failCount: filePaths.length, totalSize: 0, trashedPaths: [], errors: ['활성 창을 찾을 수 없습니다.'] }
+  }
+
   const fileList = validPaths.length <= 5
     ? validPaths.map((f) => `  ${path.basename(f.path)} (${formatBytes(f.size)})`).join('\n')
     : validPaths.slice(0, 4).map((f) => `  ${path.basename(f.path)} (${formatBytes(f.size)})`).join('\n')
       + `\n  ... 외 ${validPaths.length - 4}개`
 
-  const result = await dialog.showMessageBox(win!, {
+  const result = await dialog.showMessageBox(win, {
     type: 'warning',
     buttons: ['Cancel', 'Move to Trash'],
     defaultId: 0,
@@ -81,11 +78,11 @@ export async function trashItemsWithConfirm(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       errors.push(`${path.basename(file.path)}: ${msg}`)
-      logError('trash', 'Failed to trash item', { path: file.path, error: err })
+      logError('trash', '휴지통으로 이동 실패', { path: file.path, error: err })
     }
   }
 
-  logInfo('trash', 'Trash operation completed', {
+  logInfo('trash', '휴지통 이동 작업 완료', {
     successCount,
     requestedCount: validPaths.length,
     trashedSize,

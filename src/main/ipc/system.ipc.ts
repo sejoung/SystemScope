@@ -7,14 +7,15 @@ import { success, failure } from '@shared/types'
 import { logError } from '../services/logging'
 import {
   addSystemSubscriber,
-  getSystemSubscriberIds,
   removeSystemSubscriber,
   hasSystemSubscribers,
+  isSystemSubscriber,
   retainSystemSubscribers,
   resetSystemSubscribers
 } from './systemSubscriptions'
 
-let updateInterval: ReturnType<typeof setInterval> | null = null
+let updateTimer: ReturnType<typeof setTimeout> | null = null
+let isRunning = false
 
 export function registerSystemIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_STATS, async () => {
@@ -22,7 +23,7 @@ export function registerSystemIpc(): void {
       const stats = await getSystemStats()
       return success(stats)
     } catch (err) {
-      logError('system-ipc', 'Failed to get system stats', err)
+      logError('system-ipc', '시스템 정보를 가져올 수 없습니다', err)
       return failure('UNKNOWN_ERROR', '시스템 정보를 가져올 수 없습니다.')
     }
   })
@@ -43,58 +44,59 @@ export function registerSystemIpc(): void {
 }
 
 function startRealtimeUpdates(): void {
-  if (updateInterval) return
+  if (isRunning) return
+  isRunning = true
+  void scheduleNextUpdate()
+}
 
-  updateInterval = setInterval(async () => {
-    try {
-      const stats = await getSystemStats()
-      const wins = BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed())
-      retainSystemSubscribers(wins.map((win) => win.webContents.id))
+async function scheduleNextUpdate(): Promise<void> {
+  if (!isRunning) return
 
-      if (!hasSystemSubscribers()) {
-        stopRealtimeUpdates()
-        return
+  try {
+    const stats = await getSystemStats()
+    const wins = BrowserWindow.getAllWindows().filter((win) => !win.isDestroyed())
+    retainSystemSubscribers(wins.map((win) => win.webContents.id))
+
+    if (!hasSystemSubscribers()) {
+      stopRealtimeUpdates()
+      return
+    }
+
+    const subscriberWins = wins.filter((win) => isSystemSubscriber(win.webContents.id))
+
+    for (const win of subscriberWins) {
+      if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+        win.webContents.send(IPC_CHANNELS.EVENT_SYSTEM_UPDATE, stats)
       }
+    }
 
-      const subscriberWins = wins.filter((win) => hasSubscribedWebContents(win.webContents.id))
-
+    // 알림 체크
+    const newAlerts = checkAlerts(stats)
+    if (newAlerts.length > 0) {
       for (const win of subscriberWins) {
         if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-          win.webContents.send(IPC_CHANNELS.EVENT_SYSTEM_UPDATE, stats)
+          win.webContents.send(IPC_CHANNELS.EVENT_ALERT_FIRED, newAlerts)
         }
       }
-
-      // Check alerts
-      const newAlerts = checkAlerts(stats)
-      if (newAlerts.length > 0) {
-        for (const win of subscriberWins) {
-          if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-            win.webContents.send(IPC_CHANNELS.EVENT_ALERT_FIRED, newAlerts)
-          }
-        }
-      }
-    } catch (err) {
-      logError('system-ipc', 'Realtime update failed', err)
     }
-  }, SYSTEM_UPDATE_INTERVAL_MS)
+  } catch (err) {
+    logError('system-ipc', '실시간 업데이트 실패', err)
+  }
+
+  if (isRunning) {
+    updateTimer = setTimeout(() => { void scheduleNextUpdate() }, SYSTEM_UPDATE_INTERVAL_MS)
+  }
 }
 
 function stopRealtimeUpdates(): void {
-  if (updateInterval) {
-    clearInterval(updateInterval)
-    updateInterval = null
+  isRunning = false
+  if (updateTimer) {
+    clearTimeout(updateTimer)
+    updateTimer = null
   }
 }
 
 export function cleanupSystemIpc(): void {
   stopRealtimeUpdates()
   resetSystemSubscribers()
-}
-
-function hasSubscribedWebContents(webContentsId: number): boolean {
-  return hasSystemSubscribers() && getSubscriberIdSet().has(webContentsId)
-}
-
-function getSubscriberIdSet(): Set<number> {
-  return new Set(getSystemSubscriberIds())
 }

@@ -14,10 +14,9 @@ export const useSystemStore = create<SystemState>((set) => ({
 
   pushStats: (stats) =>
     set((state) => {
-      const history = [...state.history, stats]
-      if (history.length > HISTORY_MAX_POINTS) {
-        history.shift()
-      }
+      const history = state.history.length >= HISTORY_MAX_POINTS
+        ? [...state.history.slice(1), stats]
+        : [...state.history, stats]
       return { current: stats, history }
     })
 }))

@@ -83,7 +83,7 @@ export function cleanupOldLogs(now = new Date(), retentionDays = LOG_RETENTION_D
     try {
       fs.unlinkSync(filePath)
     } catch (error) {
-      logWarn('logging', 'Failed to remove old log file', { filePath, error })
+      logWarn('logging', '오래된 로그 파일 삭제 실패', { filePath, error })
     }
   }
 }

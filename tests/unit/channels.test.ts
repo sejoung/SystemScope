@@ -32,15 +32,18 @@ describe('IPC_CHANNELS', () => {
     expect(IPC_CHANNELS.DISK_RECENT_GROWTH).toBeDefined()
     expect(IPC_CHANNELS.DISK_FIND_DUPLICATES).toBeDefined()
     expect(IPC_CHANNELS.DISK_GROWTH_VIEW).toBeDefined()
-    expect(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES).toBeDefined()
-    expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES).toBeDefined()
-    expect(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS).toBeDefined()
-    expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS).toBeDefined()
-    expect(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS).toBeDefined()
-    expect(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES).toBeDefined()
-    expect(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES).toBeDefined()
-    expect(IPC_CHANNELS.DISK_GET_DOCKER_BUILD_CACHE).toBeDefined()
-    expect(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE).toBeDefined()
+  })
+
+  it('should contain all docker channels', () => {
+    expect(IPC_CHANNELS.DOCKER_LIST_IMAGES).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_REMOVE_IMAGES).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_LIST_CONTAINERS).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_STOP_CONTAINERS).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_LIST_VOLUMES).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_GET_BUILD_CACHE).toBeDefined()
+    expect(IPC_CHANNELS.DOCKER_PRUNE_BUILD_CACHE).toBeDefined()
   })
 
   it('should contain all process channels', () => {

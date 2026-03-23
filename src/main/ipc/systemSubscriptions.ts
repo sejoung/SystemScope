@@ -18,6 +18,10 @@ export function getSystemSubscriberIds(): number[] {
   return Array.from(subscribers)
 }
 
+export function isSystemSubscriber(webContentsId: number): boolean {
+  return subscribers.has(webContentsId)
+}
+
 export function retainSystemSubscribers(activeIds: number[]): number {
   const activeSet = new Set(activeIds)
   for (const id of subscribers) {

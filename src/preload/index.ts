@@ -15,19 +15,19 @@ function createListener(channel: string) {
 }
 
 const api = {
-  // App
+  // 앱
   logRendererError: (scope: string, message: string, details?: unknown) =>
     ipcRenderer.invoke(IPC_CHANNELS.APP_LOG_RENDERER_ERROR, { scope, message, details }),
   setUnsavedSettingsState: (hasUnsavedSettings: boolean) =>
     ipcRenderer.invoke(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, { hasUnsavedSettings }),
 
-  // System
+  // 시스템
   getSystemStats: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_STATS),
   subscribeSystem: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_SUBSCRIBE),
   unsubscribeSystem: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE),
   onSystemUpdate: createListener(IPC_CHANNELS.EVENT_SYSTEM_UPDATE),
 
-  // Disk
+  // 디스크
   scanFolder: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.DISK_SCAN_FOLDER, folderPath),
   invalidateScanCache: (folderPath: string) => ipcRenderer.invoke(IPC_CHANNELS.DISK_INVALIDATE_SCAN_CACHE, folderPath),
   getLargeFiles: (folderPath: string, limit: number) =>
@@ -45,17 +45,19 @@ const api = {
   findOldFiles: (folderPath: string, olderThanDays: number) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISK_FIND_OLD_FILES, folderPath, olderThanDays),
   trashDiskItems: (request: TrashItemsRequest) => ipcRenderer.invoke(IPC_CHANNELS.DISK_TRASH_ITEMS, request),
-  listDockerImages: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_IMAGES),
-  removeDockerImages: (imageIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_IMAGES, imageIds),
-  listDockerContainers: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_CONTAINERS),
-  removeDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_CONTAINERS, containerIds),
-  stopDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_STOP_DOCKER_CONTAINERS, containerIds),
-  listDockerVolumes: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_LIST_DOCKER_VOLUMES),
-  removeDockerVolumes: (volumeNames: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DISK_REMOVE_DOCKER_VOLUMES, volumeNames),
-  getDockerBuildCache: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_GET_DOCKER_BUILD_CACHE),
-  pruneDockerBuildCache: () => ipcRenderer.invoke(IPC_CHANNELS.DISK_PRUNE_DOCKER_BUILD_CACHE),
 
-  // Process
+  // Docker
+  listDockerImages: () => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_LIST_IMAGES),
+  removeDockerImages: (imageIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_REMOVE_IMAGES, imageIds),
+  listDockerContainers: () => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_LIST_CONTAINERS),
+  removeDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS, containerIds),
+  stopDockerContainers: (containerIds: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_STOP_CONTAINERS, containerIds),
+  listDockerVolumes: () => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_LIST_VOLUMES),
+  removeDockerVolumes: (volumeNames: string[]) => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES, volumeNames),
+  getDockerBuildCache: () => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_GET_BUILD_CACHE),
+  pruneDockerBuildCache: () => ipcRenderer.invoke(IPC_CHANNELS.DOCKER_PRUNE_BUILD_CACHE),
+
+  // 프로세스
   getTopCpuProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_CPU, limit),
   getTopMemoryProcesses: (limit: number) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY, limit),
   getAllProcesses: () => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_GET_ALL),
@@ -63,7 +65,7 @@ const api = {
   killProcess: (request: { pid: number; name?: string; command?: string; reason?: string }) =>
     ipcRenderer.invoke(IPC_CHANNELS.PROCESS_KILL, request),
 
-  // Apps
+  // 앱 관리
   listInstalledApps: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_LIST_INSTALLED),
   getAppRelatedData: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_GET_RELATED_DATA, appId),
   listLeftoverAppData: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA),
@@ -72,28 +74,28 @@ const api = {
   openAppLocation: (appId: string) => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_LOCATION, appId),
   openSystemUninstallSettings: () => ipcRenderer.invoke(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS),
 
-  // Alerts
+  // 알림
   getActiveAlerts: () => ipcRenderer.invoke(IPC_CHANNELS.ALERT_GET_ACTIVE),
   dismissAlert: (alertId: string) => ipcRenderer.invoke(IPC_CHANNELS.ALERT_DISMISS, alertId),
   onAlertFired: createListener(IPC_CHANNELS.EVENT_ALERT_FIRED),
   onShutdownState: createListener(IPC_CHANNELS.EVENT_SHUTDOWN_STATE),
 
-  // Jobs
+  // 작업
   cancelJob: (jobId: string) => ipcRenderer.invoke(IPC_CHANNELS.JOB_CANCEL, jobId),
   onJobProgress: createListener(IPC_CHANNELS.JOB_PROGRESS),
   onJobCompleted: createListener(IPC_CHANNELS.JOB_COMPLETED),
   onJobFailed: createListener(IPC_CHANNELS.JOB_FAILED),
 
-  // Settings
+  // 설정
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   setSettings: (settings: Record<string, unknown>) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, settings),
   getDataPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_DATA_PATH),
   getLogPath: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_LOG_PATH),
 
-  // Dialog
+  // 다이얼로그
   selectFolder: () => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SELECT_FOLDER),
 
-  // Shell — Finder / Explorer에서 열기
+  // 셸 — Finder / 탐색기에서 열기
   showInFolder: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, targetPath),
   openPath: (targetPath: string) => ipcRenderer.invoke(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath)
 }

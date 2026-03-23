@@ -1,8 +1,21 @@
 import si from 'systeminformation'
 import type { ProcessInfo, PortInfo } from '@shared/types'
 
-export async function getTopCpuProcesses(limit: number = 10): Promise<ProcessInfo[]> {
+// si.processes() 중복 호출 방지를 위한 TTL 캐시 (500ms)
+const PROCESS_CACHE_TTL = 500
+let cachedProcesses: { data: si.Systeminformation.ProcessesData; timestamp: number } | null = null
+
+async function getCachedProcesses(): Promise<si.Systeminformation.ProcessesData> {
+  if (cachedProcesses && Date.now() - cachedProcesses.timestamp < PROCESS_CACHE_TTL) {
+    return cachedProcesses.data
+  }
   const data = await si.processes()
+  cachedProcesses = { data, timestamp: Date.now() }
+  return data
+}
+
+export async function getTopCpuProcesses(limit: number = 10): Promise<ProcessInfo[]> {
+  const data = await getCachedProcesses()
   return data.list
     .sort((a, b) => b.cpu - a.cpu)
     .slice(0, limit)
@@ -10,7 +23,7 @@ export async function getTopCpuProcesses(limit: number = 10): Promise<ProcessInf
 }
 
 export async function getTopMemoryProcesses(limit: number = 10): Promise<ProcessInfo[]> {
-  const data = await si.processes()
+  const data = await getCachedProcesses()
   return data.list
     .sort((a, b) => b.mem - a.mem)
     .slice(0, limit)
@@ -18,7 +31,7 @@ export async function getTopMemoryProcesses(limit: number = 10): Promise<Process
 }
 
 export async function getAllProcesses(): Promise<ProcessInfo[]> {
-  const data = await si.processes()
+  const data = await getCachedProcesses()
   return data.list
     .filter((p) => p.cpu > 0 || p.memRss > 0)
     .sort((a, b) => b.cpu - a.cpu)
@@ -26,7 +39,7 @@ export async function getAllProcesses(): Promise<ProcessInfo[]> {
 }
 
 export async function getProcessByPid(pid: number): Promise<ProcessInfo | null> {
-  const data = await si.processes()
+  const data = await getCachedProcesses()
   const found = data.list.find((processInfo) => processInfo.pid === pid)
   return found ? toProcessInfo(found) : null
 }

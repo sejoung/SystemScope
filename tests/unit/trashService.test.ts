@@ -13,8 +13,8 @@ vi.mock('electron', () => ({
     trashItem
   },
   BrowserWindow: {
-    getFocusedWindow: vi.fn(() => ({ id: 1 })),
-    getAllWindows: vi.fn(() => [{ id: 1 }])
+    getFocusedWindow: vi.fn(() => ({ id: 1, isDestroyed: () => false })),
+    getAllWindows: vi.fn(() => [{ id: 1, isDestroyed: () => false }])
   },
   app: {
     getPath

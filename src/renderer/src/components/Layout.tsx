@@ -6,7 +6,7 @@ const IS_MAC = navigator.userAgent.includes('Macintosh')
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {/* Top titlebar drag region spanning full width */}
+      {/* 전체 너비에 걸친 상단 타이틀바 드래그 영역 */}
       {IS_MAC && (
         <div
           className="titlebar-drag"

@@ -2,6 +2,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import type { FolderNode, LargeFile, ExtensionGroup, DiskScanResult } from '@shared/types'
 import { SCAN_MAX_DEPTH, SCAN_CONCURRENCY, SCAN_LARGE_FILE_LIMIT } from '@shared/constants/thresholds'
+import { getDirSize } from '../utils/getDirSize'
 
 export async function scanFolder(
   folderPath: string,
@@ -35,26 +36,31 @@ export async function scanFolder(
     }
 
     if (depth >= maxDepth) {
-      // At max depth, just sum sizes without recursing
+      // 최대 깊이 도달 시 파일 크기 합산 + 하위 디렉토리는 getDirSize로 측정
       const sizes = await Promise.all(
         entries.map(async (entry) => {
           try {
             const fullPath = path.join(dirPath, entry.name)
-            const stat = await fs.stat(fullPath)
-            if (stat.isFile()) {
+            if (entry.isSymbolicLink()) return 0
+            if (entry.isFile()) {
+              const stat = await fs.stat(fullPath)
               fileCount++
+              return stat.size
             }
-            return stat.isFile() ? stat.size : 0
+            if (entry.isDirectory()) {
+              return getDirSize(fullPath)
+            }
           } catch {
-            return 0
+            // 접근 불가 항목 건너뜀
           }
+          return 0
         })
       )
       node.size = sizes.reduce((a, b) => a + b, 0)
       return node
     }
 
-    // Process in batches
+    // 배치 단위로 처리
     const batches: typeof entries[] = []
     for (let i = 0; i < entries.length; i += SCAN_CONCURRENCY) {
       batches.push(entries.slice(i, i + SCAN_CONCURRENCY))
@@ -84,7 +90,7 @@ export async function scanFolder(
               } satisfies FolderNode
             }
           } catch {
-            // Skip inaccessible entries
+            // 접근 불가 항목 건너뜀
           }
           return null
         })
@@ -98,7 +104,7 @@ export async function scanFolder(
       }
     }
 
-    // Sort children by size desc
+    // 크기 기준 내림차순 정렬
     node.children.sort((a, b) => b.size - a.size)
 
     return node
@@ -147,7 +153,7 @@ export function getExtensionBreakdown(tree: FolderNode): ExtensionGroup[] {
 
   function collect(node: FolderNode): void {
     if (node.isFile) {
-      const ext = path.extname(node.name).toLowerCase() || '(no ext)'
+      const ext = path.extname(node.name).toLowerCase() || '(확장자 없음)'
       const group = map.get(ext) ?? { totalSize: 0, count: 0 }
       group.totalSize += node.size
       group.count++

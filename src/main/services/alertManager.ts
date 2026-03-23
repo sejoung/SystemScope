@@ -1,6 +1,6 @@
 import type { Alert, AlertThresholds, AlertType, AlertSeverity, SystemStats } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
-import { ALERT_COOLDOWN_MS } from '@shared/constants/thresholds'
+import { ALERT_COOLDOWN_MS, MAX_ACTIVE_ALERTS } from '@shared/constants/thresholds'
 
 let thresholds: AlertThresholds = { ...DEFAULT_THRESHOLDS }
 const activeAlerts: Map<string, Alert> = new Map()
@@ -22,7 +22,7 @@ export function dismissAlert(id: string): boolean {
 export function checkAlerts(stats: SystemStats): Alert[] {
   const newAlerts: Alert[] = []
 
-  // Disk alerts — macOS에서는 purgeable 제외한 realUsage 기준으로 판단
+  // 디스크 알림 — macOS에서는 purgeable 제외한 realUsage 기준으로 판단
   for (const drive of stats.disk.drives) {
     const key = `disk:${drive.mount}`
     const effectiveUsage = drive.realUsage ?? drive.usage
@@ -35,7 +35,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
     }
   }
 
-  // Memory alert
+  // 메모리 알림
   if (stats.memory.usage >= thresholds.memoryCritical) {
     const alert = createAlertIfCooldown('memory', 'memory', 'critical', `메모리 사용률 ${stats.memory.usage}%`, stats.memory.usage, thresholds.memoryCritical)
     if (alert) newAlerts.push(alert)
@@ -44,7 +44,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
     if (alert) newAlerts.push(alert)
   }
 
-  // GPU memory alert
+  // GPU 메모리 알림
   if (stats.gpu.available && stats.gpu.memoryTotal && stats.gpu.memoryUsed) {
     const gpuUsage = Math.round((stats.gpu.memoryUsed / stats.gpu.memoryTotal) * 10000) / 100
     if (gpuUsage >= thresholds.gpuMemoryCritical) {
@@ -72,6 +72,13 @@ function createAlertIfCooldown(
   if (last && now - last < ALERT_COOLDOWN_MS) return null
 
   lastFired.set(key, now)
+
+  // 최대 알림 수 초과 시 가장 오래된 알림 제거
+  if (activeAlerts.size >= MAX_ACTIVE_ALERTS) {
+    const oldestKey = activeAlerts.keys().next().value
+    if (oldestKey !== undefined) activeAlerts.delete(oldestKey)
+  }
+
   const id = `alert-${++alertCounter}-${now}`
   const alert: Alert = { id, type, severity, message, value, threshold, timestamp: now, dismissed: false }
   activeAlerts.set(id, alert)

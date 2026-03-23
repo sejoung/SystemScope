@@ -5,6 +5,7 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import type { UserSpaceEntry, UserSpaceInfo } from '@shared/types'
 import { logDebug, logWarn } from './logging'
+import { getDirSizeRecursive } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
 let hasLoggedUserSpaceApfsFallback = false
@@ -53,8 +54,8 @@ async function getDirSizesBatchMac(paths: string[]): Promise<Map<string, number>
       if (!isNaN(kb)) result.set(p, kb * 1024)
     }
   } catch (err) {
-    // partial results may be available in stderr with individual permission errors
-    // du still outputs sizes for accessible paths
+    // 권한 오류로 인해 stderr에 부분 결과가 있을 수 있음
+    // du는 접근 가능한 경로의 크기는 여전히 출력함
     const errObj = err as { stdout?: string }
     if (errObj.stdout) {
       for (const line of errObj.stdout.trim().split('\n')) {
@@ -65,39 +66,10 @@ async function getDirSizesBatchMac(paths: string[]): Promise<Map<string, number>
         if (!isNaN(kb)) result.set(p, kb * 1024)
       }
     } else {
-      logDebug('user-space', 'Failed to batch measure user space folders with du', { paths, error: err })
+      logDebug('user-space', 'du 명령으로 사용자 공간 폴더 일괄 측정 실패', { paths, error: err })
     }
   }
   return result
-}
-
-// Windows fallback: 개별 폴더 재귀 탐색 (depth 제한)
-async function getDirSizeRecursive(dirPath: string, maxDepth: number = 3, depth: number = 0): Promise<number> {
-  let total = 0
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true })
-    const promises = entries.map(async (entry) => {
-      const fullPath = path.join(dirPath, entry.name)
-      try {
-        if (entry.isSymbolicLink()) return 0
-        if (entry.isFile()) {
-          const stat = await fs.stat(fullPath)
-          return stat.size
-        }
-        if (entry.isDirectory() && depth < maxDepth) {
-          return getDirSizeRecursive(fullPath, maxDepth, depth + 1)
-        }
-      } catch {
-        // skip
-      }
-      return 0
-    })
-    const sizes = await Promise.all(promises)
-    total = sizes.reduce((a, b) => a + b, 0)
-  } catch {
-    // skip
-  }
-  return total
 }
 
 // macOS APFS 컨테이너 정보
@@ -115,9 +87,9 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
     } catch {
       if (!hasLoggedUserSpaceApfsFallback) {
         hasLoggedUserSpaceApfsFallback = true
-        logDebug('user-space', 'Failed to read APFS container info, falling back to statfs')
+        logDebug('user-space', 'APFS 컨테이너 정보 읽기 실패, statfs로 대체합니다')
       }
-      // fallback
+      // 대체 방식 사용
     }
   }
 
@@ -127,7 +99,7 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
     const available = stats.bavail * stats.bsize
     return { total, available, purgeable: null }
   } catch {
-    logWarn('user-space', 'Failed to resolve filesystem capacity for user space view')
+    logWarn('user-space', '사용자 공간 보기를 위한 파일시스템 용량 확인 실패')
     return { total: 0, available: 0, purgeable: null }
   }
 }
@@ -145,7 +117,7 @@ export async function getUserSpaceInfo(): Promise<UserSpaceInfo> {
       await fs.access(fullPath)
       existingFolders.push({ name: folder.name, fullPath, icon: folder.icon })
     } catch {
-      // skip
+      // 건너뜀
     }
   }
 

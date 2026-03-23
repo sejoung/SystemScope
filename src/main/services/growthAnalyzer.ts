@@ -1,13 +1,10 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform } from 'os'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
 import type { GrowthFolder, GrowthViewResult } from '@shared/types'
 import { saveSnapshot, getSnapshotsInRange, type Snapshot, type FolderSnapshot } from './snapshotStore'
-import { logDebug, logError, logInfo } from './logging'
-
-const execFileAsync = promisify(execFile)
+import { logError, logInfo } from './logging'
+import { getDirSize } from '../utils/getDirSize'
 
 const PERIODS: Record<string, number> = {
   '1h': 60 * 60 * 1000,
@@ -47,7 +44,7 @@ async function doTakeSnapshot(): Promise<Snapshot> {
       const size = await getDirSize(target.path)
       folders.push({ name: target.name, path: target.path, size })
     } catch {
-      // doesn't exist
+      // 존재하지 않는 폴더
     }
   }
 
@@ -58,7 +55,7 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   }
 
   await saveSnapshot(snapshot)
-  logInfo('snapshot', 'Snapshot saved', { folderCount: folders.length, totalSize: snapshot.totalSize })
+  logInfo('snapshot', '스냅샷 저장 완료', { folderCount: folders.length, totalSize: snapshot.totalSize })
   return snapshot
 }
 
@@ -132,11 +129,11 @@ export function startSnapshotScheduler(intervalMs: number = 60 * 60 * 1000): voi
   if (snapshotInterval) return
 
   // 앱 시작 시 즉시 1회 스냅샷
-  takeSnapshot().catch((err) => logError('snapshot', 'Initial snapshot failed', err))
+  takeSnapshot().catch((err) => logError('snapshot', '초기 스냅샷 실패', err))
 
-  // 이후 매 시간마다
+  // 이후 설정된 주기마다
   snapshotInterval = setInterval(() => {
-    takeSnapshot().catch((err) => logError('snapshot', 'Scheduled snapshot failed', err))
+    takeSnapshot().catch((err) => logError('snapshot', '예약된 스냅샷 실패', err))
   }, intervalMs)
 }
 
@@ -155,7 +152,7 @@ export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<
   try {
     await Promise.race([
       snapshotInProgress,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Snapshot wait timed out')), timeoutMs))
+      new Promise((_, reject) => setTimeout(() => reject(new Error('스냅샷 대기 시간 초과')), timeoutMs))
     ])
     return true
   } catch {
@@ -166,51 +163,4 @@ export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<
 export function restartSnapshotScheduler(intervalMs: number): void {
   stopSnapshotScheduler()
   startSnapshotScheduler(intervalMs)
-}
-
-// 폴더 크기 측정
-async function getDirSize(dirPath: string): Promise<number> {
-  if (platform() === 'darwin' || platform() === 'linux') {
-    return getDirSizeDu(dirPath)
-  }
-  return getDirSizeRecursive(dirPath, 0, 4)
-}
-
-async function getDirSizeDu(dirPath: string): Promise<number> {
-  try {
-    const { stdout } = await execFileAsync('du', ['-sk', dirPath], {
-      timeout: 30000,
-      env: { ...process.env, LANG: 'C' }
-    })
-    const kb = parseInt(stdout.split('\t')[0], 10)
-    return isNaN(kb) ? 0 : kb * 1024
-  } catch (err) {
-    const errObj = err as { stdout?: string }
-    if (errObj.stdout) {
-      const kb = parseInt(errObj.stdout.split('\t')[0], 10)
-      return isNaN(kb) ? 0 : kb * 1024
-    }
-    logDebug('snapshot', 'Failed to measure directory size with du', { dirPath, error: err })
-    return 0
-  }
-}
-
-async function getDirSizeRecursive(dirPath: string, depth: number, maxDepth: number): Promise<number> {
-  let total = 0
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name)
-      try {
-        if (entry.isSymbolicLink()) continue
-        if (entry.isFile()) {
-          const stat = await fs.stat(fullPath)
-          total += stat.size
-        } else if (entry.isDirectory() && depth < maxDepth) {
-          total += await getDirSizeRecursive(fullPath, depth + 1, maxDepth)
-        }
-      } catch { /* skip */ }
-    }
-  } catch { /* skip */ }
-  return total
 }

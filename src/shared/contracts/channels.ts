@@ -1,14 +1,14 @@
 export const IPC_CHANNELS = {
-  // App
+  // 앱
   APP_LOG_RENDERER_ERROR: 'app:logRendererError',
   APP_SET_UNSAVED_SETTINGS: 'app:setUnsavedSettings',
 
-  // System Monitoring
+  // 시스템 모니터링
   SYSTEM_GET_STATS: 'system:getStats',
   SYSTEM_SUBSCRIBE: 'system:subscribe',
   SYSTEM_UNSUBSCRIBE: 'system:unsubscribe',
 
-  // Disk Analysis
+  // 디스크 분석
   DISK_SCAN_FOLDER: 'disk:scanFolder',
   DISK_INVALIDATE_SCAN_CACHE: 'disk:invalidateScanCache',
   DISK_GET_LARGE_FILES: 'disk:getLargeFiles',
@@ -20,24 +20,26 @@ export const IPC_CHANNELS = {
   DISK_GROWTH_VIEW: 'disk:growthView',
   DISK_FIND_OLD_FILES: 'disk:findOldFiles',
   DISK_TRASH_ITEMS: 'disk:trashItems',
-  DISK_LIST_DOCKER_IMAGES: 'disk:listDockerImages',
-  DISK_REMOVE_DOCKER_IMAGES: 'disk:removeDockerImages',
-  DISK_LIST_DOCKER_CONTAINERS: 'disk:listDockerContainers',
-  DISK_REMOVE_DOCKER_CONTAINERS: 'disk:removeDockerContainers',
-  DISK_STOP_DOCKER_CONTAINERS: 'disk:stopDockerContainers',
-  DISK_LIST_DOCKER_VOLUMES: 'disk:listDockerVolumes',
-  DISK_REMOVE_DOCKER_VOLUMES: 'disk:removeDockerVolumes',
-  DISK_GET_DOCKER_BUILD_CACHE: 'disk:getDockerBuildCache',
-  DISK_PRUNE_DOCKER_BUILD_CACHE: 'disk:pruneDockerBuildCache',
 
-  // Process Monitoring
+  // Docker 관리
+  DOCKER_LIST_IMAGES: 'docker:listImages',
+  DOCKER_REMOVE_IMAGES: 'docker:removeImages',
+  DOCKER_LIST_CONTAINERS: 'docker:listContainers',
+  DOCKER_REMOVE_CONTAINERS: 'docker:removeContainers',
+  DOCKER_STOP_CONTAINERS: 'docker:stopContainers',
+  DOCKER_LIST_VOLUMES: 'docker:listVolumes',
+  DOCKER_REMOVE_VOLUMES: 'docker:removeVolumes',
+  DOCKER_GET_BUILD_CACHE: 'docker:getBuildCache',
+  DOCKER_PRUNE_BUILD_CACHE: 'docker:pruneBuildCache',
+
+  // 프로세스 모니터링
   PROCESS_GET_TOP_CPU: 'process:getTopCpu',
   PROCESS_GET_TOP_MEMORY: 'process:getTopMemory',
   PROCESS_GET_ALL: 'process:getAll',
   PROCESS_GET_PORTS: 'process:getPorts',
   PROCESS_KILL: 'process:kill',
 
-  // Installed Apps
+  // 설치된 앱
   APPS_LIST_INSTALLED: 'apps:listInstalled',
   APPS_GET_RELATED_DATA: 'apps:getRelatedData',
   APPS_LIST_LEFTOVER_DATA: 'apps:listLeftoverData',
@@ -46,30 +48,30 @@ export const IPC_CHANNELS = {
   APPS_OPEN_LOCATION: 'apps:openLocation',
   APPS_OPEN_SYSTEM_SETTINGS: 'apps:openSystemSettings',
 
-  // Alerts
+  // 알림
   ALERT_GET_ACTIVE: 'alert:getActive',
   ALERT_DISMISS: 'alert:dismiss',
 
-  // Jobs
+  // 작업
   JOB_CANCEL: 'job:cancel',
   JOB_PROGRESS: 'job:progress',
   JOB_COMPLETED: 'job:completed',
   JOB_FAILED: 'job:failed',
 
-  // Settings
+  // 설정
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
   SETTINGS_GET_DATA_PATH: 'settings:getDataPath',
   SETTINGS_GET_LOG_PATH: 'settings:getLogPath',
 
-  // Dialog
+  // 다이얼로그
   DIALOG_SELECT_FOLDER: 'dialog:selectFolder',
 
-  // Shell (Finder / Explorer)
+  // 셸 (Finder / 탐색기)
   SHELL_SHOW_IN_FOLDER: 'shell:showInFolder',
   SHELL_OPEN_PATH: 'shell:openPath',
 
-  // Real-time events (main → renderer)
+  // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',
   EVENT_SHUTDOWN_STATE: 'event:shutdownState'

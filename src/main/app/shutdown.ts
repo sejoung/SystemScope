@@ -21,15 +21,15 @@ export function initializeShutdownHandlers(): void {
   })
 
   process.once('uncaughtException', (error) => {
-    logError('shutdown', 'Uncaught exception in main process', error)
+    logError('shutdown', '메인 프로세스에서 처리되지 않은 예외 발생', error)
     void handleProcessTermination('uncaughtException', 1)
   })
 
-  process.once('unhandledRejection', (reason) => {
-    logError('shutdown', 'Unhandled rejection in main process', {
+  // unhandledRejection은 로깅만 수행 (앱 종료하지 않음)
+  process.on('unhandledRejection', (reason) => {
+    logError('shutdown', '메인 프로세스에서 처리되지 않은 Promise 거부 발생', {
       reason: reason instanceof Error ? reason : String(reason)
     })
-    void handleProcessTermination('unhandledRejection', 1)
   })
 }
 
@@ -45,7 +45,7 @@ export async function executeGracefulShutdown(reason: string): Promise<void> {
   if (!shutdownPromise) {
     shutdownPromise = doGracefulShutdown(reason)
       .catch((error) => {
-        logError('shutdown', 'Graceful shutdown failed', { reason, error })
+        logError('shutdown', '그레이스풀 셧다운 실패', { reason, error })
       })
       .finally(() => {
         shutdownCompleted = true
@@ -57,29 +57,29 @@ export async function executeGracefulShutdown(reason: string): Promise<void> {
 }
 
 async function doGracefulShutdown(reason: string): Promise<void> {
-  broadcastShutdownState('starting', 'Shutting down SystemScope...')
-  logInfo('shutdown', 'Starting graceful shutdown', {
+  broadcastShutdownState('starting', 'SystemScope를 종료하는 중...')
+  logInfo('shutdown', '그레이스풀 셧다운 시작', {
     reason,
     activeJobs: getActiveJobCount()
   })
 
-  broadcastShutdownState('cancelling_jobs', 'Cancelling active jobs...')
+  broadcastShutdownState('cancelling_jobs', '진행 중인 작업을 취소하는 중...')
   cleanupSystemIpc()
 
   const cancelledJobs = cancelAllJobs()
   stopSnapshotScheduler()
-  broadcastShutdownState('waiting_snapshot', 'Waiting for snapshot tasks to finish...')
+  broadcastShutdownState('waiting_snapshot', '스냅샷 작업 완료 대기 중...')
   const snapshotFlushed = await waitForPendingSnapshot()
-  broadcastShutdownState('cleaning_up', 'Cleaning up background services...')
+  broadcastShutdownState('cleaning_up', '백그라운드 서비스를 정리하는 중...')
   destroyTray()
 
-  logInfo('shutdown', 'Graceful shutdown completed', {
+  logInfo('shutdown', '그레이스풀 셧다운 완료', {
     reason,
     cancelledJobs,
     snapshotFlushed
   })
 
-  broadcastShutdownState('finishing', 'Finalizing shutdown...')
+  broadcastShutdownState('finishing', '종료를 마무리하는 중...')
   shutdownLogging()
 }
 

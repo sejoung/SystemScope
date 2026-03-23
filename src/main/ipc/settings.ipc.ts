@@ -33,7 +33,7 @@ export function registerSettingsIpc(): void {
 
       return success(getSettings())
     } catch (err) {
-      logError('settings-ipc', 'Failed to save settings', err)
+      logError('settings-ipc', '설정 저장 실패', err)
       return failure('UNKNOWN_ERROR', '설정 저장에 실패했습니다.')
     }
   })
@@ -81,12 +81,12 @@ export function registerSettingsIpc(): void {
     try {
       const openResult = await shell.openPath(resolved)
       if (didShellOpenPathFail(openResult)) {
-        logError('settings-ipc', 'Failed to open path', { path: resolved, error: openResult })
+        logError('settings-ipc', '경로 열기 실패', { path: resolved, error: openResult })
         return failure('UNKNOWN_ERROR', '폴더를 열 수 없습니다.')
       }
       return success(true)
     } catch (err) {
-      logError('settings-ipc', 'Failed to open path', { path: resolved, error: err })
+      logError('settings-ipc', '경로 열기 실패', { path: resolved, error: err })
       return failure('UNKNOWN_ERROR', '폴더를 열 수 없습니다.')
     }
   })
@@ -104,7 +104,7 @@ export function registerSettingsIpc(): void {
 
     // 사용자 홈 디렉토리 하위만 허용
     if (!isPathInsideParent(resolved, homePath)) {
-      logWarn('settings-ipc', 'Show in folder blocked because path is outside home', { path: resolved })
+      logWarn('settings-ipc', '홈 디렉토리 외부 경로로 폴더 열기 차단', { path: resolved })
       return failure('PERMISSION_DENIED', '허용되지 않은 경로입니다.')
     }
 
@@ -116,7 +116,7 @@ export function registerSettingsIpc(): void {
       shell.showItemInFolder(resolved)
       return success(true)
     } catch (err) {
-      logError('settings-ipc', 'Failed to show in folder', { path: resolved, error: err })
+      logError('settings-ipc', '폴더에서 보기 실패', { path: resolved, error: err })
       return failure('UNKNOWN_ERROR', '폴더를 열 수 없습니다.')
     }
   })

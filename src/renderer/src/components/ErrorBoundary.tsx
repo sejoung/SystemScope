@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     try {
       void window.systemScope.logRendererError(
         'error-boundary',
-        `Failed to render section: ${this.props.title}`,
+        `섹션 렌더링 실패: ${this.props.title}`,
         {
           error: {
             name: error.name,
@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         }
       ).catch(() => undefined)
     } catch {
-      // Ignore logging failures to avoid recursive renderer errors.
+      // 재귀적 렌더러 오류를 방지하기 위해 로깅 실패를 무시합니다.
     }
   }
 

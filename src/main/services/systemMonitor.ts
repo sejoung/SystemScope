@@ -29,11 +29,11 @@ export async function getSystemStats(): Promise<SystemStats> {
     const temp = await si.cpuTemperature()
     cpu.temperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
   } catch (err) {
-    logDebug('system-monitor', 'CPU temperature unavailable', { error: err })
+    logDebug('system-monitor', 'CPU 온도 정보를 가져올 수 없습니다', { error: err })
   }
 
-  // macOS: mem.used にはファイルキャッシュ(inactive)が含まれ常に高い値になる
-  // 実際のメモリ圧迫度 = (total - available) / total
+  // macOS: mem.used에는 파일 캐시(inactive)가 포함되어 항상 높은 값을 보여줌
+  // 실제 메모리 사용률 = (total - available) / total
   const cached = mem.used - mem.active
   const memory: MemoryInfo = {
     total: mem.total,
@@ -119,7 +119,7 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
       const size = parseInt(sizeMatch[1], 10)
       const free = parseInt(freeMatch[1], 10)
       if (isNaN(size) || isNaN(free)) {
-        logWarn('system-monitor', 'Invalid APFS sizes from diskutil', { sizeMatch: sizeMatch[1], freeMatch: freeMatch[1] })
+        logWarn('system-monitor', 'diskutil에서 가져온 APFS 크기가 유효하지 않습니다', { sizeMatch: sizeMatch[1], freeMatch: freeMatch[1] })
         return null
       }
       return { size, free }
@@ -127,7 +127,7 @@ async function getApfsContainerInfo(): Promise<{ size: number; free: number } | 
   } catch (err) {
     if (!hasLoggedApfsContainerFallback) {
       hasLoggedApfsContainerFallback = true
-      logDebug('system-monitor', 'APFS container info unavailable, falling back to fsSize data', { error: err })
+      logDebug('system-monitor', 'APFS 컨테이너 정보를 가져올 수 없어 fsSize 데이터로 대체합니다', { error: err })
     }
   }
   return null

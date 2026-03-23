@@ -32,7 +32,7 @@ export function Accordion({
       border: '1px solid var(--border)',
       overflow: 'hidden'
     }}>
-      {/* Header */}
+      {/* 헤더 */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -41,7 +41,7 @@ export function Accordion({
         flexWrap: 'wrap',
         minHeight: '40px'
       }}>
-        {/* Toggle area */}
+        {/* 토글 영역 */}
         <button
           onClick={() => setOpen(!open)}
           style={{
@@ -92,7 +92,7 @@ export function Accordion({
           )}
         </button>
 
-        {/* Action buttons */}
+        {/* 액션 버튼 */}
         {actions && (
           <div
             onClick={(e) => e.stopPropagation()}
@@ -103,7 +103,7 @@ export function Accordion({
         )}
       </div>
 
-      {/* Content */}
+      {/* 콘텐츠 */}
       {open && (
         <div style={{ padding: '0 16px 16px' }}>
           {children}
