@@ -99,4 +99,22 @@ describe('installedApps helpers', () => {
     expect(inferMacLeftoverAppName('com.example.tof.savedState')).toBe('com.example.tof')
     expect(inferMacLeftoverAppName('ToF')).toBe('ToF')
   })
+
+  it('should parse bare Windows uninstaller executables without arguments', async () => {
+    const { parseUninstallCommand } = await import('../../src/main/services/installedApps')
+
+    expect(parseUninstallCommand('C:\\KED\\FindAgent\\uninst.exe')).toEqual({
+      file: 'C:\\KED\\FindAgent\\uninst.exe',
+      args: ''
+    })
+  })
+
+  it('should split quoted Windows uninstall arguments correctly', async () => {
+    const { splitWindowsCommandArgs } = await import('../../src/main/services/installedApps')
+
+    expect(splitWindowsCommandArgs('/S /D="C:\\Program Files\\Example App"')).toEqual([
+      '/S',
+      '/D=C:\\Program Files\\Example App'
+    ])
+  })
 })

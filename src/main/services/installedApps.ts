@@ -339,7 +339,7 @@ function getCurrentMacAppBundlePath(): string | null {
   return parts.slice(0, appIndex + 1).join(path.sep)
 }
 
-function parseUninstallCommand(command: string): { file: string; args: string } {
+export function parseUninstallCommand(command: string): { file: string; args: string } {
   // "C:\path\uninstall.exe" /arg1 /arg2
   const quotedMatch = command.match(/^"([^"]+)"(.*)$/)
   if (quotedMatch) {
@@ -358,20 +358,52 @@ function parseUninstallCommand(command: string): { file: string; args: string } 
   return { file: command, args: '' }
 }
 
+export function splitWindowsCommandArgs(args: string): string[] {
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < args.length; i++) {
+    const char = args[i]
+
+    if (char === '"') {
+      inQuotes = !inQuotes
+      continue
+    }
+
+    if (!inQuotes && /\s/.test(char)) {
+      if (current) {
+        result.push(current)
+        current = ''
+      }
+      continue
+    }
+
+    current += char
+  }
+
+  if (current) {
+    result.push(current)
+  }
+
+  return result
+}
+
 function launchWindowsUninstaller(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const { file, args } = parseUninstallCommand(command)
-      const escaped = (s: string) => s.replace(/'/g, "''")
-      const argList = args ? `-ArgumentList '${escaped(args)}'` : ''
-      const psCommand = `Start-Process -FilePath '${escaped(file)}' ${argList} -Wait`
+      const argv = splitWindowsCommandArgs(args)
+      const cwd = path.isAbsolute(file) ? path.dirname(file) : undefined
 
-      logInfo('apps', 'Launching uninstaller via PowerShell', { file, args, psCommand })
+      logInfo('apps', 'Launching uninstaller process', { file, args: argv, cwd })
 
-      const child = spawn('powershell', ['-NoProfile', '-Command', psCommand], {
+      const child = spawn(file, argv, {
+        cwd,
         detached: true,
         stdio: 'ignore',
-        windowsHide: false
+        windowsHide: false,
+        shell: false
       })
       child.on('error', reject)
       child.on('spawn', () => {
