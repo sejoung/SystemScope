@@ -551,4 +551,6 @@ export const EN_MESSAGES = {
   'Analyzing folder sizes... (the first run may take a few seconds)': 'Analyzing folder sizes... (the first run may take a few seconds)',
   'Warning (%)': 'Warning (%)',
   'Critical (%)': 'Critical (%)',
+  '(no extension)': '(no extension)',
+  '... and {count} more': '... and {count} more',
   } as const

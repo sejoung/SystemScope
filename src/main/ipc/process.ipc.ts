@@ -83,7 +83,7 @@ export function registerProcessIpc(): void {
 
       const confirm = await dialog.showMessageBox(win ?? undefined, {
         type: 'warning',
-        buttons: ['Cancel', 'Kill'],
+        buttons: [tk('main.process.confirm.cancel'), tk('main.process.confirm.kill')],
         defaultId: 0,
         cancelId: 0,
         title: tk('main.process.confirm.title'),

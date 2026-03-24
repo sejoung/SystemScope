@@ -3,6 +3,7 @@ import * as path from 'path'
 import type { FolderNode, LargeFile, ExtensionGroup, DiskScanResult } from '@shared/types'
 import { SCAN_MAX_DEPTH, SCAN_CONCURRENCY, SCAN_LARGE_FILE_LIMIT } from '@shared/constants/thresholds'
 import { getDirSize } from '../utils/getDirSize'
+import { tk } from '../i18n'
 
 export async function scanFolder(
   folderPath: string,
@@ -160,10 +161,11 @@ export function findLargeFiles(
 
 export function getExtensionBreakdown(tree: FolderNode): ExtensionGroup[] {
   const map = new Map<string, { totalSize: number; count: number }>()
+  const noExtensionLabel = tk('common.no_extension')
 
   function collect(node: FolderNode): void {
     if (node.isFile) {
-      const ext = path.extname(node.name).toLowerCase() || '(확장자 없음)'
+      const ext = path.extname(node.name).toLowerCase() || noExtensionLabel
       const group = map.get(ext) ?? { totalSize: 0, count: 0 }
       group.totalSize += node.size
       group.count++

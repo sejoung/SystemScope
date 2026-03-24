@@ -10,8 +10,11 @@ import type {
   LargeFile,
   ProcessInfo,
   PortInfo,
+  QuickScanFolder,
+  RecentGrowthEntry,
   SystemStats,
   TrashItemsRequest,
+  TrashResult,
   UserSpaceInfo,
   ShutdownState,
   InstalledApp,
@@ -61,13 +64,13 @@ export interface SystemScopeApi {
   invalidateScanCache: (folderPath: string) => Promise<AppResult<boolean>>
   getLargeFiles: (folderPath: string, limit: number) => Promise<AppResult<LargeFile[]>>
   getExtensionBreakdown: (folderPath: string) => Promise<AppResult<ExtensionGroup[]>>
-  quickScan: () => Promise<AppResult<unknown>>
+  quickScan: () => Promise<AppResult<QuickScanFolder[]>>
   getUserSpace: () => Promise<AppResult<UserSpaceInfo>>
-  findRecentGrowth: (folderPath: string, days: number) => Promise<AppResult<unknown>>
+  findRecentGrowth: (folderPath: string, days: number) => Promise<AppResult<RecentGrowthEntry[]>>
   findDuplicates: (folderPath: string, minSizeKB: number) => Promise<AppResult<DuplicateGroup[]>>
   getGrowthView: (period: string) => Promise<AppResult<GrowthViewResult>>
   findOldFiles: (folderPath: string, olderThanDays: number) => Promise<AppResult<LargeFile[]>>
-  trashDiskItems: (request: TrashItemsRequest) => Promise<AppResult<unknown>>
+  trashDiskItems: (request: TrashItemsRequest) => Promise<AppResult<TrashResult>>
 
   listDockerImages: () => Promise<AppResult<DockerImagesScanResult>>
   removeDockerImages: (imageIds: string[]) => Promise<AppResult<DockerRemoveResult>>

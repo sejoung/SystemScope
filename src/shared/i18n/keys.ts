@@ -613,7 +613,11 @@ export const MESSAGE_KEYS = {
   'docker.ipc.confirm.cache_message': 'Do you want to clean up Docker build cache?',
   'docker.ipc.confirm.cache_detail': 'Currently reclaimable: {size}',
   'docker.ipc.error.prune_cache': 'Unable to clean up Docker build cache.',
-  'common.open': 'Open'
+  'common.open': 'Open',
+  'common.no_extension': '(no extension)',
+  'main.trash.dialog.more': '... and {count} more',
+  'main.process.confirm.cancel': 'Cancel',
+  'main.process.confirm.kill': 'Kill'
 } as const
 
 export type TranslationKey = keyof typeof MESSAGE_KEYS

@@ -17,8 +17,8 @@ export function getSettings(): AppSettings {
 }
 
 export function setSettings(settings: Partial<AppSettings>): void {
-  if (settings.thresholds) store.set('thresholds', settings.thresholds)
-  if (settings.theme) store.set('theme', settings.theme)
-  if (settings.locale) store.set('locale', settings.locale)
-  if (settings.snapshotIntervalMin) store.set('snapshotIntervalMin', settings.snapshotIntervalMin)
+  if (settings.thresholds !== undefined) store.set('thresholds', settings.thresholds)
+  if (settings.theme !== undefined) store.set('theme', settings.theme)
+  if (settings.locale !== undefined) store.set('locale', settings.locale)
+  if (settings.snapshotIntervalMin !== undefined) store.set('snapshotIntervalMin', settings.snapshotIntervalMin)
 }

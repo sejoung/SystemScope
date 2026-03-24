@@ -48,7 +48,7 @@ export async function trashItemsWithConfirm(
   const fileList = validPaths.length <= 5
     ? validPaths.map((f) => `  ${path.basename(f.path)} (${formatBytes(f.size)})`).join('\n')
     : validPaths.slice(0, 4).map((f) => `  ${path.basename(f.path)} (${formatBytes(f.size)})`).join('\n')
-      + `\n  ... 외 ${validPaths.length - 4}개`
+      + `\n  ${tk('main.trash.dialog.more', { count: validPaths.length - 4 })}`
 
   const result = await dialog.showMessageBox(win, {
     type: 'warning',

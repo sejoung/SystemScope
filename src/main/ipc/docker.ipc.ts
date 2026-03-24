@@ -12,10 +12,52 @@ import {
   stopDockerContainers
 } from '../services/dockerImages'
 import { success, failure } from '@shared/types'
-import type { DockerRemoveResult } from '@shared/types'
+import type { AppResult } from '@shared/types'
 import { logError } from '../services/logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
+
+interface ConfirmDialogOptions {
+  actionButton: string
+  title: string
+  message: string
+  detailLines: (string | null)[]
+}
+
+function getActiveWindow(): BrowserWindow | null {
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  return win && !win.isDestroyed() ? win : null
+}
+
+async function showConfirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
+  const win = getActiveWindow()
+  if (!win) return false
+
+  const confirm = await dialog.showMessageBox(win, {
+    type: 'warning',
+    buttons: [tk('docker.ipc.confirm.cancel'), options.actionButton],
+    defaultId: 0,
+    cancelId: 0,
+    title: options.title,
+    message: options.message,
+    detail: options.detailLines.filter(Boolean).join('\n')
+  })
+
+  return confirm.response !== 0
+}
+
+function buildTargetDetailLines(
+  labels: string[],
+  totalCount: number,
+  footerLines: string[]
+): (string | null)[] {
+  return [
+    ...labels.slice(0, 5),
+    totalCount > 5 ? tk('docker.ipc.confirm.more', { count: totalCount - 5 }) : null,
+    '',
+    ...footerLines
+  ]
+}
 
 export function registerDockerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_IMAGES, async () => {
@@ -58,7 +100,7 @@ export function registerDockerIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_IMAGES, async (_event, imageIds: string[]) => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_IMAGES, async (_event, imageIds: string[]): Promise<AppResult<never> | ReturnType<typeof success>> => {
     if (!Array.isArray(imageIds) || imageIds.length === 0 || imageIds.some((id) => typeof id !== 'string' || !id.trim())) {
       return failure('INVALID_INPUT', tk('docker.ipc.error.no_images'))
     }
@@ -77,35 +119,24 @@ export function registerDockerIpc(): void {
         return failure('PERMISSION_DENIED', tk('docker.ipc.error.images_in_use'))
       }
 
-      const totalSize = targets.reduce((sum, image) => sum + image.sizeBytes, 0)
-      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      if (!win || win.isDestroyed()) {
+      if (!getActiveWindow()) {
         return failure('UNKNOWN_ERROR', tk('main.settings.error.no_active_window'))
       }
-      const confirm = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: [tk('docker.ipc.confirm.cancel'), tk('docker.ipc.confirm.delete')],
-        defaultId: 0,
-        cancelId: 0,
+
+      const totalSize = targets.reduce((sum, image) => sum + image.sizeBytes, 0)
+      const confirmed = await showConfirmDialog({
+        actionButton: tk('docker.ipc.confirm.delete'),
         title: tk('docker.ipc.confirm.images_title'),
         message: tk('docker.ipc.confirm.images_message', { count: targets.length }),
-        detail: [
-          ...targets.slice(0, 5).map((image) => `- ${image.repository}:${image.tag} (${image.sizeLabel})`),
-          targets.length > 5 ? tk('docker.ipc.confirm.more', { count: targets.length - 5 }) : null,
-          '',
-          tk('docker.ipc.confirm.total_size', { size: formatBytes(totalSize) }),
-          tk('docker.ipc.confirm.images_note')
-        ].filter(Boolean).join('\n')
+        detailLines: buildTargetDetailLines(
+          targets.map((image) => `- ${image.repository}:${image.tag} (${image.sizeLabel})`),
+          targets.length,
+          [tk('docker.ipc.confirm.total_size', { size: formatBytes(totalSize) }), tk('docker.ipc.confirm.images_note')]
+        )
       })
 
-      if (confirm.response === 0) {
-        const result: DockerRemoveResult = {
-          deletedIds: [],
-          failCount: 0,
-          errors: [],
-          cancelled: true
-        }
-        return success(result)
+      if (!confirmed) {
+        return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerImages(targets.map((image) => image.id))
@@ -139,37 +170,24 @@ export function registerDockerIpc(): void {
         return failure('PERMISSION_DENIED', tk('docker.ipc.error.running_containers'))
       }
 
-      const totalSize = targets.reduce((sum, container) => sum + container.sizeBytes, 0)
-      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      if (!win || win.isDestroyed()) {
+      if (!getActiveWindow()) {
         return failure('UNKNOWN_ERROR', tk('main.settings.error.no_active_window'))
       }
-      const confirm = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: [tk('docker.ipc.confirm.cancel'), tk('docker.ipc.confirm.delete')],
-        defaultId: 0,
-        cancelId: 0,
+
+      const totalSize = targets.reduce((sum, container) => sum + container.sizeBytes, 0)
+      const confirmed = await showConfirmDialog({
+        actionButton: tk('docker.ipc.confirm.delete'),
         title: tk('docker.ipc.confirm.containers_title'),
         message: tk('docker.ipc.confirm.containers_message', { count: targets.length }),
-        detail: [
-          ...targets.slice(0, 5).map((container) => `- ${container.name} (${container.image})`),
-          targets.length > 5 ? tk('docker.ipc.confirm.more', { count: targets.length - 5 }) : null,
-          '',
-          tk('docker.ipc.confirm.total_size', { size: formatBytes(totalSize) }),
-          tk('docker.ipc.confirm.containers_note')
-        ]
-          .filter(Boolean)
-          .join('\n')
+        detailLines: buildTargetDetailLines(
+          targets.map((container) => `- ${container.name} (${container.image})`),
+          targets.length,
+          [tk('docker.ipc.confirm.total_size', { size: formatBytes(totalSize) }), tk('docker.ipc.confirm.containers_note')]
+        )
       })
 
-      if (confirm.response === 0) {
-        const result: DockerRemoveResult = {
-          deletedIds: [],
-          failCount: 0,
-          errors: [],
-          cancelled: true
-        }
-        return success(result)
+      if (!confirmed) {
+        return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerContainers(targets.map((container) => container.id))
@@ -203,28 +221,22 @@ export function registerDockerIpc(): void {
         return failure('PERMISSION_DENIED', tk('docker.ipc.error.already_stopped'))
       }
 
-      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      if (!win || win.isDestroyed()) {
+      if (!getActiveWindow()) {
         return failure('UNKNOWN_ERROR', tk('main.settings.error.no_active_window'))
       }
-      const confirm = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: [tk('docker.ipc.confirm.cancel'), tk('docker.ipc.confirm.stop')],
-        defaultId: 0,
-        cancelId: 0,
+
+      const confirmed = await showConfirmDialog({
+        actionButton: tk('docker.ipc.confirm.stop'),
         title: tk('docker.ipc.confirm.stop_title'),
         message: tk('docker.ipc.confirm.stop_message', { count: targets.length }),
-        detail: [
-          ...targets.slice(0, 5).map((container) => `- ${container.name} (${container.image})`),
-          targets.length > 5 ? tk('docker.ipc.confirm.more', { count: targets.length - 5 }) : null,
-          '',
-          tk('docker.ipc.confirm.stop_note')
-        ]
-          .filter(Boolean)
-          .join('\n')
+        detailLines: buildTargetDetailLines(
+          targets.map((container) => `- ${container.name} (${container.image})`),
+          targets.length,
+          [tk('docker.ipc.confirm.stop_note')]
+        )
       })
 
-      if (confirm.response === 0) {
+      if (!confirmed) {
         return success({ affectedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
@@ -259,28 +271,22 @@ export function registerDockerIpc(): void {
         return failure('PERMISSION_DENIED', tk('docker.ipc.error.volumes_in_use'))
       }
 
-      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      if (!win || win.isDestroyed()) {
+      if (!getActiveWindow()) {
         return failure('UNKNOWN_ERROR', tk('main.settings.error.no_active_window'))
       }
-      const confirm = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: [tk('docker.ipc.confirm.cancel'), tk('docker.ipc.confirm.delete')],
-        defaultId: 0,
-        cancelId: 0,
+
+      const confirmed = await showConfirmDialog({
+        actionButton: tk('docker.ipc.confirm.delete'),
         title: tk('docker.ipc.confirm.volumes_title'),
         message: tk('docker.ipc.confirm.volumes_message', { count: targets.length }),
-        detail: [
-          ...targets.slice(0, 5).map((volume) => `- ${volume.name} (${volume.driver})`),
-          targets.length > 5 ? tk('docker.ipc.confirm.more', { count: targets.length - 5 }) : null,
-          '',
-          tk('docker.ipc.confirm.volumes_note')
-        ]
-          .filter(Boolean)
-          .join('\n')
+        detailLines: buildTargetDetailLines(
+          targets.map((volume) => `- ${volume.name} (${volume.driver})`),
+          targets.length,
+          [tk('docker.ipc.confirm.volumes_note')]
+        )
       })
 
-      if (confirm.response === 0) {
+      if (!confirmed) {
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
@@ -299,21 +305,18 @@ export function registerDockerIpc(): void {
         return failure('UNKNOWN_ERROR', cache.message ?? tk('main.docker.status.daemon_unavailable'))
       }
 
-      const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
-      if (!win || win.isDestroyed()) {
+      if (!getActiveWindow()) {
         return failure('UNKNOWN_ERROR', tk('main.settings.error.no_active_window'))
       }
-      const confirm = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: [tk('docker.ipc.confirm.cancel'), tk('docker.ipc.confirm.cleanup')],
-        defaultId: 0,
-        cancelId: 0,
+
+      const confirmed = await showConfirmDialog({
+        actionButton: tk('docker.ipc.confirm.cleanup'),
         title: tk('docker.ipc.confirm.cache_title'),
         message: tk('docker.ipc.confirm.cache_message'),
-        detail: tk('docker.ipc.confirm.cache_detail', { size: cache.summary?.reclaimableLabel ?? '0 B' })
+        detailLines: [tk('docker.ipc.confirm.cache_detail', { size: cache.summary?.reclaimableLabel ?? '0 B' })]
       })
 
-      if (confirm.response === 0) {
+      if (!confirmed) {
         return success({ reclaimedBytes: 0, reclaimedLabel: '0 B', cancelled: true })
       }
 

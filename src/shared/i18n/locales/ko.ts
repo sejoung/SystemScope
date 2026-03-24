@@ -551,4 +551,6 @@ export const KO_MESSAGES = {
   'Analyzing folder sizes... (the first run may take a few seconds)': '폴더 크기 분석 중... (첫 실행 시 수 초 걸릴 수 있습니다)',
   'Warning (%)': '경고 (%)',
   'Critical (%)': '위험 (%)',
+  '(no extension)': '(확장자 없음)',
+  '... and {count} more': '... 외 {count}개',
   } as const

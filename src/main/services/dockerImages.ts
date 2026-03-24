@@ -7,8 +7,7 @@ import type {
   DockerImagesScanResult,
   DockerImageSummary,
   DockerPruneResult,
-  DockerRemoveResult
-  ,
+  DockerRemoveResult,
   DockerVolumesScanResult,
   DockerVolumeSummary
 } from '@shared/types'
