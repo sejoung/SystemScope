@@ -1,4 +1,4 @@
-import { Fragment, startTransition, useEffect, useMemo, useState } from 'react'
+import { Fragment, startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, InstalledApp } from '@shared/types'
 import { useToast } from '../components/Toast'
 import { useI18n } from '../i18n/useI18n'
@@ -30,12 +30,16 @@ export function AppsPage() {
   const [relatedDataByAppId, setRelatedDataByAppId] = useState<Record<string, AppRelatedDataItem[]>>({})
   const [selectedRelatedIdsByAppId, setSelectedRelatedIdsByAppId] = useState<Record<string, string[]>>({})
   const [selectedLeftoverIds, setSelectedLeftoverIds] = useState<string[]>([])
+  const [pendingUninstallIds, setPendingUninstallIds] = useState<string[]>([])
+  const uninstallRefreshTimersRef = useRef<number[]>([])
   const isWindows = navigator.userAgent.includes('Windows')
 
   const loadApps = async () => {
     const res = await window.systemScope.listInstalledApps()
     if (res.ok && res.data) {
-      setApps(res.data as InstalledApp[])
+      const items = res.data as InstalledApp[]
+      setApps(items)
+      setPendingUninstallIds((current) => current.filter((id) => items.some((app) => app.id === id)))
     } else {
       showToast(res.error?.message ?? tk('apps.error.load_installed'))
     }
@@ -66,19 +70,26 @@ export function AppsPage() {
     void refreshCurrentTab()
   }, [activeTab, locale])
 
-  const filteredApps = useMemo(() => {
+  useEffect(() => {
+    return () => {
+      for (const timerId of uninstallRefreshTimersRef.current) {
+        window.clearTimeout(timerId)
+      }
+      uninstallRefreshTimersRef.current = []
+    }
+  }, [])
+
+  const filteredApps = useMemo(() => apps.filter((app) => !pendingUninstallIds.includes(app.id)).filter((app) => {
     const normalizedQuery = installedAppliedSearch.trim().toLowerCase()
-    return apps.filter((app) => {
-      if (installedPlatformFilter !== 'all' && app.platform !== installedPlatformFilter) return false
-      if (!normalizedQuery) return true
-      return [
-        app.name,
-        app.version,
-        app.publisher,
-        app.installLocation
-      ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
-    })
-  }, [apps, installedAppliedSearch, installedPlatformFilter])
+    if (installedPlatformFilter !== 'all' && app.platform !== installedPlatformFilter) return false
+    if (!normalizedQuery) return true
+    return [
+      app.name,
+      app.version,
+      app.publisher,
+      app.installLocation
+    ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
+  }), [apps, installedAppliedSearch, installedPlatformFilter, pendingUninstallIds])
 
   const filteredLeftovers = useMemo(() => {
     const normalizedQuery = leftoverAppliedSearch.trim().toLowerCase()
@@ -138,6 +149,16 @@ export function AppsPage() {
     if (result.cancelled) return
 
     showToast(result.message ? t(result.message) : (result.completed ? tk('apps.toast.removed') : tk('apps.toast.uninstaller_started')))
+    if (!result.completed && app.platform === 'windows') {
+      setPendingUninstallIds((current) => current.includes(app.id) ? current : [...current, app.id])
+      setApps((current) => current.filter((entry) => entry.id !== app.id))
+      for (const delay of [1500, 5000, 15000]) {
+        const timerId = window.setTimeout(() => {
+          void loadApps()
+        }, delay)
+        uninstallRefreshTimersRef.current.push(timerId)
+      }
+    }
     await loadApps()
     await loadLeftovers()
   }
