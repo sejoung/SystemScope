@@ -44,6 +44,7 @@ export interface AppRemovalResult {
   started: boolean
   completed: boolean
   cancelled: boolean
+  action?: 'trash' | 'uninstaller' | 'open_settings'
   message?: string
   relatedDataDeletedCount?: number
   relatedDataFailedPaths?: string[]

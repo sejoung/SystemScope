@@ -3,6 +3,7 @@ import * as fs from 'fs'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { logError, logWarn } from './logging'
+import { getSettings } from '../store/settingsStore'
 
 export interface FolderSnapshot {
   name: string
@@ -21,7 +22,8 @@ interface SnapshotData {
   snapshots: Snapshot[]
 }
 
-const MAX_SNAPSHOTS = 168 // 7일 x 24시간
+const MIN_RETENTION_SNAPSHOTS = 168 // 60분 기준 7일치
+const RETENTION_WINDOW_MINUTES = 7 * 24 * 60
 let saveQueue: Promise<void> = Promise.resolve()
 
 function getSnapshotDir(): string {
@@ -74,7 +76,8 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
     }
     existing.push(snapshot)
 
-    while (existing.length > MAX_SNAPSHOTS) {
+    const maxSnapshots = getMaxSnapshots()
+    while (existing.length > maxSnapshots) {
       existing.shift()
     }
 
@@ -92,6 +95,10 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
   })
 
   return saveQueue
+}
+
+export function getMaxSnapshots(intervalMinutes = getSettings().snapshotIntervalMin): number {
+  return Math.max(MIN_RETENTION_SNAPSHOTS, Math.ceil(RETENTION_WINDOW_MINUTES / intervalMinutes) + 1)
 }
 
 export function getSnapshotsInRange(since: number): Snapshot[] {

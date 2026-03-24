@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const originalAppData = process.env.APPDATA
 const originalLocalAppData = process.env.LOCALAPPDATA
 const originalProgramData = process.env.ProgramData
-
 vi.mock('electron', () => ({
   app: {
     getPath: (name: string) => {
@@ -139,5 +138,24 @@ describe('installedApps helpers', () => {
     expect(
       buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', [])
     ).toContain("$ErrorActionPreference = 'Stop'")
+  })
+
+  it('should mark Windows apps without an uninstall command as open_settings', async () => {
+    const { parseWindowsRegistryOutput } = await import('../../src/main/services/installedApps')
+
+    const parsed = parseWindowsRegistryOutput([
+      'HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\SettingsOnlyApp',
+      '    DisplayName    REG_SZ    Settings Only App',
+      '    DisplayVersion    REG_SZ    9.9.9',
+      '    Publisher    REG_SZ    Example Inc.',
+      '    InstallLocation    REG_SZ    C:\\Program Files\\Settings Only App'
+    ].join('\n'))
+
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0]).toMatchObject({
+      name: 'Settings Only App',
+      uninstallKind: 'open_settings',
+      uninstallCommand: undefined
+    })
   })
 })

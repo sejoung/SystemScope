@@ -242,6 +242,7 @@ export const EN_MESSAGES = {
   'Protected items cannot be removed.': 'Protected items cannot be removed.',
   'The app bundle will be moved to the trash.': 'The app bundle will be moved to the trash.',
   'The registered uninstaller will be launched. The rest of the flow continues outside the app.': 'The registered uninstaller will be launched. The rest of the flow continues outside the app.',
+  'Opened the system uninstall settings.': 'Opened the system uninstall settings.',
   'Selected related data will also be moved to the trash.': 'Selected related data will also be moved to the trash.',
   'Do you want to {action} "{name}"?': 'Do you want to {action} "{name}"?',
   'Unable to start uninstalling the app.': 'Unable to start uninstalling the app.',

@@ -2,7 +2,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform } from 'os'
 import type { GrowthFolder, GrowthViewResult } from '@shared/types'
-import { saveSnapshot, getSnapshotsInRange, type Snapshot, type FolderSnapshot } from './snapshotStore'
+import { saveSnapshot, getSnapshotsInRange, loadSnapshots, type Snapshot, type FolderSnapshot } from './snapshotStore'
 import { logError, logInfo } from './logging'
 import { getDirSize } from '../utils/getDirSize'
 import { tk } from '../i18n'
@@ -85,11 +85,9 @@ export async function analyzeGrowth(period: string = '7d'): Promise<GrowthViewRe
     ? latest
     : await takeSnapshot()
 
-  // 해당 기간 내 가장 오래된 스냅샷 찾기
-  const history = getSnapshotsInRange(since)
-  const oldest = history.length > 0 ? history[0] : null
+  const baseline = findBaselineSnapshot(loadSnapshots(), since)
 
-  if (!oldest || oldest.timestamp === current.timestamp) {
+  if (!baseline || baseline.timestamp === current.timestamp) {
     // 과거 데이터가 없음 → 첫 실행이거나 기간 내 스냅샷 없음
     return {
       period,
@@ -108,7 +106,7 @@ export async function analyzeGrowth(period: string = '7d'): Promise<GrowthViewRe
   }
 
   // 폴더별 증감 계산
-  const oldMap = new Map(oldest.folders.map((f) => [f.name, f.size]))
+  const oldMap = new Map(baseline.folders.map((f) => [f.name, f.size]))
   const folders: GrowthFolder[] = []
 
   for (const cur of current.folders) {
@@ -134,6 +132,28 @@ export async function analyzeGrowth(period: string = '7d'): Promise<GrowthViewRe
     totalAdded: folders.reduce((acc, f) => acc + f.addedSize, 0),
     totalAddedFiles: 0
   }
+}
+
+function findBaselineSnapshot(snapshots: Snapshot[], since: number): Snapshot | null {
+  if (snapshots.length === 0) {
+    return null
+  }
+
+  let latestBeforeOrAtCutoff: Snapshot | null = null
+  let earliestAfterCutoff: Snapshot | null = null
+
+  for (const snapshot of snapshots) {
+    if (snapshot.timestamp <= since) {
+      latestBeforeOrAtCutoff = snapshot
+      continue
+    }
+
+    if (!earliestAfterCutoff) {
+      earliestAfterCutoff = snapshot
+    }
+  }
+
+  return latestBeforeOrAtCutoff ?? earliestAfterCutoff
 }
 
 // 주기적 스냅샷 스케줄러

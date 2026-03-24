@@ -242,6 +242,7 @@ export const KO_MESSAGES = {
   'Protected items cannot be removed.': '보호된 항목은 제거할 수 없습니다.',
   'The app bundle will be moved to the trash.': '앱 번들을 휴지통으로 이동합니다.',
   'The registered uninstaller will be launched. The rest of the flow continues outside the app.': '설치된 제거 프로그램을 실행합니다. 진행은 외부 제거기에서 계속됩니다.',
+  'Opened the system uninstall settings.': '시스템 제거 설정을 열었습니다.',
   'Selected related data will also be moved to the trash.': '선택한 관련 데이터 경로도 함께 휴지통으로 이동합니다.',
   'Do you want to {action} "{name}"?': '"{name}"을(를) {action}하시겠습니까?',
   'Unable to start uninstalling the app.': '앱 제거를 시작하지 못했습니다.',

@@ -4,7 +4,8 @@ import * as path from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({
-  userDataPath: ''
+  userDataPath: '',
+  snapshotIntervalMin: 60
 }))
 
 vi.mock('electron', () => ({
@@ -16,8 +17,24 @@ vi.mock('electron', () => ({
   }
 }))
 
+vi.mock('../../src/main/store/settingsStore', () => ({
+  getSettings: () => ({
+    thresholds: {
+      diskWarning: 75,
+      diskCritical: 90,
+      memoryWarning: 75,
+      memoryCritical: 90,
+      gpuMemoryWarning: 80,
+      gpuMemoryCritical: 95
+    },
+    theme: 'dark',
+    locale: 'en',
+    snapshotIntervalMin: state.snapshotIntervalMin
+  })
+}))
+
 const snapshotStore = await import('../../src/main/services/snapshotStore')
-const { areSnapshotsEquivalent, parseSnapshotData, saveSnapshot, loadSnapshots } = snapshotStore
+const { areSnapshotsEquivalent, getMaxSnapshots, parseSnapshotData, saveSnapshot, loadSnapshots } = snapshotStore
 
 describe('snapshotStore', () => {
   let tempRoot = ''
@@ -114,6 +131,12 @@ describe('snapshotStore', () => {
     const snapshots = loadSnapshots()
     expect(snapshots).toHaveLength(2)
     expect(snapshots.map((snapshot) => snapshot.timestamp)).toEqual([1, 2])
+  })
+
+  it('should retain enough snapshots to cover seven days for shorter intervals', () => {
+    state.snapshotIntervalMin = 15
+
+    expect(getMaxSnapshots()).toBe(673)
   })
 
   it('should back up invalid snapshot files before starting fresh', async () => {

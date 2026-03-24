@@ -164,6 +164,7 @@ describe('registerAppsIpc', () => {
       started: true,
       completed: false,
       cancelled: false,
+      action: 'uninstaller',
       message: '제거 프로그램을 시작했습니다.'
     })
 
@@ -179,5 +180,34 @@ describe('registerAppsIpc', () => {
       appId: 'app-1',
       relatedDataIds: ['win:appdata-roaming:C:\\Users\\me\\AppData\\Roaming\\Example']
     })
+  })
+
+  it('should open system settings for apps without an uninstall command', async () => {
+    getInstalledAppByIdMock.mockReturnValue({
+      id: 'app-1',
+      name: 'Example',
+      platform: 'windows',
+      protected: false,
+      uninstallKind: 'open_settings'
+    })
+    showMessageBox.mockResolvedValue({ response: 1 })
+    uninstallInstalledAppMock.mockResolvedValue({
+      id: 'app-1',
+      name: 'Example',
+      started: true,
+      completed: false,
+      cancelled: false,
+      action: 'open_settings',
+      message: '시스템 제거 설정을 열었습니다.'
+    })
+
+    const { registerAppsIpc } = await import('../../src/main/ipc/apps.ipc')
+    registerAppsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APPS_UNINSTALL)
+    const result = await handler?.({}, { appId: 'app-1', relatedDataIds: [] }) as { ok: boolean; data?: { action?: string } }
+
+    expect(result.ok).toBe(true)
+    expect(result.data?.action).toBe('open_settings')
   })
 })

@@ -149,7 +149,7 @@ export function AppsPage() {
     if (result.cancelled) return
 
     showToast(result.message ? t(result.message) : (result.completed ? tk('apps.toast.removed') : tk('apps.toast.uninstaller_started')))
-    if (!result.completed && app.platform === 'windows') {
+    if (!result.completed && app.platform === 'windows' && result.action === 'uninstaller') {
       setPendingUninstallIds((current) => current.includes(app.id) ? current : [...current, app.id])
       setApps((current) => current.filter((entry) => entry.id !== app.id))
       for (const delay of [1500, 5000, 15000]) {
@@ -398,7 +398,13 @@ export function AppsPage() {
                             cursor: entry.protected || busyAppId === entry.id ? 'default' : 'pointer'
                           }}
                         >
-                          {busyAppId === entry.id ? tk('apps.action.working') : entry.platform === 'mac' ? tk('apps.action.move_to_trash') : tk('apps.action.uninstall')}
+                          {busyAppId === entry.id
+                            ? tk('apps.action.working')
+                            : entry.platform === 'mac'
+                              ? tk('apps.action.move_to_trash')
+                              : entry.uninstallKind === 'open_settings'
+                                ? tk('apps.action.open_system_settings')
+                                : tk('apps.action.uninstall')}
                         </button>
                       </td>
                     </tr>

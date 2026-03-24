@@ -149,9 +149,23 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
       started: true,
       completed: true,
       cancelled: false,
+      action: 'trash',
       message: buildRemovalMessage(tk('main.apps.message.moved_to_trash'), relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
       relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
       relatedDataFailedPaths: relatedCleanup.failedPaths
+    }
+  }
+
+  if (target.uninstallKind === 'open_settings') {
+    await openSystemUninstallSettings()
+    return {
+      id: target.id,
+      name: target.name,
+      started: true,
+      completed: false,
+      cancelled: false,
+      action: 'open_settings',
+      message: tk('main.apps.message.opened_system_settings')
     }
   }
 
@@ -178,6 +192,7 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
     started: true,
     completed: false,
     cancelled: false,
+    action: 'uninstaller',
     message: buildRemovalMessage(tk('main.apps.message.started_uninstaller'), relatedCleanup.deletedPaths.length, relatedCleanup.failedPaths.length),
     relatedDataDeletedCount: relatedCleanup.deletedPaths.length,
     relatedDataFailedPaths: relatedCleanup.failedPaths

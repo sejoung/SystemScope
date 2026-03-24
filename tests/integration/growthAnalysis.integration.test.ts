@@ -46,7 +46,8 @@ vi.mock('../../src/main/services/snapshotStore', () => ({
   saveSnapshot: async (snapshot: { timestamp: number; folders: Array<{ name: string; path: string; size: number }>; totalSize: number }) => {
     snapshotState.snapshots.push(snapshot)
   },
-  getSnapshotsInRange: (since: number) => snapshotState.snapshots.filter((snapshot) => snapshot.timestamp >= since)
+  getSnapshotsInRange: (since: number) => snapshotState.snapshots.filter((snapshot) => snapshot.timestamp >= since),
+  loadSnapshots: () => snapshotState.snapshots
 }))
 
 describe('growth analysis integration', () => {
@@ -102,5 +103,37 @@ describe('growth analysis integration', () => {
 
     expect(snapshotState.snapshots).toHaveLength(1)
     expect(result.totalAdded).toBe(0)
+  })
+
+  it('should use the last snapshot before the cutoff as the growth baseline', async () => {
+    const now = Date.now()
+    snapshotState.snapshots = [
+      {
+        timestamp: now - 30 * 60 * 60 * 1000,
+        folders: [
+          { name: 'Documents', path: '/Users/test/Documents', size: 100 * 1024 }
+        ],
+        totalSize: 100 * 1024
+      },
+      {
+        timestamp: now - 20 * 60 * 60 * 1000,
+        folders: [
+          { name: 'Documents', path: '/Users/test/Documents', size: 220 * 1024 }
+        ],
+        totalSize: 220 * 1024
+      },
+      {
+        timestamp: now - 2 * 60 * 1000,
+        folders: [
+          { name: 'Documents', path: '/Users/test/Documents', size: 280 * 1024 }
+        ],
+        totalSize: 280 * 1024
+      }
+    ]
+
+    const { analyzeGrowth } = await import('../../src/main/services/growthAnalyzer')
+    const result = await analyzeGrowth('24h')
+
+    expect(result.totalAdded).toBe(180 * 1024)
   })
 })

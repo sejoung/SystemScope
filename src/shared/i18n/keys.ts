@@ -231,6 +231,7 @@ export const MESSAGE_KEYS = {
   'main.apps.error.no_uninstall_command': 'There is no executable uninstall command.',
   'main.apps.message.moved_to_trash': 'Moved the app to the trash.',
   'main.apps.message.started_uninstaller': 'Started the uninstaller.',
+  'main.apps.message.opened_system_settings': 'Opened the system uninstall settings.',
   'main.apps.message.with_related_all': '{baseMessage} Also moved {deletedCount} related item(s) to the trash.',
   'main.apps.message.with_related_partial': '{baseMessage} Moved {deletedCount} related item(s), but failed to move {failedCount}.',
   'main.apps.protected.current_app': 'You cannot remove the currently running SystemScope app.',
