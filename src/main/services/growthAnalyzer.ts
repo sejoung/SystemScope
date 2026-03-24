@@ -14,10 +14,19 @@ const PERIODS: Record<string, number> = {
 }
 
 function getTargetFolders(home: string): { name: string; path: string }[] {
-  const names = platform() === 'darwin'
-    ? ['Documents', 'Downloads', 'Desktop', 'Pictures', 'Movies', 'Music', 'Developer', 'Library']
-    : ['Documents', 'Downloads', 'Desktop', 'Pictures', 'Videos', 'Music', 'AppData']
-  return names.map((name) => ({ name, path: path.join(home, name) }))
+  if (platform() === 'darwin') {
+    return ['Documents', 'Downloads', 'Desktop', 'Pictures', 'Movies', 'Music', 'Developer', 'Library']
+      .map((name) => ({ name, path: path.join(home, name) }))
+  }
+
+  // Windows: AppData 하위를 직접 지정하여 전체 스캔 방지
+  const appData = path.join(home, 'AppData')
+  return [
+    ...['Documents', 'Downloads', 'Desktop', 'Pictures', 'Videos', 'Music']
+      .map((name) => ({ name, path: path.join(home, name) })),
+    { name: 'AppData/Local', path: path.join(appData, 'Local') },
+    { name: 'AppData/Roaming', path: path.join(appData, 'Roaming') }
+  ]
 }
 
 // 동시 실행 방지
@@ -38,14 +47,18 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   const home = homedir()
   const targets = getTargetFolders(home)
 
+  const FOLDER_TIMEOUT = 30_000
   const folders: FolderSnapshot[] = []
   for (const target of targets) {
     try {
       await fs.access(target.path)
-      const size = await getDirSize(target.path)
+      const size = await Promise.race([
+        getDirSize(target.path),
+        new Promise<number>((_, reject) => setTimeout(() => reject(new Error('timeout')), FOLDER_TIMEOUT))
+      ])
       folders.push({ name: target.name, path: target.path, size })
     } catch {
-      // 존재하지 않는 폴더
+      // 존재하지 않거나 타임아웃된 폴더는 건너뜀
     }
   }
 
