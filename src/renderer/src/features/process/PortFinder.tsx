@@ -18,7 +18,6 @@ export function PortFinder() {
     if (!search.trim()) return ports
     const q = search.toLowerCase()
     return ports.filter((p) => {
-      if (p.process.toLowerCase().includes(q) || p.pid.toString().includes(q)) return true
       if (searchScope === 'local') {
         return p.localPort.toString().includes(q) || p.localAddress.toLowerCase().includes(q)
       }

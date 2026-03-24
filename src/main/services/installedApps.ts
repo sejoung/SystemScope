@@ -298,7 +298,7 @@ async function listWindowsInstalledApps(): Promise<InstalledApp[]> {
   const allApps: InstalledApp[] = []
   for (const registryPath of registryRoots) {
     try {
-      const { stdout } = await execFileAsync('reg', ['query', registryPath, '/s'])
+      const { stdout } = await execFileAsync('cmd', ['/c', `chcp 65001 >nul & reg query "${registryPath}" /s`], { encoding: 'utf-8' })
       allApps.push(...parseWindowsRegistryOutput(stdout))
     } catch (error) {
       logWarn('apps', 'Failed to query Windows uninstall registry', { registryPath, error })
@@ -332,15 +332,22 @@ function getCurrentMacAppBundlePath(): string | null {
 function launchWindowsUninstaller(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      const child = spawn(command, [], {
-        shell: true,
+      // MsiExec 명령은 실행파일과 인수를 분리하여 -Verb RunAs로 UAC 권한 상승
+      const msiMatch = command.match(/^MsiExec\.exe\s+(.+)$/i)
+      const psArgs = msiMatch
+        ? `Start-Process -FilePath 'MsiExec.exe' -ArgumentList '${msiMatch[1].replace(/'/g, "''")}' -Verb RunAs`
+        : `Start-Process -FilePath 'cmd.exe' -ArgumentList '/c ${command.replace(/'/g, "''")}' -Verb RunAs`
+
+      const child = spawn('powershell', ['-NoProfile', '-Command', psArgs], {
         detached: true,
         stdio: 'ignore',
         windowsHide: false
       })
       child.on('error', reject)
-      child.unref()
-      resolve()
+      child.on('spawn', () => {
+        child.unref()
+        resolve()
+      })
     } catch (error) {
       logError('apps', 'Failed to start Windows uninstall command', { command, error })
       reject(error)
