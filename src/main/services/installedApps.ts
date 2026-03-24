@@ -159,8 +159,13 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
     throw new Error(tk('main.apps.error.no_uninstall_command'))
   }
 
+  logInfo('apps', 'Launching Windows uninstaller', {
+    appId: request.appId,
+    name: target.name,
+    uninstallCommand: target.uninstallCommand
+  })
   await launchWindowsUninstaller(target.uninstallCommand)
-    const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataIds ?? [])
+  const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataIds ?? [])
   logInfo('apps', 'Started Windows uninstall command', {
     appId: request.appId,
     name: target.name,
@@ -334,38 +339,35 @@ function getCurrentMacAppBundlePath(): string | null {
   return parts.slice(0, appIndex + 1).join(path.sep)
 }
 
+function parseUninstallCommand(command: string): { file: string; args: string } {
+  // "C:\path\uninstall.exe" /arg1 /arg2
+  const quotedMatch = command.match(/^"([^"]+)"(.*)$/)
+  if (quotedMatch) {
+    return { file: quotedMatch[1], args: quotedMatch[2].trim() }
+  }
+  // MsiExec.exe /X{GUID}
+  const msiMatch = command.match(/^(MsiExec\.exe)\s+(.+)$/i)
+  if (msiMatch) {
+    return { file: msiMatch[1], args: msiMatch[2].trim() }
+  }
+  // C:\path\uninstall.exe /arg1
+  const spaceIdx = command.indexOf(' ')
+  if (spaceIdx > 0) {
+    return { file: command.slice(0, spaceIdx), args: command.slice(spaceIdx + 1).trim() }
+  }
+  return { file: command, args: '' }
+}
+
 function launchWindowsUninstaller(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      // UninstallString을 shell: true로 그대로 실행
-      // 대부분의 언인스톨러가 자체 UAC manifest로 권한 상승을 요청함
-      const child = spawn(command, [], {
-        shell: true,
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: false
-      })
-      child.on('error', (err) => {
-        // 권한 부족 등으로 실패 시 PowerShell -Verb RunAs로 재시도
-        logInfo('apps', 'Direct uninstall failed, retrying with elevation', { command, error: err })
-        launchElevatedUninstaller(command).then(resolve, reject)
-      })
-      child.on('spawn', () => {
-        child.unref()
-        resolve()
-      })
-    } catch (error) {
-      logError('apps', 'Failed to start Windows uninstall command', { command, error })
-      reject(error)
-    }
-  })
-}
+      const { file, args } = parseUninstallCommand(command)
+      const escaped = (s: string) => s.replace(/'/g, "''")
+      const argList = args ? `-ArgumentList '${escaped(args)}'` : ''
+      const psCommand = `Start-Process -FilePath '${escaped(file)}' ${argList} -Wait`
 
-function launchElevatedUninstaller(command: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    try {
-      const escaped = command.replace(/'/g, "''")
-      const psCommand = `Start-Process -FilePath 'cmd.exe' -ArgumentList '/c ${escaped}' -Verb RunAs`
+      logInfo('apps', 'Launching uninstaller via PowerShell', { file, args, psCommand })
+
       const child = spawn('powershell', ['-NoProfile', '-Command', psCommand], {
         detached: true,
         stdio: 'ignore',
@@ -377,7 +379,7 @@ function launchElevatedUninstaller(command: string): Promise<void> {
         resolve()
       })
     } catch (error) {
-      logError('apps', 'Failed to start elevated uninstall command', { command, error })
+      logError('apps', 'Failed to start Windows uninstall command', { command, error })
       reject(error)
     }
   })

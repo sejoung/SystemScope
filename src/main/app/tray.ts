@@ -122,8 +122,8 @@ function getInitialTrayIcon(): Electron.NativeImage {
     icon.setTemplateImage(true)
     return icon
   }
-  // Windows: 앱 아이콘을 트레이에 사용 (테마에 관계없이 항상 보임)
-  return nativeImage.createFromPath(join(getResourcesPath(), 'icon.ico')).resize({ width: 16, height: 16 })
+  // Windows: dedicated tray asset for better small-size rendering.
+  return nativeImage.createFromPath(join(getResourcesPath(), 'tray_win.png')).resize({ width: 16, height: 16 })
 }
 
 function getResourcesPath(): string {
