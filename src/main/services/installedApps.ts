@@ -337,13 +337,36 @@ function getCurrentMacAppBundlePath(): string | null {
 function launchWindowsUninstaller(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      // MsiExec 명령은 실행파일과 인수를 분리하여 -Verb RunAs로 UAC 권한 상승
-      const msiMatch = command.match(/^MsiExec\.exe\s+(.+)$/i)
-      const psArgs = msiMatch
-        ? `Start-Process -FilePath 'MsiExec.exe' -ArgumentList '${msiMatch[1].replace(/'/g, "''")}' -Verb RunAs`
-        : `Start-Process -FilePath 'cmd.exe' -ArgumentList '/c ${command.replace(/'/g, "''")}' -Verb RunAs`
+      // UninstallString을 shell: true로 그대로 실행
+      // 대부분의 언인스톨러가 자체 UAC manifest로 권한 상승을 요청함
+      const child = spawn(command, [], {
+        shell: true,
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: false
+      })
+      child.on('error', (err) => {
+        // 권한 부족 등으로 실패 시 PowerShell -Verb RunAs로 재시도
+        logInfo('apps', 'Direct uninstall failed, retrying with elevation', { command, error: err })
+        launchElevatedUninstaller(command).then(resolve, reject)
+      })
+      child.on('spawn', () => {
+        child.unref()
+        resolve()
+      })
+    } catch (error) {
+      logError('apps', 'Failed to start Windows uninstall command', { command, error })
+      reject(error)
+    }
+  })
+}
 
-      const child = spawn('powershell', ['-NoProfile', '-Command', psArgs], {
+function launchElevatedUninstaller(command: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    try {
+      const escaped = command.replace(/'/g, "''")
+      const psCommand = `Start-Process -FilePath 'cmd.exe' -ArgumentList '/c ${escaped}' -Verb RunAs`
+      const child = spawn('powershell', ['-NoProfile', '-Command', psCommand], {
         detached: true,
         stdio: 'ignore',
         windowsHide: false
@@ -354,7 +377,7 @@ function launchWindowsUninstaller(command: string): Promise<void> {
         resolve()
       })
     } catch (error) {
-      logError('apps', 'Failed to start Windows uninstall command', { command, error })
+      logError('apps', 'Failed to start elevated uninstall command', { command, error })
       reject(error)
     }
   })

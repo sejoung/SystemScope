@@ -1,4 +1,4 @@
-import { Tray, Menu, app, BrowserWindow, nativeImage, nativeTheme } from 'electron'
+import { Tray, Menu, app, BrowserWindow, nativeImage } from 'electron'
 import { join } from 'path'
 import { platform } from 'os'
 import { logError } from '../services/logging'
@@ -65,13 +65,6 @@ export function createTray(): void {
     void refreshTrayIcon()
   }, 2000)
 
-  // Windows: 시스템 테마 변경 시 아이콘 색상 즉시 갱신
-  if (platform() !== 'darwin') {
-    nativeTheme.on('updated', () => {
-      lastVisualKey = ''
-      void refreshTrayIcon()
-    })
-  }
 }
 
 export function destroyTray(): void {
@@ -100,17 +93,21 @@ async function refreshTrayIcon(): Promise<void> {
 
     const averageUsage = cpuSamples.reduce((sum, value) => sum + value, 0) / cpuSamples.length
     const roundedUsage = Math.round(averageUsage)
-    const isHighLoad = roundedUsage >= CPU_TRAY_THRESHOLDS.HIGH
-    pulseFrame = isHighLoad ? !pulseFrame : false
 
-    const level = roundedUsage >= CPU_TRAY_THRESHOLDS.CRITICAL ? 4
-      : roundedUsage >= CPU_TRAY_THRESHOLDS.HIGH ? 3
-      : roundedUsage >= CPU_TRAY_THRESHOLDS.MEDIUM ? 2
-      : roundedUsage >= CPU_TRAY_THRESHOLDS.LOW ? 1 : 0
-    const visualKey = `${level}:${pulseFrame ? 1 : 0}:${process.platform}`
-    if (visualKey !== lastVisualKey && process.platform === 'darwin') {
-      tray.setTitle(getCpuMeterText(roundedUsage, pulseFrame))
-      lastVisualKey = visualKey
+    // macOS: 트레이 타이틀에 CPU 미터 텍스트 표시
+    if (process.platform === 'darwin') {
+      const isHighLoad = roundedUsage >= CPU_TRAY_THRESHOLDS.HIGH
+      pulseFrame = isHighLoad ? !pulseFrame : false
+
+      const level = roundedUsage >= CPU_TRAY_THRESHOLDS.CRITICAL ? 4
+        : roundedUsage >= CPU_TRAY_THRESHOLDS.HIGH ? 3
+        : roundedUsage >= CPU_TRAY_THRESHOLDS.MEDIUM ? 2
+        : roundedUsage >= CPU_TRAY_THRESHOLDS.LOW ? 1 : 0
+      const visualKey = `${level}:${pulseFrame ? 1 : 0}`
+      if (visualKey !== lastVisualKey) {
+        tray.setTitle(getCpuMeterText(roundedUsage, pulseFrame))
+        lastVisualKey = visualKey
+      }
     }
 
     tray.setToolTip(`SystemScope\nCPU ${roundedUsage}%`)
