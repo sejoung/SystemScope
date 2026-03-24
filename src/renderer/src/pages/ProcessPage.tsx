@@ -3,6 +3,7 @@ import { useProcessStore } from '../stores/useProcessStore'
 import { ProcessTable } from '../features/process/ProcessTable'
 import { PortFinder } from '../features/process/PortFinder'
 import { PortWatch } from '../features/process/PortWatch'
+import { PageLoading } from '../components/PageLoading'
 import { useI18n } from '../i18n/useI18n'
 
 type ActivityTab = 'processes' | 'ports' | 'watch'
@@ -11,6 +12,8 @@ export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses)
   const [tab, setTab] = useState<ActivityTab>('processes')
   const { tk } = useI18n()
+
+  if (tab === 'processes' && allProcesses.length === 0) return <PageLoading />
 
   return (
     <div>
