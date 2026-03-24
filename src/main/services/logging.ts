@@ -33,7 +33,7 @@ export function initializeLogging(): void {
 
   log.transports.file.level = 'info'
   log.transports.console.level = 'debug'
-  log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] › {text}'
+  log.transports.console.format = '{h}:{i}:{s}.{ms} [{level}] > {text}'
   log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
   log.transports.file.resolvePathFn = () => getLogFilePath(new Date())
 

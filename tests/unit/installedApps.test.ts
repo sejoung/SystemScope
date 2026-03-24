@@ -109,6 +109,15 @@ describe('installedApps helpers', () => {
     })
   })
 
+  it('should parse unquoted Windows executable paths that contain spaces', async () => {
+    const { parseUninstallCommand } = await import('../../src/main/services/installedApps')
+
+    expect(parseUninstallCommand('C:\\Program Files\\AhnLab\\Safe Transaction\\V3Medic.exe -Uninstall')).toEqual({
+      file: 'C:\\Program Files\\AhnLab\\Safe Transaction\\V3Medic.exe',
+      args: '-Uninstall'
+    })
+  })
+
   it('should split quoted Windows uninstall arguments correctly', async () => {
     const { splitWindowsCommandArgs } = await import('../../src/main/services/installedApps')
 

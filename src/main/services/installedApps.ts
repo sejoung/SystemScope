@@ -345,16 +345,15 @@ export function parseUninstallCommand(command: string): { file: string; args: st
   if (quotedMatch) {
     return { file: quotedMatch[1], args: quotedMatch[2].trim() }
   }
-  // MsiExec.exe /X{GUID}
-  const msiMatch = command.match(/^(MsiExec\.exe)\s+(.+)$/i)
-  if (msiMatch) {
-    return { file: msiMatch[1], args: msiMatch[2].trim() }
+
+  const executableMatch = command.match(/^(.+\.(?:exe|msi|bat|cmd|com))(?:\s+(.*))?$/i)
+  if (executableMatch) {
+    return {
+      file: executableMatch[1],
+      args: executableMatch[2]?.trim() ?? ''
+    }
   }
-  // C:\path\uninstall.exe /arg1
-  const spaceIdx = command.indexOf(' ')
-  if (spaceIdx > 0) {
-    return { file: command.slice(0, spaceIdx), args: command.slice(spaceIdx + 1).trim() }
-  }
+
   return { file: command, args: '' }
 }
 
