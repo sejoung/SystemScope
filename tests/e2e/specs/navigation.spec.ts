@@ -19,7 +19,8 @@ test.describe('사이드바 네비게이션', () => {
 
   test('Activity 페이지로 이동', async ({ mainWindow }) => {
     await mainWindow.locator('nav >> button', { hasText: 'Activity' }).click()
-    await expect(mainWindow.locator('h2', { hasText: 'Activity' })).toBeVisible()
+    // 프로세스 데이터 수신 전에는 PageLoading, 수신 후에는 h2 표시
+    await expect(mainWindow.locator('h2:has-text("Activity"), [data-testid="page-loading"]')).toBeVisible({ timeout: 15_000 })
   })
 
   test('Applications 페이지로 이동', async ({ mainWindow }) => {

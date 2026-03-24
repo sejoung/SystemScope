@@ -47,6 +47,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -55,5 +57,4 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npx playwright install --with-deps
       - run: npm run test:e2e
