@@ -10,6 +10,7 @@ export const MESSAGE_KEYS = {
   'app.error_boundary.message': 'Unable to render the current page. Move to another menu and try again.',
   'app.shutdown.title': 'SystemScope is shutting down',
   'docker.page.title': 'Docker',
+  'docker.page.retry': 'Retry',
   'docker.tab.overview': 'Overview',
   'docker.tab.containers': 'Containers',
   'docker.tab.images': 'Docker Images',
