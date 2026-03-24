@@ -16,6 +16,7 @@ export function AppsPage() {
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshingTab, setRefreshingTab] = useState<AppsTab | null>(null)
   const [installedDraftSearch, setInstalledDraftSearch] = useState('')
   const [installedAppliedSearch, setInstalledAppliedSearch] = useState('')
   const [installedPlatformFilter, setInstalledPlatformFilter] = useState<PlatformFilter>('all')
@@ -56,14 +57,48 @@ export function AppsPage() {
     }
   }
 
-  const refreshCurrentTab = async () => {
-    setLoading(true)
-    if (activeTab === 'installed') {
-      await loadApps()
+  const refreshInstalledTab = async (mode: 'initial' | 'inline' = 'inline') => {
+    if (mode === 'initial') {
+      setLoading(true)
     } else {
-      await loadLeftovers()
+      setRefreshingTab('installed')
     }
-    setLoading(false)
+
+    try {
+      await loadApps()
+    } finally {
+      if (mode === 'initial') {
+        setLoading(false)
+      } else {
+        setRefreshingTab((current) => (current === 'installed' ? null : current))
+      }
+    }
+  }
+
+  const refreshLeftoverTab = async (mode: 'initial' | 'inline' = 'inline') => {
+    if (mode === 'initial') {
+      setLoading(true)
+    } else {
+      setRefreshingTab('leftover')
+    }
+
+    try {
+      await loadLeftovers()
+    } finally {
+      if (mode === 'initial') {
+        setLoading(false)
+      } else {
+        setRefreshingTab((current) => (current === 'leftover' ? null : current))
+      }
+    }
+  }
+
+  const refreshCurrentTab = async () => {
+    if (activeTab === 'installed') {
+      await refreshInstalledTab('initial')
+    } else {
+      await refreshLeftoverTab('initial')
+    }
   }
 
   useEffect(() => {
@@ -298,13 +333,16 @@ export function AppsPage() {
       {loading ? (
         <div style={emptyStyle}>{activeTab === 'installed' ? tk('apps.loading.installed') : tk('apps.loading.leftover')}</div>
       ) : activeTab === 'installed' ? (
-        filteredApps.length === 0 ? (
-          <div style={emptyStyle}>{tk('apps.empty.installed')}</div>
-        ) : (
-          <div>
-            <div style={stickyTabControlsWrapStyle}>
+        <div>
+          <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
-              <button onClick={() => void loadApps()} style={btnStyle}>{tk('apps.action.refresh')}</button>
+              <button
+                onClick={() => void refreshInstalledTab()}
+                disabled={refreshingTab === 'installed'}
+                style={secondaryBtnStyle(refreshingTab === 'installed')}
+              >
+                {refreshingTab === 'installed' ? tk('common.refreshing') : tk('apps.action.refresh')}
+              </button>
               {isWindows && (
                 <button onClick={() => void handleOpenSystemSettings()} style={{ ...btnStyle, background: 'var(--bg-card-hover)', color: 'var(--text-primary)' }}>
                   {tk('apps.action.open_system_settings')}
@@ -333,10 +371,21 @@ export function AppsPage() {
                 <option value="windows">Windows</option>
               </select>
             </div>
-            </div>
+          </div>
+          {filteredApps.length === 0 ? (
+            <div style={emptyStyle}>{tk('apps.empty.installed')}</div>
+          ) : (
+            <>
             <div style={infoBarStyle}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {tk('apps.helper.installed')}
+                {refreshingTab === 'installed' ? (
+                  <span style={refreshingHintStyle}>
+                    <span style={refreshDotStyle} />
+                    {tk('common.refreshing')}
+                  </span>
+                ) : (
+                  tk('apps.helper.installed')
+                )}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                 {tk('apps.count.installed_summary', { count: filteredApps.length })}
@@ -456,16 +505,20 @@ export function AppsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )
+            </>
+          )}
+        </div>
       ) : (
-        filteredLeftovers.length === 0 ? (
-          <div style={emptyStyle}>{tk('apps.empty.leftover')}</div>
-        ) : (
-          <div style={{ display: 'grid', gap: '12px' }}>
-            <div style={stickyTabControlsWrapStyle}>
+        <div style={{ display: 'grid', gap: '12px' }}>
+          <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
-              <button onClick={() => void loadLeftovers()} style={btnStyle}>{tk('apps.action.refresh')}</button>
+              <button
+                onClick={() => void refreshLeftoverTab()}
+                disabled={refreshingTab === 'leftover'}
+                style={secondaryBtnStyle(refreshingTab === 'leftover')}
+              >
+                {refreshingTab === 'leftover' ? tk('common.refreshing') : tk('apps.action.refresh')}
+              </button>
               <input
                 value={leftoverDraftSearch}
                 onChange={(e) => setLeftoverDraftSearch(e.target.value)}
@@ -495,10 +548,21 @@ export function AppsPage() {
                 <option value="low">{tk('apps.confidence.low')}</option>
               </select>
             </div>
-            </div>
+          </div>
+          {filteredLeftovers.length === 0 ? (
+            <div style={emptyStyle}>{tk('apps.empty.leftover')}</div>
+          ) : (
+            <>
             <div style={infoBarStyle}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {tk('apps.helper.leftover')}
+                {refreshingTab === 'leftover' ? (
+                  <span style={refreshingHintStyle}>
+                    <span style={refreshDotStyle} />
+                    {tk('common.refreshing')}
+                  </span>
+                ) : (
+                  tk('apps.helper.leftover')
+                )}
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                 {tk('common.selected', { count: selectedFilteredLeftoverCount })}
@@ -594,8 +658,9 @@ export function AppsPage() {
                 {leftoverBusy ? tk('apps.action.working') : tk('apps.action.move_selected_to_trash')}
               </button>
             </div>
-          </div>
-        )
+            </>
+          )}
+        </div>
       )}
     </div>
   )
@@ -780,6 +845,23 @@ const infoBarStyle: React.CSSProperties = {
   borderRadius: 'var(--radius)',
   border: '1px solid var(--border)',
   flexWrap: 'wrap'
+}
+
+const refreshingHintStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  color: 'var(--accent-blue)',
+  fontWeight: 600
+}
+
+const refreshDotStyle: React.CSSProperties = {
+  width: '8px',
+  height: '8px',
+  borderRadius: '999px',
+  background: 'var(--accent-blue)',
+  boxShadow: '0 0 0 0 color-mix(in srgb, var(--accent-blue) 36%, transparent)',
+  animation: 'systemscope-refresh-pulse 1.1s ease-in-out infinite'
 }
 
 const bulkToggleRowStyle: React.CSSProperties = {
