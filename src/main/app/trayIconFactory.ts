@@ -1,4 +1,4 @@
-import { nativeImage } from 'electron'
+import { nativeImage, nativeTheme } from 'electron'
 import log from 'electron-log'
 
 type TrayPlatform = 'darwin' | 'win32' | 'other'
@@ -7,6 +7,7 @@ interface TrayVisualState {
   level: 0 | 1 | 2 | 3 | 4
   pulse: boolean
   platform: TrayPlatform
+  darkTaskbar: boolean
 }
 
 export function getCpuLevel(usage: number): TrayVisualState['level'] {
@@ -17,11 +18,12 @@ export function getCpuLevel(usage: number): TrayVisualState['level'] {
   return 0
 }
 
-export function renderTraySvg({ level, pulse, platform }: TrayVisualState): string {
+export function renderTraySvg({ level, pulse, platform, darkTaskbar }: TrayVisualState): string {
   const isMac = platform === 'darwin'
+  const isWinLight = !isMac && !darkTaskbar
   const size = 24
-  const baseColor = isMac ? '#000000' : '#dbeafe'
-  const ringColor = isMac ? '#000000' : '#38bdf8'
+  const baseColor = isMac ? '#000000' : isWinLight ? '#1e293b' : '#dbeafe'
+  const ringColor = isMac ? '#000000' : isWinLight ? '#0284c7' : '#38bdf8'
   const pulseColor = isMac ? '#000000' : level >= 4 ? '#ef4444' : '#f59e0b'
   const shellOpacity = isMac ? 0.92 : 1
   const quietBarOpacity = isMac ? 0.2 : 0.25
@@ -79,7 +81,8 @@ export function createTrayImage(usage: number, pulse: boolean, processPlatform: 
     const svg = renderTraySvg({
       level: getCpuLevel(usage),
       pulse,
-      platform
+      platform,
+      darkTaskbar: nativeTheme.shouldUseDarkColors
     })
     const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
     const icon = nativeImage.createFromDataURL(dataUrl).resize({

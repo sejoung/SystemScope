@@ -1,4 +1,4 @@
-import { Tray, Menu, app, BrowserWindow, nativeImage } from 'electron'
+import { Tray, Menu, app, BrowserWindow, nativeImage, nativeTheme } from 'electron'
 import { join } from 'path'
 import { platform } from 'os'
 import { logError } from '../services/logging'
@@ -64,6 +64,14 @@ export function createTray(): void {
   trayUpdateTimer = setInterval(() => {
     void refreshTrayIcon()
   }, 2000)
+
+  // Windows: 시스템 테마 변경 시 아이콘 색상 즉시 갱신
+  if (platform() !== 'darwin') {
+    nativeTheme.on('updated', () => {
+      lastVisualKey = ''
+      void refreshTrayIcon()
+    })
+  }
 }
 
 export function destroyTray(): void {
