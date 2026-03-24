@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { Accordion } from '../../components/Accordion'
 import { useToast } from '../../components/Toast'
 import { usePortFinderStore } from '../../stores/usePortFinderStore'
 import { getStateStyle } from './portStateStyles'
@@ -61,14 +60,15 @@ export function PortFinder() {
   }
 
   return (
-    <Accordion
-      title={tk('process.port_finder.title')}
-      badge={scanned ? tk('process.port_finder.badge', { count: listenCount }) : undefined}
-      badgeColor="var(--accent-cyan)"
-      defaultOpen
-      forceOpen={scanned && filtered.length > 0}
-      actions={
-        <>
+    <section style={sectionStyle}>
+      <div style={headerStyle}>
+        <div style={titleRowStyle}>
+          <span style={titleStyle}>{tk('process.port_finder.title')}</span>
+          {scanned && (
+            <span style={badgeStyle}>{tk('process.port_finder.badge', { count: listenCount })}</span>
+          )}
+        </div>
+        <div style={actionsStyle}>
           <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: '2px', background: 'var(--bg-primary)', borderRadius: '6px', padding: '2px' }}>
             {(['local', 'remote', 'all'] as const).map((s) => (
               <button key={s} onClick={() => setSearchScope(s)} style={{
@@ -90,9 +90,8 @@ export function PortFinder() {
           <button onClick={() => fetchPorts()} disabled={loading} style={btnStyle}>
             {loading ? 'Scanning...' : scanned ? tk('apps.action.refresh') : tk('process.port_finder.scan')}
           </button>
-        </>
-      }
-    >
+        </div>
+      </div>
       {!scanned ? (
         <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
           {tk('process.port_finder.description')}
@@ -165,7 +164,7 @@ export function PortFinder() {
           )}
         </div>
       )}
-    </Accordion>
+    </section>
   )
 }
 
@@ -239,4 +238,53 @@ const killBtnStyle: React.CSSProperties = {
   background: 'var(--accent-red)',
   color: 'var(--text-on-accent)',
   cursor: 'pointer'
+}
+
+const sectionStyle: React.CSSProperties = {
+  backgroundColor: 'var(--bg-card)',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border)',
+  padding: '16px'
+}
+
+const headerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  flexWrap: 'wrap',
+  marginBottom: '16px'
+}
+
+const titleRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  minWidth: 0
+}
+
+const titleStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: 'var(--text-secondary)'
+}
+
+const badgeStyle: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 600,
+  padding: '1px 8px',
+  borderRadius: '4px',
+  background: 'color-mix(in srgb, var(--accent-cyan) 16%, transparent)',
+  color: 'var(--accent-cyan)',
+  whiteSpace: 'nowrap'
+}
+
+const actionsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  flexWrap: 'wrap',
+  flexShrink: 0
 }

@@ -38,7 +38,6 @@ export function DashboardPage() {
         <GrowthView />
       </div>
 
-      {/* Bottom row 2: Top Resource Consumers */}
       <div>
         <TopResourceConsumers />
       </div>

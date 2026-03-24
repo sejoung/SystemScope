@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import type { ProcessInfo, ProcessKillResult } from '@shared/types'
-import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useToast } from '../../components/Toast'
 import { useI18n } from '../../i18n/useI18n'
@@ -77,22 +76,24 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   }
 
   return (
-    <Accordion
-      title={tk('process.table.title', { count: filtered.length })}
-      defaultOpen
-      badge={processes.length > 0 ? `${processes.length}` : undefined}
-      badgeColor="var(--text-muted)"
-      actions={
+    <section style={sectionStyle}>
+      <div style={headerStyle}>
+        <div style={titleRowStyle}>
+          <span style={titleStyle}>{tk('process.table.title', { count: filtered.length })}</span>
+          {processes.length > 0 && (
+            <span style={badgeStyle}>{processes.length}</span>
+          )}
+        </div>
+        <div style={actionsStyle}>
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={tk('process.table.search_placeholder')}
-          onClick={(e) => e.stopPropagation()}
           style={searchStyle}
         />
-      }
-    >
+        </div>
+      </div>
       <div style={{ maxHeight: '500px', overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
           <thead>
@@ -151,7 +152,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           </tbody>
         </table>
       </div>
-    </Accordion>
+    </section>
   )
 }
 
@@ -214,4 +215,52 @@ const killBtnStyle: React.CSSProperties = {
   background: 'var(--accent-red)',
   color: 'var(--text-on-accent)',
   cursor: 'pointer'
+}
+
+const sectionStyle: React.CSSProperties = {
+  backgroundColor: 'var(--bg-card)',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border)',
+  padding: '16px'
+}
+
+const headerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  flexWrap: 'wrap',
+  marginBottom: '16px'
+}
+
+const titleRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  minWidth: 0
+}
+
+const titleStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: 'var(--text-secondary)'
+}
+
+const badgeStyle: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 600,
+  padding: '1px 8px',
+  borderRadius: '4px',
+  background: 'var(--bg-card-hover)',
+  color: 'var(--text-secondary)',
+  whiteSpace: 'nowrap'
+}
+
+const actionsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  flexShrink: 0
 }

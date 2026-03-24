@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Accordion } from '../../components/Accordion'
 import { useInterval } from '../../hooks/useInterval'
 import { useToast } from '../../components/Toast'
 import { usePortWatchStore } from '../../stores/usePortWatchStore'
@@ -95,12 +94,15 @@ export function PortWatch() {
   useInterval(monitoring && watches.length > 0 ? pollPorts : () => {}, pollInterval)
 
   return (
-    <Accordion
-      title={tk('process.port_watch.title')}
-      defaultOpen
-      badge={monitoring && watches.length > 0 ? tk('process.port_watch.badge', { count: watches.length }) : undefined}
-      badgeColor="var(--accent-cyan)"
-    >
+    <section style={sectionStyle}>
+      <div style={headerStyle}>
+        <div style={titleRowStyle}>
+          <span style={titleStyle}>{tk('process.port_watch.title')}</span>
+          {monitoring && watches.length > 0 && (
+            <span style={badgeStyle}>{tk('process.port_watch.badge', { count: watches.length })}</span>
+          )}
+        </div>
+      </div>
       {/* Input */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-primary)', borderRadius: '6px', padding: '2px' }}>
@@ -310,7 +312,7 @@ export function PortWatch() {
           )}
         </div>
       )}
-    </Accordion>
+    </section>
   )
 }
 
@@ -378,6 +380,47 @@ const detailsBtn: React.CSSProperties = {
   padding: '2px 8px', fontSize: '11px', fontWeight: 500,
   border: 'none', borderRadius: '4px',
   background: 'transparent', cursor: 'pointer'
+}
+
+const sectionStyle: React.CSSProperties = {
+  backgroundColor: 'var(--bg-card)',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border)',
+  padding: '16px'
+}
+
+const headerStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  flexWrap: 'wrap',
+  marginBottom: '16px'
+}
+
+const titleRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  minWidth: 0
+}
+
+const titleStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: 'var(--text-secondary)'
+}
+
+const badgeStyle: React.CSSProperties = {
+  fontSize: '11px',
+  fontWeight: 600,
+  padding: '1px 8px',
+  borderRadius: '4px',
+  background: 'color-mix(in srgb, var(--accent-cyan) 16%, transparent)',
+  color: 'var(--accent-cyan)',
+  whiteSpace: 'nowrap'
 }
 
 const sectionTitle: React.CSSProperties = {
