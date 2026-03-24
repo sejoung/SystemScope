@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSettingsStore } from '../stores/useSettingsStore'
-import { Accordion } from '../components/Accordion'
 import { useToast } from '../components/Toast'
 import type { AlertThresholds } from '@shared/types'
 import { useI18n } from '../i18n/useI18n'
@@ -189,82 +188,80 @@ export function SettingsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
-        <Accordion title={tk('settings.section.language')} defaultOpen badge={languageDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.language.description')}
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[
-                { value: 'en' as const, label: tk('settings.language.english') },
-                { value: 'ko' as const, label: tk('settings.language.korean') }
-              ].map((option) => {
-                const active = localLocale === option.value
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      hasEditedRef.current = true
-                      setLocalLocale(option.value)
-                    }}
-                    style={{
-                      padding: '8px 18px',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      borderRadius: 'var(--radius)',
-                      border: active ? '1px solid transparent' : '1px solid var(--border)',
-                      background: active ? 'var(--accent-blue)' : 'var(--bg-card)',
-                      color: active ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
-            </div>
+        {/* Language */}
+        <Section title={tk('settings.section.language')} badge={languageDirty ? tk('settings.badge.edited') : undefined}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('settings.language.description')}
           </div>
-        </Accordion>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[
+              { value: 'en' as const, label: tk('settings.language.english') },
+              { value: 'ko' as const, label: tk('settings.language.korean') }
+            ].map((option) => {
+              const active = localLocale === option.value
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    hasEditedRef.current = true
+                    setLocalLocale(option.value)
+                  }}
+                  style={{
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius)',
+                    border: active ? '1px solid transparent' : '1px solid var(--border)',
+                    background: active ? 'var(--accent-blue)' : 'var(--bg-card)',
+                    color: active ? 'var(--text-on-accent)' : 'var(--text-primary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </Section>
 
-        <Accordion title={tk('settings.section.appearance')} defaultOpen badge={appearanceDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.theme.description')}
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[
-                { value: 'dark', label: tk('settings.theme.dark') },
-                { value: 'light', label: tk('settings.theme.light') }
-              ].map((option) => {
-                const active = localTheme === option.value
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      hasEditedRef.current = true
-                      setLocalTheme(option.value as 'dark' | 'light')
-                    }}
-                    style={{
-                      padding: '8px 18px',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      borderRadius: 'var(--radius)',
-                      border: active ? '1px solid transparent' : '1px solid var(--border)',
-                      background: active ? 'var(--accent-blue)' : 'var(--bg-card)',
-                      color: active ? 'var(--text-on-accent)' : 'var(--text-primary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
-            </div>
+        {/* Appearance */}
+        <Section title={tk('settings.section.appearance')} badge={appearanceDirty ? tk('settings.badge.edited') : undefined}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('settings.theme.description')}
           </div>
-        </Accordion>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[
+              { value: 'dark', label: tk('settings.theme.dark') },
+              { value: 'light', label: tk('settings.theme.light') }
+            ].map((option) => {
+              const active = localTheme === option.value
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    hasEditedRef.current = true
+                    setLocalTheme(option.value as 'dark' | 'light')
+                  }}
+                  style={{
+                    padding: '8px 18px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius)',
+                    border: active ? '1px solid transparent' : '1px solid var(--border)',
+                    background: active ? 'var(--accent-blue)' : 'var(--bg-card)',
+                    color: active ? 'var(--text-on-accent)' : 'var(--text-primary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </Section>
 
         {/* Alert Thresholds */}
-        <Accordion title={tk('settings.section.alerts')} defaultOpen badge={alertsDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
+        <Section title={tk('settings.section.alerts')} badge={alertsDirty ? tk('settings.badge.edited') : undefined}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <ThresholdGroup
               label={tk('settings.alerts.storage')}
@@ -288,162 +285,158 @@ export function SettingsPage() {
               onCriticalChange={(v) => updateField('gpuMemoryCritical', v)}
             />
           </div>
-        </Accordion>
+        </Section>
 
         {/* Snapshot Settings */}
-        <Accordion title={tk('settings.section.snapshots')} defaultOpen badge={snapshotsDirty ? tk('settings.badge.edited') : undefined} badgeColor="var(--accent-yellow)">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.snapshots.description')}
-            </div>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {[
-                { value: 15, label: tk('settings.snapshots.option_15m') },
-                { value: 30, label: tk('settings.snapshots.option_30m') },
-                { value: 60, label: tk('settings.snapshots.option_1h') },
-                { value: 120, label: tk('settings.snapshots.option_2h') },
-                { value: 360, label: tk('settings.snapshots.option_6h') }
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    hasEditedRef.current = true
-                    setSnapshotInterval(opt.value)
-                  }}
-                  style={{
-                    padding: '6px 16px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    border: 'none',
-                    borderRadius: 'var(--radius)',
-                    background: snapshotInterval === opt.value ? 'var(--accent-blue)' : 'var(--bg-card-hover)',
-                    color: snapshotInterval === opt.value ? 'var(--text-on-accent)' : 'var(--text-secondary)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              {tk('settings.snapshots.current', { interval: snapshotInterval, days: Math.round((168 * snapshotInterval) / 60 / 24) })}
-            </div>
+        <Section title={tk('settings.section.snapshots')} badge={snapshotsDirty ? tk('settings.badge.edited') : undefined}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('settings.snapshots.description')}
           </div>
-        </Accordion>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {[
+              { value: 15, label: tk('settings.snapshots.option_15m') },
+              { value: 30, label: tk('settings.snapshots.option_30m') },
+              { value: 60, label: tk('settings.snapshots.option_1h') },
+              { value: 120, label: tk('settings.snapshots.option_2h') },
+              { value: 360, label: tk('settings.snapshots.option_6h') }
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  hasEditedRef.current = true
+                  setSnapshotInterval(opt.value)
+                }}
+                style={{
+                  padding: '6px 16px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: 'var(--radius)',
+                  background: snapshotInterval === opt.value ? 'var(--accent-blue)' : 'var(--bg-card-hover)',
+                  color: snapshotInterval === opt.value ? 'var(--text-on-accent)' : 'var(--text-secondary)',
+                  cursor: 'pointer'
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            {tk('settings.snapshots.current', { interval: snapshotInterval, days: Math.round((168 * snapshotInterval) / 60 / 24) })}
+          </div>
+        </Section>
 
         {/* Data Storage */}
-        <Accordion title={tk('settings.section.app_data')} defaultOpen>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.app_data.description')}
-            </div>
-            {dataPath && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '10px 14px',
-                background: 'var(--bg-primary)',
-                borderRadius: 'var(--radius)',
-                border: '1px solid var(--border)'
-              }}>
-                <span style={{
-                  flex: 1, fontSize: '13px', fontFamily: 'monospace',
-                  color: 'var(--text-primary)',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                  {dataPath}
-                </span>
-                <button
-                  onClick={() => void handleOpenPath(dataPath, tk('settings.app_data.open_failed'))}
-                  style={btnStyle}
-                >
-                  {tk('common.open')}
-                </button>
-              </div>
-            )}
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-              <div>{tk('settings.app_data.config')}</div>
-              <div>{tk('settings.app_data.window_state')}</div>
-              <div>{tk('settings.app_data.snapshots')}</div>
-            </div>
+        <Section title={tk('settings.section.app_data')}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('settings.app_data.description')}
           </div>
-        </Accordion>
-
-        <Accordion title={tk('settings.section.logs')} defaultOpen>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.logs.description')}
-            </div>
-            {logPath && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '10px 14px',
-                background: 'var(--bg-primary)',
-                borderRadius: 'var(--radius)',
-                border: '1px solid var(--border)'
-              }}>
-                <span style={{
-                  flex: 1, fontSize: '13px', fontFamily: 'monospace',
-                  color: 'var(--text-primary)',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                  {logPath}
-                </span>
-                <button
-                  onClick={() => void handleOpenPath(logPath, tk('settings.logs.open_failed'))}
-                  style={btnStyle}
-                >
-                  {tk('common.open')}
-                </button>
-              </div>
-            )}
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-              <div>{tk('settings.logs.filename')}</div>
-              <div>{tk('settings.logs.retention')}</div>
-            </div>
-          </div>
-        </Accordion>
-
-        <Accordion title={tk('settings.section.about')} defaultOpen>
-          <div style={{ display: 'grid', gap: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tk('settings.about.description')}
-            </div>
+          {dataPath && (
             <div style={{
-              display: 'grid',
-              gap: '8px',
-              padding: '12px 14px',
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px',
               background: 'var(--bg-primary)',
               borderRadius: 'var(--radius)',
               border: '1px solid var(--border)'
             }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {aboutInfo?.appName ?? 'SystemScope'}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {tk('settings.about.version')}: {aboutInfo?.version ?? '-'}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {tk('settings.about.developer')}: {aboutInfo?.author ?? '-'}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {tk('settings.about.license')}: {aboutInfo?.license ?? '-'}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button onClick={() => void handleOpenAboutWindow()} style={btnStyle}>
-                {tk('settings.about.open_window')}
+              <span style={{
+                flex: 1, fontSize: '13px', fontFamily: 'monospace',
+                color: 'var(--text-primary)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>
+                {dataPath}
+              </span>
+              <button
+                onClick={() => void handleOpenPath(dataPath, tk('settings.app_data.open_failed'))}
+                style={btnStyle}
+              >
+                {tk('common.open')}
               </button>
             </div>
+          )}
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+            <div>{tk('settings.app_data.config')}</div>
+            <div>{tk('settings.app_data.window_state')}</div>
+            <div>{tk('settings.app_data.snapshots')}</div>
           </div>
-        </Accordion>
+        </Section>
+
+        {/* Logs */}
+        <Section title={tk('settings.section.logs')}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('settings.logs.description')}
+          </div>
+          {logPath && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px',
+              background: 'var(--bg-primary)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)'
+            }}>
+              <span style={{
+                flex: 1, fontSize: '13px', fontFamily: 'monospace',
+                color: 'var(--text-primary)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>
+                {logPath}
+              </span>
+              <button
+                onClick={() => void handleOpenPath(logPath, tk('settings.logs.open_failed'))}
+                style={btnStyle}
+              >
+                {tk('common.open')}
+              </button>
+            </div>
+          )}
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+            <div>{tk('settings.logs.filename')}</div>
+            <div>{tk('settings.logs.retention')}</div>
+          </div>
+        </Section>
+
+        {/* About */}
+        <Section title={tk('settings.section.about')}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('settings.about.description')}
+          </div>
+          <div style={{
+            display: 'grid',
+            gap: '8px',
+            padding: '12px 14px',
+            background: 'var(--bg-primary)',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {aboutInfo?.appName ?? 'SystemScope'}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {tk('settings.about.version')}: {aboutInfo?.version ?? '-'}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {tk('settings.about.developer')}: {aboutInfo?.author ?? '-'}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              {tk('settings.about.license')}: {aboutInfo?.license ?? '-'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={() => void handleOpenAboutWindow()} style={btnStyle}>
+              {tk('settings.about.open_window')}
+            </button>
+          </div>
+        </Section>
       </div>
 
       {/* Save bar — 하단 고정 */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '10px',
+        position: 'sticky', bottom: 0,
         marginTop: '20px', padding: '12px 16px',
         background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border)'
+        border: '1px solid var(--border)',
+        zIndex: 10
       }}>
         <button
           onClick={handleSave}
@@ -463,6 +456,45 @@ export function SettingsPage() {
           {tk('settings.footer.description')}
         </span>
       </div>
+    </div>
+  )
+}
+
+function Section({ title, badge, children }: { title: string; badge?: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      backgroundColor: 'var(--bg-card)',
+      borderRadius: 'var(--radius-lg)',
+      border: '1px solid var(--border)',
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{
+          fontSize: '12px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: 'var(--text-secondary)'
+        }}>
+          {title}
+        </span>
+        {badge && (
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            padding: '1px 8px',
+            borderRadius: '4px',
+            background: 'rgba(245, 158, 11, 0.12)',
+            color: 'var(--accent-yellow)'
+          }}>
+            {badge}
+          </span>
+        )}
+      </div>
+      {children}
     </div>
   )
 }
