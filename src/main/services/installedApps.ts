@@ -389,17 +389,24 @@ export function splitWindowsCommandArgs(args: string): string[] {
   return result
 }
 
+export function buildWindowsUninstallerPowerShellCommand(file: string, args: string[]): string {
+  const escapedFile = file.replace(/'/g, "''")
+  const argListLiteral = args.length > 0
+    ? `-ArgumentList @(${args.map((arg) => `'${arg.replace(/'/g, "''")}'`).join(', ')})`
+    : ''
+  return `Start-Process -FilePath '${escapedFile}' ${argListLiteral} -WorkingDirectory '${path.dirname(escapedFile)}' -Verb RunAs`
+}
+
 function launchWindowsUninstaller(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
       const { file, args } = parseUninstallCommand(command)
       const argv = splitWindowsCommandArgs(args)
-      const cwd = path.isAbsolute(file) ? path.dirname(file) : undefined
+      const psCommand = buildWindowsUninstallerPowerShellCommand(file, argv)
 
-      logInfo('apps', 'Launching uninstaller process', { file, args: argv, cwd })
+      logInfo('apps', 'Launching uninstaller process', { file, args: argv, psCommand })
 
-      const child = spawn(file, argv, {
-        cwd,
+      const child = spawn('powershell', ['-NoProfile', '-Command', psCommand], {
         detached: true,
         stdio: 'ignore',
         windowsHide: false,

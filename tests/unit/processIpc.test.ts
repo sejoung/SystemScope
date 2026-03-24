@@ -12,6 +12,7 @@ const getFocusedWindow = vi.hoisted(() => vi.fn())
 const getAllWindows = vi.hoisted(() => vi.fn())
 const getAppName = vi.hoisted(() => vi.fn())
 const getAppPath = vi.hoisted(() => vi.fn())
+const runExternalCommand = vi.hoisted(() => vi.fn())
 vi.mock('electron', () => ({
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -47,6 +48,10 @@ vi.mock('../../src/main/services/processMonitor', () => ({
   getProcessByPid
 }))
 
+vi.mock('../../src/main/services/externalCommand', () => ({
+  runExternalCommand
+}))
+
 describe('registerProcessIpc', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -61,6 +66,7 @@ describe('registerProcessIpc', () => {
     getAllWindows.mockReset()
     getAppName.mockReset()
     getAppPath.mockReset()
+    runExternalCommand.mockReset()
 
     getFocusedWindow.mockReturnValue(null)
     getAllWindows.mockReturnValue([])
@@ -163,5 +169,39 @@ describe('registerProcessIpc', () => {
     expect(killSpy).not.toHaveBeenCalled()
     expect(logWarn).toHaveBeenCalled()
     killSpy.mockRestore()
+  })
+
+  it('should fall back to taskkill on Windows when process.kill returns EPERM', async () => {
+    const target = { pid: 4321, name: 'node', command: 'C:\\node.exe', cpu: 0, memory: 0, memoryBytes: 0 }
+    getProcessByPid.mockResolvedValue(target)
+    showMessageBox.mockResolvedValue({ response: 1 })
+    getAppPath.mockImplementation((name: string) => {
+      if (name === 'exe') return 'C:\\Program Files\\SystemScope\\SystemScope.exe'
+      return 'C:\\Temp'
+    })
+
+    const originalPlatform = process.platform
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+      const err = new Error('kill EPERM') as Error & { code?: string }
+      err.code = 'EPERM'
+      throw err
+    })
+    runExternalCommand.mockResolvedValue({ stdout: '', stderr: '' })
+
+    const { registerProcessIpc } = await import('../../src/main/ipc/process.ipc')
+    registerProcessIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL)
+    const result = await handler?.({}, { pid: 4321 }) as { ok: boolean; data?: { killed: boolean } }
+
+    expect(result.ok).toBe(true)
+    expect(result.data?.killed).toBe(true)
+    expect(runExternalCommand).toHaveBeenCalledWith('taskkill', ['/PID', '4321', '/T', '/F'], {
+      windowsHide: true
+    })
+
+    killSpy.mockRestore()
+    Object.defineProperty(process, 'platform', { value: originalPlatform })
   })
 })

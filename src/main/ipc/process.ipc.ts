@@ -4,6 +4,7 @@ import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
 import { logError, logInfo, logWarn } from '../services/logging'
+import { runExternalCommand } from '../services/externalCommand'
 import { tk } from '../i18n'
 
 export function registerProcessIpc(): void {
@@ -107,7 +108,7 @@ export function registerProcessIpc(): void {
         return failure('UNKNOWN_ERROR', tk('main.process.error.changed'))
       }
 
-      process.kill(request.pid, 'SIGTERM')
+      await terminateProcess(confirmedTarget.pid)
       logInfo('process-ipc', 'Process kill signal sent', { pid: confirmedTarget.pid, name: confirmedTarget.name })
 
       const result: ProcessKillResult = {
@@ -122,6 +123,33 @@ export function registerProcessIpc(): void {
       return failure('UNKNOWN_ERROR', tk('main.process.error.kill_failed'))
     }
   })
+}
+
+async function terminateProcess(pid: number): Promise<void> {
+  try {
+    process.kill(pid, 'SIGTERM')
+    return
+  } catch (error) {
+    if (!shouldFallbackToTaskkill(error)) {
+      throw error
+    }
+  }
+
+  await runExternalCommand('taskkill', ['/PID', String(pid), '/T', '/F'], {
+    windowsHide: true
+  })
+}
+
+function shouldFallbackToTaskkill(error: unknown): boolean {
+  if (process.platform !== 'win32') {
+    return false
+  }
+
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? (error as { code?: string }).code
+    : undefined
+
+  return code === 'EPERM' || code === 'EACCES'
 }
 
 function isProtectedProcess(target: { pid: number; name: string; command: string }): boolean {

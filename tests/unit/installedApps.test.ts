@@ -117,4 +117,15 @@ describe('installedApps helpers', () => {
       '/D=C:\\Program Files\\Example App'
     ])
   })
+
+  it('should build elevated PowerShell launch command for Windows uninstallers', async () => {
+    const { buildWindowsUninstallerPowerShellCommand } = await import('../../src/main/services/installedApps')
+
+    expect(
+      buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', [])
+    ).toContain("-Verb RunAs")
+    expect(
+      buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', ['/S'])
+    ).toContain("-ArgumentList @('/S')")
+  })
 })
