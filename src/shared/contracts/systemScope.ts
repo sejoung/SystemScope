@@ -37,9 +37,20 @@ export interface SystemScopeSettingsPayload {
   snapshotIntervalMin?: number
 }
 
+export interface SystemScopeAboutInfo {
+  appName: string
+  version: string
+  author: string
+  homepage: string | null
+  license: string | null
+}
+
 export interface SystemScopeApi {
   logRendererError: (scope: string, message: string, details?: unknown) => Promise<AppResult<boolean>>
   setUnsavedSettingsState: (hasUnsavedSettings: boolean) => Promise<AppResult<boolean>>
+  getAboutInfo: () => Promise<AppResult<SystemScopeAboutInfo>>
+  openAboutWindow: () => Promise<AppResult<boolean>>
+  openHomepage: () => Promise<AppResult<boolean>>
 
   getSystemStats: () => Promise<AppResult<SystemStats>>
   subscribeSystem: () => Promise<AppResult<boolean>>

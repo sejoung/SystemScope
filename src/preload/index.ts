@@ -21,6 +21,9 @@ const api: SystemScopeApi = {
     ipcRenderer.invoke(IPC_CHANNELS.APP_LOG_RENDERER_ERROR, { scope, message, details }),
   setUnsavedSettingsState: (hasUnsavedSettings: boolean) =>
     ipcRenderer.invoke(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, { hasUnsavedSettings }),
+  getAboutInfo: () => ipcRenderer.invoke(IPC_CHANNELS.APP_GET_ABOUT_INFO),
+  openAboutWindow: () => ipcRenderer.invoke(IPC_CHANNELS.APP_OPEN_ABOUT),
+  openHomepage: () => ipcRenderer.invoke(IPC_CHANNELS.APP_OPEN_HOMEPAGE),
 
   // 시스템
   getSystemStats: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_GET_STATS),

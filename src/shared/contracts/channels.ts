@@ -2,6 +2,9 @@ export const IPC_CHANNELS = {
   // 앱
   APP_LOG_RENDERER_ERROR: 'app:logRendererError',
   APP_SET_UNSAVED_SETTINGS: 'app:setUnsavedSettings',
+  APP_GET_ABOUT_INFO: 'app:getAboutInfo',
+  APP_OPEN_ABOUT: 'app:openAbout',
+  APP_OPEN_HOMEPAGE: 'app:openHomepage',
 
   // 시스템 모니터링
   SYSTEM_GET_STATS: 'system:getStats',

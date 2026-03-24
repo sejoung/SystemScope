@@ -1,9 +1,10 @@
-import { ipcMain } from 'electron'
+import { ipcMain, shell } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
 import { setUnsavedSettingsState } from '../app/rendererState'
 import { logError, logWarn } from '../services/logging'
 import { tk } from '../i18n'
+import { getAboutInfo, getHomepageUrl, openAboutWindow } from '../app/aboutWindow'
 
 export function registerAppIpc(): void {
   ipcMain.handle(
@@ -34,5 +35,39 @@ export function registerAppIpc(): void {
 
     setUnsavedSettingsState(payload.hasUnsavedSettings)
     return success(true)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APP_GET_ABOUT_INFO, () => {
+    return success(getAboutInfo())
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APP_OPEN_ABOUT, (event) => {
+    try {
+      void event
+      openAboutWindow()
+      return success(true)
+    } catch (err) {
+      logError('app-ipc', 'Failed to open About window', err)
+      return failure('UNKNOWN_ERROR', tk('main.app.error.open_about'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APP_OPEN_HOMEPAGE, async () => {
+    const homepage = getHomepageUrl()
+    if (!homepage) {
+      return failure('INVALID_INPUT', tk('main.app.error.open_homepage'))
+    }
+
+    try {
+      const parsed = new URL(homepage)
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return failure('PERMISSION_DENIED', tk('main.app.error.open_homepage'))
+      }
+      await shell.openExternal(parsed.toString())
+      return success(true)
+    } catch (err) {
+      logError('app-ipc', 'Failed to open homepage', err)
+      return failure('UNKNOWN_ERROR', tk('main.app.error.open_homepage'))
+    }
   })
 }

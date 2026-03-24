@@ -5,6 +5,7 @@ import { logError } from '../services/logging'
 import { getSystemStats } from '../services/systemMonitor'
 import { getCpuMeterText } from './trayIconFactory'
 import { CPU_TRAY_THRESHOLDS } from '@shared/constants/thresholds'
+import { openAboutWindow } from './aboutWindow'
 
 let tray: Tray | null = null
 let trayUpdateTimer: ReturnType<typeof setInterval> | null = null
@@ -28,13 +29,19 @@ export function createTray(): void {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Show SystemScope',
+      label: 'Show',
       click: () => {
         const win = BrowserWindow.getAllWindows()[0]
         if (win) {
           win.show()
           win.focus()
         }
+      }
+    },
+    {
+      label: 'About',
+      click: () => {
+        openAboutWindow()
       }
     },
     { type: 'separator' },

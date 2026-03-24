@@ -5,6 +5,7 @@ import { useToast } from '../components/Toast'
 import type { AlertThresholds } from '@shared/types'
 import { useI18n } from '../i18n/useI18n'
 import type { AppLocale } from '@shared/i18n'
+import type { SystemScopeAboutInfo } from '@shared/contracts/systemScope'
 
 export function SettingsPage() {
   const thresholds = useSettingsStore((s) => s.thresholds)
@@ -21,6 +22,7 @@ export function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [dataPath, setDataPath] = useState<string | null>(null)
   const [logPath, setLogPath] = useState<string | null>(null)
+  const [aboutInfo, setAboutInfo] = useState<SystemScopeAboutInfo | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasEditedRef = useRef(false)
@@ -76,6 +78,11 @@ export function SettingsPage() {
     })
     window.systemScope.getLogPath().then((res) => {
       if (res.ok && res.data) setLogPath(res.data as string)
+    })
+    window.systemScope.getAboutInfo().then((res) => {
+      if (res.ok && res.data) {
+        setAboutInfo(res.data as SystemScopeAboutInfo)
+      }
     })
 
     return () => {
@@ -153,6 +160,13 @@ export function SettingsPage() {
     const res = await window.systemScope.openPath(targetPath)
     if (!res.ok) {
       showToast(res.error?.message ?? errorMessage)
+    }
+  }
+
+  const handleOpenAboutWindow = async () => {
+    const res = await window.systemScope.openAboutWindow()
+    if (!res.ok) {
+      showToast(res.error?.message ?? tk('settings.about.open_failed'))
     }
   }
 
@@ -385,6 +399,40 @@ export function SettingsPage() {
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
               <div>{tk('settings.logs.filename')}</div>
               <div>{tk('settings.logs.retention')}</div>
+            </div>
+          </div>
+        </Accordion>
+
+        <Accordion title={tk('settings.section.about')} defaultOpen>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              {tk('settings.about.description')}
+            </div>
+            <div style={{
+              display: 'grid',
+              gap: '8px',
+              padding: '12px 14px',
+              background: 'var(--bg-primary)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)'
+            }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {aboutInfo?.appName ?? 'SystemScope'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {tk('settings.about.version')}: {aboutInfo?.version ?? '-'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {tk('settings.about.developer')}: {aboutInfo?.author ?? '-'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {tk('settings.about.license')}: {aboutInfo?.license ?? '-'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button onClick={() => void handleOpenAboutWindow()} style={btnStyle}>
+                {tk('settings.about.open_window')}
+              </button>
             </div>
           </div>
         </Accordion>

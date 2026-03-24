@@ -5,8 +5,18 @@ const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknow
 const logError = vi.hoisted(() => vi.fn())
 const logWarn = vi.hoisted(() => vi.fn())
 const setUnsavedSettingsState = vi.hoisted(() => vi.fn())
+const getAboutInfo = vi.hoisted(() => vi.fn())
+const getHomepageUrl = vi.hoisted(() => vi.fn())
+const openAboutWindow = vi.hoisted(() => vi.fn())
+const openExternal = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
+  BrowserWindow: {
+    fromWebContents: (contents: unknown) => contents
+  },
+  shell: {
+    openExternal
+  },
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
       handlers.set(channel, handler)
@@ -25,12 +35,22 @@ vi.mock('../../src/main/app/rendererState', () => ({
   setUnsavedSettingsState
 }))
 
+vi.mock('../../src/main/app/aboutWindow', () => ({
+  getAboutInfo,
+  getHomepageUrl,
+  openAboutWindow
+}))
+
 describe('registerAppIpc', () => {
   beforeEach(() => {
     handlers.clear()
     logError.mockReset()
     logWarn.mockReset()
     setUnsavedSettingsState.mockReset()
+    getAboutInfo.mockReset()
+    getHomepageUrl.mockReset()
+    openAboutWindow.mockReset()
+    openExternal.mockReset()
   })
 
   it('should log renderer errors with normalized scope and details', async () => {
@@ -93,5 +113,52 @@ describe('registerAppIpc', () => {
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('INVALID_INPUT')
     expect(logWarn).toHaveBeenCalled()
+  })
+
+  it('should return about info from the main process', async () => {
+    getAboutInfo.mockReturnValue({
+      appName: 'SystemScope',
+      version: '1.0.9',
+      author: 'Sejoung',
+      homepage: 'https://github.com/sejoung/SystemScope',
+      license: 'Apache-2.0'
+    })
+
+    const { registerAppIpc } = await import('../../src/main/ipc/app.ipc')
+    registerAppIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APP_GET_ABOUT_INFO)
+    const result = handler?.({}, undefined) as { ok: boolean; data?: { author: string } }
+
+    expect(result.ok).toBe(true)
+    expect(result.data?.author).toBe('Sejoung')
+  })
+
+  it('should open the about window for the requesting browser window', async () => {
+    const { registerAppIpc } = await import('../../src/main/ipc/app.ipc')
+    registerAppIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APP_OPEN_ABOUT)
+    const result = handler?.({
+      sender: { id: 7 }
+    }, undefined) as { ok: boolean; data?: boolean }
+
+    expect(result.ok).toBe(true)
+    expect(result.data).toBe(true)
+    expect(openAboutWindow).toHaveBeenCalledWith()
+  })
+
+  it('should open the homepage via the shell', async () => {
+    getHomepageUrl.mockReturnValue('https://github.com/sejoung/SystemScope')
+
+    const { registerAppIpc } = await import('../../src/main/ipc/app.ipc')
+    registerAppIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APP_OPEN_HOMEPAGE)
+    const result = await handler?.({}, undefined) as { ok: boolean; data?: boolean }
+
+    expect(result.ok).toBe(true)
+    expect(result.data).toBe(true)
+    expect(openExternal).toHaveBeenCalledWith('https://github.com/sejoung/SystemScope')
   })
 })
