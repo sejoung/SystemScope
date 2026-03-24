@@ -58,6 +58,12 @@ export async function executeGracefulShutdown(reason: string): Promise<void> {
 }
 
 async function doGracefulShutdown(reason: string): Promise<void> {
+  // 테스트 모드에서는 즉시 종료
+  if (process.env.NODE_ENV === 'test') {
+    destroyTray()
+    return
+  }
+
   broadcastShutdownState('starting', tk('shutdown.starting'))
   logInfo('shutdown', 'Graceful shutdown started', {
     reason,

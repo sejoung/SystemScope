@@ -7,14 +7,14 @@ type ElectronFixtures = {
 }
 
 export const test = base.extend<ElectronFixtures>({
-  electronApp: async ({}, use) => {
+  electronApp: [async ({}, use) => {
     const app = await _electron.launch({
       args: [path.join(__dirname, '../../../out/main/index.js')],
       env: { ...process.env, NODE_ENV: 'test' }
     })
     await use(app)
     await app.close()
-  },
+  }, { timeout: 15_000 }],
 
   mainWindow: async ({ electronApp }, use) => {
     const window = await electronApp.firstWindow({ timeout: 30_000 })
