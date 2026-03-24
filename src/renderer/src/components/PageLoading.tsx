@@ -4,7 +4,7 @@ export function PageLoading() {
   const { tk } = useI18n()
 
   return (
-    <div style={{
+    <div data-testid="page-loading" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

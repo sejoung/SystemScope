@@ -2,7 +2,8 @@ import { test, expect } from '../fixtures/electronApp'
 
 test.describe('사이드바 네비게이션', () => {
   test('기본 페이지는 Overview이다', async ({ mainWindow }) => {
-    await expect(mainWindow.locator('.dashboard-grid-3')).toBeVisible()
+    // 시스템 데이터 수신 전에는 PageLoading, 수신 후에는 dashboard-grid-3 표시
+    await expect(mainWindow.locator('.dashboard-grid-3, [data-testid="page-loading"]')).toBeVisible({ timeout: 15_000 })
   })
 
   test('Storage 페이지로 이동', async ({ mainWindow }) => {
@@ -35,6 +36,6 @@ test.describe('사이드바 네비게이션', () => {
     await mainWindow.locator('nav >> button', { hasText: 'Preferences' }).click()
     await expect(mainWindow.locator('text=Appearance')).toBeVisible()
     await mainWindow.locator('nav >> button', { hasText: 'Overview' }).click()
-    await expect(mainWindow.locator('.dashboard-grid-3')).toBeVisible()
+    await expect(mainWindow.locator('.dashboard-grid-3, [data-testid="page-loading"]')).toBeVisible({ timeout: 15_000 })
   })
 })

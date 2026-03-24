@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22
 
 jobs:
   verify:
@@ -53,13 +53,6 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - name: Cache Electron build dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/electron
-            ~/.cache/electron-builder
-          key: ${{ runner.os }}-electron-builder-26.8.1-${{ hashFiles('package-lock.json') }}
       - run: ${{ matrix.build_cmd }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
