@@ -7,8 +7,10 @@ import {
   getInstalledAppRelatedData,
   listInstalledApps,
   listLeftoverAppData,
+  listLeftoverAppRegistry,
   openInstalledAppLocation,
   removeLeftoverAppData,
+  removeLeftoverAppRegistry,
   openSystemUninstallSettings,
   uninstallInstalledApp
 } from '../services/installedApps'
@@ -81,6 +83,28 @@ export function registerAppsIpc(): void {
     } catch (error) {
       logError('apps-ipc', 'Failed to remove leftover app data', { itemIds, error })
       return failure('UNKNOWN_ERROR', tk('apps.error.remove_leftover'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APPS_LIST_LEFTOVER_REGISTRY, async () => {
+    try {
+      return success(await listLeftoverAppRegistry())
+    } catch (error) {
+      logError('apps-ipc', 'Failed to list leftover app registry', error)
+      return failure('UNKNOWN_ERROR', tk('apps.error.load_registry'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_REGISTRY, async (_event, itemIds: string[]) => {
+    if (!Array.isArray(itemIds) || itemIds.length === 0 || itemIds.some((entry) => typeof entry !== 'string' || !entry.trim())) {
+      return failure('INVALID_INPUT', 'Invalid item ID list.')
+    }
+
+    try {
+      return success(await removeLeftoverAppRegistry(itemIds))
+    } catch (error) {
+      logError('apps-ipc', 'Failed to remove leftover app registry', { itemIds, error })
+      return failure('UNKNOWN_ERROR', tk('apps.error.remove_registry'))
     }
   })
 

@@ -1,16 +1,25 @@
 import { app, shell } from 'electron'
+import { existsSync } from 'fs'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform as getPlatform } from 'os'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
-import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, AppUninstallRequest, InstalledApp } from '@shared/types'
+import type {
+  AppLeftoverDataItem,
+  AppLeftoverRegistryItem,
+  AppRelatedDataItem,
+  AppRemovalResult,
+  AppUninstallRequest,
+  InstalledApp
+} from '@shared/types'
 import { logDebug, logError, logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
 
 const execFileAsync = promisify(execFile)
 const installedAppsCache = new Map<string, InstalledApp>()
 const leftoverAppDataCache = new Map<string, AppLeftoverDataItem>()
+const leftoverRegistryCache = new Map<string, AppLeftoverRegistryItem>()
 
 export async function listInstalledApps(): Promise<InstalledApp[]> {
   const apps = getPlatform() === 'darwin'
@@ -75,6 +84,52 @@ export async function removeLeftoverAppData(itemIds: string[]): Promise<{ delete
   }
 
   return { deletedPaths, failedPaths }
+}
+
+export async function listLeftoverAppRegistry(): Promise<AppLeftoverRegistryItem[]> {
+  if (getPlatform() !== 'win32') {
+    return []
+  }
+
+  const items = await listWindowsLeftoverRegistryEntries()
+  leftoverRegistryCache.clear()
+  for (const item of items) {
+    leftoverRegistryCache.set(item.id, item)
+  }
+
+  return items.sort((a, b) => a.appName.localeCompare(b.appName) || a.registryPath.localeCompare(b.registryPath))
+}
+
+export async function removeLeftoverAppRegistry(itemIds: string[]): Promise<{ deletedKeys: string[]; failedKeys: string[] }> {
+  if (getPlatform() !== 'win32') {
+    return { deletedKeys: [], failedKeys: [] }
+  }
+
+  const uniqueItems = [...new Set(itemIds)]
+    .map((itemId) => leftoverRegistryCache.get(itemId))
+    .filter((item): item is AppLeftoverRegistryItem => item !== undefined)
+
+  const deletedKeys: string[] = []
+  const failedKeys: string[] = []
+
+  for (const item of uniqueItems) {
+    try {
+      await execFileAsync('reg', ['delete', item.registryPath, '/f'], {
+        windowsHide: true
+      })
+      leftoverRegistryCache.delete(item.id)
+      deletedKeys.push(item.registryPath)
+    } catch (error) {
+      failedKeys.push(item.registryPath)
+      logWarn('apps', 'Failed to remove leftover uninstall registry entry', {
+        registryPath: item.registryPath,
+        itemId: item.id,
+        error
+      })
+    }
+  }
+
+  return { deletedKeys, failedKeys }
 }
 
 export async function openInstalledAppLocation(appId: string): Promise<void> {
@@ -237,6 +292,7 @@ export function parseWindowsRegistryOutput(raw: string): InstalledApp[] {
       launchPath,
       uninstallCommand: uninstallCommand ?? undefined,
       quietUninstallCommand: quietUninstallCommand ?? undefined,
+      uninstallRegistryPath: registryPath,
       platform: 'windows',
       uninstallKind: uninstallCommand ? 'uninstall_command' : 'open_settings',
       protected: isProtected,
@@ -333,11 +389,66 @@ async function listWindowsInstalledApps(): Promise<InstalledApp[]> {
   return allApps
 }
 
+async function listWindowsLeftoverRegistryEntries(): Promise<AppLeftoverRegistryItem[]> {
+  const entries = await listWindowsInstalledApps()
+  const leftovers: AppLeftoverRegistryItem[] = []
+
+  for (const entry of entries) {
+    const installLocationExists = entry.installLocation ? pathExists(entry.installLocation) : false
+    const uninstallerExists = entry.uninstallCommand ? commandTargetExists(entry.uninstallCommand) : false
+
+    if (installLocationExists || uninstallerExists) {
+      continue
+    }
+
+    const registryPath = entry.uninstallRegistryPath ?? entry.id
+    leftovers.push({
+      id: registryPath,
+      appName: entry.name,
+      registryPath,
+      version: entry.version,
+      publisher: entry.publisher,
+      installLocation: entry.installLocation,
+      uninstallCommand: entry.uninstallCommand,
+      installLocationExists,
+      uninstallerExists
+    })
+  }
+
+  return leftovers
+}
+
 function sanitizeRegistryValue(value?: string): string | null {
   if (!value) return null
   const trimmed = value.trim()
   if (!trimmed) return null
   return trimmed
+}
+
+function pathExists(targetPath: string): boolean {
+  if (!targetPath.trim()) return false
+  return existsSync(expandWindowsEnvVars(targetPath))
+}
+
+function commandTargetExists(command: string): boolean {
+  const { file } = parseUninstallCommand(expandWindowsEnvVars(command))
+  const normalized = file.trim().replace(/^"(.*)"$/, '$1')
+  if (!normalized) return false
+
+  const lower = normalized.toLowerCase()
+  if (lower === 'msiexec' || lower === 'msiexec.exe' || lower === 'rundll32' || lower === 'rundll32.exe') {
+    return true
+  }
+
+  if (!/[\\/]/.test(normalized)) {
+    return true
+  }
+
+  return existsSync(normalized)
+}
+
+function expandWindowsEnvVars(input: string): string {
+  return input.replace(/%([^%]+)%/g, (_match, name: string) => process.env[name] ?? `%${name}%`)
 }
 
 function currentExeIfInside(currentExe: string, installLocation: string): string | undefined {

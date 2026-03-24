@@ -1,11 +1,17 @@
 import { Fragment, startTransition, useEffect, useMemo, useRef, useState } from 'react'
-import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, InstalledApp } from '@shared/types'
+import type {
+  AppLeftoverDataItem,
+  AppLeftoverRegistryItem,
+  AppRelatedDataItem,
+  AppRemovalResult,
+  InstalledApp
+} from '@shared/types'
 import { useToast } from '../components/Toast'
 import { useI18n } from '../i18n/useI18n'
 import { useSettingsStore } from '../stores/useSettingsStore'
 
 type PlatformFilter = 'all' | 'mac' | 'windows'
-type AppsTab = 'installed' | 'leftover'
+type AppsTab = 'installed' | 'leftover' | 'registry'
 type ConfidenceFilter = 'all' | 'high' | 'medium' | 'low'
 
 export function AppsPage() {
@@ -15,6 +21,7 @@ export function AppsPage() {
   const [activeTab, setActiveTab] = useState<AppsTab>('installed')
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
+  const [registryItems, setRegistryItems] = useState<AppLeftoverRegistryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshingTab, setRefreshingTab] = useState<AppsTab | null>(null)
   const [installedDraftSearch, setInstalledDraftSearch] = useState('')
@@ -24,13 +31,17 @@ export function AppsPage() {
   const [leftoverAppliedSearch, setLeftoverAppliedSearch] = useState('')
   const [leftoverPlatformFilter, setLeftoverPlatformFilter] = useState<PlatformFilter>('all')
   const [leftoverConfidenceFilter, setLeftoverConfidenceFilter] = useState<ConfidenceFilter>('all')
+  const [registryDraftSearch, setRegistryDraftSearch] = useState('')
+  const [registryAppliedSearch, setRegistryAppliedSearch] = useState('')
   const [busyAppId, setBusyAppId] = useState<string | null>(null)
   const [leftoverBusy, setLeftoverBusy] = useState(false)
+  const [registryBusy, setRegistryBusy] = useState(false)
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null)
   const [relatedLoadingAppId, setRelatedLoadingAppId] = useState<string | null>(null)
   const [relatedDataByAppId, setRelatedDataByAppId] = useState<Record<string, AppRelatedDataItem[]>>({})
   const [selectedRelatedIdsByAppId, setSelectedRelatedIdsByAppId] = useState<Record<string, string[]>>({})
   const [selectedLeftoverIds, setSelectedLeftoverIds] = useState<string[]>([])
+  const [selectedRegistryIds, setSelectedRegistryIds] = useState<string[]>([])
   const [pendingUninstallIds, setPendingUninstallIds] = useState<string[]>([])
   const uninstallRefreshTimersRef = useRef<number[]>([])
   const isWindows = navigator.userAgent.includes('Windows')
@@ -54,6 +65,17 @@ export function AppsPage() {
       setSelectedLeftoverIds((current) => current.filter((itemId) => items.some((entry) => entry.id === itemId)))
     } else {
       showToast(res.error?.message ?? tk('apps.error.load_leftover'))
+    }
+  }
+
+  const loadRegistry = async () => {
+    const res = await window.systemScope.listLeftoverAppRegistry()
+    if (res.ok && res.data) {
+      const items = res.data as AppLeftoverRegistryItem[]
+      setRegistryItems(items)
+      setSelectedRegistryIds((current) => current.filter((itemId) => items.some((entry) => entry.id === itemId)))
+    } else {
+      showToast(res.error?.message ?? tk('apps.error.load_registry'))
     }
   }
 
@@ -96,8 +118,10 @@ export function AppsPage() {
   const refreshCurrentTab = async () => {
     if (activeTab === 'installed') {
       await refreshInstalledTab('initial')
-    } else {
+    } else if (activeTab === 'leftover') {
       await refreshLeftoverTab('initial')
+    } else {
+      await refreshRegistryTab('initial')
     }
   }
 
@@ -135,11 +159,31 @@ export function AppsPage() {
       return [item.appName, item.label, item.path].some((value) => value.toLowerCase().includes(normalizedQuery))
     })
   }, [leftoverAppliedSearch, leftoverConfidenceFilter, leftoverItems, leftoverPlatformFilter])
+
+  const filteredRegistry = useMemo(() => {
+    const normalizedQuery = registryAppliedSearch.trim().toLowerCase()
+    return registryItems.filter((item) => {
+      if (!normalizedQuery) return true
+      return [
+        item.appName,
+        item.version,
+        item.publisher,
+        item.registryPath,
+        item.installLocation,
+        item.uninstallCommand
+      ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
+    })
+  }, [registryAppliedSearch, registryItems])
   const selectedFilteredLeftoverCount = useMemo(
     () => filteredLeftovers.filter((item) => selectedLeftoverIds.includes(item.id)).length,
     [filteredLeftovers, selectedLeftoverIds]
   )
   const allFilteredLeftoversChecked = filteredLeftovers.length > 0 && selectedFilteredLeftoverCount === filteredLeftovers.length
+  const selectedFilteredRegistryCount = useMemo(
+    () => filteredRegistry.filter((item) => selectedRegistryIds.includes(item.id)).length,
+    [filteredRegistry, selectedRegistryIds]
+  )
+  const allFilteredRegistryChecked = filteredRegistry.length > 0 && selectedFilteredRegistryCount === filteredRegistry.length
 
   const applyInstalledSearch = () => {
     startTransition(() => {
@@ -164,6 +208,19 @@ export function AppsPage() {
     setLeftoverDraftSearch('')
     startTransition(() => {
       setLeftoverAppliedSearch('')
+    })
+  }
+
+  const applyRegistrySearch = () => {
+    startTransition(() => {
+      setRegistryAppliedSearch(registryDraftSearch)
+    })
+  }
+
+  const clearRegistrySearch = () => {
+    setRegistryDraftSearch('')
+    startTransition(() => {
+      setRegistryAppliedSearch('')
     })
   }
 
@@ -196,6 +253,9 @@ export function AppsPage() {
     }
     await loadApps()
     await loadLeftovers()
+    if (isWindows) {
+      await loadRegistry()
+    }
   }
 
   const handleToggleLeftoverId = (itemId: string) => {
@@ -228,6 +288,24 @@ export function AppsPage() {
         })
     )
     await loadLeftovers()
+  }
+
+  const refreshRegistryTab = async (mode: 'initial' | 'inline' = 'inline') => {
+    if (mode === 'initial') {
+      setLoading(true)
+    } else {
+      setRefreshingTab('registry')
+    }
+
+    try {
+      await loadRegistry()
+    } finally {
+      if (mode === 'initial') {
+        setLoading(false)
+      } else {
+        setRefreshingTab((current) => (current === 'registry' ? null : current))
+      }
+    }
   }
 
   const handleOpenLeftoverPath = async (targetPath: string) => {
@@ -292,6 +370,39 @@ export function AppsPage() {
     }
   }
 
+  const handleToggleRegistryId = (itemId: string) => {
+    setSelectedRegistryIds((current) => current.includes(itemId)
+      ? current.filter((entry) => entry !== itemId)
+      : [...current, itemId]
+    )
+  }
+
+  const handleRemoveSelectedRegistry = async () => {
+    if (selectedRegistryIds.length === 0) return
+
+    setRegistryBusy(true)
+    const res = await window.systemScope.removeLeftoverAppRegistry(selectedRegistryIds)
+    setRegistryBusy(false)
+
+    if (!res.ok || !res.data) {
+      showToast(res.error?.message ?? tk('apps.error.remove_registry'))
+      return
+    }
+
+    const result = res.data as { deletedKeys: string[]; failedKeys: string[] }
+    setSelectedRegistryIds([])
+    showToast(
+      result.failedKeys.length === 0
+        ? tk('apps.toast.registry_all', { count: result.deletedKeys.length })
+        : tk('apps.toast.registry_partial', {
+          deletedCount: result.deletedKeys.length,
+          failedCount: result.failedKeys.length
+        })
+    )
+    await loadRegistry()
+    await loadApps()
+  }
+
   return (
     <div>
       <div style={stickyHeaderStyle}>
@@ -300,6 +411,7 @@ export function AppsPage() {
         <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '3px' }}>
           <PageTab active={activeTab === 'installed'} onClick={() => setActiveTab('installed')}>{tk('apps.tab.installed')}</PageTab>
           <PageTab active={activeTab === 'leftover'} onClick={() => setActiveTab('leftover')}>{tk('apps.tab.leftover')}</PageTab>
+          {isWindows && <PageTab active={activeTab === 'registry'} onClick={() => setActiveTab('registry')}>{tk('apps.tab.registry')}</PageTab>}
         </div>
       </div>
 
@@ -312,10 +424,16 @@ export function AppsPage() {
         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
           {activeTab === 'installed'
             ? tk('apps.description.installed')
-            : tk('apps.description.leftover')}
+            : activeTab === 'leftover'
+              ? tk('apps.description.leftover')
+              : tk('apps.description.registry')}
         </span>
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          {activeTab === 'installed' ? tk('apps.count.apps', { count: filteredApps.length }) : tk('apps.count.items', { count: filteredLeftovers.length })}
+          {activeTab === 'installed'
+            ? tk('apps.count.apps', { count: filteredApps.length })
+            : activeTab === 'leftover'
+              ? tk('apps.count.items', { count: filteredLeftovers.length })
+              : tk('apps.count.items', { count: filteredRegistry.length })}
         </span>
         {activeTab === 'installed' && installedAppliedSearch && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -327,11 +445,22 @@ export function AppsPage() {
             {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{leftoverAppliedSearch}</strong>
           </span>
         )}
+        {activeTab === 'registry' && registryAppliedSearch && (
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{registryAppliedSearch}</strong>
+          </span>
+        )}
       </div>
       </div>
 
       {loading ? (
-        <div style={emptyStyle}>{activeTab === 'installed' ? tk('apps.loading.installed') : tk('apps.loading.leftover')}</div>
+        <div style={emptyStyle}>
+          {activeTab === 'installed'
+            ? tk('apps.loading.installed')
+            : activeTab === 'leftover'
+              ? tk('apps.loading.leftover')
+              : tk('apps.loading.registry')}
+        </div>
       ) : activeTab === 'installed' ? (
         <div>
           <div style={stickyTabControlsWrapStyle}>
@@ -508,7 +637,7 @@ export function AppsPage() {
             </>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'leftover' ? (
         <div style={{ display: 'grid', gap: '12px' }}>
           <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
@@ -656,6 +785,147 @@ export function AppsPage() {
                 }}
               >
                 {leftoverBusy ? tk('apps.action.working') : tk('apps.action.move_selected_to_trash')}
+              </button>
+            </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '12px' }}>
+          <div style={stickyTabControlsWrapStyle}>
+            <div style={tabControlsStyle}>
+              <button
+                onClick={() => void refreshRegistryTab()}
+                disabled={refreshingTab === 'registry'}
+                style={secondaryBtnStyle(refreshingTab === 'registry')}
+              >
+                {refreshingTab === 'registry' ? tk('common.refreshing') : tk('apps.action.refresh')}
+              </button>
+              <input
+                value={registryDraftSearch}
+                onChange={(e) => setRegistryDraftSearch(e.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') applyRegistrySearch()
+                }}
+                placeholder={tk('apps.search.registry_placeholder')}
+                style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
+              />
+              <button onClick={applyRegistrySearch} style={btnStyle}>{tk('common.search')}</button>
+              <button
+                onClick={clearRegistrySearch}
+                disabled={!registryDraftSearch && !registryAppliedSearch}
+                style={secondaryBtnStyle(!registryDraftSearch && !registryAppliedSearch)}
+              >
+                {tk('common.clear')}
+              </button>
+            </div>
+          </div>
+          {filteredRegistry.length === 0 ? (
+            <div style={emptyStyle}>{tk('apps.empty.registry')}</div>
+          ) : (
+            <>
+            <div style={infoBarStyle}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                {refreshingTab === 'registry' ? (
+                  <span style={refreshingHintStyle}>
+                    <span style={refreshDotStyle} />
+                    {tk('common.refreshing')}
+                  </span>
+                ) : (
+                  tk('apps.helper.registry')
+                )}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {tk('common.selected', { count: selectedFilteredRegistryCount })}
+              </span>
+            </div>
+            <div style={bulkToggleRowStyle}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={allFilteredRegistryChecked}
+                  disabled={filteredRegistry.length === 0}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      setSelectedRegistryIds((current) => {
+                        const next = new Set(current)
+                        filteredRegistry.forEach((item) => next.add(item.id))
+                        return [...next]
+                      })
+                    } else {
+                      setSelectedRegistryIds((current) => current.filter((itemId) => !filteredRegistry.some((item) => item.id === itemId)))
+                    }
+                  }}
+                />
+                <span>{tk('apps.count.registry_summary', { count: filteredRegistry.length })}</span>
+              </label>
+            </div>
+            <div style={{ display: 'grid', gap: '10px', paddingBottom: '84px' }}>
+              {filteredRegistry.map((item) => {
+                const checked = selectedRegistryIds.includes(item.id)
+                return (
+                  <label key={item.id} style={leftoverCardStyle}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => handleToggleRegistryId(item.id)}
+                        style={{ marginTop: '3px' }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: 0, flex: '1 1 220px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                              {item.appName}
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                              <Badge text="Windows" color="var(--accent-yellow)" />
+                              <Badge
+                                text={item.installLocation ? tk('apps.registry.install_missing') : tk('apps.registry.install_unavailable')}
+                                color="var(--accent-red)"
+                              />
+                              <Badge
+                                text={item.uninstallCommand ? tk('apps.registry.uninstaller_missing') : tk('apps.registry.uninstall_unavailable')}
+                                color="var(--accent-red)"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gap: '8px', marginTop: '10px' }}>
+                          <div style={detailBlockStyle}>
+                            <strong style={detailLabelStyle}>{tk('apps.registry.path')}</strong>
+                            <span style={detailValueStyle}>{item.registryPath}</span>
+                          </div>
+                          <div style={detailBlockStyle}>
+                            <strong style={detailLabelStyle}>{tk('apps.registry.install_location')}</strong>
+                            <span style={detailValueStyle}>{item.installLocation ?? '-'}</span>
+                          </div>
+                          <div style={detailBlockStyle}>
+                            <strong style={detailLabelStyle}>{tk('apps.registry.uninstall_command')}</strong>
+                            <span style={detailValueStyle}>{item.uninstallCommand ?? '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                )
+              })}
+            </div>
+            <div style={stickyActionBarStyle}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {tk('common.selected', { count: selectedFilteredRegistryCount })}
+              </div>
+              <button
+                onClick={() => void handleRemoveSelectedRegistry()}
+                disabled={registryBusy || selectedRegistryIds.length === 0}
+                style={{
+                  ...actionBtnStyle,
+                  minWidth: '220px',
+                  opacity: registryBusy || selectedRegistryIds.length === 0 ? 0.55 : 1,
+                  cursor: registryBusy || selectedRegistryIds.length === 0 ? 'default' : 'pointer'
+                }}
+              >
+                {registryBusy ? tk('apps.action.working') : tk('apps.action.remove_selected_registry')}
               </button>
             </div>
             </>
@@ -879,6 +1149,23 @@ const leftoverCardStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   borderRadius: '12px',
   cursor: 'pointer'
+}
+
+const detailBlockStyle: React.CSSProperties = {
+  display: 'grid',
+  gap: '4px'
+}
+
+const detailLabelStyle: React.CSSProperties = {
+  fontSize: '11px',
+  color: 'var(--text-secondary)'
+}
+
+const detailValueStyle: React.CSSProperties = {
+  fontSize: '11px',
+  color: 'var(--text-muted)',
+  fontFamily: 'monospace',
+  wordBreak: 'break-all'
 }
 
 const stickyActionBarStyle: React.CSSProperties = {

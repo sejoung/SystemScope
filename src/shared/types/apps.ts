@@ -12,6 +12,7 @@ export interface InstalledApp {
   launchPath?: string
   uninstallCommand?: string
   quietUninstallCommand?: string
+  uninstallRegistryPath?: string
   platform: InstalledAppPlatform
   uninstallKind: InstalledAppUninstallKind
   protected: boolean
@@ -31,6 +32,18 @@ export interface AppLeftoverDataItem extends AppRelatedDataItem {
   confidence: AppLeftoverConfidence
   reason: string
   risk: string
+}
+
+export interface AppLeftoverRegistryItem {
+  id: string
+  appName: string
+  registryPath: string
+  version?: string
+  publisher?: string
+  installLocation?: string
+  uninstallCommand?: string
+  installLocationExists: boolean
+  uninstallerExists: boolean
 }
 
 export interface AppUninstallRequest {

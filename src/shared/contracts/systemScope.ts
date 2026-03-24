@@ -20,6 +20,7 @@ import type {
   InstalledApp,
   AppRelatedDataItem,
   AppLeftoverDataItem,
+  AppLeftoverRegistryItem,
   DockerBuildCacheScanResult,
   DockerContainersScanResult,
   DockerImagesScanResult,
@@ -92,6 +93,8 @@ export interface SystemScopeApi {
   getAppRelatedData: (appId: string) => Promise<AppResult<AppRelatedDataItem[]>>
   listLeftoverAppData: () => Promise<AppResult<AppLeftoverDataItem[]>>
   removeLeftoverAppData: (itemIds: string[]) => Promise<AppResult<{ deletedPaths: string[]; failedPaths: string[] }>>
+  listLeftoverAppRegistry: () => Promise<AppResult<AppLeftoverRegistryItem[]>>
+  removeLeftoverAppRegistry: (itemIds: string[]) => Promise<AppResult<{ deletedKeys: string[]; failedKeys: string[] }>>
   uninstallApp: (request: AppUninstallRequest) => Promise<AppResult<AppRemovalResult>>
   openAppLocation: (appId: string) => Promise<AppResult<boolean>>
   openSystemUninstallSettings: () => Promise<AppResult<boolean>>
