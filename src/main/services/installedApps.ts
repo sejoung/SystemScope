@@ -2,7 +2,7 @@ import { app, shell } from 'electron'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform as getPlatform } from 'os'
-import { execFile, spawn } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
 import type { AppLeftoverDataItem, AppRelatedDataItem, AppRemovalResult, AppUninstallRequest, InstalledApp } from '@shared/types'
 import { logDebug, logError, logInfo, logWarn } from './logging'
@@ -393,34 +393,28 @@ export function buildWindowsUninstallerPowerShellCommand(file: string, args: str
   const argListLiteral = args.length > 0
     ? `-ArgumentList @(${args.map((arg) => `'${arg.replace(/'/g, "''")}'`).join(', ')})`
     : ''
-  return `Start-Process -FilePath '${escapedFile}' ${argListLiteral} -WorkingDirectory '${path.dirname(escapedFile)}' -Verb RunAs`
+  return [
+    '$ErrorActionPreference = \'Stop\'',
+    `$process = Start-Process -FilePath '${escapedFile}' ${argListLiteral} -WorkingDirectory '${path.dirname(escapedFile)}' -Verb RunAs -PassThru`,
+    'if ($null -eq $process) { throw \'Failed to launch uninstaller process.\' }'
+  ].join('; ')
 }
 
-function launchWindowsUninstaller(command: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    try {
-      const { file, args } = parseUninstallCommand(command)
-      const argv = splitWindowsCommandArgs(args)
-      const psCommand = buildWindowsUninstallerPowerShellCommand(file, argv)
+async function launchWindowsUninstaller(command: string): Promise<void> {
+  try {
+    const { file, args } = parseUninstallCommand(command)
+    const argv = splitWindowsCommandArgs(args)
+    const psCommand = buildWindowsUninstallerPowerShellCommand(file, argv)
 
-      logInfo('apps', 'Launching uninstaller process', { file, args: argv, psCommand })
+    logInfo('apps', 'Launching uninstaller process', { file, args: argv, psCommand })
 
-      const child = spawn('powershell', ['-NoProfile', '-Command', psCommand], {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: false,
-        shell: false
-      })
-      child.on('error', reject)
-      child.on('spawn', () => {
-        child.unref()
-        resolve()
-      })
-    } catch (error) {
-      logError('apps', 'Failed to start Windows uninstall command', { command, error })
-      reject(error)
-    }
-  })
+    await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCommand], {
+      windowsHide: false
+    })
+  } catch (error) {
+    logError('apps', 'Failed to start Windows uninstall command', { command, error })
+    throw error
+  }
 }
 
 async function moveMacAppToTrashWithFinder(appPath: string): Promise<void> {

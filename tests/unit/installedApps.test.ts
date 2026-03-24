@@ -132,9 +132,12 @@ describe('installedApps helpers', () => {
 
     expect(
       buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', [])
-    ).toContain("-Verb RunAs")
+    ).toContain("-Verb RunAs -PassThru")
     expect(
       buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', ['/S'])
     ).toContain("-ArgumentList @('/S')")
+    expect(
+      buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', [])
+    ).toContain("$ErrorActionPreference = 'Stop'")
   })
 })
