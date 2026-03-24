@@ -79,10 +79,10 @@ For more detailed behavior, see [docs/features.md](docs/features.md).
 
 Recommended:
 
-- Node.js 20+
+- Node.js 24+
 - `docker` CLI plus Docker Desktop or Docker Engine for Docker features
 - A standard Windows environment with `reg.exe` available for Windows app management
-- `.nvmrc` is included and pins the project to Node 20
+- `.nvmrc` is included and pins the project to Node 24
 
 ### Install and Run
 

@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/sejoung/SystemScope#readme",
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "dependencies": {
     "d3-hierarchy": "^3.1.2",

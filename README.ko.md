@@ -79,10 +79,10 @@
 
 권장 환경:
 
-- Node.js 20+
+- Node.js 24+
 - Docker 기능 사용 시 `docker` CLI와 Docker Desktop 또는 Docker Engine
 - Windows 앱 관리 기능 사용 시 `reg.exe` 사용 가능 환경
-- `.nvmrc`로 Node 20 기준을 함께 제공합니다
+- `.nvmrc`로 Node 24 기준을 함께 제공합니다
 
 ### 설치 및 실행
 

@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 22
+  NODE_VERSION: 24
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
 jobs:
@@ -38,6 +38,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - run: npm run build
 
   e2e:
     name: E2E (${{ matrix.os }})

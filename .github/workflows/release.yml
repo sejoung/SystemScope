@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -9,11 +10,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write
-
 env:
-  NODE_VERSION: 22
+  NODE_VERSION: 24
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
 jobs:
@@ -21,6 +19,8 @@ jobs:
     name: Verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -29,15 +29,28 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci --prefer-offline --no-audit
+      - name: Verify tag matches package version
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if [[ "${TAG_NAME}" != "v${PKG_VERSION}" ]]; then
+            echo "Tag ${TAG_NAME} does not match package.json version v${PKG_VERSION}" >&2
+            exit 1
+          fi
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - run: npm run build
 
   build:
     name: Build (${{ matrix.os }})
     needs: verify
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -71,11 +84,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v5
         with:
           path: artifacts
           merge-multiple: true
+      - name: Generate checksums
+        shell: bash
+        run: |
+          find artifacts -type f \( -name '*.dmg' -o -name '*.exe' \) -print0 | sort -z | xargs -0 sha256sum > artifacts/SHA256SUMS.txt
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -84,3 +104,4 @@ jobs:
           files: |
             artifacts/**/*.dmg
             artifacts/**/*.exe
+            artifacts/SHA256SUMS.txt
