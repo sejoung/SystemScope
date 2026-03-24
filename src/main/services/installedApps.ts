@@ -298,7 +298,12 @@ async function listWindowsInstalledApps(): Promise<InstalledApp[]> {
   const allApps: InstalledApp[] = []
   for (const registryPath of registryRoots) {
     try {
-      const { stdout } = await execFileAsync('cmd', ['/c', `chcp 65001 >nul & reg query "${registryPath}" /s`], { encoding: 'utf-8' })
+      // PowerShell의 [Console]::OutputEncoding으로 UTF-8 출력 보장
+      const psCommand = `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; reg query "${registryPath}" /s`
+      const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-Command', psCommand], {
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024
+      })
       allApps.push(...parseWindowsRegistryOutput(stdout))
     } catch (error) {
       logWarn('apps', 'Failed to query Windows uninstall registry', { registryPath, error })

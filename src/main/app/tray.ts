@@ -3,7 +3,7 @@ import { join } from 'path'
 import { platform } from 'os'
 import { logError } from '../services/logging'
 import { getSystemStats } from '../services/systemMonitor'
-import { createTrayImage, getCpuMeterText } from './trayIconFactory'
+import { getCpuMeterText } from './trayIconFactory'
 import { CPU_TRAY_THRESHOLDS } from '@shared/constants/thresholds'
 
 let tray: Tray | null = null
@@ -108,12 +108,8 @@ async function refreshTrayIcon(): Promise<void> {
       : roundedUsage >= CPU_TRAY_THRESHOLDS.MEDIUM ? 2
       : roundedUsage >= CPU_TRAY_THRESHOLDS.LOW ? 1 : 0
     const visualKey = `${level}:${pulseFrame ? 1 : 0}:${process.platform}`
-    if (visualKey !== lastVisualKey) {
-      if (process.platform === 'darwin') {
-        tray.setTitle(getCpuMeterText(roundedUsage, pulseFrame))
-      } else {
-        tray.setImage(createTrayImage(roundedUsage, pulseFrame, process.platform))
-      }
+    if (visualKey !== lastVisualKey && process.platform === 'darwin') {
+      tray.setTitle(getCpuMeterText(roundedUsage, pulseFrame))
       lastVisualKey = visualKey
     }
 
@@ -129,7 +125,8 @@ function getInitialTrayIcon(): Electron.NativeImage {
     icon.setTemplateImage(true)
     return icon
   }
-  return createTrayImage(0, false, process.platform)
+  // Windows: 앱 아이콘을 트레이에 사용 (테마에 관계없이 항상 보임)
+  return nativeImage.createFromPath(join(getResourcesPath(), 'icon.ico')).resize({ width: 16, height: 16 })
 }
 
 function getResourcesPath(): string {
