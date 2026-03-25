@@ -48,10 +48,9 @@ export function registerAppIpc(): void {
     return success(aboutInfo)
   })
 
-  ipcMain.handle(IPC_CHANNELS.APP_OPEN_ABOUT, (event, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.APP_OPEN_ABOUT, (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     try {
-      void event
       openAboutWindow()
       logInfoAction('app-ipc', 'about.window.open', withRequestMeta(requestMeta))
       return success(true)

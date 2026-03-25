@@ -48,19 +48,19 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   const targets = getTargetFolders(home)
 
   const FOLDER_TIMEOUT = 30_000
-  const folders: FolderSnapshot[] = []
-  for (const target of targets) {
+  const results = await Promise.all(targets.map(async (target) => {
     try {
       await fs.access(target.path)
       const size = await Promise.race([
         getDirSize(target.path),
         new Promise<number>((_, reject) => setTimeout(() => reject(new Error('timeout')), FOLDER_TIMEOUT))
       ])
-      folders.push({ name: target.name, path: target.path, size })
+      return { name: target.name, path: target.path, size }
     } catch {
-      // 존재하지 않거나 타임아웃된 폴더는 건너뜀
+      return null
     }
-  }
+  }))
+  const folders: FolderSnapshot[] = results.filter((r): r is FolderSnapshot => r !== null)
 
   const snapshot: Snapshot = {
     timestamp: Date.now(),

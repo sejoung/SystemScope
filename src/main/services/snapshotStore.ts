@@ -25,6 +25,8 @@ interface SnapshotData {
 const MIN_RETENTION_SNAPSHOTS = 168 // 60분 기준 7일치
 const RETENTION_WINDOW_MINUTES = 7 * 24 * 60
 let saveQueue: Promise<void> = Promise.resolve()
+let cachedSnapshots: Snapshot[] | null = null
+let cachedSnapshotFile: string | null = null
 
 function getSnapshotDir(): string {
   return path.join(app.getPath('userData'), 'snapshots')
@@ -43,20 +45,28 @@ export function ensureSnapshotDir(): void {
 
 export function loadSnapshots(): Snapshot[] {
   const filePath = getSnapshotFile()
+  if (cachedSnapshots && cachedSnapshotFile === filePath) return cachedSnapshots
+  cachedSnapshotFile = filePath
   try {
-    if (!fs.existsSync(filePath)) return []
+    if (!fs.existsSync(filePath)) {
+      cachedSnapshots = []
+      return cachedSnapshots
+    }
     const raw = fs.readFileSync(filePath, 'utf-8')
     const data = parseSnapshotData(raw)
     if (!data) {
       logWarn('snapshot-store', 'Invalid snapshot file detected, backing it up and starting fresh')
       backupCorruptSnapshotFile(filePath)
-      return []
+      cachedSnapshots = []
+      return cachedSnapshots
     }
-    return data.snapshots
+    cachedSnapshots = data.snapshots
+    return cachedSnapshots
   } catch (err) {
     logWarn('snapshot-store', 'Failed to load snapshots, starting fresh', err)
     backupCorruptSnapshotFile(filePath)
-    return []
+    cachedSnapshots = []
+    return cachedSnapshots
   }
 }
 

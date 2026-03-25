@@ -186,6 +186,8 @@ export const MESSAGE_KEYS = {
   'apps.tab.installed': 'Installed',
   'apps.tab.leftover': 'Leftover Data',
   'apps.tab.registry': 'Registry Cleanup',
+  'apps.error.invalid_app_id': 'Invalid app ID.',
+  'apps.error.invalid_item_ids': 'Invalid item ID list.',
   'apps.error.load_installed': 'Unable to load the installed app list.',
   'apps.error.load_leftover': 'Unable to load leftover app data.',
   'apps.error.load_registry': 'Unable to load leftover uninstall registry entries.',

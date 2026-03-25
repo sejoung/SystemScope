@@ -42,11 +42,15 @@ export function DiskAnalysisPage() {
       return
     }
     setTreemapWidth(Math.max(treemapRef.current.clientWidth, 600))
+    let rafId = 0
     const observer = new ResizeObserver(([entry]) => {
-      setTreemapWidth(Math.max(Math.floor(entry.contentRect.width), 320))
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        setTreemapWidth(Math.max(Math.floor(entry.contentRect.width), 320))
+      })
     })
     observer.observe(treemapRef.current)
-    return () => observer.disconnect()
+    return () => { cancelAnimationFrame(rafId); observer.disconnect() }
   }, [scanResult])
 
   // --- Scan logic ---

@@ -34,7 +34,7 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_OPEN_LOCATION, async (_event, appId: string, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     if (!appId || typeof appId !== 'string') {
-      return failure('INVALID_INPUT', 'Invalid app ID.')
+      return failure('INVALID_INPUT', tk('apps.error.invalid_app_id'))
     }
 
     try {
@@ -62,7 +62,7 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_GET_RELATED_DATA, async (_event, appId: string, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     if (!appId || typeof appId !== 'string') {
-      return failure('INVALID_INPUT', 'Invalid app ID.')
+      return failure('INVALID_INPUT', tk('apps.error.invalid_app_id'))
     }
 
     try {
@@ -90,17 +90,16 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, async (_event, itemIds: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     if (!isValidStringArray(itemIds)) {
-      return failure('INVALID_INPUT', 'Invalid item ID list.')
+      return failure('INVALID_INPUT', tk('apps.error.invalid_item_ids'))
     }
 
     try {
       const result = await removeLeftoverAppData(itemIds)
-      logInfoAction('apps-ipc', 'leftover_data.remove', {
+      logInfoAction('apps-ipc', 'leftover_data.remove', withRequestMeta(requestMeta, {
         requestedCount: itemIds.length,
         deletedCount: result.deletedPaths.length,
-        failedCount: result.failedPaths.length,
-        requestId: requestMeta?.requestId
-      })
+        failedCount: result.failedPaths.length
+      }))
       return success(result)
     } catch (error) {
       logErrorAction('apps-ipc', 'leftover_data.remove', withRequestMeta(requestMeta, { itemIds, error }))
@@ -123,17 +122,16 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_REGISTRY, async (_event, itemIds: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     if (!isValidStringArray(itemIds)) {
-      return failure('INVALID_INPUT', 'Invalid item ID list.')
+      return failure('INVALID_INPUT', tk('apps.error.invalid_item_ids'))
     }
 
     try {
       const result = await removeLeftoverAppRegistry(itemIds)
-      logInfoAction('apps-ipc', 'leftover_registry.remove', {
+      logInfoAction('apps-ipc', 'leftover_registry.remove', withRequestMeta(requestMeta, {
         requestedCount: itemIds.length,
         deletedCount: result.deletedKeys.length,
-        failedCount: result.failedKeys.length,
-        requestId: requestMeta?.requestId
-      })
+        failedCount: result.failedKeys.length
+      }))
       return success(result)
     } catch (error) {
       logErrorAction('apps-ipc', 'leftover_registry.remove', withRequestMeta(requestMeta, { itemIds, error }))
@@ -146,7 +144,7 @@ export function registerAppsIpc(): void {
     const appId = request?.appId
     if (!appId || typeof appId !== 'string') {
       logWarnAction('apps-ipc', 'uninstall.start', withRequestMeta(requestMeta, { reason: 'invalid_input', appId }))
-      return failure('INVALID_INPUT', 'Invalid app ID.')
+      return failure('INVALID_INPUT', tk('apps.error.invalid_app_id'))
     }
 
     const target = getInstalledAppById(appId)
