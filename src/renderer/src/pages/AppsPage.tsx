@@ -1,4 +1,4 @@
-import { Fragment, startTransition, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import type {
   AppLeftoverDataItem,
   AppLeftoverRegistryItem,
@@ -9,6 +9,8 @@ import type {
 import { useToast } from '../components/Toast'
 import { useI18n } from '../i18n/useI18n'
 import { useSettingsStore } from '../stores/useSettingsStore'
+import { useSearchFilter } from '../hooks/useSearchFilter'
+import { useTabRefresh } from '../hooks/useTabRefresh'
 
 type PlatformFilter = 'all' | 'mac' | 'windows'
 type AppsTab = 'installed' | 'leftover' | 'registry'
@@ -22,17 +24,12 @@ export function AppsPage() {
   const [apps, setApps] = useState<InstalledApp[]>([])
   const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([])
   const [registryItems, setRegistryItems] = useState<AppLeftoverRegistryItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshingTab, setRefreshingTab] = useState<AppsTab | null>(null)
-  const [installedDraftSearch, setInstalledDraftSearch] = useState('')
-  const [installedAppliedSearch, setInstalledAppliedSearch] = useState('')
+  const installedSearch = useSearchFilter()
+  const leftoverSearch = useSearchFilter()
+  const registrySearch = useSearchFilter()
   const [installedPlatformFilter, setInstalledPlatformFilter] = useState<PlatformFilter>('all')
-  const [leftoverDraftSearch, setLeftoverDraftSearch] = useState('')
-  const [leftoverAppliedSearch, setLeftoverAppliedSearch] = useState('')
   const [leftoverPlatformFilter, setLeftoverPlatformFilter] = useState<PlatformFilter>('all')
   const [leftoverConfidenceFilter, setLeftoverConfidenceFilter] = useState<ConfidenceFilter>('all')
-  const [registryDraftSearch, setRegistryDraftSearch] = useState('')
-  const [registryAppliedSearch, setRegistryAppliedSearch] = useState('')
   const [busyAppId, setBusyAppId] = useState<string | null>(null)
   const [leftoverBusy, setLeftoverBusy] = useState(false)
   const [registryBusy, setRegistryBusy] = useState(false)
@@ -44,90 +41,54 @@ export function AppsPage() {
   const [selectedRegistryIds, setSelectedRegistryIds] = useState<string[]>([])
   const [pendingUninstallIds, setPendingUninstallIds] = useState<string[]>([])
   const uninstallRefreshTimersRef = useRef<number[]>([])
+  const showToastRef = useRef(showToast)
+  showToastRef.current = showToast
+  const tkRef = useRef(tk)
+  tkRef.current = tk
   const isWindows = navigator.userAgent.includes('Windows')
 
-  const loadApps = async () => {
+  const loadApps = useCallback(async () => {
     const res = await window.systemScope.listInstalledApps()
     if (res.ok && res.data) {
       const items = res.data as InstalledApp[]
       setApps(items)
       setPendingUninstallIds((current) => current.filter((id) => items.some((app) => app.id === id)))
     } else {
-      showToast(res.error?.message ?? tk('apps.error.load_installed'))
+      showToastRef.current(res.error?.message ?? tkRef.current('apps.error.load_installed'))
     }
-  }
+  }, [])
 
-  const loadLeftovers = async () => {
+  const loadLeftovers = useCallback(async () => {
     const res = await window.systemScope.listLeftoverAppData()
     if (res.ok && res.data) {
       const items = res.data as AppLeftoverDataItem[]
       setLeftoverItems(items)
       setSelectedLeftoverIds((current) => current.filter((itemId) => items.some((entry) => entry.id === itemId)))
     } else {
-      showToast(res.error?.message ?? tk('apps.error.load_leftover'))
+      showToastRef.current(res.error?.message ?? tkRef.current('apps.error.load_leftover'))
     }
-  }
+  }, [])
 
-  const loadRegistry = async () => {
+  const loadRegistry = useCallback(async () => {
     const res = await window.systemScope.listLeftoverAppRegistry()
     if (res.ok && res.data) {
       const items = res.data as AppLeftoverRegistryItem[]
       setRegistryItems(items)
       setSelectedRegistryIds((current) => current.filter((itemId) => items.some((entry) => entry.id === itemId)))
     } else {
-      showToast(res.error?.message ?? tk('apps.error.load_registry'))
+      showToastRef.current(res.error?.message ?? tkRef.current('apps.error.load_registry'))
     }
-  }
+  }, [])
 
-  const refreshInstalledTab = async (mode: 'initial' | 'inline' = 'inline') => {
-    if (mode === 'initial') {
-      setLoading(true)
-    } else {
-      setRefreshingTab('installed')
-    }
-
-    try {
-      await loadApps()
-    } finally {
-      if (mode === 'initial') {
-        setLoading(false)
-      } else {
-        setRefreshingTab((current) => (current === 'installed' ? null : current))
-      }
-    }
-  }
-
-  const refreshLeftoverTab = async (mode: 'initial' | 'inline' = 'inline') => {
-    if (mode === 'initial') {
-      setLoading(true)
-    } else {
-      setRefreshingTab('leftover')
-    }
-
-    try {
-      await loadLeftovers()
-    } finally {
-      if (mode === 'initial') {
-        setLoading(false)
-      } else {
-        setRefreshingTab((current) => (current === 'leftover' ? null : current))
-      }
-    }
-  }
-
-  const refreshCurrentTab = async () => {
-    if (activeTab === 'installed') {
-      await refreshInstalledTab('initial')
-    } else if (activeTab === 'leftover') {
-      await refreshLeftoverTab('initial')
-    } else {
-      await refreshRegistryTab('initial')
-    }
-  }
+  const { loading, refreshingTab, refresh } = useTabRefresh<AppsTab>({
+    installed: loadApps,
+    leftover: loadLeftovers,
+    registry: loadRegistry
+  })
 
   useEffect(() => {
-    void refreshCurrentTab()
-  }, [activeTab, locale])
+    void refresh(activeTab, 'initial')
+  }, [activeTab, locale, refresh])
 
   useEffect(() => {
     return () => {
@@ -139,7 +100,7 @@ export function AppsPage() {
   }, [])
 
   const filteredApps = useMemo(() => apps.filter((app) => !pendingUninstallIds.includes(app.id)).filter((app) => {
-    const normalizedQuery = installedAppliedSearch.trim().toLowerCase()
+    const normalizedQuery = installedSearch.applied.trim().toLowerCase()
     if (installedPlatformFilter !== 'all' && app.platform !== installedPlatformFilter) return false
     if (!normalizedQuery) return true
     return [
@@ -148,20 +109,20 @@ export function AppsPage() {
       app.publisher,
       app.installLocation
     ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
-  }), [apps, installedAppliedSearch, installedPlatformFilter, pendingUninstallIds])
+  }), [apps, installedSearch.applied, installedPlatformFilter, pendingUninstallIds])
 
   const filteredLeftovers = useMemo(() => {
-    const normalizedQuery = leftoverAppliedSearch.trim().toLowerCase()
+    const normalizedQuery = leftoverSearch.applied.trim().toLowerCase()
     return leftoverItems.filter((item) => {
       if (leftoverPlatformFilter !== 'all' && item.platform !== leftoverPlatformFilter) return false
       if (leftoverConfidenceFilter !== 'all' && item.confidence !== leftoverConfidenceFilter) return false
       if (!normalizedQuery) return true
       return [item.appName, item.label, item.path].some((value) => value.toLowerCase().includes(normalizedQuery))
     })
-  }, [leftoverAppliedSearch, leftoverConfidenceFilter, leftoverItems, leftoverPlatformFilter])
+  }, [leftoverSearch.applied, leftoverConfidenceFilter, leftoverItems, leftoverPlatformFilter])
 
   const filteredRegistry = useMemo(() => {
-    const normalizedQuery = registryAppliedSearch.trim().toLowerCase()
+    const normalizedQuery = registrySearch.applied.trim().toLowerCase()
     return registryItems.filter((item) => {
       if (!normalizedQuery) return true
       return [
@@ -173,7 +134,7 @@ export function AppsPage() {
         item.uninstallCommand
       ].filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery))
     })
-  }, [registryAppliedSearch, registryItems])
+  }, [registrySearch.applied, registryItems])
   const selectedFilteredLeftoverCount = useMemo(
     () => filteredLeftovers.filter((item) => selectedLeftoverIds.includes(item.id)).length,
     [filteredLeftovers, selectedLeftoverIds]
@@ -184,45 +145,6 @@ export function AppsPage() {
     [filteredRegistry, selectedRegistryIds]
   )
   const allFilteredRegistryChecked = filteredRegistry.length > 0 && selectedFilteredRegistryCount === filteredRegistry.length
-
-  const applyInstalledSearch = () => {
-    startTransition(() => {
-      setInstalledAppliedSearch(installedDraftSearch)
-    })
-  }
-
-  const clearInstalledSearch = () => {
-    setInstalledDraftSearch('')
-    startTransition(() => {
-      setInstalledAppliedSearch('')
-    })
-  }
-
-  const applyLeftoverSearch = () => {
-    startTransition(() => {
-      setLeftoverAppliedSearch(leftoverDraftSearch)
-    })
-  }
-
-  const clearLeftoverSearch = () => {
-    setLeftoverDraftSearch('')
-    startTransition(() => {
-      setLeftoverAppliedSearch('')
-    })
-  }
-
-  const applyRegistrySearch = () => {
-    startTransition(() => {
-      setRegistryAppliedSearch(registryDraftSearch)
-    })
-  }
-
-  const clearRegistrySearch = () => {
-    setRegistryDraftSearch('')
-    startTransition(() => {
-      setRegistryAppliedSearch('')
-    })
-  }
 
   const handleUninstall = async (app: InstalledApp) => {
     setBusyAppId(app.id)
@@ -288,24 +210,6 @@ export function AppsPage() {
         })
     )
     await loadLeftovers()
-  }
-
-  const refreshRegistryTab = async (mode: 'initial' | 'inline' = 'inline') => {
-    if (mode === 'initial') {
-      setLoading(true)
-    } else {
-      setRefreshingTab('registry')
-    }
-
-    try {
-      await loadRegistry()
-    } finally {
-      if (mode === 'initial') {
-        setLoading(false)
-      } else {
-        setRefreshingTab((current) => (current === 'registry' ? null : current))
-      }
-    }
   }
 
   const handleOpenLeftoverPath = async (targetPath: string) => {
@@ -435,19 +339,19 @@ export function AppsPage() {
               ? tk('apps.count.items', { count: filteredLeftovers.length })
               : tk('apps.count.items', { count: filteredRegistry.length })}
         </span>
-        {activeTab === 'installed' && installedAppliedSearch && (
+        {activeTab === 'installed' && installedSearch.applied && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{installedAppliedSearch}</strong>
+            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{installedSearch.applied}</strong>
           </span>
         )}
-        {activeTab === 'leftover' && leftoverAppliedSearch && (
+        {activeTab === 'leftover' && leftoverSearch.applied && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{leftoverAppliedSearch}</strong>
+            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{leftoverSearch.applied}</strong>
           </span>
         )}
-        {activeTab === 'registry' && registryAppliedSearch && (
+        {activeTab === 'registry' && registrySearch.applied && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{registryAppliedSearch}</strong>
+            {tk('apps.search.label')}: <strong style={{ color: 'var(--text-primary)' }}>{registrySearch.applied}</strong>
           </span>
         )}
       </div>
@@ -466,7 +370,7 @@ export function AppsPage() {
           <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
               <button
-                onClick={() => void refreshInstalledTab()}
+                onClick={() => void refresh('installed')}
                 disabled={refreshingTab === 'installed'}
                 style={secondaryBtnStyle(refreshingTab === 'installed')}
               >
@@ -478,19 +382,19 @@ export function AppsPage() {
                 </button>
               )}
               <input
-                value={installedDraftSearch}
-                onChange={(e) => setInstalledDraftSearch(e.target.value)}
+                value={installedSearch.draft}
+                onChange={(e) => installedSearch.setDraft(e.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') applyInstalledSearch()
+                  if (event.key === 'Enter') installedSearch.apply()
                 }}
                 placeholder={tk('apps.search.installed_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
-              <button onClick={applyInstalledSearch} style={btnStyle}>{tk('common.search')}</button>
+              <button onClick={installedSearch.apply} style={btnStyle}>{tk('common.search')}</button>
               <button
-                onClick={clearInstalledSearch}
-                disabled={!installedDraftSearch && !installedAppliedSearch}
-                style={secondaryBtnStyle(!installedDraftSearch && !installedAppliedSearch)}
+                onClick={installedSearch.clear}
+                disabled={installedSearch.isEmpty}
+                style={secondaryBtnStyle(installedSearch.isEmpty)}
               >
                 {tk('common.clear')}
               </button>
@@ -642,26 +546,26 @@ export function AppsPage() {
           <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
               <button
-                onClick={() => void refreshLeftoverTab()}
+                onClick={() => void refresh('leftover')}
                 disabled={refreshingTab === 'leftover'}
                 style={secondaryBtnStyle(refreshingTab === 'leftover')}
               >
                 {refreshingTab === 'leftover' ? tk('common.refreshing') : tk('apps.action.refresh')}
               </button>
               <input
-                value={leftoverDraftSearch}
-                onChange={(e) => setLeftoverDraftSearch(e.target.value)}
+                value={leftoverSearch.draft}
+                onChange={(e) => leftoverSearch.setDraft(e.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') applyLeftoverSearch()
+                  if (event.key === 'Enter') leftoverSearch.apply()
                 }}
                 placeholder={tk('apps.search.leftover_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
-              <button onClick={applyLeftoverSearch} style={btnStyle}>{tk('common.search')}</button>
+              <button onClick={leftoverSearch.apply} style={btnStyle}>{tk('common.search')}</button>
               <button
-                onClick={clearLeftoverSearch}
-                disabled={!leftoverDraftSearch && !leftoverAppliedSearch}
-                style={secondaryBtnStyle(!leftoverDraftSearch && !leftoverAppliedSearch)}
+                onClick={leftoverSearch.clear}
+                disabled={leftoverSearch.isEmpty}
+                style={secondaryBtnStyle(leftoverSearch.isEmpty)}
               >
                 {tk('common.clear')}
               </button>
@@ -795,26 +699,26 @@ export function AppsPage() {
           <div style={stickyTabControlsWrapStyle}>
             <div style={tabControlsStyle}>
               <button
-                onClick={() => void refreshRegistryTab()}
+                onClick={() => void refresh('registry')}
                 disabled={refreshingTab === 'registry'}
                 style={secondaryBtnStyle(refreshingTab === 'registry')}
               >
                 {refreshingTab === 'registry' ? tk('common.refreshing') : tk('apps.action.refresh')}
               </button>
               <input
-                value={registryDraftSearch}
-                onChange={(e) => setRegistryDraftSearch(e.target.value)}
+                value={registrySearch.draft}
+                onChange={(e) => registrySearch.setDraft(e.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') applyRegistrySearch()
+                  if (event.key === 'Enter') registrySearch.apply()
                 }}
                 placeholder={tk('apps.search.registry_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
-              <button onClick={applyRegistrySearch} style={btnStyle}>{tk('common.search')}</button>
+              <button onClick={registrySearch.apply} style={btnStyle}>{tk('common.search')}</button>
               <button
-                onClick={clearRegistrySearch}
-                disabled={!registryDraftSearch && !registryAppliedSearch}
-                style={secondaryBtnStyle(!registryDraftSearch && !registryAppliedSearch)}
+                onClick={registrySearch.clear}
+                disabled={registrySearch.isEmpty}
+                style={secondaryBtnStyle(registrySearch.isEmpty)}
               >
                 {tk('common.clear')}
               </button>
