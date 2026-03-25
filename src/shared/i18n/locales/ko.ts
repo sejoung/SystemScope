@@ -754,10 +754,16 @@ export const KO_MESSAGES = {
     "앱 이름 기준으로 가나다/알파벳 순 정렬합니다.",
   "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.":
     "큰 잔여 데이터부터 먼저 보여줘 정리 효과가 큰 항목을 우선 검토하기 쉽습니다.",
+  "Size order updates as remaining folder sizes finish loading.":
+    "남은 폴더 크기 계산이 끝나는 대로 용량 기준 정렬이 계속 갱신됩니다.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
     "설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 각 카드의 근거와 위험도를 보고 직접 선택하세요.",
+  "Calculating folder sizes: {ready}/{total} ready, {remaining} remaining":
+    "폴더 크기 계산 중: {ready}/{total}개 준비됨, {remaining}개 남음",
+  "Folder sizes loaded for all {count} items":
+    "전체 {count}개 항목의 폴더 크기 계산이 완료되었습니다",
   "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.":
     "앱 제거는 선택한 앱에 즉시 영향을 줍니다. Windows에서는 앱 자체 제거 프로그램이 실행될 수 있고, 선택한 관련 데이터도 함께 정리될 수 있습니다.",
   "Leftover cleanup moves the selected folders to the trash. Review the path and risk note before removing anything you may still need.":

@@ -284,6 +284,11 @@ export function AppsPage() {
         .length,
     [filteredLeftovers, selectedLeftoverIds],
   );
+  const leftoverSizePendingCount = useMemo(
+    () => leftoverItems.filter((item) => item.sizeBytes === undefined).length,
+    [leftoverItems],
+  );
+  const leftoverSizeReadyCount = leftoverItems.length - leftoverSizePendingCount;
   const allFilteredLeftoversChecked =
     filteredLeftovers.length > 0 &&
     selectedFilteredLeftoverCount === filteredLeftovers.length;
@@ -1128,10 +1133,28 @@ export function AppsPage() {
                 </span>
                 <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                   {leftoverSort === "size"
-                    ? tk("apps.sort.size_detail")
+                    ? leftoverSizePendingCount > 0
+                      ? tk("apps.sort.size_pending_detail")
+                      : tk("apps.sort.size_detail")
                     : leftoverSort === "priority"
                       ? tk("apps.sort.priority_detail")
                       : tk("apps.sort.name_detail")}
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  {leftoverSizePendingCount > 0 ? (
+                    <span style={refreshingHintStyle}>
+                      <span style={refreshDotStyle} />
+                      {tk("apps.status.leftover_sizes_loading", {
+                        ready: leftoverSizeReadyCount,
+                        total: leftoverItems.length,
+                        remaining: leftoverSizePendingCount,
+                      })}
+                    </span>
+                  ) : (
+                    tk("apps.status.leftover_sizes_ready", {
+                      count: leftoverItems.length,
+                    })
+                  )}
                 </span>
                 <span
                   style={{

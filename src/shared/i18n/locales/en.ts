@@ -760,10 +760,16 @@ export const EN_MESSAGES = {
     "Items are sorted alphabetically by app name.",
   "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.":
     "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.",
+  "Size order updates as remaining folder sizes finish loading.":
+    "Size order updates as remaining folder sizes finish loading.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
     "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
+  "Calculating folder sizes: {ready}/{total} ready, {remaining} remaining":
+    "Calculating folder sizes: {ready}/{total} ready, {remaining} remaining",
+  "Folder sizes loaded for all {count} items":
+    "Folder sizes loaded for all {count} items",
   "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.":
     "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.",
   "Leftover cleanup moves the selected folders to the trash. Review the path and risk note before removing anything you may still need.":

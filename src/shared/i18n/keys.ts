@@ -314,10 +314,16 @@ export const MESSAGE_KEYS = {
   "apps.sort.name_detail": "Items are sorted alphabetically by app name.",
   "apps.sort.size_detail":
     "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.",
+  "apps.sort.size_pending_detail":
+    "Size order updates as remaining folder sizes finish loading.",
   "apps.helper.installed":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "apps.helper.leftover":
     "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
+  "apps.status.leftover_sizes_loading":
+    "Calculating folder sizes: {ready}/{total} ready, {remaining} remaining",
+  "apps.status.leftover_sizes_ready":
+    "Folder sizes loaded for all {count} items",
   "apps.helper.registry":
     "These are uninstall registry entries whose install path and uninstaller are both no longer valid. Removing them only clears the leftover uninstall registration.",
   "apps.danger.installed":
