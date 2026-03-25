@@ -104,11 +104,11 @@ export function DockerImages({
         <EmptyState title={message ?? tk('main.docker.images.empty')} detail={tk('docker.images.empty_detail')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {tk('docker.images.helper')}
           </div>
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
                   <th style={{ ...thStyle, width: '36px' }}>
@@ -137,7 +137,7 @@ export function DockerImages({
                 {images.map((image) => {
                   const checked = selectedIds.has(image.id)
                   return (
-                    <tr key={image.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <tr key={image.id} style={rowStyle}>
                       <td style={tdStyle}>
                         <input
                           type="checkbox"
@@ -155,11 +155,11 @@ export function DockerImages({
                       </td>
                       <td style={tdStyle}>
                         <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{image.repository}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{image.shortId}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums', marginTop: '4px' }}>{image.shortId}</div>
                       </td>
-                      <td style={tdStyle}>{image.tag}</td>
-                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace' }}>{formatBytes(image.sizeBytes)}</td>
-                      <td style={tdStyle}>{image.createdSince}</td>
+                      <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{image.tag}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{formatBytes(image.sizeBytes)}</td>
+                      <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>{image.createdSince}</td>
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                           {image.inUse && <Badge text={tk('docker.images.in_use')} color="var(--accent-yellow)" />}
@@ -167,7 +167,7 @@ export function DockerImages({
                           {image.dangling && <Badge text={tk('docker.images.untagged')} color="var(--accent-red)" />}
                         </div>
                         {image.containers.length > 0 && (
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.45 }}>
                             {image.containers.join(', ')}
                             {onOpenContainers && (
                               <button
@@ -179,7 +179,7 @@ export function DockerImages({
                                   background: 'transparent',
                                   color: 'var(--accent-cyan)',
                                   cursor: 'pointer',
-                                  fontSize: '10px',
+                                  fontSize: '12px',
                                   fontWeight: 600
                                 }}
                               >
@@ -218,8 +218,8 @@ export function DockerImages({
 function EmptyState({ title, detail }: { title: string; detail: string }) {
   return (
     <div style={{ padding: '28px 12px', textAlign: 'center' }}>
-      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{detail}</div>
+      <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{detail}</div>
     </div>
   )
 }
@@ -227,9 +227,9 @@ function EmptyState({ title, detail }: { title: string; detail: string }) {
 function Badge({ text, color }: { text: string; color: string }) {
   return (
     <span style={{
-      fontSize: '10px',
+      fontSize: '11px',
       fontWeight: 700,
-      padding: '2px 6px',
+      padding: '3px 8px',
       borderRadius: '999px',
       background: `${color}20`,
       color
@@ -241,23 +241,25 @@ function Badge({ text, color }: { text: string; color: string }) {
 
 const thStyle: React.CSSProperties = {
   textAlign: 'left',
-  padding: '8px 4px',
+  padding: '12px 8px',
   color: 'var(--text-muted)',
-  fontWeight: 500,
-  fontSize: '11px',
+  fontWeight: 600,
+  fontSize: '12px',
   textTransform: 'uppercase',
-  letterSpacing: '0.05em',
+  letterSpacing: '0.06em',
   whiteSpace: 'nowrap'
 }
 
 const tdStyle: React.CSSProperties = {
-  padding: '8px 4px',
+  padding: '12px 8px',
   color: 'var(--text-secondary)',
-  verticalAlign: 'top'
+  verticalAlign: 'top',
+  fontSize: '14px',
+  lineHeight: 1.4
 }
 
 const actionBtnStyle: React.CSSProperties = {
-  padding: '5px 12px',
+  padding: '7px 12px',
   fontSize: '12px',
   fontWeight: 600,
   border: 'none',
@@ -265,4 +267,8 @@ const actionBtnStyle: React.CSSProperties = {
   background: 'var(--accent-cyan)',
   color: 'var(--text-on-accent)',
   cursor: 'pointer'
+}
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: '1px solid var(--border)'
 }

@@ -4,6 +4,7 @@ import { formatBytes } from '../../utils/format'
 import { useToast } from '../../components/Toast'
 import type { DuplicateFileEntry, LargeFile, ExtensionGroup, DuplicateGroup, TrashResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
+import { CopyableValue } from '../../components/CopyableValue'
 
 type Tab = 'types' | 'largest' | 'old' | 'duplicates'
 
@@ -237,7 +238,7 @@ function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[];
 
   return (
     <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
             <th style={thStyle}>{tk('disk.file_insights.name')}</th>
@@ -247,12 +248,14 @@ function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[];
         </thead>
         <tbody>
           {files.map((f) => (
-            <tr key={f.path} style={{ borderBottom: '1px solid var(--border)' }}>
+            <tr key={f.path} style={rowStyle}>
               <td style={tdStyle}>
-                <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{f.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{f.path}</div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{f.name}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5, maxWidth: '360px' }}>
+                  <CopyableValue value={f.path} fontSize="12px" color="var(--text-muted)" multiline maxWidth="360px" />
+                </div>
               </td>
-              <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--accent-yellow)' }}>
+              <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: 'var(--accent-yellow)', fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums' }}>
                 {formatBytes(f.size)}
               </td>
               <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
@@ -286,19 +289,19 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
         <select value={days} onChange={(e) => onDaysChange(Number(e.target.value))} style={selectStyle}>
           <option value={90}>{tk('disk.file_insights.days_90')}</option>
           <option value={180}>{tk('disk.file_insights.days_180')}</option>
           <option value={365}>{tk('disk.file_insights.days_365')}</option>
           <option value={730}>{tk('disk.file_insights.days_730')}</option>
         </select>
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{tk('disk.file_insights.old_filter_hint')}</span>
+        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{tk('disk.file_insights.old_filter_hint')}</span>
         <button onClick={onScan} disabled={loading} style={actionBtnStyle}>
           {loading ? tk('common.scanning') : scanned ? tk('common.rescan') : tk('common.scan')}
         </button>
         {scanned && totalSize > 0 && (
-          <span style={{ fontSize: '12px', color: 'var(--accent-yellow)', fontWeight: 600, marginLeft: 'auto' }}>
+          <span style={{ fontSize: '13px', color: 'var(--accent-yellow)', fontWeight: 600, marginLeft: 'auto' }}>
             {tk('disk.file_insights.files_size', { count: files.length, size: formatBytes(totalSize) })}
           </span>
         )}
@@ -312,7 +315,7 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
         <Empty>{tk('disk.file_insights.old_empty')}</Empty>
       ) : (
         <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <th style={thStyle}>{tk('disk.file_insights.name')}</th>
@@ -323,15 +326,17 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
             </thead>
             <tbody>
               {files.map((f) => (
-                <tr key={f.path} style={{ borderBottom: '1px solid var(--border)' }}>
+                <tr key={f.path} style={rowStyle}>
                   <td style={tdStyle}>
-                    <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{f.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{f.path}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{f.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5, maxWidth: '360px' }}>
+                      <CopyableValue value={f.path} fontSize="12px" color="var(--text-muted)" multiline maxWidth="360px" />
+                    </div>
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                  <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums' }}>
                     {formatBytes(f.size)}
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', color: 'var(--accent-yellow)' }}>
+                  <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', color: 'var(--accent-yellow)', fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums' }}>
                     {new Date(f.modified).toLocaleDateString()}
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
@@ -475,12 +480,13 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px 0' }}>{children}</div>
+  return <div style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.5, padding: '12px 0' }}>{children}</div>
 }
 
-const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 4px', color: 'var(--text-muted)', fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }
-const tdStyle: React.CSSProperties = { padding: '6px 4px', color: 'var(--text-secondary)' }
-const openBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', marginRight: '4px' }
-const trashBtn: React.CSSProperties = { padding: '3px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--accent-red)', color: 'var(--text-on-accent)', cursor: 'pointer' }
-const actionBtnStyle: React.CSSProperties = { padding: '5px 14px', fontSize: '12px', fontWeight: 600, border: 'none', borderRadius: '6px', background: 'var(--accent-yellow)', color: 'var(--text-on-accent-strong)', cursor: 'pointer' }
-const selectStyle: React.CSSProperties = { padding: '4px 8px', fontSize: '12px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }
+const thStyle: React.CSSProperties = { textAlign: 'left', padding: '12px 8px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }
+const tdStyle: React.CSSProperties = { padding: '12px 8px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.4, verticalAlign: 'top' }
+const openBtn: React.CSSProperties = { padding: '5px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', marginRight: '4px' }
+const trashBtn: React.CSSProperties = { padding: '5px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--accent-red)', color: 'var(--text-on-accent)', cursor: 'pointer' }
+const actionBtnStyle: React.CSSProperties = { padding: '7px 14px', fontSize: '12px', fontWeight: 600, border: 'none', borderRadius: '6px', background: 'var(--accent-yellow)', color: 'var(--text-on-accent-strong)', cursor: 'pointer' }
+const selectStyle: React.CSSProperties = { padding: '7px 10px', fontSize: '13px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }
+const rowStyle: React.CSSProperties = { borderBottom: '1px solid var(--border)' }
