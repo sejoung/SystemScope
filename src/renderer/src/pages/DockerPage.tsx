@@ -57,7 +57,7 @@ export function DockerPage() {
     availability === "not_installed" || availability === "daemon_unavailable";
 
   return (
-    <div>
+    <div data-testid="page-docker">
       <div
         style={{
           display: "grid",

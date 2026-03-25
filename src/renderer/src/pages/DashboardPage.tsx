@@ -19,7 +19,7 @@ export function DashboardPage() {
   if (!current) return <PageLoading />;
 
   return (
-    <div>
+    <div data-testid="page-dashboard">
       <div style={{ display: "grid", gap: "6px", marginBottom: "16px" }}>
         <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
           {t("Overview")}

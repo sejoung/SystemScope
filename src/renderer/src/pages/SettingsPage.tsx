@@ -252,7 +252,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div>
+    <div data-testid="page-settings">
       <div
         style={{
           display: "flex",

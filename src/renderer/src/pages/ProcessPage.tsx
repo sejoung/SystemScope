@@ -25,7 +25,7 @@ export function ProcessPage() {
   }
 
   return (
-    <div>
+    <div data-testid="page-process">
       <div
         style={{
           display: "grid",

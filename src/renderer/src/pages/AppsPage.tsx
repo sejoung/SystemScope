@@ -434,7 +434,7 @@ export function AppsPage() {
   };
 
   return (
-    <div>
+    <div data-testid="page-apps">
       <div style={stickyHeaderStyle}>
         <div
           style={{

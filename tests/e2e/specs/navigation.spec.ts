@@ -5,48 +5,44 @@ test.describe("사이드바 네비게이션", () => {
     const clickNav = async (
       pageId: "dashboard" | "disk" | "docker" | "process" | "apps" | "settings",
     ) => {
-      await mainWindow
-        .getByTestId(`nav-${pageId}`)
-        .click({ noWaitAfter: true });
+      const target = mainWindow.getByTestId(`nav-${pageId}`);
+      await target.click({ noWaitAfter: true });
+      await expect(target).toHaveAttribute("aria-current", "page");
     };
 
     // Overview (기본 페이지)
-    await expect(
-      mainWindow.locator('.dashboard-grid-3, [data-testid="page-loading"]'),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(mainWindow.getByTestId("page-dashboard")).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Storage
     await clickNav("disk");
-    await expect(
-      mainWindow.locator("button", { hasText: "Scan" }).first(),
-    ).toBeVisible();
+    await expect(mainWindow.getByTestId("page-disk")).toBeVisible();
 
     // Docker
     await clickNav("docker");
-    await expect(mainWindow.locator("h2", { hasText: "Docker" })).toBeVisible();
+    await expect(mainWindow.getByTestId("page-docker")).toBeVisible();
 
     // Activity
     await clickNav("process");
     await expect(
       mainWindow.locator(
-        'h2:has-text("Activity"), [data-testid="page-loading"]',
+        '[data-testid="page-process"], [data-testid="page-loading"]',
       ),
     ).toBeVisible({ timeout: 15_000 });
 
     // Applications
     await clickNav("apps");
-    await expect(
-      mainWindow.locator("button", { hasText: "Installed" }).first(),
-    ).toBeVisible();
+    await expect(mainWindow.getByTestId("page-apps")).toBeVisible();
 
     // Preferences
     await clickNav("settings");
-    await expect(mainWindow.locator("text=Appearance")).toBeVisible();
+    await expect(mainWindow.getByTestId("page-settings")).toBeVisible();
 
     // Overview 복귀
     await clickNav("dashboard");
-    await expect(
-      mainWindow.locator('.dashboard-grid-3, [data-testid="page-loading"]'),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(mainWindow.getByTestId("page-dashboard")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

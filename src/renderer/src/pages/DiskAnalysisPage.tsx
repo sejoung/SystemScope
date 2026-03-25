@@ -262,7 +262,7 @@ export function DiskAnalysisPage() {
   useIpcListener(window.systemScope.onJobFailed, handleJobFailed);
 
   return (
-    <div>
+    <div data-testid="page-disk">
       {/* Header + Tabs */}
       <div
         style={{
