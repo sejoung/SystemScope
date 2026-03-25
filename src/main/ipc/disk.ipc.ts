@@ -13,7 +13,7 @@ import { findOldFiles } from '../services/oldFileFinder'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
 import type { DiskScanResult, DuplicateGroup, LargeFile, TrashItemsRequest } from '@shared/types'
-import { logErrorAction, logInfoAction } from '../services/logging'
+import { logErrorAction, logInfoAction, logProductMetric } from '../services/logging'
 import { trashItemsWithConfirm } from '../services/trashService'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
@@ -64,6 +64,7 @@ export function registerDiskIpc(): void {
     const job = createJob('diskScan')
     job.status = 'running'
     logInfoAction('disk-ipc', 'scan.start', withRequestMeta(requestMeta, { jobId: job.id, path: resolved }))
+    logProductMetric('disk-ipc', 'disk.scan', 'started', withRequestMeta(requestMeta, { jobId: job.id, path: resolved }))
 
     // 스캔을 비동기로 실행하고 작업 ID를 즉시 반환
     scanFolder(
@@ -82,6 +83,11 @@ export function registerDiskIpc(): void {
           path: resolved,
           totalSize: result.totalSize
         }))
+        logProductMetric('disk-ipc', 'disk.scan', 'succeeded', withRequestMeta(requestMeta, {
+          jobId: job.id,
+          path: resolved,
+          totalSize: result.totalSize
+        }))
         if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
           sendJobCompleted(win, job, result)
         }
@@ -89,11 +95,13 @@ export function registerDiskIpc(): void {
       .catch((err) => {
         if (err instanceof Error && err.message === 'Scan cancelled') {
           logInfoAction('disk-ipc', 'scan.cancel', withRequestMeta(requestMeta, { jobId: job.id, path: resolved }))
+          logProductMetric('disk-ipc', 'disk.scan', 'cancelled', withRequestMeta(requestMeta, { jobId: job.id, path: resolved }))
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
             sendJobFailed(win, job, tk('disk.scan.cancelled'))
           }
         } else {
           logErrorAction('disk-ipc', 'scan.run', withRequestMeta(requestMeta, { error: err }))
+          logProductMetric('disk-ipc', 'disk.scan', 'failed', withRequestMeta(requestMeta, { jobId: job.id, path: resolved, error: err }))
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
             sendJobFailed(win, job, tk('disk.scan.failed_runtime'))
           }
@@ -190,9 +198,11 @@ export function registerDiskIpc(): void {
     try {
       const results = await runQuickScan()
       logInfoAction('disk-ipc', 'quick_scan.run', withRequestMeta(requestMeta, { count: results.length }))
+      logProductMetric('disk-ipc', 'disk.quick_scan', 'succeeded', withRequestMeta(requestMeta, { count: results.length }))
       return success(results)
     } catch (err) {
       logErrorAction('disk-ipc', 'quick_scan.run', withRequestMeta(requestMeta, { error: err }))
+      logProductMetric('disk-ipc', 'disk.quick_scan', 'failed', withRequestMeta(requestMeta, { error: err }))
       return failure('SCAN_FAILED', tk('disk.error.quick_scan_failed'))
     }
   })

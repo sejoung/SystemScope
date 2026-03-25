@@ -13,6 +13,7 @@ const ACCESS_LOG_FILE_PATTERN = /^systemscope-access-(\d{4})-(\d{2})-(\d{2})\.lo
 let cleanupTimer: NodeJS.Timeout | null = null
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+type ProductMetricResult = 'started' | 'succeeded' | 'failed' | 'cancelled'
 
 export function logDebug(scope: string, message: string, metadata?: unknown): void {
   writeLog('debug', scope, message, metadata)
@@ -40,6 +41,16 @@ export function logError(scope: string, message: string, metadata?: unknown): vo
 
 export function logErrorAction(scope: string, action: string, metadata?: unknown): void {
   writeAccessLog('error', scope, formatActionMessage(action, 'failed'), metadata)
+}
+
+export function logProductMetric(
+  scope: string,
+  task: string,
+  result: ProductMetricResult,
+  metadata?: unknown
+): void {
+  const level: LogLevel = result === 'failed' ? 'error' : 'info'
+  writeAccessLog(level, scope, formatProductMetricMessage(task, result), metadata)
 }
 
 export function initializeLogging(): void {
@@ -161,6 +172,10 @@ function startOfDay(date: Date): Date {
 
 function formatActionMessage(action: string, result: 'success' | 'rejected' | 'failed'): string {
   return `action=${action} result=${result}`
+}
+
+function formatProductMetricMessage(task: string, result: ProductMetricResult): string {
+  return `event=product_metric task=${task} result=${result}`
 }
 
 function writeLog(level: LogLevel, scope: string, message: string, metadata?: unknown): void {

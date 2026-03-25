@@ -14,7 +14,7 @@ import {
   openSystemUninstallSettings,
   uninstallInstalledApp
 } from '../services/installedApps'
-import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
+import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
@@ -100,9 +100,15 @@ export function registerAppsIpc(): void {
         deletedCount: result.deletedPaths.length,
         failedCount: result.failedPaths.length
       }))
+      logProductMetric('apps-ipc', 'apps.leftover_cleanup', 'succeeded', withRequestMeta(requestMeta, {
+        requestedCount: itemIds.length,
+        deletedCount: result.deletedPaths.length,
+        failedCount: result.failedPaths.length
+      }))
       return success(result)
     } catch (error) {
       logErrorAction('apps-ipc', 'leftover_data.remove', withRequestMeta(requestMeta, { itemIds, error }))
+      logProductMetric('apps-ipc', 'apps.leftover_cleanup', 'failed', withRequestMeta(requestMeta, { itemIds, error }))
       return failure('UNKNOWN_ERROR', tk('apps.error.remove_leftover'))
     }
   })
@@ -190,6 +196,7 @@ export function registerAppsIpc(): void {
         cancelled: true
       }
       logInfoAction('apps-ipc', 'uninstall.cancel', withRequestMeta(requestMeta, { appId, name: target.name }))
+      logProductMetric('apps-ipc', 'apps.uninstall', 'cancelled', withRequestMeta(requestMeta, { appId, name: target.name }))
       return success(result)
     }
 
@@ -204,9 +211,16 @@ export function registerAppsIpc(): void {
         completed: result.completed,
         action: result.action
       }))
+      logProductMetric('apps-ipc', 'apps.uninstall', 'succeeded', withRequestMeta(requestMeta, {
+        appId,
+        relatedDataCount,
+        completed: result.completed,
+        action: result.action
+      }))
       return success(result)
     } catch (error) {
       logErrorAction('apps-ipc', 'uninstall.start', withRequestMeta(requestMeta, { appId, error }))
+      logProductMetric('apps-ipc', 'apps.uninstall', 'failed', withRequestMeta(requestMeta, { appId, error }))
       return failure('UNKNOWN_ERROR', tk('apps.error.uninstall_start'))
     }
   })

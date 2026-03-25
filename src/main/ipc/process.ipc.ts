@@ -3,7 +3,7 @@ import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
+import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
 import { tk } from '../i18n'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
@@ -56,9 +56,11 @@ export function registerProcessIpc(): void {
     try {
       const ports = await getNetworkPorts()
       logInfoAction('process-ipc', 'ports.list', withRequestMeta(requestMeta, { count: ports.length }))
+      logProductMetric('process-ipc', 'ports.scan', 'succeeded', withRequestMeta(requestMeta, { count: ports.length }))
       return success(ports)
     } catch (err) {
       logErrorAction('process-ipc', 'ports.list', withRequestMeta(requestMeta, { error: err }))
+      logProductMetric('process-ipc', 'ports.scan', 'failed', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_ports'))
     }
   })
@@ -103,6 +105,7 @@ export function registerProcessIpc(): void {
 
       if (confirm.response === 0) {
         logInfoAction('process-ipc', 'process.kill.cancel', withRequestMeta(requestMeta, { pid: target.pid, name: target.name }))
+        logProductMetric('process-ipc', 'process.kill', 'cancelled', withRequestMeta(requestMeta, { pid: target.pid, name: target.name }))
         const result: ProcessKillResult = {
           pid: target.pid,
           name: target.name,
@@ -120,6 +123,7 @@ export function registerProcessIpc(): void {
 
       await terminateProcess(confirmedTarget.pid)
       logInfoAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { pid: confirmedTarget.pid, name: confirmedTarget.name }))
+      logProductMetric('process-ipc', 'process.kill', 'succeeded', withRequestMeta(requestMeta, { pid: confirmedTarget.pid, name: confirmedTarget.name }))
 
       const result: ProcessKillResult = {
         pid: confirmedTarget.pid,
@@ -130,6 +134,7 @@ export function registerProcessIpc(): void {
       return success(result)
     } catch (err) {
       logErrorAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { error: err }))
+      logProductMetric('process-ipc', 'process.kill', 'failed', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.kill_failed'))
     }
   })
