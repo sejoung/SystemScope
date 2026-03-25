@@ -26,7 +26,7 @@ interface QuickScanProps {
 }
 
 export function QuickScan({ onFolderClick }: QuickScanProps) {
-  const { tk } = useI18n();
+  const { tk, t } = useI18n();
   const [results, setResults] = useState<QuickScanFolder[]>([]);
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
@@ -102,6 +102,18 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
         <StatusMessage message={tk("disk.quick_cleanup.empty")} />
       ) : (
         <div>
+          <div
+            style={{
+              marginBottom: "12px",
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}
+          >
+            {t(
+              "Cache folders are usually safer to review first. App data, containers, and SDK folders often need manual verification before cleanup.",
+            )}
+          </div>
           {/* Summary */}
           <div
             style={{
@@ -260,6 +272,18 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                               {tk("disk.quick_cleanup.cleanable_label")}
                             </span>
                           )}
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              padding: "1px 6px",
+                              borderRadius: "4px",
+                              background: `${getSafetyTone(folder).color}20`,
+                              color: getSafetyTone(folder).color,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {t(getSafetyTone(folder).label)}
+                          </span>
                         </div>
                         <div
                           style={{
@@ -269,6 +293,15 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                           }}
                         >
                           {folder.description}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--text-secondary)",
+                            marginTop: "4px",
+                          }}
+                        >
+                          {t(getSafetyTone(folder).note)}
                         </div>
                       </div>
 
@@ -313,6 +346,34 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
       )}
     </Accordion>
   );
+}
+
+function getSafetyTone(folder: QuickScanFolder): {
+  label: string;
+  color: string;
+  note: string;
+} {
+  if (!folder.cleanable) {
+    return {
+      label: "REVIEW FIRST",
+      color: "var(--accent-red)",
+      note: "Large app data or container folders can break environments if removed blindly.",
+    };
+  }
+
+  if (folder.category === "packages" || folder.category === "homebrew") {
+    return {
+      label: "USE TOOL CLEANUP",
+      color: "var(--accent-yellow)",
+      note: "Prefer package-manager cleanup commands before deleting files directly.",
+    };
+  }
+
+  return {
+    label: "GENERALLY SAFE",
+    color: "var(--accent-green)",
+    note: "Usually cache or temporary data, but still review the folder contents before deleting.",
+  };
 }
 
 const btnStyle: React.CSSProperties = {

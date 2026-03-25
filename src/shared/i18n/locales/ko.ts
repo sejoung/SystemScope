@@ -151,6 +151,17 @@ export const KO_MESSAGES = {
     "빠른 정리 후보 탐색에 실패했습니다.",
   "No quick cleanup candidates were found.":
     "빠른 정리 후보가 발견되지 않았습니다.",
+  "Cache folders are usually safer to review first. App data, containers, and SDK folders often need manual verification before cleanup.":
+    "캐시 폴더부터 검토하는 편이 일반적으로 더 안전합니다. 앱 데이터, 컨테이너, SDK 폴더는 정리 전에 수동 확인이 필요할 수 있습니다.",
+  "REVIEW FIRST": "먼저 검토",
+  "USE TOOL CLEANUP": "도구 정리 권장",
+  "GENERALLY SAFE": "비교적 안전",
+  "Large app data or container folders can break environments if removed blindly.":
+    "대용량 앱 데이터나 컨테이너 폴더는 무작정 제거하면 환경이 깨질 수 있습니다.",
+  "Prefer package-manager cleanup commands before deleting files directly.":
+    "파일을 직접 지우기 전에 패키지 매니저 정리 명령을 우선 사용하는 편이 좋습니다.",
+  "Usually cache or temporary data, but still review the folder contents before deleting.":
+    "대체로 캐시나 임시 데이터이지만, 삭제 전에는 폴더 내용을 한 번 확인하세요.",
   Cleanable: "정리 가능",
   CLEANABLE: "정리 가능",
   "Open in Finder / Explorer": "Finder / Explorer에서 열기",
@@ -643,16 +654,30 @@ export const KO_MESSAGES = {
     "macOS는 앱 번들을 휴지통으로 이동하고, Windows는 등록된 제거 프로그램을 실행합니다. 펼친 항목에서 관련 데이터도 함께 선택할 수 있습니다.",
   "Even if the main app is gone, you can still review and clean up leftover related data candidates.":
     "앱 본체가 없어도 남아 있는 관련 데이터 후보를 따로 정리할 수 있습니다.",
+  "1. Review installed apps": "1. 설치 앱 검토",
+  "2. Clean leftover data": "2. 잔여 데이터 정리",
+  "3. Remove stale registry entries": "3. 오래된 레지스트리 정리",
   "Loading installed apps...": "설치 앱 목록을 불러오는 중입니다.",
   "Loading leftover app data...": "잔여 앱 데이터를 불러오는 중입니다.",
   "No installed apps to show.": "표시할 설치 앱이 없습니다.",
   "No leftover app data to show.": "표시할 잔여 앱 데이터가 없습니다.",
+  "Priority order": "우선순위 정렬",
+  "Name order": "이름순 정렬",
+  "High-confidence leftovers appear first because size data is not available here.":
+    "이 화면에는 용량 정보가 없어서 높은 신뢰도 항목이 먼저 보이도록 정렬합니다.",
+  "Items are sorted alphabetically by app name.":
+    "앱 이름 기준으로 가나다/알파벳 순 정렬합니다.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
     "설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 각 카드의 근거와 위험도를 보고 직접 선택하세요.",
   "Only the selected paths will be moved to the trash along with app removal.":
     "선택한 경로만 앱 제거와 함께 휴지통으로 이동합니다.",
+  "Selected: high {high} / medium {medium} / low {low}":
+    "선택 항목: 높음 {high} / 중간 {medium} / 낮음 {low}",
+  "Selected stale entries: {count}": "선택한 오래된 항목: {count}",
+  "Registry cleanup only removes stale uninstall entries. Keep it for the final cleanup step.":
+    "레지스트리 정리는 오래된 제거 항목만 지웁니다. 마지막 정리 단계에서 사용하는 편이 좋습니다.",
   "Loading related data candidates...": "관련 데이터 후보를 찾는 중입니다.",
   Listening: "수신 대기",
   Established: "연결됨",

@@ -151,6 +151,17 @@ export const EN_MESSAGES = {
     "Failed to scan quick cleanup candidates.",
   "No quick cleanup candidates were found.":
     "No quick cleanup candidates were found.",
+  "Cache folders are usually safer to review first. App data, containers, and SDK folders often need manual verification before cleanup.":
+    "Cache folders are usually safer to review first. App data, containers, and SDK folders often need manual verification before cleanup.",
+  "REVIEW FIRST": "REVIEW FIRST",
+  "USE TOOL CLEANUP": "USE TOOL CLEANUP",
+  "GENERALLY SAFE": "GENERALLY SAFE",
+  "Large app data or container folders can break environments if removed blindly.":
+    "Large app data or container folders can break environments if removed blindly.",
+  "Prefer package-manager cleanup commands before deleting files directly.":
+    "Prefer package-manager cleanup commands before deleting files directly.",
+  "Usually cache or temporary data, but still review the folder contents before deleting.":
+    "Usually cache or temporary data, but still review the folder contents before deleting.",
   Cleanable: "Cleanable",
   CLEANABLE: "CLEANABLE",
   "Open in Finder / Explorer": "Open in Finder / Explorer",
@@ -647,16 +658,30 @@ export const EN_MESSAGES = {
     "On macOS, the app bundle is moved to the trash. On Windows, the registered uninstaller is launched. You can also select related data from the expanded item.",
   "Even if the main app is gone, you can still review and clean up leftover related data candidates.":
     "Even if the main app is gone, you can still review and clean up leftover related data candidates.",
+  "1. Review installed apps": "1. Review installed apps",
+  "2. Clean leftover data": "2. Clean leftover data",
+  "3. Remove stale registry entries": "3. Remove stale registry entries",
   "Loading installed apps...": "Loading installed apps...",
   "Loading leftover app data...": "Loading leftover app data...",
   "No installed apps to show.": "No installed apps to show.",
   "No leftover app data to show.": "No leftover app data to show.",
+  "Priority order": "Priority order",
+  "Name order": "Name order",
+  "High-confidence leftovers appear first because size data is not available here.":
+    "High-confidence leftovers appear first because size data is not available here.",
+  "Items are sorted alphabetically by app name.":
+    "Items are sorted alphabetically by app name.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
     "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
   "Only the selected paths will be moved to the trash along with app removal.":
     "Only the selected paths will be moved to the trash along with app removal.",
+  "Selected: high {high} / medium {medium} / low {low}":
+    "Selected: high {high} / medium {medium} / low {low}",
+  "Selected stale entries: {count}": "Selected stale entries: {count}",
+  "Registry cleanup only removes stale uninstall entries. Keep it for the final cleanup step.":
+    "Registry cleanup only removes stale uninstall entries. Keep it for the final cleanup step.",
   "Loading related data candidates...": "Loading related data candidates...",
   Listening: "Listening",
   Established: "Established",

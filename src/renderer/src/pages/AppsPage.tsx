@@ -23,6 +23,7 @@ import { StatusMessage } from "../components/StatusMessage";
 type PlatformFilter = "all" | "mac" | "windows";
 type AppsTab = "installed" | "leftover" | "registry";
 type ConfidenceFilter = "all" | "high" | "medium" | "low";
+type LeftoverSort = "priority" | "name";
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show);
@@ -43,6 +44,7 @@ export function AppsPage() {
     useState<PlatformFilter>("all");
   const [leftoverConfidenceFilter, setLeftoverConfidenceFilter] =
     useState<ConfidenceFilter>("all");
+  const [leftoverSort, setLeftoverSort] = useState<LeftoverSort>("priority");
   const [busyAppId, setBusyAppId] = useState<string | null>(null);
   const [leftoverBusy, setLeftoverBusy] = useState(false);
   const [registryBusy, setRegistryBusy] = useState(false);
@@ -167,27 +169,43 @@ export function AppsPage() {
 
   const filteredLeftovers = useMemo(() => {
     const normalizedQuery = leftoverSearch.applied.trim().toLowerCase();
-    return leftoverItems.filter((item) => {
-      if (
-        leftoverPlatformFilter !== "all" &&
-        item.platform !== leftoverPlatformFilter
-      )
-        return false;
-      if (
-        leftoverConfidenceFilter !== "all" &&
-        item.confidence !== leftoverConfidenceFilter
-      )
-        return false;
-      if (!normalizedQuery) return true;
-      return [item.appName, item.label, item.path].some((value) =>
-        value.toLowerCase().includes(normalizedQuery),
-      );
-    });
+    const confidenceWeight = { high: 0, medium: 1, low: 2 } as const;
+
+    return leftoverItems
+      .filter((item) => {
+        if (
+          leftoverPlatformFilter !== "all" &&
+          item.platform !== leftoverPlatformFilter
+        )
+          return false;
+        if (
+          leftoverConfidenceFilter !== "all" &&
+          item.confidence !== leftoverConfidenceFilter
+        )
+          return false;
+        if (!normalizedQuery) return true;
+        return [item.appName, item.label, item.path].some((value) =>
+          value.toLowerCase().includes(normalizedQuery),
+        );
+      })
+      .sort((left, right) => {
+        if (leftoverSort === "name") {
+          return left.appName.localeCompare(right.appName);
+        }
+
+        const confidenceDiff =
+          confidenceWeight[left.confidence] -
+          confidenceWeight[right.confidence];
+        if (confidenceDiff !== 0) return confidenceDiff;
+
+        return left.appName.localeCompare(right.appName);
+      });
   }, [
-    leftoverSearch.applied,
     leftoverConfidenceFilter,
     leftoverItems,
     leftoverPlatformFilter,
+    leftoverSearch.applied,
+    leftoverSort,
   ]);
 
   const filteredRegistry = useMemo(() => {
@@ -224,6 +242,12 @@ export function AppsPage() {
   const allFilteredRegistryChecked =
     filteredRegistry.length > 0 &&
     selectedFilteredRegistryCount === filteredRegistry.length;
+  const selectedLeftoverItems = filteredLeftovers.filter((item) =>
+    selectedLeftoverIds.includes(item.id),
+  );
+  const selectedRegistryItems = filteredRegistry.filter((item) =>
+    selectedRegistryIds.includes(item.id),
+  );
 
   const handleUninstall = async (app: InstalledApp) => {
     setBusyAppId(app.id);
@@ -472,6 +496,28 @@ export function AppsPage() {
             border: "1px solid var(--border)",
           }}
         >
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+              flexWrap: "wrap",
+            }}
+          >
+            <StepBadge
+              active={activeTab === "installed"}
+              text={tk("apps.flow.installed")}
+            />
+            <StepBadge
+              active={activeTab === "leftover"}
+              text={tk("apps.flow.leftover")}
+            />
+            {isWindows ? (
+              <StepBadge
+                active={activeTab === "registry"}
+                text={tk("apps.flow.registry")}
+              />
+            ) : null}
+          </div>
           <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {activeTab === "installed"
               ? tk("apps.description.installed")
@@ -950,6 +996,16 @@ export function AppsPage() {
                 <option value="medium">{tk("apps.confidence.medium")}</option>
                 <option value="low">{tk("apps.confidence.low")}</option>
               </select>
+              <select
+                value={leftoverSort}
+                onChange={(e) =>
+                  setLeftoverSort(e.target.value as LeftoverSort)
+                }
+                style={inputStyle}
+              >
+                <option value="priority">{tk("apps.sort.priority")}</option>
+                <option value="name">{tk("apps.sort.name")}</option>
+              </select>
             </div>
           </div>
           {loadErrors.leftover && leftoverItems.length === 0 ? (
@@ -980,6 +1036,11 @@ export function AppsPage() {
                   ) : (
                     tk("apps.helper.leftover")
                   )}
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  {leftoverSort === "priority"
+                    ? tk("apps.sort.priority_detail")
+                    : tk("apps.sort.name_detail")}
                 </span>
                 <span
                   style={{
@@ -1035,6 +1096,19 @@ export function AppsPage() {
                     })}
                   </span>
                 </label>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  {tk("apps.selection.leftover_summary", {
+                    high: selectedLeftoverItems.filter(
+                      (item) => item.confidence === "high",
+                    ).length,
+                    medium: selectedLeftoverItems.filter(
+                      (item) => item.confidence === "medium",
+                    ).length,
+                    low: selectedLeftoverItems.filter(
+                      (item) => item.confidence === "low",
+                    ).length,
+                  })}
+                </span>
               </div>
               <div
                 style={{ display: "grid", gap: "10px", paddingBottom: "84px" }}
@@ -1267,6 +1341,9 @@ export function AppsPage() {
                     tk("apps.helper.registry")
                   )}
                 </span>
+                <span style={{ fontSize: "12px", color: "var(--accent-red)" }}>
+                  {tk("apps.registry.warning")}
+                </span>
                 <span
                   style={{
                     fontSize: "12px",
@@ -1319,6 +1396,11 @@ export function AppsPage() {
                     })}
                   </span>
                 </label>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  {tk("apps.selection.registry_summary", {
+                    count: selectedRegistryItems.length,
+                  })}
+                </span>
               </div>
               <div
                 style={{ display: "grid", gap: "10px", paddingBottom: "84px" }}
@@ -1739,6 +1821,26 @@ function Badge({ text, color }: { text: string; color: string }) {
         background: `${color}20`,
         color,
         whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </span>
+  );
+}
+
+function StepBadge({ active, text }: { active: boolean; text: string }) {
+  return (
+    <span
+      style={{
+        fontSize: "11px",
+        fontWeight: 700,
+        padding: "2px 8px",
+        borderRadius: "999px",
+        background: active
+          ? "color-mix(in srgb, var(--accent-blue) 18%, transparent)"
+          : "var(--bg-primary)",
+        border: `1px solid ${active ? "var(--accent-blue)" : "var(--border)"}`,
+        color: active ? "var(--accent-blue)" : "var(--text-secondary)",
       }}
     >
       {text}

@@ -244,6 +244,9 @@ export const MESSAGE_KEYS = {
     "Even if the main app is gone, you can still review and clean up leftover related data candidates.",
   "apps.description.registry":
     "Windows only. This tab only shows stale uninstall registry entries whose install path and uninstaller are both no longer valid.",
+  "apps.flow.installed": "1. Review installed apps",
+  "apps.flow.leftover": "2. Clean leftover data",
+  "apps.flow.registry": "3. Remove stale registry entries",
   "apps.count.apps": "{count} apps",
   "apps.count.items": "{count} items",
   "apps.search.label": "Search",
@@ -260,12 +263,22 @@ export const MESSAGE_KEYS = {
   "apps.search.registry_placeholder": "Search registry cleanup entries",
   "apps.platform.all": "All Platforms",
   "apps.confidence.all": "All Confidence",
+  "apps.sort.priority": "Priority order",
+  "apps.sort.name": "Name order",
+  "apps.sort.priority_detail":
+    "High-confidence leftovers appear first because size data is not available here.",
+  "apps.sort.name_detail": "Items are sorted alphabetically by app name.",
   "apps.helper.installed":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "apps.helper.leftover":
     "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
   "apps.helper.registry":
     "These are uninstall registry entries whose install path and uninstaller are both no longer valid. Removing them only clears the leftover uninstall registration.",
+  "apps.selection.leftover_summary":
+    "Selected: high {high} / medium {medium} / low {low}",
+  "apps.selection.registry_summary": "Selected stale entries: {count}",
+  "apps.registry.warning":
+    "Registry cleanup only removes stale uninstall entries. Keep it for the final cleanup step.",
   "apps.action.refresh": "Refresh",
   "apps.action.open_system_settings": "Open System Settings",
   "apps.action.related_data": "Related Data",
