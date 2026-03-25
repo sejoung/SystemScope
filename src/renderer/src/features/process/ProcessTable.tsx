@@ -90,6 +90,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={tk('process.table.search_placeholder')}
+          aria-label={tk('process.table.search_placeholder')}
           style={searchStyle}
         />
         </div>

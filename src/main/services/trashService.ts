@@ -1,6 +1,6 @@
 import { dialog, shell, BrowserWindow, app } from 'electron'
 import * as path from 'path'
-import * as fs from 'fs'
+import * as fs from 'fs/promises'
 import { logError, logInfo } from './logging'
 import { isPathInsideParent } from '../ipc/settingsPathUtils'
 import type { TrashResult } from '@shared/types'
@@ -26,7 +26,7 @@ export async function trashItemsWithConfirm(
     }
 
     try {
-      const stat = fs.statSync(resolved)
+      const stat = await fs.stat(resolved)
       validPaths.push({ path: resolved, size: stat.size })
     } catch {
       invalidPaths.push(p)

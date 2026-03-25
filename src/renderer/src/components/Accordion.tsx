@@ -44,6 +44,7 @@ export function Accordion({
         {/* 토글 영역 */}
         <button
           onClick={() => setOpen(!open)}
+          aria-expanded={open}
           style={{
             display: 'flex',
             alignItems: 'center',

@@ -175,8 +175,8 @@ export function DiskAnalysisPage() {
           <PageTab active={tab === 'overview'} onClick={() => setTab('overview')}>{tk('disk.tab.overview')}</PageTab>
           <PageTab active={tab === 'scan'} onClick={() => setTab('scan')}>
             {tk('disk.tab.scan')}
-            {isScanning && <span style={{ marginLeft: '4px', color: 'var(--accent-yellow)' }}>●</span>}
-            {!isScanning && scanResult && <span style={{ marginLeft: '4px', color: 'var(--accent-green)' }}>✓</span>}
+            {isScanning && <span style={{ marginLeft: '4px', color: 'var(--accent-yellow)' }} aria-label={tk('disk.scan.preparing')}>●</span>}
+            {!isScanning && scanResult && <span style={{ marginLeft: '4px', color: 'var(--accent-green)' }} aria-label={tk('disk.scan.complete_label')}>✓</span>}
           </PageTab>
           <PageTab active={tab === 'cleanup'} onClick={() => setTab('cleanup')}>{tk('disk.tab.cleanup')}</PageTab>
         </div>

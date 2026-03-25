@@ -18,9 +18,29 @@ import { trashItemsWithConfirm } from '../services/trashService'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
-// 대용량 파일 / 확장자 조회를 위한 마지막 스캔 결과 캐시
+const SCAN_CACHE_TTL_MS = 30 * 60 * 1000 // 30분
+const TRASH_TARGET_TTL_MS = 60 * 60 * 1000 // 1시간
+
 let lastScanResult: DiskScanResult | null = null
-const registeredTrashTargets = new Map<string, { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate' }>()
+let lastScanTimestamp = 0
+const registeredTrashTargets = new Map<string, { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate'; createdAt: number }>()
+
+function isScanCacheValid(folderPath: string): boolean {
+  return lastScanResult !== null
+    && path.resolve(lastScanResult.rootPath) === folderPath
+    && (Date.now() - lastScanTimestamp) < SCAN_CACHE_TTL_MS
+}
+
+const MAX_LARGE_FILE_LIMIT = 500
+const MAX_GROWTH_DAYS = 365
+const MAX_DUPLICATE_MIN_SIZE_KB = 1048576 // 1 GB
+const DEFAULT_OLD_FILE_DAYS = 365
+const MAX_OLD_FILE_DAYS = 3650 // ~10년
+
+function setScanCache(result: DiskScanResult): void {
+  lastScanResult = result
+  lastScanTimestamp = Date.now()
+}
 
 export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_SCAN_FOLDER, async (_event, folderPath: string, metaArg?: IpcRequestMetaArg) => {
@@ -56,7 +76,7 @@ export function registerDiskIpc(): void {
       job.abortController.signal
     )
       .then((result) => {
-        lastScanResult = result
+        setScanCache(result)
         logInfoAction('disk-ipc', 'scan.complete', withRequestMeta(requestMeta, {
           jobId: job.id,
           path: resolved,
@@ -92,6 +112,7 @@ export function registerDiskIpc(): void {
     const resolved = path.resolve(folderPath)
     if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
       lastScanResult = null
+      lastScanTimestamp = 0
     }
     clearTrashTargetsForRootPath(resolved)
     logInfoAction('disk-ipc', 'scan_cache.invalidate', withRequestMeta(requestMeta, { path: resolved }))
@@ -104,15 +125,15 @@ export function registerDiskIpc(): void {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
-    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LARGE_FILE_LIMIT) {
       return failure('INVALID_INPUT', tk('disk.error.invalid_limit'))
     }
 
     const resolved = path.resolve(folderPath)
 
     // 해당 경로의 캐시된 결과가 있으면 사용
-    if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
-      const files = registerLargeFileTrashTargets(findLargeFiles(lastScanResult.tree, limit), resolved, 'large')
+    if (isScanCacheValid(resolved)) {
+      const files = registerLargeFileTrashTargets(findLargeFiles(lastScanResult!.tree, limit), resolved, 'large')
       logInfoAction('disk-ipc', 'large_files.list_cached', withRequestMeta(requestMeta, { path: resolved, limit, count: files.length }))
       return success(files)
     }
@@ -124,7 +145,7 @@ export function registerDiskIpc(): void {
 
     try {
       const result = await scanFolder(resolved)
-      lastScanResult = result
+      setScanCache(result)
       const files = registerLargeFileTrashTargets(findLargeFiles(result.tree, limit), resolved, 'large')
       logInfoAction('disk-ipc', 'large_files.list', withRequestMeta(requestMeta, { path: resolved, limit, count: files.length }))
       return success(files)
@@ -141,8 +162,8 @@ export function registerDiskIpc(): void {
     }
 
     const resolved = path.resolve(folderPath)
-    if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
-      const extensions = getExtensionBreakdown(lastScanResult.tree)
+    if (isScanCacheValid(resolved)) {
+      const extensions = getExtensionBreakdown(lastScanResult!.tree)
       logInfoAction('disk-ipc', 'extensions.list_cached', withRequestMeta(requestMeta, { path: resolved, count: extensions.length }))
       return success(extensions)
     }
@@ -154,7 +175,7 @@ export function registerDiskIpc(): void {
 
     try {
       const result = await scanFolder(resolved)
-      lastScanResult = result
+      setScanCache(result)
       const extensions = getExtensionBreakdown(result.tree)
       logInfoAction('disk-ipc', 'extensions.list', withRequestMeta(requestMeta, { path: resolved, count: extensions.length }))
       return success(extensions)
@@ -196,7 +217,7 @@ export function registerDiskIpc(): void {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
-    if (!Number.isInteger(days) || days < 1 || days > 365) {
+    if (!Number.isInteger(days) || days < 1 || days > MAX_GROWTH_DAYS) {
       return failure('INVALID_INPUT', tk('disk.error.invalid_days_short'))
     }
     const resolved = path.resolve(folderPath)
@@ -220,7 +241,7 @@ export function registerDiskIpc(): void {
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
-    if (!Number.isInteger(minSizeKB) || minSizeKB < 1 || minSizeKB > 1048576) {
+    if (!Number.isInteger(minSizeKB) || minSizeKB < 1 || minSizeKB > MAX_DUPLICATE_MIN_SIZE_KB) {
       return failure('INVALID_INPUT', tk('disk.error.invalid_min_size'))
     }
     const resolved = path.resolve(folderPath)
@@ -254,12 +275,12 @@ export function registerDiskIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DISK_FIND_OLD_FILES, async (_event, folderPath: string, olderThanDays: number = 365, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.DISK_FIND_OLD_FILES, async (_event, folderPath: string, olderThanDays: number = DEFAULT_OLD_FILE_DAYS, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     if (!folderPath || typeof folderPath !== 'string') {
       return failure('INVALID_INPUT', tk('disk.error.invalid_path'))
     }
-    if (!Number.isInteger(olderThanDays) || olderThanDays < 1 || olderThanDays > 3650) {
+    if (!Number.isInteger(olderThanDays) || olderThanDays < 1 || olderThanDays > MAX_OLD_FILE_DAYS) {
       return failure('INVALID_INPUT', tk('disk.error.invalid_old_days'))
     }
     const resolved = path.resolve(folderPath)
@@ -294,7 +315,7 @@ export function registerDiskIpc(): void {
     if (targets.some((target) => !target)) {
       return failure('INVALID_INPUT', tk('disk.error.invalid_trash_target'))
     }
-    const resolvedTargets = targets.filter((target): target is { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate' } => Boolean(target))
+    const resolvedTargets = targets.filter((target): target is { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate'; createdAt: number } => Boolean(target))
 
     try {
       const result = await trashItemsWithConfirm(
@@ -353,8 +374,14 @@ function clearTrashTargetsForRootPath(rootPath: string): void {
   }
 }
 
-/** 최대 등록 수 초과 시 가장 오래된 항목 제거 */
+/** 만료 항목 정리 후, 최대 등록 수 초과 시 가장 오래된 항목 제거 */
 function enforceTrashTargetLimit(): void {
+  const now = Date.now()
+  for (const [itemId, target] of registeredTrashTargets) {
+    if ((now - target.createdAt) > TRASH_TARGET_TTL_MS) {
+      registeredTrashTargets.delete(itemId)
+    }
+  }
   while (registeredTrashTargets.size > MAX_TRASH_TARGETS) {
     const firstKey = registeredTrashTargets.keys().next().value
     if (firstKey !== undefined) registeredTrashTargets.delete(firstKey)
@@ -368,9 +395,10 @@ function registerLargeFileTrashTargets(
   scope: 'large' | 'old'
 ): LargeFile[] {
   clearTrashTargetsForScope(rootPath, scope)
+  const now = Date.now()
   const result = files.map((file) => {
     const deletionKey = randomUUID()
-    registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope })
+    registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope, createdAt: now })
     return { ...file, deletionKey }
   })
   enforceTrashTargetLimit()
@@ -379,11 +407,12 @@ function registerLargeFileTrashTargets(
 
 function registerDuplicateTrashTargets(groups: DuplicateGroup[], rootPath: string): DuplicateGroup[] {
   clearTrashTargetsForScope(rootPath, 'duplicate')
+  const now = Date.now()
   const result = groups.map((group) => ({
     ...group,
     files: group.files.map((file) => {
       const deletionKey = randomUUID()
-      registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope: 'duplicate' })
+      registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope: 'duplicate', createdAt: now })
       return { ...file, deletionKey }
     })
   }))

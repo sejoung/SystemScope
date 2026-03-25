@@ -121,6 +121,7 @@ export function PortWatch() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleAddWatch() }}
           placeholder={watchScope === 'local' ? tk('process.port_watch.placeholder_local') : watchScope === 'remote' ? tk('process.port_watch.placeholder_remote') : tk('process.port_watch.placeholder_all')}
+          aria-label={tk('process.port_watch.title')}
           style={inputStyle}
         />
         <button onClick={handleAddWatch} style={btnStyle}>{tk('process.port_watch.add')}</button>
@@ -193,11 +194,15 @@ export function PortWatch() {
                       <span style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--text-muted)', flexShrink: 0 }}>
                         {status ? formatTime(status.lastChecked) : '--:--:--'}
                       </span>
-                      <span style={{
-                        width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                        backgroundColor: status?.matched ? 'var(--accent-green)' : 'var(--text-muted)',
-                        boxShadow: status?.matched ? '0 0 6px var(--accent-green)' : 'none'
-                      }} />
+                      <span
+                        role="status"
+                        aria-label={status?.matched ? tk('process.port_watch.connected_label') : tk('process.port_watch.disconnected_label')}
+                        style={{
+                          width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                          backgroundColor: status?.matched ? 'var(--accent-green)' : 'var(--text-muted)',
+                          boxShadow: status?.matched ? '0 0 6px var(--accent-green)' : 'none'
+                        }}
+                      />
                       <span style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-primary)' }}>
                         {watch.pattern}
                       </span>
@@ -222,7 +227,7 @@ export function PortWatch() {
                           {isOpen ? `▼ ${tk('process.port_watch.hide')}` : `▶ ${tk('process.port_watch.details')}`}
                         </button>
                       )}
-                      <button onClick={() => removeWatch(watch.id)} style={removeBtnStyle}>×</button>
+                      <button onClick={() => removeWatch(watch.id)} style={removeBtnStyle} aria-label={tk('process.port_watch.remove')}>×</button>
                     </div>
 
                     {/* Detail table */}

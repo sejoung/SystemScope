@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const showMessageBox = vi.hoisted(() => vi.fn())
 const trashItem = vi.hoisted(() => vi.fn())
 const getPath = vi.hoisted(() => vi.fn())
-const statSync = vi.hoisted(() => vi.fn())
+const stat = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   dialog: {
@@ -21,11 +21,11 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('fs', () => ({
+vi.mock('fs/promises', () => ({
   default: {
-    statSync
+    stat
   },
-  statSync
+  stat
 }))
 
 describe('trashService', () => {
@@ -33,11 +33,11 @@ describe('trashService', () => {
     showMessageBox.mockReset()
     trashItem.mockReset()
     getPath.mockReset()
-    statSync.mockReset()
+    stat.mockReset()
 
     getPath.mockReturnValue('/Users/test')
     showMessageBox.mockResolvedValue({ response: 1 })
-    statSync.mockImplementation((targetPath: string) => ({
+    stat.mockImplementation(async (targetPath: string) => ({
       size: targetPath.includes('a') ? 100 : 200
     }))
   })

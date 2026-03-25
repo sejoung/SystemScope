@@ -85,6 +85,7 @@ export function PortFinder() {
             onChange={(e) => setSearch(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             placeholder={searchScope === 'local' ? tk('process.port_finder.search_local') : searchScope === 'remote' ? tk('process.port_finder.search_remote') : tk('process.port_finder.search_all')}
+            aria-label={tk('process.port_finder.title')}
             style={searchStyle}
           />
           <button onClick={() => fetchPorts()} disabled={loading} style={btnStyle}>

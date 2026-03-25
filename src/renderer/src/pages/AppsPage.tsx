@@ -388,6 +388,7 @@ export function AppsPage() {
                   if (event.key === 'Enter') installedSearch.apply()
                 }}
                 placeholder={tk('apps.search.installed_placeholder')}
+                aria-label={tk('apps.search.installed_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
               <button onClick={installedSearch.apply} style={btnStyle}>{tk('common.search')}</button>
@@ -559,6 +560,7 @@ export function AppsPage() {
                   if (event.key === 'Enter') leftoverSearch.apply()
                 }}
                 placeholder={tk('apps.search.leftover_placeholder')}
+                aria-label={tk('apps.search.leftover_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
               <button onClick={leftoverSearch.apply} style={btnStyle}>{tk('common.search')}</button>
@@ -712,6 +714,7 @@ export function AppsPage() {
                   if (event.key === 'Enter') registrySearch.apply()
                 }}
                 placeholder={tk('apps.search.registry_placeholder')}
+                aria-label={tk('apps.search.registry_placeholder')}
                 style={{ ...inputStyle, minWidth: '220px', flex: '1 1 220px' }}
               />
               <button onClick={registrySearch.apply} style={btnStyle}>{tk('common.search')}</button>
