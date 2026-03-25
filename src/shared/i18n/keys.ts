@@ -42,6 +42,11 @@ export const MESSAGE_KEYS = {
   "process.table.kill_failed": "Unable to terminate the process.",
   "process.table.kill_sent":
     'Sent a terminate request for "{name}" (PID {pid}).',
+  "process.table.helper":
+    "Processes are sorted by CPU usage first. Killing a process stops the running task immediately, so review the command before sending the terminate request.",
+  "process.table.cpu_high": "High",
+  "process.table.cpu_medium": "Moderate",
+  "process.table.cpu_normal": "Normal",
   "process.table.empty_search": '검색 결과 없음: "{query}"',
   "process.table.loading": "Loading process data...",
   "process.port_finder.title": "Port Finder",
@@ -55,6 +60,8 @@ export const MESSAGE_KEYS = {
   "process.port_finder.scan": "Scan Ports",
   "process.port_finder.description":
     "Currently inspect active network ports and the processes holding them.",
+  "process.port_finder.helper":
+    "Port Finder is for one-time inspection. Killing a PID here closes the process that owns the port, which can drop active connections immediately.",
   "process.port_finder.filter.all": "All ({count})",
   "process.port_finder.filter.listening": "Listening ({count})",
   "process.port_finder.filter.established": "Established ({count})",
@@ -93,6 +100,11 @@ export const MESSAGE_KEYS = {
   "process.port_watch.state": "State",
   "process.port_watch.more": "+{count} more (showing first {limit})",
   "process.port_watch.history": "History",
+  "process.port_watch.filter.all": "All ({count})",
+  "process.port_watch.filter.connected": "Connected ({count})",
+  "process.port_watch.filter.disconnected": "Disconnected ({count})",
+  "process.port_watch.history_summary":
+    "Events recorded: connected {connected} / disconnected {disconnected}",
   "process.port_watch.clear": "Clear",
   "process.port_watch.connected_label": "CONNECTED",
   "process.port_watch.disconnected_label": "DISCONNECTED",
@@ -126,6 +138,11 @@ export const MESSAGE_KEYS = {
   "disk.scan.refresh_failed_short": "새로고침 실패",
   "disk.scan.preparing": "Preparing scan...",
   "disk.scan.complete_label": "Scan complete",
+  "disk.scan.cancelled_detail":
+    "The folder scan was cancelled. You can select the same folder again to restart from the beginning.",
+  "disk.scan.status_running": "Running",
+  "disk.scan.status_complete": "Done",
+  "disk.scan.status_cancelled": "Cancelled",
   "disk.scan.empty":
     "Select a folder to analyze size distribution, large files, and duplicates right away.",
   "disk.scan.browse_folder": "Browse Folder",
@@ -288,6 +305,12 @@ export const MESSAGE_KEYS = {
     "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
   "apps.helper.registry":
     "These are uninstall registry entries whose install path and uninstaller are both no longer valid. Removing them only clears the leftover uninstall registration.",
+  "apps.danger.installed":
+    "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.",
+  "apps.danger.leftover":
+    "Leftover cleanup moves the selected folders to the trash. Review the path and risk note before removing anything you may still need.",
+  "apps.danger.registry":
+    "Registry cleanup deletes stale uninstall entries only. Keep it as the final step after checking the install path and uninstall command.",
   "apps.selection.leftover_summary":
     "Selected: high {high} / medium {medium} / low {low}",
   "apps.selection.registry_summary": "Selected stale entries: {count}",
@@ -782,6 +805,11 @@ export const MESSAGE_KEYS = {
   "docker.ipc.confirm.cache_detail": "Currently reclaimable: {size}",
   "docker.ipc.error.prune_cache": "Unable to clean up Docker build cache.",
   "common.open": "Open",
+  "common.copy": "Copy",
+  "common.copied": "Copied",
+  "common.copy_failed": "Unable to copy to the clipboard.",
+  "common.show_full": "Show full",
+  "common.show_less": "Show less",
   "common.no_extension": "(no extension)",
   "main.trash.dialog.more": "... and {count} more",
   "main.process.confirm.cancel": "Cancel",

@@ -34,6 +34,11 @@ export const KO_MESSAGES = {
   Light: "라이트",
   Edited: "수정됨",
   Open: "열기",
+  Copy: "복사",
+  Copied: "복사됨",
+  "Unable to copy to the clipboard.": "클립보드에 복사할 수 없습니다.",
+  "Show full": "전체 보기",
+  "Show less": "접기",
   Refresh: "새로고침",
   "Refresh All": "전체 새로고침",
   Rescan: "다시 스캔",
@@ -216,6 +221,13 @@ export const KO_MESSAGES = {
   "Unable to refresh scan results after deletion.":
     "삭제 후 스캔 결과를 새로고침하지 못했습니다.",
   "Preparing scan...": "스캔 준비 중...",
+  "Scan cancelled": "스캔이 취소되었습니다.",
+  "The scan was cancelled.": "스캔이 취소되었습니다.",
+  "The folder scan was cancelled. You can select the same folder again to restart from the beginning.":
+    "폴더 스캔이 취소되었습니다. 같은 폴더를 다시 선택하면 처음부터 다시 시작할 수 있습니다.",
+  Running: "진행 중",
+  Done: "완료",
+  Cancelled: "취소됨",
   "Select a folder to analyze size distribution, large files, and duplicates right away.":
     "폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.",
   "After scanning a folder, you can clean up large, old, and duplicate files.":
@@ -231,6 +243,11 @@ export const KO_MESSAGES = {
   "Unable to terminate the process.": "프로세스를 종료할 수 없습니다.",
   'Sent a terminate request for "{name}" (PID {pid}).':
     '"{name}" (PID {pid}) 종료 요청을 보냈습니다.',
+  "Processes are sorted by CPU usage first. Killing a process stops the running task immediately, so review the command before sending the terminate request.":
+    "프로세스는 CPU 사용량 순으로 먼저 정렬됩니다. 종료 요청을 보내면 실행 중인 작업이 즉시 멈출 수 있으니, 명령어를 확인한 뒤 진행하세요.",
+  High: "높음",
+  Moderate: "보통",
+  Normal: "정상",
   Kill: "종료",
   '검색 결과 없음: "{query}"': '"{query}" 검색 결과 없음',
   "Port, address, process...": "포트, 주소, 프로세스...",
@@ -239,6 +256,8 @@ export const KO_MESSAGES = {
   "Scan Ports": "포트 스캔",
   "Currently inspect active network ports and the processes holding them.":
     "현재 사용 중인 네트워크 포트와 점유 프로세스를 조회합니다",
+  "Port Finder is for one-time inspection. Killing a PID here closes the process that owns the port, which can drop active connections immediately.":
+    "Port Finder는 일회성 점검용입니다. 여기서 PID를 종료하면 해당 포트를 점유한 프로세스가 종료되어 활성 연결이 즉시 끊길 수 있습니다.",
   "All ({count})": "전체 ({count})",
   "Listening ({count})": "수신 대기 ({count})",
   "Established ({count})": "연결됨 ({count})",
@@ -267,6 +286,10 @@ export const KO_MESSAGES = {
   Clear: "지우기",
   CONNECTED: "연결됨",
   DISCONNECTED: "연결 해제됨",
+  "Connected ({count})": "연결됨 ({count})",
+  "Disconnected ({count})": "연결 해제됨 ({count})",
+  "Events recorded: connected {connected} / disconnected {disconnected}":
+    "기록된 이벤트: 연결됨 {connected} / 연결 해제됨 {disconnected}",
   "컨테이너 보기": "Containers 보기",
   running: "실행 중",
   stopped: "중지됨",
@@ -685,6 +708,12 @@ export const KO_MESSAGES = {
     "설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
     "설치된 앱과 연결되지 않은 잔여 데이터 후보입니다. 각 카드의 근거와 위험도를 보고 직접 선택하세요.",
+  "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.":
+    "앱 제거는 선택한 앱에 즉시 영향을 줍니다. Windows에서는 앱 자체 제거 프로그램이 실행될 수 있고, 선택한 관련 데이터도 함께 정리될 수 있습니다.",
+  "Leftover cleanup moves the selected folders to the trash. Review the path and risk note before removing anything you may still need.":
+    "잔여 데이터 정리는 선택한 폴더를 휴지통으로 이동합니다. 아직 필요할 수 있는 항목은 경로와 위험 설명을 확인한 뒤 정리하세요.",
+  "Registry cleanup deletes stale uninstall entries only. Keep it as the final step after checking the install path and uninstall command.":
+    "레지스트리 정리는 오래된 제거 항목만 삭제합니다. 설치 경로와 제거 명령을 확인한 뒤 마지막 단계에서 진행하세요.",
   "Only the selected paths will be moved to the trash along with app removal.":
     "선택한 경로만 앱 제거와 함께 휴지통으로 이동합니다.",
   "Selected: high {high} / medium {medium} / low {low}":

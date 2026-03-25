@@ -3,6 +3,8 @@ import type { ProcessInfo, ProcessKillResult } from "@shared/types";
 import { formatBytes } from "../../utils/format";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
+import { StatusMessage } from "../../components/StatusMessage";
+import { CopyableValue } from "../../components/CopyableValue";
 
 type SortField = "cpu" | "memory" | "name" | "pid";
 type SortDir = "asc" | "desc";
@@ -115,6 +117,9 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           />
         </div>
       </div>
+      <div style={{ marginBottom: "12px" }}>
+        <StatusMessage message={tk("process.table.helper")} />
+      </div>
       <div style={{ maxHeight: "500px", overflow: "auto" }}>
         <table
           style={{
@@ -218,19 +223,22 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                   }}
                 >
                   <div>{p.name}</div>
-                  {search && p.command && p.command !== p.name && (
+                  {p.command && p.command !== p.name && (
                     <div
                       style={{
-                        fontSize: "10px",
+                        fontSize: "11px",
                         color: "var(--text-muted)",
-                        marginTop: "1px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        marginTop: "4px",
                         maxWidth: "300px",
                       }}
                     >
-                      {p.command}
+                      <CopyableValue
+                        value={p.command}
+                        fontSize="10px"
+                        color="var(--text-muted)"
+                        multiline
+                        maxWidth="300px"
+                      />
                     </div>
                   )}
                 </td>
@@ -251,7 +259,12 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                             : "var(--text-primary)",
                     }}
                   >
-                    {p.cpu.toFixed(1)}
+                    {p.cpu.toFixed(1)}{" "}
+                    {p.cpu > 80
+                      ? tk("process.table.cpu_high")
+                      : p.cpu > 30
+                        ? tk("process.table.cpu_medium")
+                        : tk("process.table.cpu_normal")}
                   </span>
                 </td>
                 <td

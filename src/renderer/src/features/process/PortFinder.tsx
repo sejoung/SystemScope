@@ -5,6 +5,7 @@ import { getStateStyle } from "./portStateStyles";
 import type { PortInfo, ProcessKillResult } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
+import { CopyableValue } from "../../components/CopyableValue";
 
 export function PortFinder() {
   const showToast = useToast((s) => s.show);
@@ -164,6 +165,9 @@ export function PortFinder() {
         <StatusMessage message={tk("process.port_finder.description")} />
       ) : (
         <div>
+          <div style={{ marginBottom: "12px" }}>
+            <StatusMessage message={tk("process.port_finder.helper")} />
+          </div>
           {/* State filter tabs */}
           <div
             style={{
@@ -284,12 +288,14 @@ export function PortFinder() {
                           fontWeight: 500,
                           color: "var(--text-primary)",
                           maxWidth: "150px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
-                        {p.process}
+                        <CopyableValue
+                          value={p.process}
+                          fontSize="11px"
+                          color="var(--text-primary)"
+                          maxWidth="150px"
+                        />
                       </td>
                       <td
                         style={{

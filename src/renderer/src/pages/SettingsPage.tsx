@@ -5,6 +5,7 @@ import type { AlertThresholds } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import type { AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
+import { CopyableValue } from "../components/CopyableValue";
 
 export function SettingsPage() {
   const thresholds = useSettingsStore((s) => s.thresholds);
@@ -498,19 +499,13 @@ export function SettingsPage() {
                 border: "1px solid var(--border)",
               }}
             >
-              <span
-                style={{
-                  flex: 1,
-                  fontSize: "13px",
-                  fontFamily: "monospace",
-                  color: "var(--text-primary)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {dataPath}
-              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <CopyableValue
+                  value={dataPath}
+                  fontSize="13px"
+                  maxWidth="100%"
+                />
+              </div>
               <button
                 onClick={() =>
                   void handleOpenPath(
@@ -796,18 +791,7 @@ function PathRow({
         >
           {label}
         </div>
-        <div
-          style={{
-            fontSize: "13px",
-            fontFamily: "monospace",
-            color: "var(--text-primary)",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {value}
-        </div>
+        <CopyableValue value={value} fontSize="13px" maxWidth="100%" />
       </div>
       <button onClick={onOpen} style={btnStyle}>
         {openLabel}

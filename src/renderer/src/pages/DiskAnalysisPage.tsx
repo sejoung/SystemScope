@@ -16,6 +16,8 @@ import { YourStorage } from "../features/disk/YourStorage";
 import { GrowthView } from "../features/disk/GrowthView";
 import type { DiskScanResult } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
+import { StatusMessage } from "../components/StatusMessage";
+import { CopyableValue } from "../components/CopyableValue";
 
 const TreemapChart = lazy(async () =>
   import("../features/disk/TreemapChart").then((mod) => ({
@@ -39,6 +41,7 @@ const RecentGrowth = lazy(async () =>
 );
 
 type StorageTab = "overview" | "scan" | "cleanup";
+type ScanOutcome = "idle" | "running" | "completed" | "failed" | "cancelled";
 
 export function DiskAnalysisPage() {
   const { tk, t } = useI18n();
@@ -62,6 +65,7 @@ export function DiskAnalysisPage() {
 
   const showToast = useToast((s) => s.show);
   const [tab, setTab] = useState<StorageTab>("overview");
+  const [scanOutcome, setScanOutcome] = useState<ScanOutcome>("idle");
   const sectionResetKey = `${selectedFolder ?? "none"}:${scanResult?.scanDuration ?? 0}:${isScanning}`;
   const pendingRefreshRef = useRef(false);
 
@@ -94,6 +98,7 @@ export function DiskAnalysisPage() {
   const startScan = useCallback(
     async (folderPath: string) => {
       clearScan();
+      setScanOutcome("running");
       setSelectedFolder(folderPath);
       setScanning(true);
       setTab("scan"); // 스캔 시작하면 Scan 탭으로 자동 이동
@@ -102,6 +107,7 @@ export function DiskAnalysisPage() {
         setScanning(true, (res.data as { jobId: string }).jobId);
       } else {
         setScanning(false);
+        setScanOutcome("failed");
         setScanProgress(res.error?.message ?? tk("disk.scan.failed"));
         showToast(res.error?.message ?? tk("disk.scan.start_failed"));
       }
@@ -124,8 +130,10 @@ export function DiskAnalysisPage() {
     if (scanJobId) {
       window.systemScope.cancelJob(scanJobId).catch(() => {});
       setScanning(false);
+      setScanOutcome("cancelled");
+      setScanProgress(tk("disk.scan.cancelled"));
     }
-  }, [scanJobId, setScanning]);
+  }, [scanJobId, setScanning, setScanProgress, tk]);
 
   const handleSelectFolder = useCallback(async () => {
     if (isScanning) {
@@ -146,6 +154,7 @@ export function DiskAnalysisPage() {
       }
 
       setScanning(true);
+      setScanOutcome("running");
       setScanProgress(tk("disk.scan.refreshing_after_delete"));
 
       const res = await window.systemScope.scanFolder(folderPath);
@@ -155,6 +164,7 @@ export function DiskAnalysisPage() {
       }
 
       setScanning(false);
+      setScanOutcome("failed");
       setScanProgress(
         res.error?.message ?? tk("disk.scan.refresh_failed_short"),
       );
@@ -178,6 +188,7 @@ export function DiskAnalysisPage() {
       const d = data as { id: string; data: DiskScanResult };
       if (d.id === scanJobId) {
         setScanResult(d.data);
+        setScanOutcome("completed");
         if (selectedFolder) {
           window.systemScope
             .getLargeFiles(selectedFolder, 50)
@@ -218,6 +229,7 @@ export function DiskAnalysisPage() {
       const d = data as { id: string; error: string };
       if (d.id === scanJobId) {
         setScanning(false);
+        setScanOutcome("failed");
         setScanProgress(d.error);
         if (pendingRefreshRef.current && selectedFolder) {
           pendingRefreshRef.current = false;
@@ -287,18 +299,26 @@ export function DiskAnalysisPage() {
             {tk("disk.tab.scan")}
             {isScanning && (
               <span
-                style={{ marginLeft: "4px", color: "var(--accent-yellow)" }}
+                style={{ marginLeft: "6px", color: "var(--accent-yellow)" }}
                 aria-label={tk("disk.scan.preparing")}
               >
-                ●
+                {tk("disk.scan.status_running")}
               </span>
             )}
-            {!isScanning && scanResult && (
+            {!isScanning && scanOutcome === "completed" && scanResult && (
               <span
-                style={{ marginLeft: "4px", color: "var(--accent-green)" }}
+                style={{ marginLeft: "6px", color: "var(--accent-green)" }}
                 aria-label={tk("disk.scan.complete_label")}
               >
-                ✓
+                {tk("disk.scan.status_complete")}
+              </span>
+            )}
+            {!isScanning && scanOutcome === "cancelled" && (
+              <span
+                style={{ marginLeft: "6px", color: "var(--accent-yellow)" }}
+                aria-label={tk("disk.scan.cancelled")}
+              >
+                {tk("disk.scan.status_cancelled")}
               </span>
             )}
           </PageTab>
@@ -326,6 +346,7 @@ export function DiskAnalysisPage() {
           treemapRef={treemapRef}
           safeTreemapWidth={safeTreemapWidth}
           sectionResetKey={sectionResetKey}
+          scanOutcome={scanOutcome}
           onSelectFolder={handleSelectFolder}
           onCancelScan={handleCancelScan}
         />
@@ -384,6 +405,7 @@ function ScanTab({
   treemapRef,
   safeTreemapWidth,
   sectionResetKey,
+  scanOutcome,
   onSelectFolder,
   onCancelScan,
 }: {
@@ -396,6 +418,7 @@ function ScanTab({
   treemapRef: React.RefObject<HTMLDivElement | null>;
   safeTreemapWidth: number;
   sectionResetKey: string;
+  scanOutcome: ScanOutcome;
   onSelectFolder: () => void;
   onCancelScan: () => void;
 }) {
@@ -421,19 +444,14 @@ function ScanTab({
         </button>
         {selectedFolder && (
           <>
-            <span
-              style={{
-                fontSize: "13px",
-                color: "var(--text-secondary)",
-                flex: 1,
-                minWidth: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {selectedFolder}
-            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <CopyableValue
+                value={selectedFolder}
+                fontSize="13px"
+                color="var(--text-secondary)"
+                maxWidth="100%"
+              />
+            </div>
             <button
               onClick={() => window.systemScope.showInFolder(selectedFolder)}
               style={{
@@ -456,6 +474,22 @@ function ScanTab({
           </button>
         )}
       </div>
+
+      {!isScanning && scanOutcome === "cancelled" && (
+        <div style={{ marginBottom: "16px" }}>
+          <StatusMessage message={tk("disk.scan.cancelled_detail")} />
+        </div>
+      )}
+
+      {!isScanning && scanOutcome === "failed" && scanProgress && (
+        <div style={{ marginBottom: "16px" }}>
+          <StatusMessage
+            tone="error"
+            title={tk("disk.scan.failed")}
+            message={scanProgress}
+          />
+        </div>
+      )}
 
       {/* Scan progress */}
       {isScanning && (

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useInterval } from "../../hooks/useInterval";
 import { useToast } from "../../components/Toast";
 import { usePortWatchStore } from "../../stores/usePortWatchStore";
@@ -52,8 +52,27 @@ export function PortWatch() {
   const [watchScope, setWatchScope] = useState<"local" | "remote" | "all">(
     "local",
   );
+  type PortWatchHistoryEntry = (typeof history)[number];
+  const [historyFilter, setHistoryFilter] = useState<
+    "all" | "connected" | "disconnected"
+  >("all");
   const [inputError, setInputError] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const connectedHistoryCount = useMemo(
+    () => history.filter((entry) => entry.event === "connected").length,
+    [history],
+  );
+  const disconnectedHistoryCount = useMemo(
+    () => history.filter((entry) => entry.event === "disconnected").length,
+    [history],
+  );
+  const filteredHistory = useMemo(
+    () =>
+      historyFilter === "all"
+        ? history
+        : history.filter((entry) => entry.event === historyFilter),
+    [history, historyFilter],
+  );
 
   const handleAddWatch = () => {
     const entry = parseWatchPattern(input, watchScope);
@@ -295,7 +314,7 @@ export function PortWatch() {
           </div>
         )}
         {monitoring && watches.length > 0 && (
-          <span style={{ fontSize: "11px", color: "var(--accent-green)" }}>
+          <span style={{ fontSize: "12px", color: "var(--accent-green)" }}>
             ● {tk("process.port_watch.monitoring")}
           </span>
         )}
@@ -408,7 +427,20 @@ export function PortWatch() {
                       />
                       <span
                         style={{
-                          fontSize: "13px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: status?.matched
+                            ? "var(--accent-green)"
+                            : "var(--text-muted)",
+                        }}
+                      >
+                        {status?.matched
+                          ? tk("process.port_watch.connected_label")
+                          : tk("process.port_watch.disconnected_label")}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "14px",
                           fontWeight: 600,
                           fontFamily: "monospace",
                           color: "var(--text-primary)",
@@ -651,13 +683,48 @@ export function PortWatch() {
                 }}
               >
                 <span>{tk("process.port_watch.history")}</span>
-                <button
-                  type="button"
-                  onClick={clearHistory}
-                  style={removeBtnStyle}
-                >
-                  {tk("process.port_watch.clear")}
-                </button>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <HistoryFilterButton
+                    active={historyFilter === "all"}
+                    onClick={() => setHistoryFilter("all")}
+                    label={tk("process.port_watch.filter.all", {
+                      count: history.length,
+                    })}
+                  />
+                  <HistoryFilterButton
+                    active={historyFilter === "connected"}
+                    onClick={() => setHistoryFilter("connected")}
+                    label={tk("process.port_watch.filter.connected", {
+                      count: connectedHistoryCount,
+                    })}
+                  />
+                  <HistoryFilterButton
+                    active={historyFilter === "disconnected"}
+                    onClick={() => setHistoryFilter("disconnected")}
+                    label={tk("process.port_watch.filter.disconnected", {
+                      count: disconnectedHistoryCount,
+                    })}
+                  />
+                  <button
+                    type="button"
+                    onClick={clearHistory}
+                    style={removeBtnStyle}
+                  >
+                    {tk("process.port_watch.clear")}
+                  </button>
+                </div>
+              </div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--text-muted)",
+                  marginBottom: "8px",
+                }}
+              >
+                {tk("process.port_watch.history_summary", {
+                  connected: connectedHistoryCount,
+                  disconnected: disconnectedHistoryCount,
+                })}
               </div>
               <div
                 style={{
@@ -668,7 +735,7 @@ export function PortWatch() {
                   gap: "2px",
                 }}
               >
-                {history.map((entry) => (
+                {filteredHistory.map((entry: PortWatchHistoryEntry) => (
                   <div
                     key={`${entry.timestamp}-${entry.watchId}-${entry.event}`}
                     style={{
@@ -676,7 +743,7 @@ export function PortWatch() {
                       gap: "8px",
                       alignItems: "center",
                       padding: "4px 8px",
-                      fontSize: "12px",
+                      fontSize: "13px",
                       borderLeft: `3px solid ${entry.event === "connected" ? "var(--accent-green)" : "var(--accent-red)"}`,
                     }}
                   >
@@ -684,7 +751,7 @@ export function PortWatch() {
                       style={{
                         color: "var(--text-muted)",
                         fontFamily: "monospace",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         flexShrink: 0,
                       }}
                     >
@@ -702,7 +769,7 @@ export function PortWatch() {
                     </span>
                     <span
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 600,
                         padding: "1px 6px",
                         borderRadius: "3px",
@@ -812,6 +879,36 @@ function StateBadge({ state }: { state: string }) {
     >
       {state}
     </span>
+  );
+}
+
+function HistoryFilterButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      style={{
+        padding: "4px 8px",
+        fontSize: "11px",
+        fontWeight: 600,
+        borderRadius: "6px",
+        border: "1px solid var(--border)",
+        background: active ? "var(--bg-card-hover)" : "transparent",
+        color: active ? "var(--text-primary)" : "var(--text-secondary)",
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
   );
 }
 

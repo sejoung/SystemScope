@@ -19,6 +19,7 @@ import { useSettingsStore } from "../stores/useSettingsStore";
 import { useSearchFilter } from "../hooks/useSearchFilter";
 import { useTabRefresh } from "../hooks/useTabRefresh";
 import { StatusMessage } from "../components/StatusMessage";
+import { CopyableValue } from "../components/CopyableValue";
 
 type PlatformFilter = "all" | "mac" | "windows";
 type AppsTab = "installed" | "leftover" | "registry";
@@ -675,6 +676,7 @@ export function AppsPage() {
                   })}
                 </span>
               </div>
+              <StatusMessage message={tk("apps.danger.installed")} />
               <table
                 style={{
                   width: "100%",
@@ -766,9 +768,15 @@ export function AppsPage() {
                           />
                         </td>
                         <td style={{ ...tdStyle, maxWidth: "340px" }}>
-                          <span style={{ color: "var(--text-muted)" }}>
-                            {entry.installLocation ?? entry.launchPath ?? "-"}
-                          </span>
+                          <CopyableValue
+                            value={
+                              entry.installLocation ?? entry.launchPath ?? ""
+                            }
+                            emptyValue="-"
+                            fontSize="11px"
+                            color="var(--text-muted)"
+                            maxWidth="340px"
+                          />
                         </td>
                         <td
                           style={{
@@ -912,14 +920,19 @@ export function AppsPage() {
                                             >
                                               {item.label}
                                             </span>
-                                            <span
+                                            <div
                                               style={{
                                                 fontSize: "11px",
                                                 color: "var(--text-muted)",
                                               }}
                                             >
-                                              {item.path}
-                                            </span>
+                                              <CopyableValue
+                                                value={item.path}
+                                                fontSize="11px"
+                                                color="var(--text-muted)"
+                                                multiline
+                                              />
+                                            </div>
                                           </div>
                                         </label>
                                       );
@@ -1110,6 +1123,7 @@ export function AppsPage() {
                   })}
                 </span>
               </div>
+              <StatusMessage message={tk("apps.danger.leftover")} />
               <div
                 style={{ display: "grid", gap: "10px", paddingBottom: "84px" }}
               >
@@ -1195,12 +1209,14 @@ export function AppsPage() {
                           <div
                             style={{
                               marginTop: "10px",
-                              fontSize: "11px",
-                              color: "var(--text-muted)",
-                              wordBreak: "break-all",
                             }}
                           >
-                            {formatPathPreview(item.path)}
+                            <CopyableValue
+                              value={item.path}
+                              fontSize="11px"
+                              color="var(--text-muted)"
+                              multiline
+                            />
                           </div>
                           <div
                             style={{
@@ -1402,6 +1418,10 @@ export function AppsPage() {
                   })}
                 </span>
               </div>
+              <StatusMessage
+                tone="error"
+                message={tk("apps.danger.registry")}
+              />
               <div
                 style={{ display: "grid", gap: "10px", paddingBottom: "84px" }}
               >
@@ -1487,25 +1507,42 @@ export function AppsPage() {
                               <strong style={detailLabelStyle}>
                                 {tk("apps.registry.path")}
                               </strong>
-                              <span style={detailValueStyle}>
-                                {item.registryPath}
-                              </span>
+                              <div style={detailValueStyle}>
+                                <CopyableValue
+                                  value={item.registryPath}
+                                  fontSize="11px"
+                                  color="var(--text-secondary)"
+                                  multiline
+                                />
+                              </div>
                             </div>
                             <div style={detailBlockStyle}>
                               <strong style={detailLabelStyle}>
                                 {tk("apps.registry.install_location")}
                               </strong>
-                              <span style={detailValueStyle}>
-                                {item.installLocation ?? "-"}
-                              </span>
+                              <div style={detailValueStyle}>
+                                <CopyableValue
+                                  value={item.installLocation ?? ""}
+                                  emptyValue="-"
+                                  fontSize="11px"
+                                  color="var(--text-secondary)"
+                                  multiline
+                                />
+                              </div>
                             </div>
                             <div style={detailBlockStyle}>
                               <strong style={detailLabelStyle}>
                                 {tk("apps.registry.uninstall_command")}
                               </strong>
-                              <span style={detailValueStyle}>
-                                {item.uninstallCommand ?? "-"}
-                              </span>
+                              <div style={detailValueStyle}>
+                                <CopyableValue
+                                  value={item.uninstallCommand ?? ""}
+                                  emptyValue="-"
+                                  fontSize="11px"
+                                  color="var(--text-secondary)"
+                                  multiline
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1553,16 +1590,6 @@ export function AppsPage() {
       )}
     </div>
   );
-}
-
-function formatPathPreview(targetPath: string): string {
-  if (targetPath.length <= 140) {
-    return targetPath;
-  }
-
-  const head = targetPath.slice(0, 72);
-  const tail = targetPath.slice(-52);
-  return `${head} ... ${tail}`;
 }
 
 function getConfidenceLabel(

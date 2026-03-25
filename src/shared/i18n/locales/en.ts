@@ -34,6 +34,11 @@ export const EN_MESSAGES = {
   Light: "Light",
   Edited: "Edited",
   Open: "Open",
+  Copy: "Copy",
+  Copied: "Copied",
+  "Unable to copy to the clipboard.": "Unable to copy to the clipboard.",
+  "Show full": "Show full",
+  "Show less": "Show less",
   Refresh: "Refresh",
   "Refresh All": "Refresh All",
   Rescan: "Rescan",
@@ -216,6 +221,13 @@ export const EN_MESSAGES = {
   "Unable to refresh scan results after deletion.":
     "Unable to refresh scan results after deletion.",
   "Preparing scan...": "Preparing scan...",
+  "Scan cancelled": "Scan cancelled",
+  "The scan was cancelled.": "The scan was cancelled.",
+  "The folder scan was cancelled. You can select the same folder again to restart from the beginning.":
+    "The folder scan was cancelled. You can select the same folder again to restart from the beginning.",
+  Running: "Running",
+  Done: "Done",
+  Cancelled: "Cancelled",
   "Select a folder to analyze size distribution, large files, and duplicates right away.":
     "Select a folder to analyze size distribution, large files, and duplicates right away.",
   "After scanning a folder, you can clean up large, old, and duplicate files.":
@@ -231,6 +243,11 @@ export const EN_MESSAGES = {
   "Unable to terminate the process.": "Unable to terminate the process.",
   'Sent a terminate request for "{name}" (PID {pid}).':
     'Sent a terminate request for "{name}" (PID {pid}).',
+  "Processes are sorted by CPU usage first. Killing a process stops the running task immediately, so review the command before sending the terminate request.":
+    "Processes are sorted by CPU usage first. Killing a process stops the running task immediately, so review the command before sending the terminate request.",
+  High: "High",
+  Moderate: "Moderate",
+  Normal: "Normal",
   Kill: "Kill",
   '검색 결과 없음: "{query}"': '검색 결과 없음: "{query}"',
   "Port, address, process...": "Port, address, process...",
@@ -239,6 +256,8 @@ export const EN_MESSAGES = {
   "Scan Ports": "Scan Ports",
   "Currently inspect active network ports and the processes holding them.":
     "Currently inspect active network ports and the processes holding them.",
+  "Port Finder is for one-time inspection. Killing a PID here closes the process that owns the port, which can drop active connections immediately.":
+    "Port Finder is for one-time inspection. Killing a PID here closes the process that owns the port, which can drop active connections immediately.",
   "All ({count})": "All ({count})",
   "Listening ({count})": "Listening ({count})",
   "Established ({count})": "Established ({count})",
@@ -267,6 +286,10 @@ export const EN_MESSAGES = {
   Clear: "Clear",
   CONNECTED: "CONNECTED",
   DISCONNECTED: "DISCONNECTED",
+  "Connected ({count})": "Connected ({count})",
+  "Disconnected ({count})": "Disconnected ({count})",
+  "Events recorded: connected {connected} / disconnected {disconnected}":
+    "Events recorded: connected {connected} / disconnected {disconnected}",
   "컨테이너 보기": "컨테이너 보기",
   running: "running",
   stopped: "stopped",
@@ -689,6 +712,12 @@ export const EN_MESSAGES = {
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
     "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
+  "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.":
+    "App removal affects the selected app immediately. On Windows this may launch the app's own uninstaller, and selected related data can be removed together.",
+  "Leftover cleanup moves the selected folders to the trash. Review the path and risk note before removing anything you may still need.":
+    "Leftover cleanup moves the selected folders to the trash. Review the path and risk note before removing anything you may still need.",
+  "Registry cleanup deletes stale uninstall entries only. Keep it as the final step after checking the install path and uninstall command.":
+    "Registry cleanup deletes stale uninstall entries only. Keep it as the final step after checking the install path and uninstall command.",
   "Only the selected paths will be moved to the trash along with app removal.":
     "Only the selected paths will be moved to the trash along with app removal.",
   "Selected: high {high} / medium {medium} / low {low}":
