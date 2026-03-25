@@ -264,6 +264,9 @@ export function SettingsPage() {
         <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
           {tk("settings.page.title")}
         </h2>
+        <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+          {tk("settings.page.description")}
+        </span>
         <span
           style={{
             fontSize: "12px",
@@ -388,6 +391,9 @@ export function SettingsPage() {
           title={tk("settings.section.alerts")}
           badge={alertsDirty ? tk("settings.badge.edited") : undefined}
         >
+          <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            {tk("settings.alerts.description")}
+          </div>
           <div
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
@@ -463,6 +469,15 @@ export function SettingsPage() {
               interval: snapshotInterval,
               days: Math.round((168 * snapshotInterval) / 60 / 24),
             })}
+          </div>
+          <div
+            style={{
+              fontSize: "11px",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}
+          >
+            {tk("settings.snapshots.guidance")}
           </div>
         </Section>
 

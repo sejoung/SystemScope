@@ -1,16 +1,28 @@
 export const KO_MESSAGES = {
   Overview: "개요",
+  "Monitor live system usage, review alerts, and jump into storage or process details from one place.":
+    "실시간 시스템 사용량을 확인하고, 알림을 검토한 뒤 스토리지나 프로세스 상세 화면으로 바로 이동할 수 있습니다.",
   Storage: "스토리지",
   Docker: "도커",
+  "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.":
+    "Docker 리소스를 정리하기 전에 컨테이너, 이미지, 볼륨, 빌드 캐시 사용량을 먼저 확인합니다.",
   Activity: "활동",
+  "Search active processes, inspect ports, and watch specific connections over time.":
+    "실행 중인 프로세스를 찾고, 포트를 확인하고, 특정 연결 상태를 시간에 따라 감시할 수 있습니다.",
   Applications: "앱",
   Preferences: "환경설정",
+  "Tune alerts, theme, language, and snapshot behavior from one place.":
+    "알림, 테마, 언어, 스냅샷 동작을 한 곳에서 조정합니다.",
   Disk: "디스크",
+  "Scan folders, inspect large files, and review cleanup candidates before deleting anything.":
+    "폴더를 스캔하고 대용량 파일과 정리 후보를 검토한 뒤 삭제 여부를 결정할 수 있습니다.",
   Installed: "설치됨",
   "Leftover Data": "잔여 데이터",
   "Registry Cleanup": "레지스트리 정리",
   Appearance: "화면",
   Alerts: "알림",
+  "Keep warning lower than critical. A common starting point is 75% warning and 85% critical.":
+    "warning 값은 critical 값보다 낮게 유지하세요. 보통 75% / 85%부터 시작하면 무난합니다.",
   Snapshots: "스냅샷",
   "App Data": "앱 데이터",
   Logs: "로그",
@@ -81,6 +93,8 @@ export const KO_MESSAGES = {
     "Growth View에서 폴더 크기 변화를 추적하기 위한 스냅샷 주기입니다.",
   "Current: every {interval} min / Max retention: 168 snapshots (about {days} days)":
     "현재: {interval}분 간격 / 최대 보관: 168개 (약 {days}일분)",
+  "Shorter intervals catch change sooner but rotate history faster. Longer intervals keep a broader timeline with fewer points.":
+    "간격이 짧을수록 변화를 더 빨리 포착하지만 기록이 더 빨리 순환합니다. 간격이 길수록 더 넓은 기간을 적은 포인트로 보관합니다.",
   "This is where app data such as settings, snapshots, and logs is stored.":
     "설정, 스냅샷, 로그 등 앱 데이터가 저장되는 경로입니다.",
   "System logs and user access logs are stored in separate folders as daily files and kept for the last 10 days.":

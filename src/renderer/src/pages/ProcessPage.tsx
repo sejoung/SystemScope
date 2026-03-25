@@ -28,15 +28,27 @@ export function ProcessPage() {
     <div>
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "16px",
+          display: "grid",
+          gap: "10px",
           marginBottom: "16px",
         }}
       >
-        <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
-          {tk("process.page.title")}
-        </h2>
+        <div style={{ display: "grid", gap: "6px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
+            {tk("process.page.title")}
+          </h2>
+          <div
+            style={{
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}
+          >
+            {t(
+              "Search active processes, inspect ports, and watch specific connections over time.",
+            )}
+          </div>
+        </div>
         <div
           role="tablist"
           aria-label={tk("process.page.title")}

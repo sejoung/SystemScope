@@ -41,7 +41,7 @@ const RecentGrowth = lazy(async () =>
 type StorageTab = "overview" | "scan" | "cleanup";
 
 export function DiskAnalysisPage() {
-  const { tk } = useI18n();
+  const { tk, t } = useI18n();
   const {
     scanResult,
     largeFiles,
@@ -240,15 +240,27 @@ export function DiskAnalysisPage() {
       {/* Header + Tabs */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "16px",
+          display: "grid",
+          gap: "10px",
           marginBottom: "16px",
         }}
       >
-        <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
-          {tk("disk.page.title")}
-        </h2>
+        <div style={{ display: "grid", gap: "6px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
+            {tk("disk.page.title")}
+          </h2>
+          <div
+            style={{
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}
+          >
+            {t(
+              "Scan folders, inspect large files, and review cleanup candidates before deleting anything.",
+            )}
+          </div>
+        </div>
         <div
           role="tablist"
           aria-label={tk("disk.page.title")}

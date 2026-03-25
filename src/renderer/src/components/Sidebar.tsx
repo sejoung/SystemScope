@@ -142,8 +142,23 @@ export function Sidebar() {
                 textAlign: "left",
                 transition: "all 0.15s ease",
                 boxShadow: currentPage === item.id ? "var(--shadow)" : "none",
+                position: "relative",
               }}
             >
+              {currentPage === item.id ? (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: "-2px",
+                    top: "8px",
+                    bottom: "8px",
+                    width: "3px",
+                    borderRadius: "999px",
+                    background: "var(--accent-blue)",
+                  }}
+                />
+              ) : null}
               <span
                 style={{
                   fontSize: "16px",

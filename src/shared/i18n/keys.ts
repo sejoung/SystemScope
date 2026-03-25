@@ -11,7 +11,11 @@ export const MESSAGE_KEYS = {
   "app.error_boundary.message":
     "Unable to render the current page. Move to another menu and try again.",
   "app.shutdown.title": "SystemScope is shutting down",
+  "dashboard.page.description":
+    "Monitor live system usage, review alerts, and jump into storage or process details from one place.",
   "docker.page.title": "Docker",
+  "docker.page.description":
+    "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.",
   "docker.page.retry": "Retry",
   "docker.tab.overview": "Overview",
   "docker.tab.containers": "Containers",
@@ -24,6 +28,8 @@ export const MESSAGE_KEYS = {
   "docker.section.volumes": "Docker Volumes",
   "docker.section.build_cache": "Docker Build Cache",
   "process.page.title": "Activity",
+  "process.page.description":
+    "Search active processes, inspect ports, and watch specific connections over time.",
   "process.tab.processes": "Processes",
   "process.tab.ports": "Ports",
   "process.tab.watch": "Watch",
@@ -105,6 +111,8 @@ export const MESSAGE_KEYS = {
     "GPU monitoring unavailable on unified memory",
   "process.top_resources.gpu_missing": "Unable to detect a GPU",
   "disk.page.title": "Storage",
+  "disk.page.description":
+    "Scan folders, inspect large files, and review cleanup candidates before deleting anything.",
   "disk.tab.overview": "Overview",
   "disk.tab.scan": "Scan",
   "disk.tab.cleanup": "Cleanup",
@@ -140,6 +148,8 @@ export const MESSAGE_KEYS = {
     "Scan a folder in the Scan tab, or select a folder from Quick Cleanup above.",
   "disk.common.loading": "Loading...",
   "settings.page.title": "Preferences",
+  "settings.page.description":
+    "Tune alerts, theme, language, and snapshot behavior from one place.",
   "settings.status.saving": "Saving...",
   "settings.status.saved": "Saved",
   "settings.status.unsaved_changes": "Unsaved changes",
@@ -147,6 +157,8 @@ export const MESSAGE_KEYS = {
   "settings.section.appearance": "Appearance",
   "settings.section.language": "Language",
   "settings.section.alerts": "Alerts",
+  "settings.alerts.description":
+    "Keep warning lower than critical. A common starting point is 75% warning and 85% critical.",
   "settings.section.snapshots": "Snapshots",
   "settings.section.app_data": "App Data",
   "settings.section.logs": "Logs",
@@ -168,6 +180,8 @@ export const MESSAGE_KEYS = {
   "settings.snapshots.option_6h": "6 hours",
   "settings.snapshots.current":
     "Current: every {interval} min / Max retention: 168 snapshots (about {days} days)",
+  "settings.snapshots.guidance":
+    "Shorter intervals catch change sooner but rotate history faster. Longer intervals keep a broader timeline with fewer points.",
   "settings.alerts.storage": "Storage",
   "settings.alerts.memory": "Memory",
   "settings.alerts.gpu_memory": "GPU Memory",

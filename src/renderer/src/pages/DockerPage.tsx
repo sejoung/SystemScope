@@ -27,7 +27,7 @@ export function DockerPage() {
   const [availability, setAvailability] =
     useState<DockerAvailability>("checking");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const { tk } = useI18n();
+  const { tk, t } = useI18n();
 
   const handleChanged = () => setRefreshToken((prev) => prev + 1);
 
@@ -60,15 +60,27 @@ export function DockerPage() {
     <div>
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "16px",
+          display: "grid",
+          gap: "10px",
           marginBottom: "16px",
         }}
       >
-        <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
-          {tk("docker.page.title")}
-        </h2>
+        <div style={{ display: "grid", gap: "6px" }}>
+          <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
+            {tk("docker.page.title")}
+          </h2>
+          <div
+            style={{
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+            }}
+          >
+            {t(
+              "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.",
+            )}
+          </div>
+        </div>
         {!dockerUnavailable && (
           <div
             role="tablist"

@@ -1,16 +1,28 @@
 export const EN_MESSAGES = {
   Overview: "Overview",
+  "Monitor live system usage, review alerts, and jump into storage or process details from one place.":
+    "Monitor live system usage, review alerts, and jump into storage or process details from one place.",
   Storage: "Storage",
   Docker: "Docker",
+  "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.":
+    "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.",
   Activity: "Activity",
+  "Search active processes, inspect ports, and watch specific connections over time.":
+    "Search active processes, inspect ports, and watch specific connections over time.",
   Applications: "Applications",
   Preferences: "Preferences",
+  "Tune alerts, theme, language, and snapshot behavior from one place.":
+    "Tune alerts, theme, language, and snapshot behavior from one place.",
   Disk: "Disk",
+  "Scan folders, inspect large files, and review cleanup candidates before deleting anything.":
+    "Scan folders, inspect large files, and review cleanup candidates before deleting anything.",
   Installed: "Installed",
   "Leftover Data": "Leftover Data",
   "Registry Cleanup": "Registry Cleanup",
   Appearance: "Appearance",
   Alerts: "Alerts",
+  "Keep warning lower than critical. A common starting point is 75% warning and 85% critical.":
+    "Keep warning lower than critical. A common starting point is 75% warning and 85% critical.",
   Snapshots: "Snapshots",
   "App Data": "App Data",
   Logs: "Logs",
@@ -81,6 +93,8 @@ export const EN_MESSAGES = {
     "This is the snapshot interval used to track folder size changes in Growth View.",
   "Current: every {interval} min / Max retention: 168 snapshots (about {days} days)":
     "Current: every {interval} min / Max retention: 168 snapshots (about {days} days)",
+  "Shorter intervals catch change sooner but rotate history faster. Longer intervals keep a broader timeline with fewer points.":
+    "Shorter intervals catch change sooner but rotate history faster. Longer intervals keep a broader timeline with fewer points.",
   "This is where app data such as settings, snapshots, and logs is stored.":
     "This is where app data such as settings, snapshots, and logs is stored.",
   "System logs and user access logs are stored in separate folders as daily files and kept for the last 10 days.":

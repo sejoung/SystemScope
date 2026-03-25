@@ -1,23 +1,37 @@
-import { startTransition, useState } from 'react'
+import { startTransition, useState } from "react";
 
 export function useSearchFilter() {
-  const [draft, setDraft] = useState('')
-  const [applied, setApplied] = useState('')
+  const [draft, setDraft] = useState("");
+  const [applied, setApplied] = useState("");
+
+  const updateDraft = (value: string) => {
+    setDraft(value);
+    startTransition(() => {
+      setApplied(value);
+    });
+  };
 
   const apply = () => {
     startTransition(() => {
-      setApplied(draft)
-    })
-  }
+      setApplied(draft);
+    });
+  };
 
   const clear = () => {
-    setDraft('')
+    setDraft("");
     startTransition(() => {
-      setApplied('')
-    })
-  }
+      setApplied("");
+    });
+  };
 
-  const isEmpty = !draft && !applied
+  const isEmpty = !draft && !applied;
 
-  return { draft, applied, setDraft, apply, clear, isEmpty } as const
+  return {
+    draft,
+    applied,
+    setDraft: updateDraft,
+    apply,
+    clear,
+    isEmpty,
+  } as const;
 }
