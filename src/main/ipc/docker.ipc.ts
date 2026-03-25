@@ -13,7 +13,7 @@ import {
 } from '../services/dockerImages'
 import { success, failure } from '@shared/types'
 import type { AppResult } from '@shared/types'
-import { logError } from '../services/logging'
+import { logErrorAction, logInfoAction } from '../services/logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
 
@@ -63,9 +63,13 @@ export function registerDockerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_IMAGES, async () => {
     try {
       const result = await listDockerImages()
+      logInfoAction('docker-ipc', 'images.list', {
+        status: result.status,
+        count: result.status === 'ready' ? result.images.length : 0
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to list Docker images', err)
+      logErrorAction('docker-ipc', 'images.list', err)
       return failure('SCAN_FAILED', tk('docker.ipc.error.list_images'))
     }
   })
@@ -73,9 +77,13 @@ export function registerDockerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_CONTAINERS, async () => {
     try {
       const result = await listDockerContainers()
+      logInfoAction('docker-ipc', 'containers.list', {
+        status: result.status,
+        count: result.status === 'ready' ? result.containers.length : 0
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to list Docker containers', err)
+      logErrorAction('docker-ipc', 'containers.list', err)
       return failure('SCAN_FAILED', tk('docker.ipc.error.list_containers'))
     }
   })
@@ -83,9 +91,13 @@ export function registerDockerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_VOLUMES, async () => {
     try {
       const result = await listDockerVolumes()
+      logInfoAction('docker-ipc', 'volumes.list', {
+        status: result.status,
+        count: result.status === 'ready' ? result.volumes.length : 0
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to list Docker volumes', err)
+      logErrorAction('docker-ipc', 'volumes.list', err)
       return failure('SCAN_FAILED', tk('docker.ipc.error.list_volumes'))
     }
   })
@@ -93,9 +105,13 @@ export function registerDockerIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DOCKER_GET_BUILD_CACHE, async () => {
     try {
       const result = await getDockerBuildCache()
+      logInfoAction('docker-ipc', 'build_cache.get', {
+        status: result.status,
+        totalCount: result.status === 'ready' ? (result.summary?.totalCount ?? 0) : 0
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to load Docker build cache', err)
+      logErrorAction('docker-ipc', 'build_cache.get', err)
       return failure('SCAN_FAILED', tk('docker.ipc.error.build_cache'))
     }
   })
@@ -136,13 +152,19 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
+        logInfoAction('docker-ipc', 'images.remove.cancel', { requestedCount: imageIds.length })
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerImages(targets.map((image) => image.id))
+      logInfoAction('docker-ipc', 'images.remove', {
+        requestedCount: targets.length,
+        deletedCount: result.deletedIds.length,
+        failCount: result.failCount
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to remove Docker images', err)
+      logErrorAction('docker-ipc', 'images.remove', err)
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.remove_images'))
     }
   })
@@ -187,13 +209,19 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
+        logInfoAction('docker-ipc', 'containers.remove.cancel', { requestedCount: containerIds.length })
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerContainers(targets.map((container) => container.id))
+      logInfoAction('docker-ipc', 'containers.remove', {
+        requestedCount: targets.length,
+        deletedCount: result.deletedIds.length,
+        failCount: result.failCount
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to remove Docker containers', err)
+      logErrorAction('docker-ipc', 'containers.remove', err)
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.remove_containers'))
     }
   })
@@ -237,13 +265,19 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
+        logInfoAction('docker-ipc', 'containers.stop.cancel', { requestedCount: containerIds.length })
         return success({ affectedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await stopDockerContainers(targets.map((container) => container.id))
+      logInfoAction('docker-ipc', 'containers.stop', {
+        requestedCount: targets.length,
+        affectedCount: result.affectedIds.length,
+        failCount: result.failCount
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to stop Docker containers', err)
+      logErrorAction('docker-ipc', 'containers.stop', err)
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.stop_containers'))
     }
   })
@@ -287,13 +321,19 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
+        logInfoAction('docker-ipc', 'volumes.remove.cancel', { requestedCount: volumeNames.length })
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerVolumes(targets.map((volume) => volume.name))
+      logInfoAction('docker-ipc', 'volumes.remove', {
+        requestedCount: targets.length,
+        deletedCount: result.deletedIds.length,
+        failCount: result.failCount
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to remove Docker volumes', err)
+      logErrorAction('docker-ipc', 'volumes.remove', err)
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.remove_volumes'))
     }
   })
@@ -317,13 +357,18 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
+        logInfoAction('docker-ipc', 'build_cache.prune.cancel')
         return success({ reclaimedBytes: 0, reclaimedLabel: '0 B', cancelled: true })
       }
 
       const result = await pruneDockerBuildCache()
+      logInfoAction('docker-ipc', 'build_cache.prune', {
+        reclaimedBytes: result.reclaimedBytes,
+        reclaimedLabel: result.reclaimedLabel
+      })
       return success(result)
     } catch (err) {
-      logError('docker-ipc', 'Failed to prune Docker build cache', err)
+      logErrorAction('docker-ipc', 'build_cache.prune', err)
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.prune_cache'))
     }
   })

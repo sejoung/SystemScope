@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '../../src/shared/contracts/channels'
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>())
 const logError = vi.hoisted(() => vi.fn())
+const logInfo = vi.hoisted(() => vi.fn())
 const logWarn = vi.hoisted(() => vi.fn())
 const setUnsavedSettingsState = vi.hoisted(() => vi.fn())
 const getAboutInfo = vi.hoisted(() => vi.fn())
@@ -27,6 +28,7 @@ vi.mock('electron', () => ({
 vi.mock('electron-log', () => ({
   default: {
     error: logError,
+    info: logInfo,
     warn: logWarn
   }
 }))
@@ -45,6 +47,7 @@ describe('registerAppIpc', () => {
   beforeEach(() => {
     handlers.clear()
     logError.mockReset()
+    logInfo.mockReset()
     logWarn.mockReset()
     setUnsavedSettingsState.mockReset()
     getAboutInfo.mockReset()

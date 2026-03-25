@@ -13,7 +13,7 @@ import { findOldFiles } from '../services/oldFileFinder'
 import { createJob, cancelJob, sendJobProgress, sendJobCompleted, sendJobFailed } from '../jobs/jobManager'
 import { success, failure } from '@shared/types'
 import type { DiskScanResult, DuplicateGroup, LargeFile, TrashItemsRequest } from '@shared/types'
-import { logError } from '../services/logging'
+import { logErrorAction, logInfoAction } from '../services/logging'
 import { trashItemsWithConfirm } from '../services/trashService'
 import { tk } from '../i18n'
 
@@ -41,6 +41,7 @@ export function registerDiskIpc(): void {
 
     const job = createJob('diskScan')
     job.status = 'running'
+    logInfoAction('disk-ipc', 'scan.start', { jobId: job.id, path: resolved })
 
     // 스캔을 비동기로 실행하고 작업 ID를 즉시 반환
     scanFolder(
@@ -54,17 +55,23 @@ export function registerDiskIpc(): void {
     )
       .then((result) => {
         lastScanResult = result
+        logInfoAction('disk-ipc', 'scan.complete', {
+          jobId: job.id,
+          path: resolved,
+          totalSize: result.totalSize
+        })
         if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
           sendJobCompleted(win, job, result)
         }
       })
       .catch((err) => {
         if (err instanceof Error && err.message === 'Scan cancelled') {
+          logInfoAction('disk-ipc', 'scan.cancel', { jobId: job.id, path: resolved })
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
             sendJobFailed(win, job, tk('disk.scan.cancelled'))
           }
         } else {
-          logError('disk-ipc', 'Disk scan failed', err)
+          logErrorAction('disk-ipc', 'scan.run', err)
           if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
             sendJobFailed(win, job, tk('disk.scan.failed_runtime'))
           }
@@ -84,6 +91,7 @@ export function registerDiskIpc(): void {
       lastScanResult = null
     }
     clearTrashTargetsForRootPath(resolved)
+    logInfoAction('disk-ipc', 'scan_cache.invalidate', { path: resolved })
 
     return success(true)
   })
@@ -100,7 +108,9 @@ export function registerDiskIpc(): void {
 
     // 해당 경로의 캐시된 결과가 있으면 사용
     if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
-      return success(registerLargeFileTrashTargets(findLargeFiles(lastScanResult.tree, limit), resolved, 'large'))
+      const files = registerLargeFileTrashTargets(findLargeFiles(lastScanResult.tree, limit), resolved, 'large')
+      logInfoAction('disk-ipc', 'large_files.list_cached', { path: resolved, limit, count: files.length })
+      return success(files)
     }
     try {
       await fs.access(resolved, fs.constants.R_OK)
@@ -111,9 +121,11 @@ export function registerDiskIpc(): void {
     try {
       const result = await scanFolder(resolved)
       lastScanResult = result
-      return success(registerLargeFileTrashTargets(findLargeFiles(result.tree, limit), resolved, 'large'))
+      const files = registerLargeFileTrashTargets(findLargeFiles(result.tree, limit), resolved, 'large')
+      logInfoAction('disk-ipc', 'large_files.list', { path: resolved, limit, count: files.length })
+      return success(files)
     } catch (err) {
-      logError('disk-ipc', 'Large file scan failed', err)
+      logErrorAction('disk-ipc', 'large_files.list', err)
       return failure('SCAN_FAILED', tk('disk.error.large_failed'))
     }
   })
@@ -125,7 +137,9 @@ export function registerDiskIpc(): void {
 
     const resolved = path.resolve(folderPath)
     if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
-      return success(getExtensionBreakdown(lastScanResult.tree))
+      const extensions = getExtensionBreakdown(lastScanResult.tree)
+      logInfoAction('disk-ipc', 'extensions.list_cached', { path: resolved, count: extensions.length })
+      return success(extensions)
     }
     try {
       await fs.access(resolved, fs.constants.R_OK)
@@ -136,9 +150,11 @@ export function registerDiskIpc(): void {
     try {
       const result = await scanFolder(resolved)
       lastScanResult = result
-      return success(getExtensionBreakdown(result.tree))
+      const extensions = getExtensionBreakdown(result.tree)
+      logInfoAction('disk-ipc', 'extensions.list', { path: resolved, count: extensions.length })
+      return success(extensions)
     } catch (err) {
-      logError('disk-ipc', 'Extension analysis failed', err)
+      logErrorAction('disk-ipc', 'extensions.list', err)
       return failure('SCAN_FAILED', tk('disk.error.extensions_failed'))
     }
   })
@@ -146,9 +162,10 @@ export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_QUICK_SCAN, async () => {
     try {
       const results = await runQuickScan()
+      logInfoAction('disk-ipc', 'quick_scan.run', { count: results.length })
       return success(results)
     } catch (err) {
-      logError('disk-ipc', 'Quick scan failed', err)
+      logErrorAction('disk-ipc', 'quick_scan.run', err)
       return failure('SCAN_FAILED', tk('disk.error.quick_scan_failed'))
     }
   })
@@ -156,9 +173,13 @@ export function registerDiskIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DISK_USER_SPACE, async () => {
     try {
       const info = await getUserSpaceInfo()
+      logInfoAction('disk-ipc', 'user_space.get', {
+        diskTotal: info.diskTotal,
+        diskUsage: info.diskUsage
+      })
       return success(info)
     } catch (err) {
-      logError('disk-ipc', 'User-space scan failed', err)
+      logErrorAction('disk-ipc', 'user_space.get', err)
       return failure('SCAN_FAILED', tk('disk.error.user_space_failed'))
     }
   })
@@ -178,9 +199,10 @@ export function registerDiskIpc(): void {
     }
     try {
       const results = await findRecentGrowth(resolved, days)
+      logInfoAction('disk-ipc', 'recent_growth.list', { path: resolved, days, count: results.length })
       return success(results)
     } catch (err) {
-      logError('disk-ipc', 'Recent growth scan failed', err)
+      logErrorAction('disk-ipc', 'recent_growth.list', err)
       return failure('SCAN_FAILED', tk('disk.error.recent_growth_failed'))
     }
   })
@@ -200,9 +222,10 @@ export function registerDiskIpc(): void {
     }
     try {
       const results = registerDuplicateTrashTargets(await findDuplicates(resolved, minSizeKB * 1024), resolved)
+      logInfoAction('disk-ipc', 'duplicates.list', { path: resolved, minSizeKB, count: results.length })
       return success(results)
     } catch (err) {
-      logError('disk-ipc', 'Duplicate file scan failed', err)
+      logErrorAction('disk-ipc', 'duplicates.list', err)
       return failure('SCAN_FAILED', tk('disk.error.duplicates_failed'))
     }
   })
@@ -213,9 +236,10 @@ export function registerDiskIpc(): void {
     }
     try {
       const result = await analyzeGrowth(period)
+      logInfoAction('disk-ipc', 'growth_analysis.get', { period, folderCount: result.folders.length, totalAdded: result.totalAdded })
       return success(result)
     } catch (err) {
-      logError('disk-ipc', 'Growth analysis failed', err)
+      logErrorAction('disk-ipc', 'growth_analysis.get', err)
       return failure('SCAN_FAILED', tk('disk.error.growth_failed'))
     }
   })
@@ -235,9 +259,10 @@ export function registerDiskIpc(): void {
     }
     try {
       const results = registerLargeFileTrashTargets(await findOldFiles(resolved, olderThanDays), resolved, 'old')
+      logInfoAction('disk-ipc', 'old_files.list', { path: resolved, olderThanDays, count: results.length })
       return success(results)
     } catch (err) {
-      logError('disk-ipc', 'Old file scan failed', err)
+      logErrorAction('disk-ipc', 'old_files.list', err)
       return failure('SCAN_FAILED', tk('disk.error.old_files_failed'))
     }
   })
@@ -276,9 +301,14 @@ export function registerDiskIpc(): void {
         }
       }
 
+      logInfoAction('disk-ipc', 'trash_items.run', {
+        requestedCount: resolvedTargets.length,
+        trashedCount: result.trashedPaths.length,
+        failedCount: result.failCount
+      })
       return success(result)
     } catch (err) {
-      logError('disk-ipc', 'Failed to trash disk items', err)
+      logErrorAction('disk-ipc', 'trash_items.run', err)
       return failure('UNKNOWN_ERROR', tk('disk.error.trash_failed'))
     }
   })
@@ -291,6 +321,7 @@ export function registerDiskIpc(): void {
     if (!cancelled) {
       return failure('JOB_NOT_FOUND', tk('disk.error.job_not_found'))
     }
+    logInfoAction('disk-ipc', 'job.cancel', { jobId })
     return success(true)
   })
 }

@@ -14,15 +14,17 @@ import {
   openSystemUninstallSettings,
   uninstallInstalledApp
 } from '../services/installedApps'
-import { logError, logInfo, logWarn } from '../services/logging'
+import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
 
 export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async () => {
     try {
-      return success(await listInstalledApps())
+      const items = await listInstalledApps()
+      logInfoAction('apps-ipc', 'installed.list', { count: items.length })
+      return success(items)
     } catch (error) {
-      logError('apps-ipc', 'Failed to list installed apps', error)
+      logErrorAction('apps-ipc', 'installed.list', error)
       return failure('UNKNOWN_ERROR', tk('apps.error.load_installed'))
     }
   })
@@ -34,9 +36,10 @@ export function registerAppsIpc(): void {
 
     try {
       await openInstalledAppLocation(appId)
+      logInfoAction('apps-ipc', 'installed.open_location', { appId })
       return success(true)
     } catch (error) {
-      logError('apps-ipc', 'Failed to open installed app location', { appId, error })
+      logErrorAction('apps-ipc', 'installed.open_location', { appId, error })
       return failure('UNKNOWN_ERROR', tk('apps.error.open_location'))
     }
   })
@@ -44,9 +47,10 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_OPEN_SYSTEM_SETTINGS, async () => {
     try {
       await openSystemUninstallSettings()
+      logInfoAction('apps-ipc', 'system_settings.open')
       return success(true)
     } catch (error) {
-      logError('apps-ipc', 'Failed to open system uninstall settings', error)
+      logErrorAction('apps-ipc', 'system_settings.open', error)
       return failure('UNKNOWN_ERROR', tk('apps.error.open_system_settings'))
     }
   })
@@ -57,18 +61,22 @@ export function registerAppsIpc(): void {
     }
 
     try {
-      return success(await getInstalledAppRelatedData(appId))
+      const items = await getInstalledAppRelatedData(appId)
+      logInfoAction('apps-ipc', 'related_data.list', { appId, count: items.length })
+      return success(items)
     } catch (error) {
-      logError('apps-ipc', 'Failed to get related app data', { appId, error })
+      logErrorAction('apps-ipc', 'related_data.list', { appId, error })
       return failure('UNKNOWN_ERROR', tk('apps.error.load_related'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA, async () => {
     try {
-      return success(await listLeftoverAppData())
+      const items = await listLeftoverAppData()
+      logInfoAction('apps-ipc', 'leftover_data.list', { count: items.length })
+      return success(items)
     } catch (error) {
-      logError('apps-ipc', 'Failed to list leftover app data', error)
+      logErrorAction('apps-ipc', 'leftover_data.list', error)
       return failure('UNKNOWN_ERROR', tk('apps.error.load_leftover'))
     }
   })
@@ -79,9 +87,15 @@ export function registerAppsIpc(): void {
     }
 
     try {
-      return success(await removeLeftoverAppData(itemIds))
+      const result = await removeLeftoverAppData(itemIds)
+      logInfoAction('apps-ipc', 'leftover_data.remove', {
+        requestedCount: itemIds.length,
+        deletedCount: result.deletedPaths.length,
+        failedCount: result.failedPaths.length
+      })
+      return success(result)
     } catch (error) {
-      logError('apps-ipc', 'Failed to remove leftover app data', { itemIds, error })
+      logErrorAction('apps-ipc', 'leftover_data.remove', { itemIds, error })
       return failure('UNKNOWN_ERROR', tk('apps.error.remove_leftover'))
     }
   })
@@ -89,10 +103,10 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_LEFTOVER_REGISTRY, async () => {
     try {
       const items = await listLeftoverAppRegistry()
-      logInfo('apps-ipc', 'Listed leftover app registry entries', { count: items.length })
+      logInfoAction('apps-ipc', 'leftover_registry.list', { count: items.length })
       return success(items)
     } catch (error) {
-      logError('apps-ipc', 'Failed to list leftover app registry', error)
+      logErrorAction('apps-ipc', 'leftover_registry.list', error)
       return failure('UNKNOWN_ERROR', tk('apps.error.load_registry'))
     }
   })
@@ -103,9 +117,15 @@ export function registerAppsIpc(): void {
     }
 
     try {
-      return success(await removeLeftoverAppRegistry(itemIds))
+      const result = await removeLeftoverAppRegistry(itemIds)
+      logInfoAction('apps-ipc', 'leftover_registry.remove', {
+        requestedCount: itemIds.length,
+        deletedCount: result.deletedKeys.length,
+        failedCount: result.failedKeys.length
+      })
+      return success(result)
     } catch (error) {
-      logError('apps-ipc', 'Failed to remove leftover app registry', { itemIds, error })
+      logErrorAction('apps-ipc', 'leftover_registry.remove', { itemIds, error })
       return failure('UNKNOWN_ERROR', tk('apps.error.remove_registry'))
     }
   })
@@ -113,7 +133,7 @@ export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_UNINSTALL, async (_event, request: AppUninstallRequest) => {
     const appId = request?.appId
     if (!appId || typeof appId !== 'string') {
-      logWarn('apps-ipc', 'App uninstall rejected due to invalid input', { appId })
+      logWarnAction('apps-ipc', 'uninstall.start', { reason: 'invalid_input', appId })
       return failure('INVALID_INPUT', 'Invalid app ID.')
     }
 
@@ -159,7 +179,7 @@ export function registerAppsIpc(): void {
         completed: false,
         cancelled: true
       }
-      logInfo('apps-ipc', 'App uninstall cancelled by user', { appId, name: target.name })
+      logInfoAction('apps-ipc', 'uninstall.cancel', { appId, name: target.name })
       return success(result)
     }
 
@@ -168,9 +188,15 @@ export function registerAppsIpc(): void {
         appId,
         relatedDataIds
       })
+      logInfoAction('apps-ipc', 'uninstall.start', {
+        appId,
+        relatedDataCount,
+        completed: result.completed,
+        action: result.action
+      })
       return success(result)
     } catch (error) {
-      logError('apps-ipc', 'Failed to uninstall app', { appId, error })
+      logErrorAction('apps-ipc', 'uninstall.start', { appId, error })
       return failure('UNKNOWN_ERROR', error instanceof Error ? error.message : tk('apps.error.uninstall_start'))
     }
   })

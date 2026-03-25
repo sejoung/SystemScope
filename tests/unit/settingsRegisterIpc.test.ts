@@ -9,7 +9,10 @@ const restartSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
 const setThresholdsMock = vi.hoisted(() => vi.fn())
 const getLogDirMock = vi.hoisted(() => vi.fn())
 const getPathMock = vi.hoisted(() => vi.fn())
+const logErrorActionMock = vi.hoisted(() => vi.fn())
 const logErrorMock = vi.hoisted(() => vi.fn())
+const logInfoActionMock = vi.hoisted(() => vi.fn())
+const logWarnActionMock = vi.hoisted(() => vi.fn())
 const logWarnMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
@@ -45,7 +48,10 @@ vi.mock('../../src/main/services/alertManager', () => ({
 
 vi.mock('../../src/main/services/logging', () => ({
   getLogDir: getLogDirMock,
+  logErrorAction: logErrorActionMock,
   logError: logErrorMock,
+  logInfoAction: logInfoActionMock,
+  logWarnAction: logWarnActionMock,
   logWarn: logWarnMock
 }))
 
@@ -59,7 +65,10 @@ describe('registerSettingsIpc', () => {
     setThresholdsMock.mockReset()
     getLogDirMock.mockReset()
     getPathMock.mockReset()
+    logErrorActionMock.mockReset()
     logErrorMock.mockReset()
+    logInfoActionMock.mockReset()
+    logWarnActionMock.mockReset()
     logWarnMock.mockReset()
   })
 

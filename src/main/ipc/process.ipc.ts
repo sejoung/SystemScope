@@ -3,7 +3,7 @@ import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
-import { logError, logInfo, logWarn } from '../services/logging'
+import { logErrorAction, logInfo, logInfoAction, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
 import { tk } from '../i18n'
 
@@ -14,9 +14,10 @@ export function registerProcessIpc(): void {
     }
     try {
       const processes = await getTopCpuProcesses(limit)
+      logInfoAction('process-ipc', 'processes.top_cpu.list', { limit, count: processes.length })
       return success(processes)
     } catch (err) {
-      logError('process-ipc', 'Failed to get CPU processes', err)
+      logErrorAction('process-ipc', 'processes.top_cpu.list', err)
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
@@ -27,9 +28,10 @@ export function registerProcessIpc(): void {
     }
     try {
       const processes = await getTopMemoryProcesses(limit)
+      logInfoAction('process-ipc', 'processes.top_memory.list', { limit, count: processes.length })
       return success(processes)
     } catch (err) {
-      logError('process-ipc', 'Failed to get memory processes', err)
+      logErrorAction('process-ipc', 'processes.top_memory.list', err)
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
@@ -37,9 +39,10 @@ export function registerProcessIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROCESS_GET_ALL, async () => {
     try {
       const processes = await getAllProcesses()
+      logInfoAction('process-ipc', 'processes.all.list', { count: processes.length })
       return success(processes)
     } catch (err) {
-      logError('process-ipc', 'Failed to get all processes', err)
+      logErrorAction('process-ipc', 'processes.all.list', err)
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
@@ -47,27 +50,28 @@ export function registerProcessIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROCESS_GET_PORTS, async () => {
     try {
       const ports = await getNetworkPorts()
+      logInfoAction('process-ipc', 'ports.list', { count: ports.length })
       return success(ports)
     } catch (err) {
-      logError('process-ipc', 'Failed to get network ports', err)
+      logErrorAction('process-ipc', 'ports.list', err)
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_ports'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.PROCESS_KILL, async (_event, request: ProcessKillRequest) => {
     if (!request || typeof request !== 'object' || !Number.isInteger(request.pid) || request.pid < 1) {
-      logWarn('process-ipc', 'Process kill rejected due to invalid PID', { request })
+      logWarnAction('process-ipc', 'process.kill', { reason: 'invalid_pid', request })
       return failure('INVALID_INPUT', tk('main.process.error.invalid_pid'))
     }
 
     try {
       const target = await getProcessByPid(request.pid)
       if (!target) {
-        logWarn('process-ipc', 'Process kill failed because target was not found', { pid: request.pid })
+        logWarnAction('process-ipc', 'process.kill', { reason: 'not_found', pid: request.pid })
         return failure('UNKNOWN_ERROR', tk('main.process.error.not_found'))
       }
       if (isProtectedProcess(target)) {
-        logWarn('process-ipc', 'Process kill blocked for protected target', { pid: target.pid, name: target.name })
+        logWarnAction('process-ipc', 'process.kill', { reason: 'protected', pid: target.pid, name: target.name })
         return failure('PERMISSION_DENIED', tk('main.process.error.protected'))
       }
 
@@ -104,7 +108,7 @@ export function registerProcessIpc(): void {
 
       const confirmedTarget = await getProcessByPid(request.pid)
       if (!confirmedTarget || confirmedTarget.name !== target.name || confirmedTarget.command !== target.command) {
-        logWarn('process-ipc', 'Process kill aborted because target changed before termination', { pid: request.pid })
+        logWarnAction('process-ipc', 'process.kill', { reason: 'target_changed', pid: request.pid })
         return failure('UNKNOWN_ERROR', tk('main.process.error.changed'))
       }
 
@@ -119,7 +123,7 @@ export function registerProcessIpc(): void {
       }
       return success(result)
     } catch (err) {
-      logError('process-ipc', 'Failed to kill process', err)
+      logErrorAction('process-ipc', 'process.kill', err)
       return failure('UNKNOWN_ERROR', tk('main.process.error.kill_failed'))
     }
   })

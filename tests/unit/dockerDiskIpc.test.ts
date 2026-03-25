@@ -12,7 +12,9 @@ const removeDockerVolumes = vi.hoisted(() => vi.fn())
 const getDockerBuildCache = vi.hoisted(() => vi.fn())
 const pruneDockerBuildCache = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
+const logErrorAction = vi.hoisted(() => vi.fn())
 const logError = vi.hoisted(() => vi.fn())
+const logInfoAction = vi.hoisted(() => vi.fn())
 
 const mockWindow = vi.hoisted(() => ({
   isDestroyed: vi.fn(() => false),
@@ -63,8 +65,11 @@ vi.mock('../../src/main/services/dockerImages', () => ({
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
+  logErrorAction,
   logError,
+  logInfoAction,
   logInfo: vi.fn(),
+  logWarnAction: vi.fn(),
   logWarn: vi.fn(),
   logDebug: vi.fn()
 }))
@@ -83,7 +88,9 @@ describe('docker disk IPC', () => {
     getDockerBuildCache.mockReset()
     pruneDockerBuildCache.mockReset()
     showMessageBox.mockReset()
+    logErrorAction.mockReset()
     logError.mockReset()
+    logInfoAction.mockReset()
   })
 
   it('should return docker images scan result', async () => {

@@ -4,7 +4,7 @@ import { SYSTEM_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { getSystemStats } from '../services/systemMonitor'
 import { checkAlerts } from '../services/alertManager'
 import { success, failure } from '@shared/types'
-import { logError } from '../services/logging'
+import { logErrorAction, logInfoAction } from '../services/logging'
 import { tk } from '../i18n'
 import {
   addSystemSubscriber,
@@ -22,21 +22,24 @@ export function registerSystemIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_STATS, async () => {
     try {
       const stats = await getSystemStats()
+      logInfoAction('system-ipc', 'stats.get')
       return success(stats)
     } catch (err) {
-      logError('system-ipc', 'Failed to load system information', err)
+      logErrorAction('system-ipc', 'stats.get', err)
       return failure('UNKNOWN_ERROR', tk('main.system.error.fetch'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.SYSTEM_SUBSCRIBE, (event) => {
     addSystemSubscriber(event.sender.id)
+    logInfoAction('system-ipc', 'realtime.subscribe', { senderId: event.sender.id })
     startRealtimeUpdates()
     return success(true)
   })
 
   ipcMain.handle(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE, (event) => {
     removeSystemSubscriber(event.sender.id)
+    logInfoAction('system-ipc', 'realtime.unsubscribe', { senderId: event.sender.id })
     if (!hasSystemSubscribers()) {
       stopRealtimeUpdates()
     }
@@ -47,6 +50,7 @@ export function registerSystemIpc(): void {
 function startRealtimeUpdates(): void {
   if (isRunning) return
   isRunning = true
+  logInfoAction('system-ipc', 'realtime.start')
   void scheduleNextUpdate()
 }
 
@@ -81,7 +85,7 @@ async function scheduleNextUpdate(): Promise<void> {
       }
     }
   } catch (err) {
-    logError('system-ipc', 'Realtime update failed', err)
+    logErrorAction('system-ipc', 'realtime.tick', err)
   }
 
   if (isRunning) {
@@ -95,6 +99,7 @@ function stopRealtimeUpdates(): void {
     clearTimeout(updateTimer)
     updateTimer = null
   }
+  logInfoAction('system-ipc', 'realtime.stop')
 }
 
 export function cleanupSystemIpc(): void {

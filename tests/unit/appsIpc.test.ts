@@ -11,8 +11,11 @@ const removeLeftoverAppDataMock = vi.hoisted(() => vi.fn())
 const openInstalledAppLocationMock = vi.hoisted(() => vi.fn())
 const openSystemUninstallSettingsMock = vi.hoisted(() => vi.fn())
 const uninstallInstalledAppMock = vi.hoisted(() => vi.fn())
+const logErrorActionMock = vi.hoisted(() => vi.fn())
 const logErrorMock = vi.hoisted(() => vi.fn())
+const logInfoActionMock = vi.hoisted(() => vi.fn())
 const logInfoMock = vi.hoisted(() => vi.fn())
+const logWarnActionMock = vi.hoisted(() => vi.fn())
 const logWarnMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
@@ -42,8 +45,11 @@ vi.mock('../../src/main/services/installedApps', () => ({
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
+  logErrorAction: logErrorActionMock,
   logError: logErrorMock,
+  logInfoAction: logInfoActionMock,
   logInfo: logInfoMock,
+  logWarnAction: logWarnActionMock,
   logWarn: logWarnMock
 }))
 
@@ -60,8 +66,11 @@ describe('registerAppsIpc', () => {
     openInstalledAppLocationMock.mockReset()
     openSystemUninstallSettingsMock.mockReset()
     uninstallInstalledAppMock.mockReset()
+    logErrorActionMock.mockReset()
     logErrorMock.mockReset()
+    logInfoActionMock.mockReset()
     logInfoMock.mockReset()
+    logWarnActionMock.mockReset()
     logWarnMock.mockReset()
   })
 
@@ -89,7 +98,7 @@ describe('registerAppsIpc', () => {
     const result = await handler?.({}, { appId: '' }) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('INVALID_INPUT')
-    expect(logWarnMock).toHaveBeenCalled()
+    expect(logWarnActionMock).toHaveBeenCalled()
   })
 
   it('should return related app data', async () => {
@@ -147,6 +156,7 @@ describe('registerAppsIpc', () => {
     expect(result.ok).toBe(true)
     expect(result.data?.cancelled).toBe(true)
     expect(uninstallInstalledAppMock).not.toHaveBeenCalled()
+    expect(logInfoActionMock).toHaveBeenCalled()
   })
 
   it('should start uninstall after confirmation', async () => {

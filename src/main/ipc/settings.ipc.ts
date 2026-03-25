@@ -9,12 +9,14 @@ import { success, failure } from '@shared/types'
 import { restartSnapshotScheduler } from '../services/growthAnalyzer'
 import { setThresholds } from '../services/alertManager'
 import { didShellOpenPathFail, isPathInsideAnyParent, isPathInsideParent } from './settingsPathUtils'
-import { getLogDir, logError, logWarn } from '../services/logging'
+import { getLogDir, logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => {
-    return success(getSettings())
+    const settings = getSettings()
+    logInfoAction('settings-ipc', 'settings.get')
+    return success(settings)
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_SET, (_event, settings: Record<string, unknown>) => {
@@ -33,19 +35,29 @@ export function registerSettingsIpc(): void {
         restartSnapshotScheduler(parsed.snapshotIntervalMin * 60 * 1000)
       }
 
-      return success(getSettings())
+      const nextSettings = getSettings()
+      logInfoAction('settings-ipc', 'settings.save', {
+        updatedKeys: Object.keys(parsed),
+        thresholdsUpdated: Boolean(parsed.thresholds),
+        snapshotIntervalMin: parsed.snapshotIntervalMin
+      })
+      return success(nextSettings)
     } catch (err) {
-      logError('settings-ipc', 'Failed to save settings', err)
+      logErrorAction('settings-ipc', 'settings.save', err)
       return failure('UNKNOWN_ERROR', tk('main.settings.error.save_failed'))
     }
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DATA_PATH, () => {
-    return success(app.getPath('userData'))
+    const dataPath = app.getPath('userData')
+    logInfoAction('settings-ipc', 'paths.user_data.get', { path: dataPath })
+    return success(dataPath)
   })
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_LOG_PATH, () => {
-    return success(getLogDir())
+    const logPath = getLogDir()
+    logInfoAction('settings-ipc', 'paths.log.get', { path: logPath })
+    return success(logPath)
   })
 
   ipcMain.handle(IPC_CHANNELS.DIALOG_SELECT_FOLDER, async () => {
@@ -57,8 +69,10 @@ export function registerSettingsIpc(): void {
       properties: ['openDirectory']
     })
     if (result.canceled || result.filePaths.length === 0) {
+      logInfoAction('settings-ipc', 'dialog.select_folder.cancel')
       return success(null)
     }
+    logInfoAction('settings-ipc', 'dialog.select_folder.complete', { path: result.filePaths[0] })
     return success(result.filePaths[0])
   })
 
@@ -83,12 +97,13 @@ export function registerSettingsIpc(): void {
     try {
       const openResult = await shell.openPath(resolved)
       if (didShellOpenPathFail(openResult)) {
-        logError('settings-ipc', 'Failed to open path', { path: resolved, error: openResult })
+        logErrorAction('settings-ipc', 'path.open', { path: resolved, error: openResult })
         return failure('UNKNOWN_ERROR', tk('main.settings.error.open_folder'))
       }
+      logInfoAction('settings-ipc', 'path.open', { path: resolved })
       return success(true)
     } catch (err) {
-      logError('settings-ipc', 'Failed to open path', { path: resolved, error: err })
+      logErrorAction('settings-ipc', 'path.open', { path: resolved, error: err })
       return failure('UNKNOWN_ERROR', tk('main.settings.error.open_folder'))
     }
   })
@@ -119,7 +134,7 @@ export function registerSettingsIpc(): void {
     ]
 
     if (!isPathInsideAnyParent(resolved, allowedRoots)) {
-      logWarn('settings-ipc', 'Blocked showInFolder because path is outside allowed roots', { path: resolved })
+      logWarnAction('settings-ipc', 'path.reveal', { reason: 'outside_allowed_roots', path: resolved })
       return failure('PERMISSION_DENIED', tk('main.settings.error.permission_denied'))
     }
 
@@ -129,9 +144,10 @@ export function registerSettingsIpc(): void {
 
     try {
       shell.showItemInFolder(resolved)
+      logInfoAction('settings-ipc', 'path.reveal', { path: resolved })
       return success(true)
     } catch (err) {
-      logError('settings-ipc', 'Failed to show item in folder', { path: resolved, error: err })
+      logErrorAction('settings-ipc', 'path.reveal', { path: resolved, error: err })
       return failure('UNKNOWN_ERROR', tk('main.settings.error.open_folder'))
     }
   })

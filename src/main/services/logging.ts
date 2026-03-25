@@ -20,12 +20,24 @@ export function logInfo(scope: string, message: string, metadata?: unknown): voi
   writeLog('info', scope, message, metadata)
 }
 
+export function logInfoAction(scope: string, action: string, metadata?: unknown): void {
+  writeLog('info', scope, formatActionMessage(action, 'success'), metadata)
+}
+
 export function logWarn(scope: string, message: string, metadata?: unknown): void {
   writeLog('warn', scope, message, metadata)
 }
 
+export function logWarnAction(scope: string, action: string, metadata?: unknown): void {
+  writeLog('warn', scope, formatActionMessage(action, 'rejected'), metadata)
+}
+
 export function logError(scope: string, message: string, metadata?: unknown): void {
   writeLog('error', scope, message, metadata)
+}
+
+export function logErrorAction(scope: string, action: string, metadata?: unknown): void {
+  writeLog('error', scope, formatActionMessage(action, 'failed'), metadata)
 }
 
 export function initializeLogging(): void {
@@ -130,6 +142,10 @@ function parseLogDateFromFileName(fileName: string): Date | null {
 function startOfDay(date: Date): Date {
   date.setHours(0, 0, 0, 0)
   return date
+}
+
+function formatActionMessage(action: string, result: 'success' | 'rejected' | 'failed'): string {
+  return `action=${action} result=${result}`
 }
 
 function writeLog(level: LogLevel, scope: string, message: string, metadata?: unknown): void {
