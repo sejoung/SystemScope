@@ -16,7 +16,7 @@ import type { DiskScanResult, DuplicateGroup, LargeFile, TrashItemsRequest } fro
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { trashItemsWithConfirm } from '../services/trashService'
 import { tk } from '../i18n'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 // 대용량 파일 / 확장자 조회를 위한 마지막 스캔 결과 캐시
 let lastScanResult: DiskScanResult | null = null
@@ -283,9 +283,7 @@ export function registerDiskIpc(): void {
     if (
       !request ||
       typeof request !== 'object' ||
-      !Array.isArray(request.itemIds) ||
-      request.itemIds.length === 0 ||
-      request.itemIds.some((itemId) => typeof itemId !== 'string' || !itemId.trim())
+      !isValidStringArray(request.itemIds)
     ) {
       return failure('INVALID_INPUT', tk('disk.error.invalid_trash_request'))
     }

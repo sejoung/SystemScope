@@ -16,7 +16,7 @@ import type { AppResult } from '@shared/types'
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 interface ConfirmDialogOptions {
   actionButton: string
@@ -123,7 +123,7 @@ export function registerDockerIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_IMAGES, async (_event, imageIds: string[], metaArg?: IpcRequestMetaArg): Promise<AppResult<never> | ReturnType<typeof success>> => {
     const requestMeta = getRequestMeta(metaArg)
-    if (!Array.isArray(imageIds) || imageIds.length === 0 || imageIds.some((id) => typeof id !== 'string' || !id.trim())) {
+    if (!isValidStringArray(imageIds)) {
       return failure('INVALID_INPUT', tk('docker.ipc.error.no_images'))
     }
 
@@ -177,11 +177,7 @@ export function registerDockerIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS, async (_event, containerIds: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (
-      !Array.isArray(containerIds) ||
-      containerIds.length === 0 ||
-      containerIds.some((id) => typeof id !== 'string' || !id.trim())
-    ) {
+    if (!isValidStringArray(containerIds)) {
       return failure('INVALID_INPUT', tk('docker.ipc.error.no_containers'))
     }
 
@@ -235,11 +231,7 @@ export function registerDockerIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.DOCKER_STOP_CONTAINERS, async (_event, containerIds: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (
-      !Array.isArray(containerIds) ||
-      containerIds.length === 0 ||
-      containerIds.some((id) => typeof id !== 'string' || !id.trim())
-    ) {
+    if (!isValidStringArray(containerIds)) {
       return failure('INVALID_INPUT', tk('docker.ipc.error.no_stop_targets'))
     }
 
@@ -292,11 +284,7 @@ export function registerDockerIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES, async (_event, volumeNames: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (
-      !Array.isArray(volumeNames) ||
-      volumeNames.length === 0 ||
-      volumeNames.some((name) => typeof name !== 'string' || !name.trim())
-    ) {
+    if (!isValidStringArray(volumeNames)) {
       return failure('INVALID_INPUT', tk('docker.ipc.error.no_volumes'))
     }
 

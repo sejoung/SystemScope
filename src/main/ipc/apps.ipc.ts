@@ -16,7 +16,7 @@ import {
 } from '../services/installedApps'
 import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async (_event, metaArg?: IpcRequestMetaArg) => {
@@ -89,7 +89,7 @@ export function registerAppsIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, async (_event, itemIds: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (!Array.isArray(itemIds) || itemIds.length === 0 || itemIds.some((entry) => typeof entry !== 'string' || !entry.trim())) {
+    if (!isValidStringArray(itemIds)) {
       return failure('INVALID_INPUT', 'Invalid item ID list.')
     }
 
@@ -122,7 +122,7 @@ export function registerAppsIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_REGISTRY, async (_event, itemIds: string[], metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (!Array.isArray(itemIds) || itemIds.length === 0 || itemIds.some((entry) => typeof entry !== 'string' || !entry.trim())) {
+    if (!isValidStringArray(itemIds)) {
       return failure('INVALID_INPUT', 'Invalid item ID list.')
     }
 
@@ -209,7 +209,7 @@ export function registerAppsIpc(): void {
       return success(result)
     } catch (error) {
       logErrorAction('apps-ipc', 'uninstall.start', withRequestMeta(requestMeta, { appId, error }))
-      return failure('UNKNOWN_ERROR', error instanceof Error ? error.message : tk('apps.error.uninstall_start'))
+      return failure('UNKNOWN_ERROR', tk('apps.error.uninstall_start'))
     }
   })
 }

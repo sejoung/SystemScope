@@ -19,6 +19,10 @@ export function getRequestMeta(value: unknown): IpcRequestMeta | null {
   return meta
 }
 
+export function isValidStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length > 0 && value.every((entry) => typeof entry === 'string' && entry.trim() !== '')
+}
+
 export function withRequestMeta(
   requestMeta: IpcRequestMeta | null | undefined,
   metadata?: Record<string, unknown>
