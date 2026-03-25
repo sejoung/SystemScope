@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './tests/e2e/specs',
   testMatch: '*.spec.ts',
   timeout: 60_000,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {

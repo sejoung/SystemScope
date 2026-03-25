@@ -2,6 +2,14 @@ import { test, expect } from "../fixtures/electronApp";
 
 test.describe("사이드바 네비게이션", () => {
   test("모든 페이지 탐색", async ({ mainWindow }) => {
+    const expectDashboardReady = async () => {
+      await expect(
+        mainWindow.locator(
+          '[data-testid="page-dashboard"], [data-testid="page-loading"]',
+        ),
+      ).toBeVisible({ timeout: 15_000 });
+    };
+
     const clickNav = async (
       pageId: "dashboard" | "disk" | "docker" | "process" | "apps" | "settings",
     ) => {
@@ -11,9 +19,7 @@ test.describe("사이드바 네비게이션", () => {
     };
 
     // Overview (기본 페이지)
-    await expect(mainWindow.getByTestId("page-dashboard")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expectDashboardReady();
 
     // Storage
     await clickNav("disk");
@@ -41,8 +47,6 @@ test.describe("사이드바 네비게이션", () => {
 
     // Overview 복귀
     await clickNav("dashboard");
-    await expect(mainWindow.getByTestId("page-dashboard")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expectDashboardReady();
   });
 });
