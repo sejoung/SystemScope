@@ -5,7 +5,7 @@ import { cleanupSystemIpc } from '../ipc'
 import { destroyTray } from './tray'
 import { cancelAllJobs, getActiveJobCount } from '../jobs/jobManager'
 import { stopSnapshotScheduler, waitForPendingSnapshot } from '../services/growthAnalyzer'
-import { logError, logInfo, shutdownLogging } from '../services/logging'
+import { flushLoggingWrites, logError, logInfo, shutdownLogging } from '../services/logging'
 import { tk } from '../i18n'
 
 let shutdownPromise: Promise<void> | null = null
@@ -88,6 +88,7 @@ async function doGracefulShutdown(reason: string): Promise<void> {
 
   broadcastShutdownState('finishing', tk('shutdown.finishing'))
   shutdownLogging()
+  await flushLoggingWrites()
 }
 
 function broadcastShutdownState(phase: ShutdownPhase, message: string): void {

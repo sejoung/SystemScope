@@ -5,6 +5,7 @@ import { logError, logInfoAction, logWarn } from './logging'
 
 const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
 const RELEASES_API_URL = 'https://api.github.com/repos/sejoung/SystemScope/releases/latest'
+const DOWNLOAD_PAGE_URL = 'https://sejoung.github.io/SystemScope/'
 
 type FetchLike = typeof fetch
 type GitHubReleaseResponse = {
@@ -122,7 +123,7 @@ export async function fetchLatestRelease(currentVersion: string, fetchImpl: Fetc
 
 export function parseLatestRelease(payload: GitHubReleaseResponse, currentVersion: string): UpdateInfo | null {
   const latestVersion = normalizeVersion(payload.tag_name)
-  const releaseUrl = typeof payload.html_url === 'string' ? validateReleaseUrl(payload.html_url) : null
+  const releaseUrl = validateReleaseUrl(DOWNLOAD_PAGE_URL)
   const publishedAt = typeof payload.published_at === 'string' ? payload.published_at : null
 
   if (!latestVersion || !releaseUrl || !publishedAt) {
@@ -187,14 +188,17 @@ function validateReleaseUrl(rawUrl: string): string | null {
       return null
     }
 
-    if (parsed.hostname !== 'github.com') {
+    if (parsed.hostname !== 'sejoung.github.io') {
       return null
     }
 
-    if (!parsed.pathname.startsWith('/sejoung/SystemScope/releases')) {
+    if (parsed.pathname !== '/SystemScope/' && parsed.pathname !== '/SystemScope') {
       return null
     }
 
+    parsed.pathname = '/SystemScope/'
+    parsed.search = ''
+    parsed.hash = ''
     return parsed.toString()
   } catch {
     return null

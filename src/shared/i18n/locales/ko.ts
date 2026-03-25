@@ -223,8 +223,8 @@ export const KO_MESSAGES = {
     "새 버전 v{version}이 있습니다.",
   "Download the latest release from GitHub to update manually.":
     "수동 업데이트를 위해 GitHub 최신 릴리즈를 브라우저에서 엽니다.",
-  "Check GitHub Releases for a newer version and open the download page in your browser.":
-    "GitHub Releases에서 새 버전을 확인하고 브라우저에서 다운로드 페이지를 엽니다.",
+  "Check for a newer version and open the official download page in your browser.":
+    "새 버전을 확인하고 브라우저에서 공식 다운로드 페이지를 엽니다.",
   "Current version": "현재 버전",
   "Latest version": "최신 버전",
   "Last checked": "마지막 확인",

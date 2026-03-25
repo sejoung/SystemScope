@@ -11,6 +11,7 @@ const LOG_FILE_PATTERN = /^systemscope-(\d{4})-(\d{2})-(\d{2})\.log$/
 const ACCESS_LOG_FILE_PATTERN = /^systemscope-access-(\d{4})-(\d{2})-(\d{2})\.log$/
 
 let cleanupTimer: NodeJS.Timeout | null = null
+let accessLogWriteQueue: Promise<void> = Promise.resolve()
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 type ProductMetricResult = 'started' | 'succeeded' | 'failed' | 'cancelled'
@@ -71,6 +72,10 @@ export function shutdownLogging(): void {
     clearInterval(cleanupTimer)
     cleanupTimer = null
   }
+}
+
+export function flushLoggingWrites(): Promise<void> {
+  return accessLogWriteQueue
 }
 
 export function getLogDir(): string {
@@ -197,15 +202,15 @@ function writeAccessLog(level: LogLevel, scope: string, message: string, metadat
   const suffix = normalizedMetadata === undefined ? '' : ` ${safeJsonStringify(normalizedMetadata)}`
   const line = `[${timestamp}] [${level}] ${formattedMessage}${suffix}\n`
 
-  try {
-    fs.appendFileSync(getAccessLogFilePath(new Date()), line, 'utf8')
-  } catch (error) {
-    writeLog('warn', 'logging', 'Failed to append access log entry', {
-      error,
-      scope,
-      level
+  accessLogWriteQueue = accessLogWriteQueue
+    .then(() => fs.promises.appendFile(getAccessLogFilePath(new Date()), line, 'utf8'))
+    .catch((error) => {
+      writeLog('warn', 'logging', 'Failed to append access log entry', {
+        error,
+        scope,
+        level
+      })
     })
-  }
 }
 
 function normalizeLogMetadata(level: LogLevel, metadata: unknown): unknown {

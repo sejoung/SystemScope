@@ -58,7 +58,7 @@ describe('updateChecker', () => {
         currentVersion: '1.2.0',
         latestVersion: '1.3.0',
         hasUpdate: true,
-        releaseUrl: 'https://github.com/sejoung/SystemScope/releases/tag/v1.3.0',
+        releaseUrl: 'https://sejoung.github.io/SystemScope/',
         releaseNotes: 'Bug fixes',
         publishedAt: '2026-03-25T10:00:00.000Z'
       })
@@ -79,14 +79,14 @@ describe('updateChecker', () => {
       expect(parsed?.latestVersion).toBe('1.2.0')
     })
 
-    it('should reject invalid release URLs and malformed payloads', () => {
+    it('should reject malformed payloads', () => {
       expect(
         parseLatestRelease(
           {
             tag_name: 'v1.3.0',
             html_url: 'https://example.com/releases/tag/v1.3.0',
             body: 'Bug fixes',
-            published_at: '2026-03-25T10:00:00.000Z'
+            published_at: null
           },
           '1.2.0'
         )

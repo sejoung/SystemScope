@@ -223,8 +223,8 @@ export const EN_MESSAGES = {
     "A new version v{version} is available.",
   "Download the latest release from GitHub to update manually.":
     "Download the latest release from GitHub to update manually.",
-  "Check GitHub Releases for a newer version and open the download page in your browser.":
-    "Check GitHub Releases for a newer version and open the download page in your browser.",
+  "Check for a newer version and open the official download page in your browser.":
+    "Check for a newer version and open the official download page in your browser.",
   "Current version": "Current version",
   "Latest version": "Latest version",
   "Last checked": "Last checked",

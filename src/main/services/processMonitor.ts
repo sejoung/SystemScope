@@ -5,19 +5,31 @@ import type { ProcessInfo, PortInfo } from '@shared/types'
 // si.processes() 중복 호출 방지를 위한 TTL 캐시 (500ms)
 const PROCESS_CACHE_TTL = 500
 let cachedProcesses: { data: si.Systeminformation.ProcessesData; timestamp: number } | null = null
+let pendingProcesses: Promise<si.Systeminformation.ProcessesData> | null = null
 
 async function getCachedProcesses(): Promise<si.Systeminformation.ProcessesData> {
   if (cachedProcesses && Date.now() - cachedProcesses.timestamp < PROCESS_CACHE_TTL) {
     return cachedProcesses.data
   }
-  const data = await si.processes()
-  cachedProcesses = { data, timestamp: Date.now() }
-  return data
+  if (pendingProcesses) {
+    return pendingProcesses
+  }
+
+  pendingProcesses = si.processes()
+    .then((data) => {
+      cachedProcesses = { data, timestamp: Date.now() }
+      return data
+    })
+    .finally(() => {
+      pendingProcesses = null
+    })
+
+  return pendingProcesses
 }
 
 export async function getTopCpuProcesses(limit: number = 10): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
-  return data.list
+  return [...data.list]
     .sort((a, b) => b.cpu - a.cpu)
     .slice(0, limit)
     .map(toProcessInfo)
@@ -25,7 +37,7 @@ export async function getTopCpuProcesses(limit: number = 10): Promise<ProcessInf
 
 export async function getTopMemoryProcesses(limit: number = 10): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
-  return data.list
+  return [...data.list]
     .sort((a, b) => b.mem - a.mem)
     .slice(0, limit)
     .map(toProcessInfo)
@@ -33,7 +45,7 @@ export async function getTopMemoryProcesses(limit: number = 10): Promise<Process
 
 export async function getAllProcesses(): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
-  return data.list
+  return [...data.list]
     .filter((p) => p.cpu > 0 || p.memRss > 0)
     .sort((a, b) => b.cpu - a.cpu)
     .map(toProcessInfo)

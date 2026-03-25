@@ -30,17 +30,12 @@ import type {
   AppRemovalResult,
   ProcessKillRequest,
   ProcessKillResult,
-  UpdateStatus
+  UpdateStatus,
+  AppSettings,
+  AppSettingsPatch
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
-
-export interface SystemScopeSettingsPayload {
-  thresholds?: AlertThresholds
-  theme?: 'dark' | 'light'
-  locale?: 'ko' | 'en'
-  snapshotIntervalMin?: number
-}
 
 export interface SystemScopeAboutInfo {
   appName: string
@@ -115,8 +110,8 @@ export interface SystemScopeApi {
   onJobCompleted: IpcListener
   onJobFailed: IpcListener
 
-  getSettings: () => Promise<AppResult<Record<string, unknown>>>
-  setSettings: (settings: SystemScopeSettingsPayload) => Promise<AppResult<Record<string, unknown>>>
+  getSettings: () => Promise<AppResult<AppSettings>>
+  setSettings: (settings: AppSettingsPatch) => Promise<AppResult<AppSettings>>
   getDataPath: () => Promise<AppResult<string>>
   getSystemLogPath: () => Promise<AppResult<string>>
   getAccessLogPath: () => Promise<AppResult<string>>

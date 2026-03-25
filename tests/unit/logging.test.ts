@@ -39,6 +39,7 @@ const {
   getAccessLogDir,
   getLogDir,
   getSystemLogDir,
+  flushLoggingWrites,
   initializeLogging,
   logInfoAction
 } = logging
@@ -95,6 +96,7 @@ describe('logging service', () => {
     initializeLogging()
 
     logInfoAction('apps-ipc', 'installed.list', { count: 3, requestId: 'req-1' })
+    await flushLoggingWrites()
 
     const contents = await fs.readFile(getAccessLogFilePath(new Date()), 'utf8')
     expect(contents).toContain('action=installed.list result=success')

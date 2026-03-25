@@ -51,10 +51,7 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   const results = await Promise.all(targets.map(async (target) => {
     try {
       await fs.access(target.path)
-      const size = await Promise.race([
-        getDirSize(target.path),
-        new Promise<number>((_, reject) => setTimeout(() => reject(new Error('timeout')), FOLDER_TIMEOUT))
-      ])
+      const size = await withTimeout(getDirSize(target.path), FOLDER_TIMEOUT, 'timeout')
       return { name: target.name, path: target.path, size }
     } catch {
       return null
@@ -184,10 +181,7 @@ export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<
   }
 
   try {
-    await Promise.race([
-      snapshotInProgress,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(tk('growth.wait_timeout'))), timeoutMs))
-    ])
+    await withTimeout(snapshotInProgress, timeoutMs, tk('growth.wait_timeout'))
     return true
   } catch {
     return false
@@ -197,4 +191,21 @@ export async function waitForPendingSnapshot(timeoutMs: number = 5000): Promise<
 export function restartSnapshotScheduler(intervalMs: number): void {
   stopSnapshotScheduler()
   startSnapshotScheduler(intervalMs)
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), timeoutMs)
+      })
+    ])
+  } finally {
+    if (timer) {
+      clearTimeout(timer)
+    }
+  }
 }

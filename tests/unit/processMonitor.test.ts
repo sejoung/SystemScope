@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const processes = vi.hoisted(() => vi.fn())
 const networkConnections = vi.hoisted(() => vi.fn())
 
 vi.mock('systeminformation', () => ({
   default: {
+    processes,
     networkConnections
   }
 }))
 
 describe('processMonitor.getNetworkPorts', () => {
   beforeEach(() => {
+    processes.mockReset()
     networkConnections.mockReset()
   })
 
@@ -95,5 +98,40 @@ describe('processMonitor.getNetworkPorts', () => {
 
     expect(ports).toHaveLength(1)
     expect(ports[0].process).toBe('node')
+  })
+})
+
+describe('processMonitor process caching', () => {
+  beforeEach(() => {
+    processes.mockReset()
+  })
+
+  it('should dedupe concurrent process snapshots and avoid mutating cached order', async () => {
+    const sampleList = [
+      { pid: 1, name: 'alpha', cpu: 10, mem: 20, memRss: 200, command: 'alpha' },
+      { pid: 2, name: 'beta', cpu: 90, mem: 5, memRss: 100, command: 'beta' },
+      { pid: 3, name: 'gamma', cpu: 30, mem: 40, memRss: 300, command: 'gamma' }
+    ]
+
+    let resolveProcesses: ((value: { list: typeof sampleList }) => void) | null = null
+    processes.mockImplementation(() => new Promise((resolve) => {
+      resolveProcesses = resolve
+    }))
+
+    const { getAllProcesses, getTopCpuProcesses, getTopMemoryProcesses } = await import('../../src/main/services/processMonitor')
+
+    const pending = Promise.all([
+      getAllProcesses(),
+      getTopCpuProcesses(2),
+      getTopMemoryProcesses(2)
+    ])
+
+    expect(processes).toHaveBeenCalledTimes(1)
+    resolveProcesses?.({ list: sampleList })
+
+    const [all, topCpu, topMemory] = await pending
+    expect(topCpu.map((entry) => entry.pid)).toEqual([2, 3])
+    expect(topMemory.map((entry) => entry.pid)).toEqual([3, 1])
+    expect(all.map((entry) => entry.pid)).toEqual([2, 3, 1])
   })
 })

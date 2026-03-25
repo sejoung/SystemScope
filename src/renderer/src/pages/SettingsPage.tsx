@@ -1,12 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useToast } from "../components/Toast";
-import type { AlertThresholds } from "@shared/types";
+import type { AlertThresholds, AppSettings, SnapshotIntervalMin } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import type { AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
 import { useUpdateStore } from "../stores/useUpdateStore";
+import {
+  applySettingsToStore,
+  loadAboutInfo,
+  loadAppSettings,
+  loadPathValue,
+} from "../utils/settingsBootstrap";
+
+const SNAPSHOT_OPTIONS = [
+  { value: 15, labelKey: "settings.snapshots.option_15m" },
+  { value: 30, labelKey: "settings.snapshots.option_30m" },
+  { value: 60, labelKey: "settings.snapshots.option_1h" },
+  { value: 120, labelKey: "settings.snapshots.option_2h" },
+  { value: 360, labelKey: "settings.snapshots.option_6h" },
+] as const;
 
 export function SettingsPage() {
   const thresholds = useSettingsStore((s) => s.thresholds);
@@ -19,7 +33,7 @@ export function SettingsPage() {
     (s) => s.setHasUnsavedSettings,
   );
   const [local, setLocal] = useState<AlertThresholds>(thresholds);
-  const [snapshotInterval, setSnapshotInterval] = useState(60);
+  const [snapshotInterval, setSnapshotInterval] = useState<SnapshotIntervalMin>(60);
   const [localTheme, setLocalTheme] = useState<"dark" | "light">(theme);
   const [localLocale, setLocalLocale] = useState<AppLocale>(locale);
   const [saved, setSaved] = useState(false);
@@ -37,7 +51,7 @@ export function SettingsPage() {
     locale: AppLocale;
   }>({
     thresholds,
-    snapshotInterval: 60,
+    snapshotInterval: 60 as SnapshotIntervalMin,
     theme,
     locale,
   });
@@ -49,74 +63,43 @@ export function SettingsPage() {
   const setUpdateChecking = useUpdateStore((s) => s.setChecking);
   const { t, tk } = useI18n();
 
+  const applyPersistedSettings = (settings: AppSettings) => {
+    persistedRef.current.thresholds = settings.thresholds;
+    persistedRef.current.snapshotInterval = settings.snapshotIntervalMin;
+    persistedRef.current.theme = settings.theme;
+    persistedRef.current.locale = settings.locale;
+
+    if (!hasEditedRef.current) {
+      setLocal(settings.thresholds);
+      setSnapshotInterval(settings.snapshotIntervalMin);
+      setLocalTheme(settings.theme);
+      setLocalLocale(settings.locale);
+    }
+  };
+
   useEffect(() => {
-    window.systemScope
-      .getSettings()
-      .then((res) => {
-        if (res.ok && res.data) {
-          const s = res.data as {
-            thresholds: AlertThresholds;
-            snapshotIntervalMin?: number;
-            theme?: "dark" | "light";
-            locale?: AppLocale;
-          };
-          persistedRef.current.thresholds = s.thresholds;
-          persistedRef.current.snapshotInterval = s.snapshotIntervalMin ?? 60;
-          if (s.theme) {
-            persistedRef.current.theme = s.theme;
-          }
-          if (s.locale) {
-            persistedRef.current.locale = s.locale;
-          }
+    void Promise.all([
+      loadAppSettings("settings-page"),
+      loadPathValue("settings-page", "dataPath", () => window.systemScope.getDataPath()),
+      loadPathValue("settings-page", "systemLogPath", () => window.systemScope.getSystemLogPath()),
+      loadPathValue("settings-page", "accessLogPath", () => window.systemScope.getAccessLogPath()),
+      loadAboutInfo("settings-page"),
+    ]).then(([settings, nextDataPath, nextSystemLogPath, nextAccessLogPath, nextAboutInfo]) => {
+      if (settings) {
+        applyPersistedSettings(settings);
+        applySettingsToStore(settings);
+      } else {
+        showToast(t("Failed to load settings."), "danger");
+      }
 
-          if (!hasEditedRef.current) {
-            setLocal(s.thresholds);
-            if (s.snapshotIntervalMin)
-              setSnapshotInterval(s.snapshotIntervalMin);
-            if (s.theme) {
-              setLocalTheme(s.theme);
-            }
-            if (s.locale) {
-              setLocalLocale(s.locale);
-            }
-          }
+      setDataPath(nextDataPath);
+      setSystemLogPath(nextSystemLogPath);
+      setAccessLogPath(nextAccessLogPath);
 
-          setThresholds(s.thresholds);
-          if (s.theme) {
-            setTheme(s.theme);
-          }
-          if (s.locale) {
-            setLocale(s.locale);
-          }
-        }
-      })
-      .catch(() => {});
-    window.systemScope
-      .getDataPath()
-      .then((res) => {
-        if (res.ok && res.data) setDataPath(res.data as string);
-      })
-      .catch(() => {});
-    window.systemScope
-      .getSystemLogPath()
-      .then((res) => {
-        if (res.ok && res.data) setSystemLogPath(res.data as string);
-      })
-      .catch(() => {});
-    window.systemScope
-      .getAccessLogPath()
-      .then((res) => {
-        if (res.ok && res.data) setAccessLogPath(res.data as string);
-      })
-      .catch(() => {});
-    window.systemScope
-      .getAboutInfo()
-      .then((res) => {
-        if (res.ok && res.data) {
-          setAboutInfo(res.data as SystemScopeAboutInfo);
-        }
-      })
-      .catch(() => {});
+      if (nextAboutInfo) {
+        setAboutInfo(nextAboutInfo);
+      }
+    });
 
     return () => {
       if (savedTimerRef.current) {
@@ -125,7 +108,7 @@ export function SettingsPage() {
       }
       setHasUnsavedSettings(false);
     };
-  }, [setHasUnsavedSettings, setLocale, setTheme, setThresholds]);
+  }, [setHasUnsavedSettings, showToast, t]);
 
   const appearanceDirty = localTheme !== persistedRef.current.theme;
   const languageDirty = localLocale !== persistedRef.current.locale;
@@ -476,13 +459,7 @@ export function SettingsPage() {
             {tk("settings.snapshots.description")}
           </div>
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-            {[
-              { value: 15, label: tk("settings.snapshots.option_15m") },
-              { value: 30, label: tk("settings.snapshots.option_30m") },
-              { value: 60, label: tk("settings.snapshots.option_1h") },
-              { value: 120, label: tk("settings.snapshots.option_2h") },
-              { value: 360, label: tk("settings.snapshots.option_6h") },
-            ].map((opt) => (
+            {SNAPSHOT_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => {
@@ -505,10 +482,10 @@ export function SettingsPage() {
                       : "var(--text-secondary)",
                   cursor: "pointer",
                 }}
-              >
-                {opt.label}
-              </button>
-            ))}
+                >
+                  {tk(opt.labelKey)}
+                </button>
+              ))}
           </div>
           <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
             {tk("settings.snapshots.current", {
@@ -624,7 +601,7 @@ export function SettingsPage() {
         {/* About */}
         <Section title={t("Updates")}>
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {t("Check GitHub Releases for a newer version and open the download page in your browser.")}
+            {t("Check for a newer version and open the official download page in your browser.")}
           </div>
           <div
             style={{

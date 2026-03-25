@@ -5,6 +5,9 @@ const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknow
 const logError = vi.hoisted(() => vi.fn())
 const logInfo = vi.hoisted(() => vi.fn())
 const logWarn = vi.hoisted(() => vi.fn())
+const logInfoAction = vi.hoisted(() => vi.fn())
+const logWarnAction = vi.hoisted(() => vi.fn())
+const logErrorAction = vi.hoisted(() => vi.fn())
 const setUnsavedSettingsState = vi.hoisted(() => vi.fn())
 const getAboutInfo = vi.hoisted(() => vi.fn())
 const getHomepageUrl = vi.hoisted(() => vi.fn())
@@ -33,6 +36,13 @@ vi.mock('electron-log', () => ({
   }
 }))
 
+vi.mock('../../src/main/services/logging', () => ({
+  logError,
+  logInfoAction,
+  logWarnAction,
+  logErrorAction
+}))
+
 vi.mock('../../src/main/app/rendererState', () => ({
   setUnsavedSettingsState
 }))
@@ -49,6 +59,9 @@ describe('registerAppIpc', () => {
     logError.mockReset()
     logInfo.mockReset()
     logWarn.mockReset()
+    logInfoAction.mockReset()
+    logWarnAction.mockReset()
+    logErrorAction.mockReset()
     setUnsavedSettingsState.mockReset()
     getAboutInfo.mockReset()
     getHomepageUrl.mockReset()
@@ -72,7 +85,7 @@ describe('registerAppIpc', () => {
     const result = handler?.({}, payload) as { ok: boolean; data?: boolean }
     expect(result.ok).toBe(true)
     expect(result.data).toBe(true)
-    expect(logError).toHaveBeenCalledWith('[error-boundary]\nFailed to render section', payload.details)
+    expect(logError).toHaveBeenCalledWith('error-boundary', 'Failed to render section', payload.details)
   })
 
   it('should reject malformed renderer log payloads', async () => {
@@ -85,7 +98,7 @@ describe('registerAppIpc', () => {
     const invalidPayloadResult = handler?.({}, null) as { ok: boolean; error?: { code: string } }
     expect(invalidPayloadResult.ok).toBe(false)
     expect(invalidPayloadResult.error?.code).toBe('INVALID_INPUT')
-    expect(logWarn).toHaveBeenCalled()
+    expect(logWarnAction).toHaveBeenCalled()
 
     const invalidMessageResult = handler?.({}, { scope: 1, message: '' }) as { ok: boolean; error?: { code: string } }
     expect(invalidMessageResult.ok).toBe(false)
@@ -115,7 +128,7 @@ describe('registerAppIpc', () => {
     const result = handler?.({}, { hasUnsavedSettings: 'yes' }) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('INVALID_INPUT')
-    expect(logWarn).toHaveBeenCalled()
+    expect(logWarnAction).toHaveBeenCalled()
   })
 
   it('should return about info from the main process', async () => {

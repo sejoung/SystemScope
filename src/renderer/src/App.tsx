@@ -14,11 +14,14 @@ import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
 import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import type { AlertThresholds, Alert, ShutdownState, SystemStats, UpdateInfo, UpdateStatus } from '@shared/types'
+import type { Alert, ShutdownState, SystemStats, UpdateInfo, UpdateStatus } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { useState } from 'react'
 import { useI18n } from './i18n/useI18n'
 import { useUpdateStore } from './stores/useUpdateStore'
+import { useToast } from './components/Toast'
+import { applySettingsToStore, loadAppSettings } from './utils/settingsBootstrap'
+import { reportRendererError } from './utils/rendererLogging'
 
 function isSystemStats(data: unknown): data is SystemStats {
   return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
@@ -44,9 +47,6 @@ function App() {
   const currentPage = useSettingsStore((s) => s.currentPage)
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const theme = useSettingsStore((s) => s.theme)
-  const setLocale = useSettingsStore((s) => s.setLocale)
-  const setTheme = useSettingsStore((s) => s.setTheme)
-  const setThresholds = useSettingsStore((s) => s.setThresholds)
   const setCpuProcesses = useProcessStore((s) => s.setCpuProcesses)
   const setMemoryProcesses = useProcessStore((s) => s.setMemoryProcesses)
   const setAllProcesses = useProcessStore((s) => s.setAllProcesses)
@@ -55,35 +55,43 @@ function App() {
   const setAlerts = useAlertStore((s) => s.setAlerts)
   const applyUpdateStatus = useUpdateStore((s) => s.applyStatus)
   const setUpdateInfo = useUpdateStore((s) => s.setUpdateInfo)
+  const showToast = useToast((s) => s.show)
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
   const { tk } = useI18n()
 
   useEffect(() => {
     void Promise.all([
-      window.systemScope.getSettings(),
+      loadAppSettings('app-bootstrap'),
       window.systemScope.getActiveAlerts(),
       window.systemScope.getUpdateStatus()
-    ]).then(([settingsRes, alertsRes, updateRes]) => {
-      if (settingsRes.ok && settingsRes.data) {
-        const settings = settingsRes.data as Record<string, unknown>
-        if (settings.theme === 'dark' || settings.theme === 'light') setTheme(settings.theme)
-        if (settings.locale === 'ko' || settings.locale === 'en') setLocale(settings.locale)
-        if (settings.thresholds && typeof settings.thresholds === 'object') setThresholds(settings.thresholds as AlertThresholds)
+    ]).then(([settings, alertsRes, updateRes]) => {
+      if (settings) {
+        applySettingsToStore(settings)
       }
 
       if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
         setAlerts(alertsRes.data)
+      } else if (!alertsRes.ok) {
+        void reportRendererError('app-bootstrap', 'Failed to load active alerts', {
+          error: alertsRes.error
+        })
       }
 
       if (updateRes.ok && updateRes.data && isUpdateStatus(updateRes.data)) {
         applyUpdateStatus(updateRes.data)
+      } else if (!updateRes.ok) {
+        void reportRendererError('app-bootstrap', 'Failed to load update status', {
+          error: updateRes.error
+        })
       }
-    }).catch(() => {
+    }).catch((error) => {
+      void reportRendererError('app-bootstrap', 'Failed to bootstrap app', { error })
+      showToast(tk('app.error_boundary.message'), 'danger')
     }).finally(() => {
       setBootstrapped(true)
     })
-  }, [applyUpdateStatus, setAlerts, setLocale, setTheme, setThresholds])
+  }, [applyUpdateStatus, setAlerts, showToast, tk])
 
   useEffect(() => {
     document.body.dataset.e2eReady = bootstrapped ? '1' : '0'
@@ -166,7 +174,9 @@ function App() {
       if (allRes.ok && allRes.data) setAllProcesses(allRes.data)
       if (cpuRes.ok && cpuRes.data) setCpuProcesses(cpuRes.data)
       if (memRes.ok && memRes.data) setMemoryProcesses(memRes.data)
-    }).catch(() => {})
+    }).catch((error) => {
+      void reportRendererError('process-polling', 'Failed to refresh process lists', { error })
+    })
   }, shouldPollProcesses ? PROCESS_UPDATE_INTERVAL_MS : null)
 
   return (

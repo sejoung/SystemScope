@@ -12,6 +12,7 @@ let tray: Tray | null = null
 let trayUpdateTimer: ReturnType<typeof setInterval> | null = null
 let pulseFrame = false
 let lastVisualKey = ''
+let lastMenuKey = ''
 const cpuSamples: number[] = []
 
 export function createTray(): void {
@@ -45,6 +46,7 @@ export function createTray(): void {
   trayUpdateTimer = setInterval(() => {
     void refreshTrayIcon()
   }, 2000)
+  trayUpdateTimer.unref?.()
 
 }
 
@@ -56,6 +58,7 @@ export function destroyTray(): void {
   cpuSamples.length = 0
   pulseFrame = false
   lastVisualKey = ''
+  lastMenuKey = ''
   if (tray) {
     tray.destroy()
     tray = null
@@ -92,7 +95,7 @@ async function refreshTrayIcon(): Promise<void> {
     }
 
     tray.setToolTip(`SystemScope\nCPU ${roundedUsage}%`)
-    rebuildTrayMenu()
+    rebuildTrayMenuIfNeeded(updateStatusKey())
   } catch (error) {
     logError('tray', 'Failed to refresh tray icon', error)
   }
@@ -149,6 +152,21 @@ function rebuildTrayMenu(): void {
   ])
 
   tray.setContextMenu(contextMenu)
+}
+
+function rebuildTrayMenuIfNeeded(menuKey: string): void {
+  if (menuKey === lastMenuKey) {
+    return
+  }
+
+  rebuildTrayMenu()
+  lastMenuKey = menuKey
+}
+
+function updateStatusKey(): string {
+  const updateStatus = getUpdateStatus()
+  const updateInfo = updateStatus.updateInfo?.hasUpdate ? updateStatus.updateInfo : null
+  return updateInfo ? `update:${updateInfo.latestVersion}` : 'default'
 }
 
 function getInitialTrayIcon(): Electron.NativeImage {

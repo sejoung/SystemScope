@@ -2,32 +2,39 @@ import { useEffect, useState } from 'react'
 import type { SystemScopeAboutInfo } from '@shared/contracts/systemScope'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useI18n } from '../i18n/useI18n'
+import { useToast } from '../components/Toast'
+import { applySettingsToStore, loadAboutInfo, loadAppSettings } from '../utils/settingsBootstrap'
 
 const appIconUrl = new URL('../../../../resources/systemscope_icon.svg', import.meta.url).href
 
 export function AboutPage() {
   const theme = useSettingsStore((state) => state.theme)
-  const setTheme = useSettingsStore((state) => state.setTheme)
-  const setLocale = useSettingsStore((state) => state.setLocale)
   const [aboutInfo, setAboutInfo] = useState<SystemScopeAboutInfo | null>(null)
-  const { tk } = useI18n()
+  const { t, tk } = useI18n()
+  const showToast = useToast((state) => state.show)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
   useEffect(() => {
-    void window.systemScope.getSettings().then((res) => {
-      if (!res.ok || !res.data) return
-      const settings = res.data as Record<string, unknown>
-      if (settings.theme === 'dark' || settings.theme === 'light') setTheme(settings.theme)
-      if (settings.locale === 'ko' || settings.locale === 'en') setLocale(settings.locale)
-    }).catch(() => {})
+    void Promise.all([
+      loadAppSettings('about-page'),
+      loadAboutInfo('about-page')
+    ]).then(([settings, nextAboutInfo]) => {
+      if (settings) {
+        applySettingsToStore(settings)
+      } else {
+        showToast(t('Failed to load settings.'), 'danger')
+      }
 
-    void window.systemScope.getAboutInfo().then((res) => {
-      if (res.ok && res.data) setAboutInfo(res.data as SystemScopeAboutInfo)
-    }).catch(() => {})
-  }, [setLocale, setTheme])
+      if (nextAboutInfo) {
+        setAboutInfo(nextAboutInfo)
+      } else {
+        showToast(t('Unable to load the About information.'), 'danger')
+      }
+    })
+  }, [showToast, t])
 
   return (
     <div style={pageStyle}>

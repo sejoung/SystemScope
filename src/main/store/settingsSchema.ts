@@ -1,16 +1,8 @@
-import type { AlertThresholds } from '@shared/types'
+import type { AlertThresholds, AppSettings, SnapshotIntervalMin } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 import type { AppLocale } from '@shared/i18n'
 
 export const SNAPSHOT_INTERVAL_OPTIONS = [15, 30, 60, 120, 360] as const
-export type SnapshotIntervalMin = (typeof SNAPSHOT_INTERVAL_OPTIONS)[number]
-
-export interface AppSettings {
-  thresholds: AlertThresholds
-  theme: 'dark' | 'light'
-  locale: AppLocale
-  snapshotIntervalMin: SnapshotIntervalMin
-}
 
 export const DEFAULT_SETTINGS: AppSettings = {
   thresholds: DEFAULT_THRESHOLDS,
