@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast'
 import { formatBytes } from '../../utils/format'
 import type { DockerActionResult, DockerContainerSummary, DockerContainersScanResult, DockerRemoveResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
+import { CopyableValue } from '../../components/CopyableValue'
 
 export function DockerContainers({
   refreshToken = 0,
@@ -137,12 +138,12 @@ export function DockerContainers({
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {tk('docker.containers.helper')}
             {runningContainers.length > 0 && (
               <button
                 onClick={() => void handleStop(runningContainers.map((container) => container.id))}
-                style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-yellow)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
               >
                 {tk('docker.containers.stop_running', { count: runningContainers.length })}
               </button>
@@ -150,14 +151,14 @@ export function DockerContainers({
             {onOpenImages && (
               <button
                 onClick={onOpenImages}
-                style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                style={{ marginLeft: '8px', padding: 0, border: 'none', background: 'transparent', color: 'var(--accent-cyan)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
               >
                 {tk('docker.containers.open_images')}
               </button>
             )}
           </div>
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
                   <th style={{ ...thStyle, width: '36px' }}>
@@ -184,7 +185,7 @@ export function DockerContainers({
               </thead>
               <tbody>
                 {containers.map((container) => (
-                  <tr key={container.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <tr key={container.id} style={rowStyle}>
                     <td style={tdStyle}>
                       <input
                         type="checkbox"
@@ -202,13 +203,13 @@ export function DockerContainers({
                     </td>
                     <td style={tdStyle}>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{container.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{container.shortId}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums', marginTop: '4px' }}>{container.shortId}</div>
                     </td>
                     <td style={tdStyle}>
                       <div>{container.image}</div>
                       {container.command && (
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '4px' }}>
-                          {container.command}
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '6px', lineHeight: 1.5, maxWidth: '320px' }}>
+                          <CopyableValue value={container.command} fontSize="12px" color="var(--text-muted)" multiline maxWidth="320px" />
                         </div>
                       )}
                     </td>
@@ -216,10 +217,10 @@ export function DockerContainers({
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         <Badge text={container.running ? tk('docker.containers.running') : tk('docker.containers.stopped_label')} color={container.running ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
                       </div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>{container.status}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.45 }}>{container.status}</div>
                     </td>
-                    <td style={tdStyle}>{container.ports || '-'}</td>
-                    <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace' }}>{formatBytes(container.sizeBytes)}</td>
+                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums', lineHeight: 1.45 }}>{container.ports || '-'}</td>
+                    <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'monospace', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{formatBytes(container.sizeBytes)}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                         <button
@@ -262,8 +263,8 @@ export function DockerContainers({
 function EmptyState({ title, detail }: { title: string; detail: string }) {
   return (
     <div style={{ padding: '28px 12px', textAlign: 'center' }}>
-      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{detail}</div>
+      <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{detail}</div>
     </div>
   )
 }
@@ -272,9 +273,9 @@ function Badge({ text, color }: { text: string; color: string }) {
   return (
     <span
       style={{
-        fontSize: '10px',
+        fontSize: '11px',
         fontWeight: 700,
-        padding: '2px 6px',
+        padding: '3px 8px',
         borderRadius: '999px',
         background: `${color}20`,
         color
@@ -287,23 +288,25 @@ function Badge({ text, color }: { text: string; color: string }) {
 
 const thStyle: React.CSSProperties = {
   textAlign: 'left',
-  padding: '8px 4px',
+  padding: '12px 8px',
   color: 'var(--text-muted)',
-  fontWeight: 500,
-  fontSize: '11px',
+  fontWeight: 600,
+  fontSize: '12px',
   textTransform: 'uppercase',
-  letterSpacing: '0.05em',
+  letterSpacing: '0.06em',
   whiteSpace: 'nowrap'
 }
 
 const tdStyle: React.CSSProperties = {
-  padding: '8px 4px',
+  padding: '12px 8px',
   color: 'var(--text-secondary)',
-  verticalAlign: 'top'
+  verticalAlign: 'top',
+  fontSize: '14px',
+  lineHeight: 1.4
 }
 
 const actionBtnStyle: React.CSSProperties = {
-  padding: '5px 12px',
+  padding: '7px 12px',
   fontSize: '12px',
   fontWeight: 600,
   border: 'none',
@@ -311,4 +314,8 @@ const actionBtnStyle: React.CSSProperties = {
   background: 'var(--accent-cyan)',
   color: 'var(--text-on-accent)',
   cursor: 'pointer'
+}
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: '1px solid var(--border)'
 }

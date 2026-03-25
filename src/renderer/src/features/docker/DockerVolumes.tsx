@@ -3,6 +3,7 @@ import { Accordion } from '../../components/Accordion'
 import { useToast } from '../../components/Toast'
 import type { DockerRemoveResult, DockerVolumeSummary, DockerVolumesScanResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
+import { CopyableValue } from '../../components/CopyableValue'
 
 export function DockerVolumes({
   refreshToken = 0,
@@ -107,11 +108,11 @@ export function DockerVolumes({
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {tk('docker.volumes.helper')}
           </div>
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--bg-card)', zIndex: 1 }}>
                   <th style={{ ...thStyle, width: '36px' }}>
@@ -134,7 +135,7 @@ export function DockerVolumes({
               </thead>
               <tbody>
                 {volumes.map((volume) => (
-                  <tr key={volume.name} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <tr key={volume.name} style={rowStyle}>
                     <td style={tdStyle}>
                       <input
                         type="checkbox"
@@ -152,13 +153,15 @@ export function DockerVolumes({
                     </td>
                     <td style={tdStyle}>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{volume.name}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{volume.mountpoint}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5, maxWidth: '320px' }}>
+                        <CopyableValue value={volume.mountpoint} fontSize="12px" color="var(--text-muted)" multiline maxWidth="320px" />
+                      </div>
                     </td>
-                    <td style={tdStyle}>{volume.driver}</td>
+                    <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{volume.driver}</td>
                     <td style={tdStyle}>
                       <Badge text={volume.inUse ? tk('docker.images.in_use') : tk('docker.images.unused')} color={volume.inUse ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
                     </td>
-                    <td style={tdStyle}>{volume.containers.length > 0 ? volume.containers.join(', ') : '-'}</td>
+                    <td style={{ ...tdStyle, lineHeight: 1.45 }}>{volume.containers.length > 0 ? volume.containers.join(', ') : '-'}</td>
                     <td style={{ ...tdStyle, textAlign: 'center' }}>
                       <button
                         onClick={() => void handleDelete([volume.name])}
@@ -187,15 +190,15 @@ export function DockerVolumes({
 function EmptyState({ title, detail }: { title: string; detail: string }) {
   return (
     <div style={{ padding: '28px 12px', textAlign: 'center' }}>
-      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{detail}</div>
+      <div style={{ fontSize: '14px', color: 'var(--text-primary)', marginBottom: '8px' }}>{title}</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{detail}</div>
     </div>
   )
 }
 
 function Badge({ text, color }: { text: string; color: string }) {
   return (
-    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '999px', background: `${color}20`, color }}>
+    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '999px', background: `${color}20`, color }}>
       {text}
     </span>
   )
@@ -203,23 +206,25 @@ function Badge({ text, color }: { text: string; color: string }) {
 
 const thStyle: React.CSSProperties = {
   textAlign: 'left',
-  padding: '8px 4px',
+  padding: '12px 8px',
   color: 'var(--text-muted)',
-  fontWeight: 500,
-  fontSize: '11px',
+  fontWeight: 600,
+  fontSize: '12px',
   textTransform: 'uppercase',
-  letterSpacing: '0.05em',
+  letterSpacing: '0.06em',
   whiteSpace: 'nowrap'
 }
 
 const tdStyle: React.CSSProperties = {
-  padding: '8px 4px',
+  padding: '12px 8px',
   color: 'var(--text-secondary)',
-  verticalAlign: 'top'
+  verticalAlign: 'top',
+  fontSize: '14px',
+  lineHeight: 1.4
 }
 
 const actionBtnStyle: React.CSSProperties = {
-  padding: '5px 12px',
+  padding: '7px 12px',
   fontSize: '12px',
   fontWeight: 600,
   border: 'none',
@@ -227,4 +232,8 @@ const actionBtnStyle: React.CSSProperties = {
   background: 'var(--accent-cyan)',
   color: 'var(--text-on-accent)',
   cursor: 'pointer'
+}
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: '1px solid var(--border)'
 }

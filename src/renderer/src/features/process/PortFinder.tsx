@@ -336,14 +336,15 @@ export function PortFinder() {
                   {filtered.map((p) => (
                     <tr
                       key={`${p.protocol}-${p.localAddress}-${p.localPort}-${p.pid}`}
-                      style={{ borderBottom: "1px solid var(--border)" }}
+                      style={rowStyle}
                     >
                       <td
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "12px",
+                          fontSize: "13px",
                           color: "var(--text-muted)",
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         {p.protocol}
@@ -354,31 +355,35 @@ export function PortFinder() {
                           fontFamily: "monospace",
                           fontWeight: 600,
                           color: "var(--accent-cyan)",
+                          fontVariantNumeric: "tabular-nums",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {p.localPort}
+                        <span style={portValueStyle}>{p.localPort}</span>
                       </td>
                       <td
                         style={{
                           ...tdStyle,
                           fontWeight: 500,
                           color: "var(--text-primary)",
-                          maxWidth: "150px",
+                          maxWidth: "200px",
                         }}
                       >
                         <CopyableValue
                           value={p.process}
-                          fontSize="12px"
+                          fontSize="13px"
                           color="var(--text-primary)"
-                          maxWidth="150px"
+                          maxWidth="200px"
                         />
                       </td>
                       <td
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "12px",
+                          fontSize: "13px",
                           color: "var(--text-muted)",
+                          fontVariantNumeric: "tabular-nums",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         {p.pid}
@@ -387,11 +392,18 @@ export function PortFinder() {
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "12px",
+                          fontSize: "13px",
                           color: "var(--text-muted)",
+                          fontVariantNumeric: "tabular-nums",
+                          lineHeight: 1.45,
                         }}
                       >
-                        {formatEndpoint(p.peerAddress, p.peerPort)}
+                        <CopyableValue
+                          value={formatEndpoint(p.peerAddress, p.peerPort)}
+                          fontSize="13px"
+                          color="var(--text-muted)"
+                          maxWidth="220px"
+                        />
                       </td>
                       <td style={tdStyle}>
                         <StateBadge state={p.state} />
@@ -424,7 +436,7 @@ export function PortFinder() {
 
 // ─── Helpers ───
 
-function formatEndpoint(addr: string, port: string): string {
+export function formatEndpoint(addr: string, port: string): string {
   const hasAddr = addr && addr !== "*" && addr !== "";
   const hasPort = port && port !== "*" && port !== "0" && port !== "";
   if (hasAddr && hasPort) return `${addr}:${port}`;
@@ -438,13 +450,10 @@ function StateBadge({ state }: { state: string }) {
   return (
     <span
       style={{
-        fontSize: "12px",
-        fontWeight: 600,
-        padding: "3px 7px",
-        borderRadius: "4px",
+        ...stateBadgeStyle,
         background: s.bg,
         color: s.color,
-        whiteSpace: "nowrap",
+        borderColor: s.color,
       }}
       title={s.tip}
     >
@@ -487,25 +496,26 @@ function FilterBtn({
 
 const thStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "10px 6px",
+  padding: "12px 8px",
   color: "var(--text-muted)",
-  fontWeight: 500,
+  fontWeight: 600,
   fontSize: "12px",
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  letterSpacing: "0.06em",
   whiteSpace: "nowrap",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "8px 6px",
+  padding: "12px 8px",
   color: "var(--text-secondary)",
-  fontSize: "13px",
+  fontSize: "14px",
+  lineHeight: 1.4,
 };
 
 const searchStyle: React.CSSProperties = {
-  padding: "5px 12px",
-  fontSize: "12px",
-  width: "180px",
+  padding: "8px 12px",
+  fontSize: "13px",
+  width: "220px",
   border: "1px solid var(--border)",
   borderRadius: "6px",
   background: "var(--bg-primary)",
@@ -538,7 +548,7 @@ const infoReasonStyle: React.CSSProperties = {
 };
 
 const btnStyle: React.CSSProperties = {
-  padding: "5px 14px",
+  padding: "7px 14px",
   fontSize: "13px",
   fontWeight: 600,
   border: "none",
@@ -549,7 +559,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 const killBtnStyle: React.CSSProperties = {
-  padding: "4px 10px",
+  padding: "6px 10px",
   fontSize: "12px",
   fontWeight: 600,
   border: "none",
@@ -583,7 +593,7 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -591,10 +601,10 @@ const titleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
-  padding: "1px 8px",
-  borderRadius: "4px",
+  padding: "2px 8px",
+  borderRadius: "999px",
   background: "color-mix(in srgb, var(--accent-cyan) 16%, transparent)",
   color: "var(--accent-cyan)",
   whiteSpace: "nowrap",
@@ -606,4 +616,27 @@ const actionsStyle: React.CSSProperties = {
   gap: "6px",
   flexWrap: "wrap",
   flexShrink: 0,
+};
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: "1px solid var(--border)",
+};
+
+const portValueStyle: React.CSSProperties = {
+  color: "var(--text-primary)",
+  fontWeight: 700,
+};
+
+const stateBadgeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: "108px",
+  padding: "4px 8px",
+  borderRadius: "999px",
+  border: "1px solid transparent",
+  fontSize: "11px",
+  fontWeight: 700,
+  letterSpacing: "0.04em",
+  whiteSpace: "nowrap",
 };

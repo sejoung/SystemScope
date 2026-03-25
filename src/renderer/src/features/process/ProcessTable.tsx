@@ -9,6 +9,8 @@ import { CopyableValue } from "../../components/CopyableValue";
 type SortField = "cpu" | "memory" | "name" | "pid";
 type SortDir = "asc" | "desc";
 
+type CpuUsageTone = "high" | "medium" | "normal";
+
 interface ProcessTableProps {
   processes: ProcessInfo[];
 }
@@ -209,14 +211,15 @@ export function ProcessTable({ processes }: ProcessTableProps) {
             {filtered.map((p) => (
               <tr
                 key={p.pid}
-                style={{ borderBottom: "1px solid var(--border)" }}
+                style={rowStyle}
               >
                 <td
                   style={{
                     ...tdStyle,
                     color: "var(--text-muted)",
                     fontFamily: "monospace",
-                    fontSize: "12px",
+                    fontSize: "13px",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   {p.pid}
@@ -232,18 +235,19 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                   {p.command && p.command !== p.name && (
                     <div
                       style={{
-                        fontSize: "12px",
+                        fontSize: "13px",
+                        lineHeight: 1.5,
                         color: "var(--text-muted)",
-                        marginTop: "4px",
-                        maxWidth: "300px",
+                        marginTop: "6px",
+                        maxWidth: "360px",
                       }}
                     >
                       <CopyableValue
                         value={p.command}
-                        fontSize="11px"
+                        fontSize="12px"
                         color="var(--text-muted)"
                         multiline
-                        maxWidth="300px"
+                        maxWidth="360px"
                       />
                     </div>
                   )}
@@ -253,31 +257,23 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                     ...tdStyle,
                     textAlign: "right",
                     fontFamily: "monospace",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  <span
-                    style={{
-                      color:
-                        p.cpu > 80
-                          ? "var(--accent-red)"
-                          : p.cpu > 30
-                            ? "var(--accent-yellow)"
-                            : "var(--text-primary)",
-                    }}
-                  >
-                    {p.cpu.toFixed(1)}{" "}
-                    {p.cpu > 80
-                      ? tk("process.table.cpu_high")
-                      : p.cpu > 30
-                        ? tk("process.table.cpu_medium")
-                        : tk("process.table.cpu_normal")}
-                  </span>
+                  <div style={metricCellStyle}>
+                    <span style={cpuValueStyle}>{p.cpu.toFixed(1)}%</span>
+                    <span style={getCpuBadgeStyle(getCpuUsageTone(p.cpu))}>
+                      {getCpuUsageToneLabel(getCpuUsageTone(p.cpu), tk)}
+                    </span>
+                  </div>
                 </td>
                 <td
                   style={{
                     ...tdStyle,
                     textAlign: "right",
                     fontFamily: "monospace",
+                    fontVariantNumeric: "tabular-nums",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {formatBytes(p.memoryBytes)}
@@ -303,6 +299,32 @@ export function ProcessTable({ processes }: ProcessTableProps) {
       </div>
     </section>
   );
+}
+
+export function getCpuUsageTone(cpu: number): CpuUsageTone {
+  if (cpu > 80) return "high";
+  if (cpu > 30) return "medium";
+  return "normal";
+}
+
+export function getCpuUsageToneLabel(
+  tone: CpuUsageTone,
+  tk: (
+    key:
+      | "process.table.cpu_high"
+      | "process.table.cpu_medium"
+      | "process.table.cpu_normal",
+    params?: Record<string, string | number>,
+  ) => string,
+) {
+  switch (tone) {
+    case "high":
+      return tk("process.table.cpu_high");
+    case "medium":
+      return tk("process.table.cpu_medium");
+    default:
+      return tk("process.table.cpu_normal");
+  }
 }
 
 function getProcessSortSummary(
@@ -408,23 +430,24 @@ function SortHeader({
 }
 
 const thStyle: React.CSSProperties = {
-  padding: "10px 6px",
-  fontWeight: 500,
+  padding: "12px 8px",
+  fontWeight: 600,
   fontSize: "12px",
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  letterSpacing: "0.06em",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "8px 6px",
+  padding: "12px 8px",
   color: "var(--text-secondary)",
-  fontSize: "13px",
+  fontSize: "14px",
+  lineHeight: 1.4,
 };
 
 const searchStyle: React.CSSProperties = {
-  padding: "5px 12px",
-  fontSize: "12px",
-  width: "220px",
+  padding: "8px 12px",
+  fontSize: "13px",
+  width: "240px",
   border: "1px solid var(--border)",
   borderRadius: "6px",
   background: "var(--bg-primary)",
@@ -457,7 +480,7 @@ const infoReasonStyle: React.CSSProperties = {
 };
 
 const killBtnStyle: React.CSSProperties = {
-  padding: "4px 10px",
+  padding: "6px 10px",
   fontSize: "12px",
   fontWeight: 600,
   border: "none",
@@ -491,7 +514,7 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -499,10 +522,10 @@ const titleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
-  padding: "1px 8px",
-  borderRadius: "4px",
+  padding: "2px 8px",
+  borderRadius: "999px",
   background: "var(--bg-card-hover)",
   color: "var(--text-secondary)",
   whiteSpace: "nowrap",
@@ -513,4 +536,62 @@ const actionsStyle: React.CSSProperties = {
   alignItems: "center",
   gap: "6px",
   flexShrink: 0,
+};
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: "1px solid var(--border)",
+};
+
+const metricCellStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const cpuValueStyle: React.CSSProperties = {
+  color: "var(--text-primary)",
+  fontWeight: 600,
+};
+
+function getCpuBadgeStyle(tone: CpuUsageTone): React.CSSProperties {
+  if (tone === "high") {
+    return {
+      ...cpuBadgeBaseStyle,
+      color: "var(--accent-red)",
+      background: "var(--alert-red-soft)",
+      borderColor: "var(--alert-red-border)",
+    };
+  }
+
+  if (tone === "medium") {
+    return {
+      ...cpuBadgeBaseStyle,
+      color: "var(--accent-yellow)",
+      background: "var(--alert-yellow-soft)",
+      borderColor: "var(--alert-yellow-border)",
+    };
+  }
+
+  return {
+    ...cpuBadgeBaseStyle,
+    color: "var(--accent-green)",
+    background: "var(--success-soft)",
+    borderColor: "color-mix(in srgb, var(--accent-green) 24%, transparent)",
+  };
+}
+
+const cpuBadgeBaseStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: "72px",
+  padding: "3px 8px",
+  borderRadius: "999px",
+  border: "1px solid transparent",
+  fontSize: "11px",
+  fontWeight: 700,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
 };

@@ -19,7 +19,7 @@ const POLL_OPTIONS = [
   { value: 30000, label: "30s" },
 ];
 
-function formatTime(ts: number): string {
+export function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString();
 }
 
@@ -392,15 +392,17 @@ export function PortWatch() {
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
-                        padding: "8px 10px",
+                        padding: "10px 12px",
+                        flexWrap: "wrap",
                       }}
                     >
                       <span
                         style={{
-                          fontSize: "12px",
+                          fontSize: "13px",
                           fontFamily: "monospace",
                           color: "var(--text-muted)",
                           flexShrink: 0,
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         {status ? formatTime(status.lastChecked) : "--:--:--"}
@@ -427,7 +429,7 @@ export function PortWatch() {
                       />
                       <span
                         style={{
-                          fontSize: "12px",
+                          fontSize: "13px",
                           fontWeight: 700,
                           color: status?.matched
                             ? "var(--accent-green)"
@@ -440,7 +442,7 @@ export function PortWatch() {
                       </span>
                       <span
                         style={{
-                          fontSize: "14px",
+                          fontSize: "15px",
                           fontWeight: 600,
                           fontFamily: "monospace",
                           color: "var(--text-primary)",
@@ -450,10 +452,10 @@ export function PortWatch() {
                       </span>
                       <span
                         style={{
-                          fontSize: "12px",
+                          fontSize: "13px",
                           color: "var(--text-muted)",
-                          padding: "2px 6px",
-                          borderRadius: "3px",
+                          padding: "3px 8px",
+                          borderRadius: "999px",
                           background: "var(--bg-card-hover)",
                         }}
                       >
@@ -497,10 +499,11 @@ export function PortWatch() {
                         )}
                         <span
                           style={{
-                            fontSize: "12px",
+                            fontSize: "13px",
                             color: "var(--text-muted)",
                             fontFamily: "monospace",
                             marginLeft: "4px",
+                            fontVariantNumeric: "tabular-nums",
                           }}
                         >
                           {connCount}
@@ -568,7 +571,7 @@ export function PortWatch() {
                             style={{
                               width: "100%",
                               borderCollapse: "collapse",
-                              fontSize: "13px",
+                              fontSize: "14px",
                             }}
                           >
                             <thead>
@@ -598,14 +601,14 @@ export function PortWatch() {
                               {display.map((m) => (
                                 <tr
                                   key={`${m.protocol}-${m.localAddress}-${m.localPort}-${m.peerAddress}-${m.peerPort}`}
-                                  style={{
-                                    borderBottom: "1px solid var(--border)",
-                                  }}
+                                  style={rowStyle}
                                 >
                                   <td
                                     style={{
                                       ...tdStyle,
                                       color: "var(--text-muted)",
+                                      fontFamily: "monospace",
+                                      fontVariantNumeric: "tabular-nums",
                                     }}
                                   >
                                     {m.protocol}
@@ -614,29 +617,28 @@ export function PortWatch() {
                                     style={{
                                       ...tdStyle,
                                       fontFamily: "monospace",
+                                      fontVariantNumeric: "tabular-nums",
+                                      lineHeight: 1.45,
                                     }}
                                   >
-                                    {formatPortAddress(
-                                      m.localAddress,
-                                      m.localPort,
-                                    )}
+                                    {formatPortAddress(m.localAddress, m.localPort)}
                                   </td>
                                   <td
                                     style={{
                                       ...tdStyle,
                                       fontFamily: "monospace",
+                                      fontVariantNumeric: "tabular-nums",
+                                      lineHeight: 1.45,
                                     }}
                                   >
-                                    {formatPortAddress(
-                                      m.peerAddress,
-                                      m.peerPort,
-                                    )}
+                                    {formatPortAddress(m.peerAddress, m.peerPort)}
                                   </td>
                                   <td
                                     style={{
                                       ...tdStyle,
                                       fontWeight: 500,
                                       color: "var(--text-primary)",
+                                      lineHeight: 1.45,
                                     }}
                                   >
                                     {m.process}
@@ -652,8 +654,8 @@ export function PortWatch() {
                         {hidden > 0 && (
                           <div
                             style={{
-                              padding: "6px 0",
-                              fontSize: "12px",
+                              padding: "8px 0",
+                              fontSize: "13px",
                               color: "var(--text-muted)",
                               textAlign: "center",
                             }}
@@ -716,7 +718,7 @@ export function PortWatch() {
               </div>
               <div
                 style={{
-                  fontSize: "12px",
+                  fontSize: "13px",
                   color: "var(--text-muted)",
                   marginBottom: "8px",
                 }}
@@ -732,7 +734,7 @@ export function PortWatch() {
                   overflow: "auto",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "2px",
+                  gap: "6px",
                 }}
               >
                 {filteredHistory.map((entry: PortWatchHistoryEntry) => (
@@ -740,19 +742,22 @@ export function PortWatch() {
                     key={`${entry.timestamp}-${entry.watchId}-${entry.event}`}
                     style={{
                       display: "flex",
-                      gap: "8px",
-                      alignItems: "center",
-                      padding: "4px 8px",
-                      fontSize: "13px",
+                      gap: "10px",
+                      alignItems: "flex-start",
+                      padding: "10px 12px",
+                      fontSize: "14px",
                       borderLeft: `3px solid ${entry.event === "connected" ? "var(--accent-green)" : "var(--accent-red)"}`,
+                      borderRadius: "8px",
+                      background: "var(--bg-primary)",
                     }}
                   >
                     <span
                       style={{
                         color: "var(--text-muted)",
                         fontFamily: "monospace",
-                        fontSize: "12px",
+                        fontSize: "13px",
                         flexShrink: 0,
+                        fontVariantNumeric: "tabular-nums",
                       }}
                     >
                       {formatTime(entry.timestamp)}
@@ -763,18 +768,18 @@ export function PortWatch() {
                         fontWeight: 600,
                         color: "var(--accent-cyan)",
                         flexShrink: 0,
-                        fontSize: "13px",
+                        fontSize: "14px",
                       }}
                     >
                       {entry.pattern}
                     </span>
                     <span
                       style={{
-                        fontSize: "12px",
+                        fontSize: "11px",
                         lineHeight: 1.4,
-                        fontWeight: 600,
-                        padding: "1px 6px",
-                        borderRadius: "3px",
+                        fontWeight: 700,
+                        padding: "3px 8px",
+                        borderRadius: "999px",
                         background:
                           entry.event === "connected"
                             ? "var(--success-soft)"
@@ -793,9 +798,8 @@ export function PortWatch() {
                     <span
                       style={{
                         color: "var(--text-secondary)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
+                        lineHeight: 1.5,
+                        minWidth: 0,
                       }}
                     >
                       {entry.process}
@@ -840,12 +844,12 @@ function StateCount({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: "3px",
-        padding: "1px 6px",
+        gap: "4px",
+        padding: "3px 8px",
         fontSize: "12px",
         fontWeight: 600,
         border: active ? `1px solid ${color}` : "1px solid transparent",
-        borderRadius: "4px",
+        borderRadius: "999px",
         background: active ? `${color}20` : "transparent",
         color,
         cursor: "pointer",
@@ -869,13 +873,10 @@ function StateBadge({ state }: { state: string }) {
   return (
     <span
       style={{
-        fontSize: "11px",
-        fontWeight: 600,
-        padding: "2px 6px",
-        borderRadius: "4px",
+        ...stateBadgeStyle,
         background: s.bg,
         color: s.color,
-        whiteSpace: "nowrap",
+        borderColor: s.color,
       }}
       title={s.tip}
     >
@@ -917,7 +918,7 @@ function HistoryFilterButton({
 // ─── Styles ───
 
 const inputStyle: React.CSSProperties = {
-  padding: "6px 12px",
+  padding: "8px 12px",
   fontSize: "13px",
   flex: 1,
   minWidth: "200px",
@@ -941,7 +942,7 @@ const errorTextStyle: React.CSSProperties = {
 };
 
 const btnStyle: React.CSSProperties = {
-  padding: "6px 16px",
+  padding: "7px 16px",
   fontSize: "13px",
   fontWeight: 600,
   border: "none",
@@ -952,7 +953,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 const removeBtnStyle: React.CSSProperties = {
-  padding: "2px 8px",
+  padding: "4px 8px",
   fontSize: "14px",
   fontWeight: 600,
   border: "none",
@@ -963,7 +964,7 @@ const removeBtnStyle: React.CSSProperties = {
 };
 
 const detailsBtn: React.CSSProperties = {
-  padding: "3px 9px",
+  padding: "5px 10px",
   fontSize: "12px",
   fontWeight: 500,
   border: "none",
@@ -996,7 +997,7 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "13px",
+  fontSize: "14px",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -1004,17 +1005,17 @@ const titleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
-  padding: "1px 8px",
-  borderRadius: "4px",
+  padding: "2px 8px",
+  borderRadius: "999px",
   background: "color-mix(in srgb, var(--accent-cyan) 16%, transparent)",
   color: "var(--accent-cyan)",
   whiteSpace: "nowrap",
 };
 
 const sectionTitle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   color: "var(--text-secondary)",
   textTransform: "uppercase",
@@ -1024,16 +1025,35 @@ const sectionTitle: React.CSSProperties = {
 
 const thStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "8px 6px",
+  padding: "12px 8px",
   color: "var(--text-muted)",
-  fontWeight: 500,
+  fontWeight: 600,
   fontSize: "12px",
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  letterSpacing: "0.06em",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "7px 6px",
+  padding: "12px 8px",
   color: "var(--text-secondary)",
-  fontSize: "13px",
+  fontSize: "14px",
+  lineHeight: 1.4,
+};
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: "1px solid var(--border)",
+};
+
+const stateBadgeStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minWidth: "108px",
+  padding: "4px 8px",
+  borderRadius: "999px",
+  border: "1px solid transparent",
+  fontSize: "11px",
+  fontWeight: 700,
+  letterSpacing: "0.04em",
+  whiteSpace: "nowrap",
 };
