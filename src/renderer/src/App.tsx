@@ -44,6 +44,7 @@ function App() {
   const pushStats = useSystemStore((s) => s.pushStats)
   const addAlerts = useAlertStore((s) => s.addAlerts)
   const setAlerts = useAlertStore((s) => s.setAlerts)
+  const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
   const { tk } = useI18n()
 
@@ -62,8 +63,19 @@ function App() {
       if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
         setAlerts(alertsRes.data)
       }
-    }).catch(() => {})
+    }).catch(() => {
+    }).finally(() => {
+      setBootstrapped(true)
+    })
   }, [setAlerts, setLocale, setTheme, setThresholds])
+
+  useEffect(() => {
+    document.body.dataset.e2eReady = bootstrapped ? '1' : '0'
+
+    return () => {
+      delete document.body.dataset.e2eReady
+    }
+  }, [bootstrapped])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme

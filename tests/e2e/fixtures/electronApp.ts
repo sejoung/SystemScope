@@ -27,6 +27,16 @@ export const test = base.extend<ElectronFixtures>({
   mainWindow: async ({ electronApp }, use) => {
     const window = await electronApp.firstWindow({ timeout: 45_000 });
     await window.waitForLoadState("domcontentloaded");
+    await window.bringToFront();
+    await window.waitForFunction(() => {
+      const scopedWindow = window as Window & {
+        systemScope?: unknown;
+      };
+      return Boolean(scopedWindow.systemScope);
+    });
+    await window.waitForSelector('body[data-e2e-ready="1"]', {
+      timeout: 15_000,
+    });
     await use(window);
   },
 });
