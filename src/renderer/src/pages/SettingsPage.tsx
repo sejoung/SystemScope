@@ -273,12 +273,11 @@ export function SettingsPage() {
 
       if (res.data) {
         applyUpdateStatus(res.data);
-      } else {
-        setUpdateChecking(false);
       }
     } catch {
-      setUpdateChecking(false);
       showToast(t("Unable to check for updates right now."));
+    } finally {
+      setUpdateChecking(false);
     }
   };
 
