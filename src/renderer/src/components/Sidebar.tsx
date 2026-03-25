@@ -109,6 +109,7 @@ export function Sidebar() {
             <button
               key={item.id}
               type="button"
+              data-testid={`nav-${item.id}`}
               aria-current={currentPage === item.id ? "page" : undefined}
               onClick={() => {
                 if (item.id === currentPage) return;

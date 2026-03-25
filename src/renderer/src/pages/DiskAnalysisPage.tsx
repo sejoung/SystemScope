@@ -14,6 +14,7 @@ import { formatBytes } from "../utils/format";
 import { useToast } from "../components/Toast";
 import { YourStorage } from "../features/disk/YourStorage";
 import { GrowthView } from "../features/disk/GrowthView";
+import type { TranslationKey } from "@shared/i18n";
 import type { DiskScanResult } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import { StatusMessage } from "../components/StatusMessage";
@@ -42,6 +43,19 @@ const RecentGrowth = lazy(async () =>
 
 type StorageTab = "overview" | "scan" | "cleanup";
 type ScanOutcome = "idle" | "running" | "completed" | "failed" | "cancelled";
+
+export function shouldShowCancelledScanMessage(
+  scanOutcome: ScanOutcome,
+  isScanning: boolean,
+) {
+  return !isScanning && scanOutcome === "cancelled";
+}
+
+export function getScanScopeMessageKey(
+  selectedFolder: string | null,
+): TranslationKey {
+  return selectedFolder ? "disk.scan.scope_selected" : "disk.scan.scope_empty";
+}
 
 export function DiskAnalysisPage() {
   const { tk, t } = useI18n();
@@ -491,13 +505,11 @@ function ScanTab({
             lineHeight: 1.6,
           }}
         >
-          {selectedFolder
-            ? tk("disk.scan.scope_selected")
-            : tk("disk.scan.scope_empty")}
+          {tk(getScanScopeMessageKey(selectedFolder))}
         </div>
       </div>
 
-      {!isScanning && scanOutcome === "cancelled" && (
+      {shouldShowCancelledScanMessage(scanOutcome, isScanning) && (
         <div style={{ marginBottom: "16px" }}>
           <StatusMessage message={tk("disk.scan.cancelled_detail")} />
         </div>

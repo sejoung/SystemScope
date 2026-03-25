@@ -804,7 +804,7 @@ function PathRow({
   );
 }
 
-function SaveTimingNote({ text }: { text: string }) {
+export function SaveTimingNote({ text }: { text: string }) {
   return (
     <div
       style={{

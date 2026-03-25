@@ -13,6 +13,14 @@ interface CopyableValueProps {
 
 const COLLAPSE_THRESHOLD = 72;
 
+export function canExpandCopyableValue(
+  value: string,
+  multiline: boolean,
+  threshold: number = COLLAPSE_THRESHOLD,
+) {
+  return multiline && value.trim().length > threshold;
+}
+
 export function CopyableValue({
   value,
   emptyValue = "-",
@@ -26,7 +34,7 @@ export function CopyableValue({
   const [expanded, setExpanded] = useState(false);
   const safeValue = value.trim();
   const canExpand = useMemo(
-    () => multiline && safeValue.length > COLLAPSE_THRESHOLD,
+    () => canExpandCopyableValue(safeValue, multiline),
     [multiline, safeValue],
   );
 
