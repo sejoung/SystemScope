@@ -72,21 +72,21 @@ export function SettingsPage() {
           setLocale(s.locale)
         }
       }
-    })
+    }).catch(() => {})
     window.systemScope.getDataPath().then((res) => {
       if (res.ok && res.data) setDataPath(res.data as string)
-    })
+    }).catch(() => {})
     window.systemScope.getSystemLogPath().then((res) => {
       if (res.ok && res.data) setSystemLogPath(res.data as string)
-    })
+    }).catch(() => {})
     window.systemScope.getAccessLogPath().then((res) => {
       if (res.ok && res.data) setAccessLogPath(res.data as string)
-    })
+    }).catch(() => {})
     window.systemScope.getAboutInfo().then((res) => {
       if (res.ok && res.data) {
         setAboutInfo(res.data as SystemScopeAboutInfo)
       }
-    })
+    }).catch(() => {})
 
     return () => {
       if (savedTimerRef.current) {

@@ -81,7 +81,7 @@ export function DiskAnalysisPage() {
 
   const handleCancelScan = useCallback(() => {
     if (scanJobId) {
-      window.systemScope.cancelJob(scanJobId)
+      window.systemScope.cancelJob(scanJobId).catch(() => {})
       setScanning(false)
     }
   }, [scanJobId, setScanning])
@@ -135,10 +135,10 @@ export function DiskAnalysisPage() {
         if (selectedFolder) {
           window.systemScope.getLargeFiles(selectedFolder, 50).then((res) => {
             if (res.ok && res.data) setLargeFiles(res.data)
-          })
+          }).catch(() => { /* IPC failure — scan result still usable */ })
           window.systemScope.getExtensionBreakdown(selectedFolder).then((res) => {
             if (res.ok && res.data) setExtensions(res.data)
-          })
+          }).catch(() => { /* IPC failure — scan result still usable */ })
         }
         if (pendingRefreshRef.current && selectedFolder) {
           pendingRefreshRef.current = false

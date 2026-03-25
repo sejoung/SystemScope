@@ -22,11 +22,11 @@ export function AboutPage() {
       const settings = res.data as Record<string, unknown>
       if (settings.theme === 'dark' || settings.theme === 'light') setTheme(settings.theme)
       if (settings.locale === 'ko' || settings.locale === 'en') setLocale(settings.locale)
-    })
+    }).catch(() => {})
 
     void window.systemScope.getAboutInfo().then((res) => {
       if (res.ok && res.data) setAboutInfo(res.data as SystemScopeAboutInfo)
-    })
+    }).catch(() => {})
   }, [setLocale, setTheme])
 
   return (

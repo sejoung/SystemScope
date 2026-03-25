@@ -62,7 +62,7 @@ function App() {
       if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
         setAlerts(alertsRes.data)
       }
-    })
+    }).catch(() => {})
   }, [setAlerts, setLocale, setTheme, setThresholds])
 
   useEffect(() => {
@@ -128,7 +128,7 @@ function App() {
       if (allRes.ok && allRes.data) setAllProcesses(allRes.data)
       if (cpuRes.ok && cpuRes.data) setCpuProcesses(cpuRes.data)
       if (memRes.ok && memRes.data) setMemoryProcesses(memRes.data)
-    })
+    }).catch(() => {})
   }, shouldPollProcesses ? PROCESS_UPDATE_INTERVAL_MS : null)
 
   return (
