@@ -10,6 +10,7 @@ import { useI18n } from "../i18n/useI18n";
 import type { AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useUpdateStore } from "../stores/useUpdateStore";
 import {
   applySettingsToStore,
@@ -293,12 +294,7 @@ export function SettingsPage() {
     }
   };
 
-  const formattedCheckedAt = lastCheckedAt
-    ? new Intl.DateTimeFormat(localLocale === "ko" ? "ko-KR" : "en-US", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(lastCheckedAt))
-    : null;
+  const formattedCheckedAt = formatUpdateCheckedAt(lastCheckedAt, localLocale);
 
   return (
     <div data-testid="page-settings">
@@ -830,47 +826,68 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      style={{
-        backgroundColor: "var(--bg-card)",
-        borderRadius: "var(--radius-lg)",
-        border: "1px solid var(--border)",
-        padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <span
-          style={{
-            fontSize: "12px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            color: "var(--text-secondary)",
-          }}
-        >
-          {title}
-        </span>
-        {badge && (
+    <ErrorBoundary title={title}>
+      <div
+        style={{
+          backgroundColor: "var(--bg-card)",
+          borderRadius: "var(--radius-lg)",
+          border: "1px solid var(--border)",
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span
             style={{
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
-              padding: "1px 8px",
-              borderRadius: "4px",
-              background: "rgba(245, 158, 11, 0.12)",
-              color: "var(--accent-yellow)",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: "var(--text-secondary)",
             }}
           >
-            {badge}
+            {title}
           </span>
-        )}
+          {badge && (
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                padding: "1px 8px",
+                borderRadius: "4px",
+                background: "rgba(245, 158, 11, 0.12)",
+                color: "var(--accent-yellow)",
+              }}
+            >
+              {badge}
+            </span>
+          )}
+        </div>
+        {children}
       </div>
-      {children}
-    </div>
+    </ErrorBoundary>
   );
+}
+
+export function formatUpdateCheckedAt(
+  lastCheckedAt: string | null,
+  locale: AppLocale,
+): string | null {
+  if (!lastCheckedAt) {
+    return null;
+  }
+
+  const checkedAt = new Date(lastCheckedAt);
+  if (Number.isNaN(checkedAt.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat(locale === "ko" ? "ko-KR" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(checkedAt);
 }
 
 function PathRow({

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SaveTimingNote } from "../../src/renderer/src/pages/SettingsPage";
+import { SaveTimingNote, formatUpdateCheckedAt } from "../../src/renderer/src/pages/SettingsPage";
 
 describe("SettingsPage save timing note", () => {
   it("should render the save-required badge copy", () => {
@@ -10,5 +10,9 @@ describe("SettingsPage save timing note", () => {
     );
 
     expect(markup).toContain("Applies after Save All");
+  });
+
+  it("should ignore invalid update timestamps", () => {
+    expect(formatUpdateCheckedAt("not-a-date", "en")).toBeNull();
   });
 });
