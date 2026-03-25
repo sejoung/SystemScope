@@ -7,6 +7,7 @@ import { app } from 'electron'
 import type { AppLeftoverDataItem, AppLeftoverRegistryItem, AppRelatedDataItem, InstalledApp } from '@shared/types'
 import { logError, logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
+import { getDirSize } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
 
@@ -205,14 +206,16 @@ export async function listWindowsLeftoverAppData(installedApps: InstalledApp[]):
       const appName = entry.name.trim()
       if (!appName) continue
       if (knownNames.has(appName.toLowerCase())) continue
+      const targetPath = path.win32.join(spec.root, entry.name)
 
       items.push({
-        id: `${spec.source}:${path.win32.join(spec.root, entry.name)}`,
+        id: `${spec.source}:${targetPath}`,
         appName,
         label: spec.label,
-        path: path.win32.join(spec.root, entry.name),
+        path: targetPath,
         source: spec.source,
         platform: 'windows',
+        sizeBytes: await getDirSize(targetPath),
         ...getWindowsLeftoverGuidance(spec.label)
       })
     }

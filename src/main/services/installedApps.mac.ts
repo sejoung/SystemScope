@@ -7,6 +7,7 @@ import { app } from 'electron'
 import type { AppLeftoverDataItem, AppRelatedDataItem, InstalledApp } from '@shared/types'
 import { logDebug } from './logging'
 import { tk } from '../i18n'
+import { getDirSize } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
 
@@ -155,14 +156,16 @@ export async function listMacLeftoverAppData(installedApps: InstalledApp[]): Pro
 
       const normalized = appName.toLowerCase()
       if (knownNames.has(normalized) || knownBundleIds.has(normalized)) continue
+      const targetPath = path.join(spec.root, entry.name)
 
       items.push({
-        id: `${spec.source}:${path.join(spec.root, entry.name)}`,
+        id: `${spec.source}:${targetPath}`,
         appName,
         label: spec.label,
-        path: path.join(spec.root, entry.name),
+        path: targetPath,
         source: spec.source,
         platform: 'mac',
+        sizeBytes: await getItemSize(targetPath, spec.type),
         ...getMacLeftoverGuidance(spec.label, appName)
       })
     }
@@ -242,4 +245,17 @@ function dedupeLeftoverByPath(items: AppLeftoverDataItem[]): AppLeftoverDataItem
     seen.add(item.path)
     return true
   })
+}
+
+async function getItemSize(targetPath: string, type: 'dir' | 'plist'): Promise<number> {
+  if (type === 'dir') {
+    return getDirSize(targetPath)
+  }
+
+  try {
+    const stat = await fsp.stat(targetPath)
+    return stat.size
+  } catch {
+    return 0
+  }
 }

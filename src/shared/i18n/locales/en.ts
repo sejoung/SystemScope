@@ -753,10 +753,13 @@ export const EN_MESSAGES = {
   "No leftover app data to show.": "No leftover app data to show.",
   "Priority order": "Priority order",
   "Name order": "Name order",
+  "Largest size first": "Largest size first",
   "High-confidence leftovers appear first because size data is not available here.":
     "High-confidence leftovers appear first because size data is not available here.",
   "Items are sorted alphabetically by app name.":
     "Items are sorted alphabetically by app name.",
+  "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.":
+    "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":

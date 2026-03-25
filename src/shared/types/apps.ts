@@ -30,6 +30,7 @@ export interface AppLeftoverDataItem extends AppRelatedDataItem {
   appName: string
   platform: InstalledAppPlatform
   confidence: AppLeftoverConfidence
+  sizeBytes?: number
   reason: string
   risk: string
 }

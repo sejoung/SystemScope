@@ -747,10 +747,13 @@ export const KO_MESSAGES = {
   "No leftover app data to show.": "표시할 잔여 앱 데이터가 없습니다.",
   "Priority order": "우선순위 정렬",
   "Name order": "이름순 정렬",
+  "Largest size first": "용량 큰 순",
   "High-confidence leftovers appear first because size data is not available here.":
     "이 화면에는 용량 정보가 없어서 높은 신뢰도 항목이 먼저 보이도록 정렬합니다.",
   "Items are sorted alphabetically by app name.":
     "앱 이름 기준으로 가나다/알파벳 순 정렬합니다.",
+  "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.":
+    "큰 잔여 데이터부터 먼저 보여줘 정리 효과가 큰 항목을 우선 검토하기 쉽습니다.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "설치된 앱을 직접 정리하거나, 앱별 관련 데이터 후보를 펼쳐 함께 휴지통으로 이동할 수 있습니다.",
   "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":

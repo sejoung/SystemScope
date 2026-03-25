@@ -20,11 +20,12 @@ import { useSearchFilter } from "../hooks/useSearchFilter";
 import { useTabRefresh } from "../hooks/useTabRefresh";
 import { StatusMessage } from "../components/StatusMessage";
 import { CopyableValue } from "../components/CopyableValue";
+import { formatBytes } from "../utils/format";
 
 type PlatformFilter = "all" | "mac" | "windows";
 type AppsTab = "installed" | "leftover" | "registry";
 type ConfidenceFilter = "all" | "high" | "medium" | "low";
-type LeftoverSort = "priority" | "name";
+type LeftoverSort = "priority" | "name" | "size";
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show);
@@ -191,6 +192,18 @@ export function AppsPage() {
         );
       })
       .sort((left, right) => {
+        if (leftoverSort === "size") {
+          const sizeDiff = (right.sizeBytes ?? 0) - (left.sizeBytes ?? 0);
+          if (sizeDiff !== 0) return sizeDiff;
+
+          const confidenceDiff =
+            confidenceWeight[left.confidence] -
+            confidenceWeight[right.confidence];
+          if (confidenceDiff !== 0) return confidenceDiff;
+
+          return left.appName.localeCompare(right.appName);
+        }
+
         if (leftoverSort === "name") {
           return left.appName.localeCompare(right.appName);
         }
@@ -1022,6 +1035,7 @@ export function AppsPage() {
                 }
                 style={inputStyle}
               >
+                <option value="size">{tk("apps.sort.size")}</option>
                 <option value="priority">{tk("apps.sort.priority")}</option>
                 <option value="name">{tk("apps.sort.name")}</option>
               </select>
@@ -1057,9 +1071,11 @@ export function AppsPage() {
                   )}
                 </span>
                 <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {leftoverSort === "priority"
-                    ? tk("apps.sort.priority_detail")
-                    : tk("apps.sort.name_detail")}
+                  {leftoverSort === "size"
+                    ? tk("apps.sort.size_detail")
+                    : leftoverSort === "priority"
+                      ? tk("apps.sort.priority_detail")
+                      : tk("apps.sort.name_detail")}
                 </span>
                 <span
                   style={{
@@ -1201,6 +1217,12 @@ export function AppsPage() {
                                   text={item.label}
                                   color="var(--accent-green)"
                                 />
+                                {item.sizeBytes !== undefined && (
+                                  <Badge
+                                    text={formatBytes(item.sizeBytes)}
+                                    color="var(--accent-blue)"
+                                  />
+                                )}
                                 <Badge
                                   text={getConfidenceLabel(item.confidence, tk)}
                                   color={getConfidenceColor(item.confidence)}

@@ -308,9 +308,12 @@ export const MESSAGE_KEYS = {
   "apps.confidence.all": "All Confidence",
   "apps.sort.priority": "Priority order",
   "apps.sort.name": "Name order",
+  "apps.sort.size": "Largest size first",
   "apps.sort.priority_detail":
     "High-confidence leftovers appear first because size data is not available here.",
   "apps.sort.name_detail": "Items are sorted alphabetically by app name.",
+  "apps.sort.size_detail":
+    "Larger leftover folders appear first so high-impact cleanup candidates are easier to review.",
   "apps.helper.installed":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
   "apps.helper.leftover":
