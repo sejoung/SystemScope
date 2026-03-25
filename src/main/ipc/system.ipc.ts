@@ -14,32 +14,36 @@ import {
   retainSystemSubscribers,
   resetSystemSubscribers
 } from './systemSubscriptions'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 let updateTimer: ReturnType<typeof setTimeout> | null = null
 let isRunning = false
 
 export function registerSystemIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_STATS, async () => {
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_STATS, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const stats = await getSystemStats()
-      logInfoAction('system-ipc', 'stats.get')
+      logInfoAction('system-ipc', 'stats.get', withRequestMeta(requestMeta))
       return success(stats)
     } catch (err) {
-      logErrorAction('system-ipc', 'stats.get', err)
+      logErrorAction('system-ipc', 'stats.get', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.system.error.fetch'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM_SUBSCRIBE, (event) => {
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_SUBSCRIBE, (event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     addSystemSubscriber(event.sender.id)
-    logInfoAction('system-ipc', 'realtime.subscribe', { senderId: event.sender.id })
+    logInfoAction('system-ipc', 'realtime.subscribe', withRequestMeta(requestMeta, { senderId: event.sender.id }))
     startRealtimeUpdates()
     return success(true)
   })
 
-  ipcMain.handle(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE, (event) => {
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE, (event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     removeSystemSubscriber(event.sender.id)
-    logInfoAction('system-ipc', 'realtime.unsubscribe', { senderId: event.sender.id })
+    logInfoAction('system-ipc', 'realtime.unsubscribe', withRequestMeta(requestMeta, { senderId: event.sender.id }))
     if (!hasSystemSubscribers()) {
       stopRealtimeUpdates()
     }

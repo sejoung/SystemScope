@@ -3,75 +3,81 @@ import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfo, logInfoAction, logWarnAction } from '../services/logging'
+import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
 import { tk } from '../i18n'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 export function registerProcessIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_CPU, async (_event, limit: number = 10) => {
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_CPU, async (_event, limit: number = 10, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (typeof limit !== 'number' || limit < 1 || limit > 100) {
       return failure('INVALID_INPUT', tk('main.process.error.invalid_limit'))
     }
     try {
       const processes = await getTopCpuProcesses(limit)
-      logInfoAction('process-ipc', 'processes.top_cpu.list', { limit, count: processes.length })
+      logInfoAction('process-ipc', 'processes.top_cpu.list', withRequestMeta(requestMeta, { limit, count: processes.length }))
       return success(processes)
     } catch (err) {
-      logErrorAction('process-ipc', 'processes.top_cpu.list', err)
+      logErrorAction('process-ipc', 'processes.top_cpu.list', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY, async (_event, limit: number = 10) => {
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY, async (_event, limit: number = 10, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (typeof limit !== 'number' || limit < 1 || limit > 100) {
       return failure('INVALID_INPUT', tk('main.process.error.invalid_limit'))
     }
     try {
       const processes = await getTopMemoryProcesses(limit)
-      logInfoAction('process-ipc', 'processes.top_memory.list', { limit, count: processes.length })
+      logInfoAction('process-ipc', 'processes.top_memory.list', withRequestMeta(requestMeta, { limit, count: processes.length }))
       return success(processes)
     } catch (err) {
-      logErrorAction('process-ipc', 'processes.top_memory.list', err)
+      logErrorAction('process-ipc', 'processes.top_memory.list', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_ALL, async () => {
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_ALL, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const processes = await getAllProcesses()
-      logInfoAction('process-ipc', 'processes.all.list', { count: processes.length })
+      logInfoAction('process-ipc', 'processes.all.list', withRequestMeta(requestMeta, { count: processes.length }))
       return success(processes)
     } catch (err) {
-      logErrorAction('process-ipc', 'processes.all.list', err)
+      logErrorAction('process-ipc', 'processes.all.list', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_PORTS, async () => {
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_PORTS, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const ports = await getNetworkPorts()
-      logInfoAction('process-ipc', 'ports.list', { count: ports.length })
+      logInfoAction('process-ipc', 'ports.list', withRequestMeta(requestMeta, { count: ports.length }))
       return success(ports)
     } catch (err) {
-      logErrorAction('process-ipc', 'ports.list', err)
+      logErrorAction('process-ipc', 'ports.list', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_ports'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.PROCESS_KILL, async (_event, request: ProcessKillRequest) => {
+  ipcMain.handle(IPC_CHANNELS.PROCESS_KILL, async (_event, request: ProcessKillRequest, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (!request || typeof request !== 'object' || !Number.isInteger(request.pid) || request.pid < 1) {
-      logWarnAction('process-ipc', 'process.kill', { reason: 'invalid_pid', request })
+      logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { reason: 'invalid_pid', request }))
       return failure('INVALID_INPUT', tk('main.process.error.invalid_pid'))
     }
 
     try {
       const target = await getProcessByPid(request.pid)
       if (!target) {
-        logWarnAction('process-ipc', 'process.kill', { reason: 'not_found', pid: request.pid })
+        logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { reason: 'not_found', pid: request.pid }))
         return failure('UNKNOWN_ERROR', tk('main.process.error.not_found'))
       }
       if (isProtectedProcess(target)) {
-        logWarnAction('process-ipc', 'process.kill', { reason: 'protected', pid: target.pid, name: target.name })
+        logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { reason: 'protected', pid: target.pid, name: target.name }))
         return failure('PERMISSION_DENIED', tk('main.process.error.protected'))
       }
 
@@ -96,7 +102,7 @@ export function registerProcessIpc(): void {
       })
 
       if (confirm.response === 0) {
-        logInfo('process-ipc', 'Process kill cancelled by user', { pid: target.pid, name: target.name })
+        logInfoAction('process-ipc', 'process.kill.cancel', withRequestMeta(requestMeta, { pid: target.pid, name: target.name }))
         const result: ProcessKillResult = {
           pid: target.pid,
           name: target.name,
@@ -108,12 +114,12 @@ export function registerProcessIpc(): void {
 
       const confirmedTarget = await getProcessByPid(request.pid)
       if (!confirmedTarget || confirmedTarget.name !== target.name || confirmedTarget.command !== target.command) {
-        logWarnAction('process-ipc', 'process.kill', { reason: 'target_changed', pid: request.pid })
+        logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { reason: 'target_changed', pid: request.pid }))
         return failure('UNKNOWN_ERROR', tk('main.process.error.changed'))
       }
 
       await terminateProcess(confirmedTarget.pid)
-      logInfo('process-ipc', 'Process kill signal sent', { pid: confirmedTarget.pid, name: confirmedTarget.name })
+      logInfoAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { pid: confirmedTarget.pid, name: confirmedTarget.name }))
 
       const result: ProcessKillResult = {
         pid: confirmedTarget.pid,
@@ -123,7 +129,7 @@ export function registerProcessIpc(): void {
       }
       return success(result)
     } catch (err) {
-      logErrorAction('process-ipc', 'process.kill', err)
+      logErrorAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.kill_failed'))
     }
   })

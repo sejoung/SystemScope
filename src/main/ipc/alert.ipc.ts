@@ -2,29 +2,34 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { getActiveAlerts, dismissAlert } from '../services/alertManager'
 import { success, failure } from '@shared/types'
-import { logError, logInfo, logWarn } from '../services/logging'
+import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 export function registerAlertIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.ALERT_GET_ACTIVE, () => {
-    return success(getActiveAlerts())
+  ipcMain.handle(IPC_CHANNELS.ALERT_GET_ACTIVE, (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    const alerts = getActiveAlerts()
+    logInfoAction('alert-ipc', 'alerts.list', withRequestMeta(requestMeta, { count: alerts.length }))
+    return success(alerts)
   })
 
-  ipcMain.handle(IPC_CHANNELS.ALERT_DISMISS, (_event, alertId: string) => {
+  ipcMain.handle(IPC_CHANNELS.ALERT_DISMISS, (_event, alertId: string, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (!alertId || typeof alertId !== 'string') {
-      logWarn('alert-ipc', 'Alert dismiss rejected due to invalid input', { alertId })
+      logWarnAction('alert-ipc', 'alert.dismiss', withRequestMeta(requestMeta, { alertId, reason: 'invalid_input' }))
       return failure('INVALID_INPUT', tk('main.alert.error.invalid_id'))
     }
     try {
       const dismissed = dismissAlert(alertId)
       if (!dismissed) {
-        logWarn('alert-ipc', 'Alert dismiss failed because alert was not found', { alertId })
+        logWarnAction('alert-ipc', 'alert.dismiss', withRequestMeta(requestMeta, { alertId, reason: 'not_found' }))
         return failure('UNKNOWN_ERROR', tk('main.alert.error.not_found'))
       }
-      logInfo('alert-ipc', 'Alert dismissed', { alertId })
+      logInfoAction('alert-ipc', 'alert.dismiss', withRequestMeta(requestMeta, { alertId }))
       return success(true)
     } catch (err) {
-      logError('alert-ipc', 'Failed to dismiss alert', err)
+      logErrorAction('alert-ipc', 'alert.dismiss', withRequestMeta(requestMeta, { alertId, error: err }))
       return failure('UNKNOWN_ERROR', tk('main.alert.error.dismiss_failed'))
     }
   })

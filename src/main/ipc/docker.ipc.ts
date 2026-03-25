@@ -16,6 +16,7 @@ import type { AppResult } from '@shared/types'
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 interface ConfirmDialogOptions {
   actionButton: string
@@ -60,63 +61,68 @@ function buildTargetDetailLines(
 }
 
 export function registerDockerIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_IMAGES, async () => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_IMAGES, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const result = await listDockerImages()
-      logInfoAction('docker-ipc', 'images.list', {
+      logInfoAction('docker-ipc', 'images.list', withRequestMeta(requestMeta, {
         status: result.status,
         count: result.status === 'ready' ? result.images.length : 0
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'images.list', err)
+      logErrorAction('docker-ipc', 'images.list', withRequestMeta(requestMeta, { error: err }))
       return failure('SCAN_FAILED', tk('docker.ipc.error.list_images'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_CONTAINERS, async () => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_CONTAINERS, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const result = await listDockerContainers()
-      logInfoAction('docker-ipc', 'containers.list', {
+      logInfoAction('docker-ipc', 'containers.list', withRequestMeta(requestMeta, {
         status: result.status,
         count: result.status === 'ready' ? result.containers.length : 0
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'containers.list', err)
+      logErrorAction('docker-ipc', 'containers.list', withRequestMeta(requestMeta, { error: err }))
       return failure('SCAN_FAILED', tk('docker.ipc.error.list_containers'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_VOLUMES, async () => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_LIST_VOLUMES, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const result = await listDockerVolumes()
-      logInfoAction('docker-ipc', 'volumes.list', {
+      logInfoAction('docker-ipc', 'volumes.list', withRequestMeta(requestMeta, {
         status: result.status,
         count: result.status === 'ready' ? result.volumes.length : 0
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'volumes.list', err)
+      logErrorAction('docker-ipc', 'volumes.list', withRequestMeta(requestMeta, { error: err }))
       return failure('SCAN_FAILED', tk('docker.ipc.error.list_volumes'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_GET_BUILD_CACHE, async () => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_GET_BUILD_CACHE, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const result = await getDockerBuildCache()
-      logInfoAction('docker-ipc', 'build_cache.get', {
+      logInfoAction('docker-ipc', 'build_cache.get', withRequestMeta(requestMeta, {
         status: result.status,
         totalCount: result.status === 'ready' ? (result.summary?.totalCount ?? 0) : 0
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'build_cache.get', err)
+      logErrorAction('docker-ipc', 'build_cache.get', withRequestMeta(requestMeta, { error: err }))
       return failure('SCAN_FAILED', tk('docker.ipc.error.build_cache'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_IMAGES, async (_event, imageIds: string[]): Promise<AppResult<never> | ReturnType<typeof success>> => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_IMAGES, async (_event, imageIds: string[], metaArg?: IpcRequestMetaArg): Promise<AppResult<never> | ReturnType<typeof success>> => {
+    const requestMeta = getRequestMeta(metaArg)
     if (!Array.isArray(imageIds) || imageIds.length === 0 || imageIds.some((id) => typeof id !== 'string' || !id.trim())) {
       return failure('INVALID_INPUT', tk('docker.ipc.error.no_images'))
     }
@@ -152,24 +158,25 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
-        logInfoAction('docker-ipc', 'images.remove.cancel', { requestedCount: imageIds.length })
+        logInfoAction('docker-ipc', 'images.remove.cancel', withRequestMeta(requestMeta, { requestedCount: imageIds.length }))
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerImages(targets.map((image) => image.id))
-      logInfoAction('docker-ipc', 'images.remove', {
+      logInfoAction('docker-ipc', 'images.remove', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         deletedCount: result.deletedIds.length,
         failCount: result.failCount
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'images.remove', err)
+      logErrorAction('docker-ipc', 'images.remove', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.remove_images'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS, async (_event, containerIds: string[]) => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS, async (_event, containerIds: string[], metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (
       !Array.isArray(containerIds) ||
       containerIds.length === 0 ||
@@ -209,24 +216,25 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
-        logInfoAction('docker-ipc', 'containers.remove.cancel', { requestedCount: containerIds.length })
+        logInfoAction('docker-ipc', 'containers.remove.cancel', withRequestMeta(requestMeta, { requestedCount: containerIds.length }))
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerContainers(targets.map((container) => container.id))
-      logInfoAction('docker-ipc', 'containers.remove', {
+      logInfoAction('docker-ipc', 'containers.remove', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         deletedCount: result.deletedIds.length,
         failCount: result.failCount
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'containers.remove', err)
+      logErrorAction('docker-ipc', 'containers.remove', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.remove_containers'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_STOP_CONTAINERS, async (_event, containerIds: string[]) => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_STOP_CONTAINERS, async (_event, containerIds: string[], metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (
       !Array.isArray(containerIds) ||
       containerIds.length === 0 ||
@@ -265,24 +273,25 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
-        logInfoAction('docker-ipc', 'containers.stop.cancel', { requestedCount: containerIds.length })
+        logInfoAction('docker-ipc', 'containers.stop.cancel', withRequestMeta(requestMeta, { requestedCount: containerIds.length }))
         return success({ affectedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await stopDockerContainers(targets.map((container) => container.id))
-      logInfoAction('docker-ipc', 'containers.stop', {
+      logInfoAction('docker-ipc', 'containers.stop', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         affectedCount: result.affectedIds.length,
         failCount: result.failCount
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'containers.stop', err)
+      logErrorAction('docker-ipc', 'containers.stop', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.stop_containers'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES, async (_event, volumeNames: string[]) => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES, async (_event, volumeNames: string[], metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     if (
       !Array.isArray(volumeNames) ||
       volumeNames.length === 0 ||
@@ -321,24 +330,25 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
-        logInfoAction('docker-ipc', 'volumes.remove.cancel', { requestedCount: volumeNames.length })
+        logInfoAction('docker-ipc', 'volumes.remove.cancel', withRequestMeta(requestMeta, { requestedCount: volumeNames.length }))
         return success({ deletedIds: [], failCount: 0, errors: [], cancelled: true })
       }
 
       const result = await removeDockerVolumes(targets.map((volume) => volume.name))
-      logInfoAction('docker-ipc', 'volumes.remove', {
+      logInfoAction('docker-ipc', 'volumes.remove', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         deletedCount: result.deletedIds.length,
         failCount: result.failCount
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'volumes.remove', err)
+      logErrorAction('docker-ipc', 'volumes.remove', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.remove_volumes'))
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.DOCKER_PRUNE_BUILD_CACHE, async () => {
+  ipcMain.handle(IPC_CHANNELS.DOCKER_PRUNE_BUILD_CACHE, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
     try {
       const cache = await getDockerBuildCache()
       if (cache.status !== 'ready') {
@@ -357,18 +367,18 @@ export function registerDockerIpc(): void {
       })
 
       if (!confirmed) {
-        logInfoAction('docker-ipc', 'build_cache.prune.cancel')
+        logInfoAction('docker-ipc', 'build_cache.prune.cancel', withRequestMeta(requestMeta))
         return success({ reclaimedBytes: 0, reclaimedLabel: '0 B', cancelled: true })
       }
 
       const result = await pruneDockerBuildCache()
-      logInfoAction('docker-ipc', 'build_cache.prune', {
+      logInfoAction('docker-ipc', 'build_cache.prune', withRequestMeta(requestMeta, {
         reclaimedBytes: result.reclaimedBytes,
         reclaimedLabel: result.reclaimedLabel
-      })
+      }))
       return success(result)
     } catch (err) {
-      logErrorAction('docker-ipc', 'build_cache.prune', err)
+      logErrorAction('docker-ipc', 'build_cache.prune', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('docker.ipc.error.prune_cache'))
     }
   })
