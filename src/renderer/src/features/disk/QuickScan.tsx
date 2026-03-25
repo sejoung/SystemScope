@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Accordion } from "../../components/Accordion";
 import { formatBytes } from "../../utils/format";
 import type { ScanCategory, QuickScanFolder } from "@shared/types";
@@ -22,30 +22,22 @@ function sizeColor(size: number): string {
   return "var(--text-secondary)";
 }
 
-interface QuickScanProps {
-  onFolderClick: (path: string) => void;
+interface QuickScanState {
+  results: QuickScanFolder[];
+  scanning: boolean;
+  scanned: boolean;
+  error: string | null;
 }
 
-export function QuickScan({ onFolderClick }: QuickScanProps) {
-  const { tk, t } = useI18n();
-  const [results, setResults] = useState<QuickScanFolder[]>([]);
-  const [scanning, setScanning] = useState(false);
-  const [scanned, setScanned] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface QuickScanProps {
+  onFolderClick: (path: string) => void;
+  state: QuickScanState;
+  onScan: () => void;
+}
 
-  const handleScan = async () => {
-    setScanning(true);
-    setError(null);
-    const res = await window.systemScope.quickScan();
-    if (res.ok && res.data) {
-      setResults(res.data as QuickScanFolder[]);
-    } else {
-      setResults([]);
-      setError(res.error?.message ?? tk("disk.quick_cleanup.scan_failed"));
-    }
-    setScanning(false);
-    setScanned(true);
-  };
+export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
+  const { tk, t } = useI18n();
+  const { results, scanning, scanned, error } = state;
 
   const totalSize = results.reduce((acc, r) => acc + r.size, 0);
   const cleanableSize = results
@@ -79,9 +71,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
       actions={
         <button
           type="button"
-          onClick={() => {
-            handleScan();
-          }}
+          onClick={onScan}
           disabled={scanning}
           style={btnStyle}
         >

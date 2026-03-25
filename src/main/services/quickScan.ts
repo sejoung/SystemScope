@@ -3,7 +3,7 @@ import * as path from 'path'
 import { homedir, tmpdir, platform } from 'os'
 import * as fsSync from 'fs'
 import type { ScanCategory, QuickScanFolder } from '@shared/types'
-import { getDirSizeRecursive } from '../utils/getDirSize'
+import { getDirSize, getDirSizeRecursive } from '../utils/getDirSize'
 
 interface ScanTarget {
   name: string
@@ -96,12 +96,13 @@ function getWindowsTargets(home: string): ScanTarget[] {
   ]
 }
 
-const SCAN_BATCH_SIZE = 5
+const SCAN_BATCH_SIZE = 8
 
 export async function runQuickScan(
   onProgress?: (name: string, index: number, total: number) => void
 ): Promise<QuickScanFolder[]> {
   const home = homedir()
+  const isMacOrLinux = platform() === 'darwin' || platform() === 'linux'
   const targets = platform() === 'darwin' ? getMacTargets(home) : getWindowsTargets(home)
   const results: QuickScanFolder[] = []
 
@@ -126,7 +127,10 @@ export async function runQuickScan(
 
         if (!foundPath) return null
 
-        const size = await getDirSizeRecursive(foundPath, 2)
+        // macOS/Linux: du -sk로 빠르게 측정, Windows: 재귀 탐색
+        const size = isMacOrLinux
+          ? await getDirSize(foundPath)
+          : await getDirSizeRecursive(foundPath, 2)
         return {
           name: target.name,
           path: foundPath,

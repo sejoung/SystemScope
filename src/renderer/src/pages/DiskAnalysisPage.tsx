@@ -20,6 +20,7 @@ import { useI18n } from "../i18n/useI18n";
 import { StatusMessage } from "../components/StatusMessage";
 import { CopyableValue } from "../components/CopyableValue";
 import { AsyncTaskStatus } from "../components/AsyncTaskStatus";
+import type { QuickScanFolder } from "@shared/types";
 
 const TreemapChart = lazy(async () =>
   import("../features/disk/TreemapChart").then((mod) => ({
@@ -43,6 +44,20 @@ const RecentGrowth = lazy(async () =>
 );
 
 type StorageTab = "overview" | "scan" | "cleanup";
+
+interface QuickScanState {
+  results: QuickScanFolder[];
+  scanning: boolean;
+  scanned: boolean;
+  error: string | null;
+}
+
+const QUICK_SCAN_INITIAL: QuickScanState = {
+  results: [],
+  scanning: false,
+  scanned: false,
+  error: null,
+};
 type ScanOutcome = "idle" | "running" | "completed" | "failed" | "cancelled";
 
 export function shouldShowCancelledScanMessage(
@@ -81,6 +96,19 @@ export function DiskAnalysisPage() {
   const showToast = useToast((s) => s.show);
   const [tab, setTab] = useState<StorageTab>("overview");
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome>("idle");
+  const [quickScanState, setQuickScanState] = useState<QuickScanState>(QUICK_SCAN_INITIAL);
+  const { tk: tkPage } = useI18n();
+
+  const handleQuickScan = useCallback(async () => {
+    setQuickScanState((prev) => ({ ...prev, scanning: true, error: null }));
+    const res = await window.systemScope.quickScan();
+    if (res.ok && res.data) {
+      setQuickScanState({ results: res.data as QuickScanFolder[], scanning: false, scanned: true, error: null });
+    } else {
+      setQuickScanState({ results: [], scanning: false, scanned: true, error: res.error?.message ?? tkPage("disk.quick_cleanup.scan_failed") });
+    }
+  }, [tkPage]);
+
   const sectionResetKey = `${selectedFolder ?? "none"}:${scanResult?.scanDuration ?? 0}:${isScanning}`;
   const pendingRefreshRef = useRef(false);
 
@@ -380,6 +408,8 @@ export function DiskAnalysisPage() {
               ? void refreshScanInBackground(selectedFolder)
               : undefined
           }
+          quickScanState={quickScanState}
+          onQuickScan={handleQuickScan}
         />
       )}
     </div>
@@ -692,6 +722,8 @@ function CleanupTab({
   selectedFolder,
   onFilesRemoved,
   onRefreshRequested,
+  quickScanState,
+  onQuickScan,
 }: {
   tryScan: (path: string) => void;
   sectionResetKey: string;
@@ -700,6 +732,8 @@ function CleanupTab({
   selectedFolder: string | null;
   onFilesRemoved: (paths: string[]) => void;
   onRefreshRequested: () => void;
+  quickScanState: QuickScanState;
+  onQuickScan: () => void;
 }) {
   const { tk } = useI18n();
   return (
@@ -714,7 +748,7 @@ function CleanupTab({
             <SectionFallback title={tk("disk.section.quick_cleanup")} />
           }
         >
-          <QuickScan onFolderClick={tryScan} />
+          <QuickScan onFolderClick={tryScan} state={quickScanState} onScan={onQuickScan} />
         </Suspense>
       </ErrorBoundary>
 
