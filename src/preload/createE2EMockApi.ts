@@ -1,17 +1,17 @@
-import type { SystemScopeApi } from "@shared/contracts/systemScope";
-import { createIpcApi } from "./createIpcApi";
-import { successResult } from "./helpers";
+import type { SystemScopeApi } from '@shared/contracts/systemScope'
+import { createIpcApi } from './createIpcApi'
+import { successResult } from './helpers'
 
 export function createE2EMockApi(): SystemScopeApi {
-  const api = createIpcApi();
+  const api = createIpcApi()
 
   const mockSystemStats = {
     cpu: {
       usage: 12,
       cores: [8, 10, 12, 9],
       temperature: null,
-      model: "E2E CPU",
-      speed: 3.2,
+      model: 'E2E CPU',
+      speed: 3.2
     },
     memory: {
       total: 16_000_000_000,
@@ -21,7 +21,7 @@ export function createE2EMockApi(): SystemScopeApi {
       cached: 2_000_000_000,
       usage: 37,
       swapTotal: 0,
-      swapUsed: 0,
+      swapUsed: 0
     },
     gpu: {
       available: false,
@@ -30,36 +30,36 @@ export function createE2EMockApi(): SystemScopeApi {
       memoryTotal: null,
       memoryUsed: null,
       temperature: null,
-      unavailableReason: null,
+      unavailableReason: null
     },
     disk: {
       drives: [
         {
-          fs: "/dev/disk1s1",
-          type: "apfs",
+          fs: '/dev/disk1s1',
+          type: 'apfs',
           size: 500_000_000_000,
           used: 200_000_000_000,
           available: 300_000_000_000,
           usage: 40,
-          mount: "/",
+          mount: '/',
           purgeable: null,
-          realUsage: null,
-        },
-      ],
+          realUsage: null
+        }
+      ]
     },
-    timestamp: Date.now(),
-  };
+    timestamp: Date.now()
+  }
 
   const mockProcesses = [
     {
       pid: 1001,
-      name: "node",
+      name: 'node',
       cpu: 12.5,
       memory: 120,
       memoryBytes: 120_000_000,
-      command: "/usr/bin/node server.js",
-    },
-  ];
+      command: '/usr/bin/node server.js'
+    }
+  ]
 
   Object.assign(api, {
     getSettings: () =>
@@ -70,25 +70,25 @@ export function createE2EMockApi(): SystemScopeApi {
           memoryWarning: 75,
           memoryCritical: 85,
           gpuMemoryWarning: 75,
-          gpuMemoryCritical: 85,
+          gpuMemoryCritical: 85
         },
-        theme: "dark" as const,
-        locale: "en" as const,
-        snapshotIntervalMin: 60,
+        theme: 'dark' as const,
+        locale: 'en' as const,
+        snapshotIntervalMin: 60
       }),
     getUpdateStatus: () =>
       successResult({
-        currentVersion: "1.1.2",
+        currentVersion: '1.1.2',
         checking: false,
         updateInfo: null,
-        lastCheckedAt: null,
+        lastCheckedAt: null
       }),
     checkForUpdate: () =>
       successResult({
-        currentVersion: "1.1.2",
+        currentVersion: '1.1.2',
         checking: false,
         updateInfo: null,
-        lastCheckedAt: new Date().toISOString(),
+        lastCheckedAt: new Date().toISOString()
       }),
     openUpdateRelease: () => successResult(true),
     onUpdateAvailable: () => () => {},
@@ -102,15 +102,15 @@ export function createE2EMockApi(): SystemScopeApi {
     listInstalledApps: () =>
       successResult([
         {
-          id: "mock-app",
-          name: "Mock App",
-          version: "1.0.0",
-          publisher: "SystemScope",
-          installLocation: "/Applications/Mock App.app",
-          platform: "mac" as const,
-          uninstallKind: "trash_app" as const,
-          protected: false,
-        },
+          id: 'mock-app',
+          name: 'Mock App',
+          version: '1.0.0',
+          publisher: 'SystemScope',
+          installLocation: '/Applications/Mock App.app',
+          platform: 'mac' as const,
+          uninstallKind: 'trash_app' as const,
+          protected: false
+        }
       ]),
     getAppRelatedData: () => successResult([]),
     listLeftoverAppData: () => successResult([]),
@@ -118,55 +118,55 @@ export function createE2EMockApi(): SystemScopeApi {
     listLeftoverAppRegistry: () => successResult([]),
     listDockerContainers: () =>
       successResult({
-        status: "ready" as const,
+        status: 'ready' as const,
         containers: [],
-        message: null,
+        message: null
       }),
     listDockerImages: () =>
       successResult({
-        status: "ready" as const,
+        status: 'ready' as const,
         images: [],
-        message: null,
+        message: null
       }),
     listDockerVolumes: () =>
       successResult({
-        status: "ready" as const,
+        status: 'ready' as const,
         volumes: [],
-        message: null,
+        message: null
       }),
     getDockerBuildCache: () =>
       successResult({
-        status: "ready" as const,
+        status: 'ready' as const,
         summary: {
           totalCount: 0,
           activeCount: 0,
           sizeBytes: 0,
-          sizeLabel: "0 B",
+          sizeLabel: '0 B',
           reclaimableBytes: 0,
-          reclaimableLabel: "0 B",
+          reclaimableLabel: '0 B'
         },
-        message: null,
+        message: null
       }),
     getUserSpace: () =>
       successResult({
-        homePath: "/Users/e2e",
+        homePath: '/Users/e2e',
         homeSize: 200_000_000_000,
         diskTotal: 500_000_000_000,
         diskAvailable: 300_000_000_000,
         diskUsage: 40,
         purgeable: null,
-        entries: [],
+        entries: []
       }),
     getGrowthView: () =>
       successResult({
-        period: "7d",
+        period: '7d',
         cutoffMs: Date.now() - 7 * 24 * 60 * 60 * 1000,
         folders: [],
         totalAdded: 0,
-        totalAddedFiles: 0,
+        totalAddedFiles: 0
       }),
-    quickScan: () => successResult([]),
-  } satisfies Partial<SystemScopeApi>);
+    quickScan: () => successResult([])
+  } satisfies Partial<SystemScopeApi>)
 
-  return api;
+  return api
 }

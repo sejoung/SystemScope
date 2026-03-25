@@ -59,8 +59,14 @@ function App() {
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
   const { tk } = useI18n()
+  const isE2ELightweight = window.__E2E_LIGHTWEIGHT === true
 
   useEffect(() => {
+    if (isE2ELightweight) {
+      setBootstrapped(true)
+      return
+    }
+
     void Promise.all([
       loadAppSettings('app-bootstrap'),
       window.systemScope.getActiveAlerts(),
@@ -91,7 +97,7 @@ function App() {
     }).finally(() => {
       setBootstrapped(true)
     })
-  }, [applyUpdateStatus, setAlerts, showToast, tk])
+  }, [applyUpdateStatus, isE2ELightweight, setAlerts, showToast, tk])
 
   useEffect(() => {
     document.body.dataset.e2eReady = bootstrapped ? '1' : '0'
@@ -121,12 +127,16 @@ function App() {
   }, [hasUnsavedSettings])
 
   useEffect(() => {
+    if (isE2ELightweight) {
+      return
+    }
+
     window.systemScope.subscribeSystem()
 
     return () => {
       window.systemScope.unsubscribeSystem()
     }
-  }, [])
+  }, [isE2ELightweight])
 
   const handleSystemUpdate = useCallback(
     (data: unknown) => {
@@ -163,7 +173,7 @@ function App() {
   useIpcListener(window.systemScope.onUpdateAvailable, handleUpdateAvailable)
 
   // 프로세스 데이터 폴링 — 대시보드 또는 프로세스 페이지에서만 갱신
-  const shouldPollProcesses = currentPage === 'dashboard' || currentPage === 'process'
+  const shouldPollProcesses = !isE2ELightweight && (currentPage === 'dashboard' || currentPage === 'process')
 
   useInterval(() => {
     void Promise.all([

@@ -57,4 +57,4 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci --prefer-offline --no-audit
-      - run: npm run test:e2e
+      - run: npm run test:e2e:build

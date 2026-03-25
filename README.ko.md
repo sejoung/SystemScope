@@ -123,7 +123,9 @@ npm run dist:win    # Windows .exe
 ```bash
 npm test            # unit/integration 테스트
 npm run test:watch
-npm run test:e2e    # Electron + Playwright E2E
+npm run build
+npm run test:e2e    # Electron + Playwright E2E (기존 build 사용)
+npm run test:e2e:build
 npm run test:e2e:debug
 npm run check       # typecheck -> lint -> test -> build
 ```

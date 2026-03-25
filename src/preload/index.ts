@@ -1,10 +1,11 @@
-import { contextBridge } from "electron";
-import { createE2EMockApi } from "./createE2EMockApi";
-import { createIpcApi } from "./createIpcApi";
+import { contextBridge } from 'electron'
+import { createE2EMockApi } from './createE2EMockApi'
+import { createIpcApi } from './createIpcApi'
 
 const api =
-  process.env.E2E_LIGHTWEIGHT === "1" ? createE2EMockApi() : createIpcApi();
+  process.env.E2E_LIGHTWEIGHT === '1' ? createE2EMockApi() : createIpcApi()
 
-contextBridge.exposeInMainWorld("systemScope", api);
+contextBridge.exposeInMainWorld('systemScope', api)
+contextBridge.exposeInMainWorld('__E2E_LIGHTWEIGHT', process.env.E2E_LIGHTWEIGHT === '1')
 
-export type { SystemScopeApi } from "@shared/contracts/systemScope";
+export type { SystemScopeApi } from '@shared/contracts/systemScope'
