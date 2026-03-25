@@ -10,6 +10,8 @@ import { tk } from '../i18n'
 import { getDirSize } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
+const leftoverSizeCache = new Map<string, number>()
+const MAX_SIZE_MEASUREMENTS_PER_SCAN = 12
 
 export async function listMacInstalledApps(): Promise<InstalledApp[]> {
   const roots = ['/Applications', path.join(homedir(), 'Applications')]
@@ -165,13 +167,17 @@ export async function listMacLeftoverAppData(installedApps: InstalledApp[]): Pro
         path: targetPath,
         source: spec.source,
         platform: 'mac',
-        sizeBytes: await getItemSize(targetPath, spec.type),
         ...getMacLeftoverGuidance(spec.label, appName)
       })
     }
   }
 
-  return dedupeLeftoverByPath(items)
+  const dedupedItems = dedupeLeftoverByPath(items)
+  await hydrateLeftoverSizes(
+    dedupedItems,
+    (item) => getItemSize(item.path, item.label === 'Preferences' ? 'plist' : 'dir')
+  )
+  return dedupedItems
 }
 
 export function inferMacLeftoverAppName(entryName: string): string | null {
@@ -257,5 +263,39 @@ async function getItemSize(targetPath: string, type: 'dir' | 'plist'): Promise<n
     return stat.size
   } catch {
     return 0
+  }
+}
+
+async function hydrateLeftoverSizes(
+  items: AppLeftoverDataItem[],
+  measure: (item: AppLeftoverDataItem) => Promise<number>
+): Promise<void> {
+  for (const item of items) {
+    const cachedSize = leftoverSizeCache.get(item.path)
+    if (cachedSize !== undefined) {
+      item.sizeBytes = cachedSize
+    }
+  }
+
+  const pendingItems = items
+    .filter((item) => item.sizeBytes === undefined)
+    .sort((left, right) => confidenceRank(left.confidence) - confidenceRank(right.confidence) || left.appName.localeCompare(right.appName))
+    .slice(0, MAX_SIZE_MEASUREMENTS_PER_SCAN)
+
+  for (const item of pendingItems) {
+    const sizeBytes = await measure(item)
+    leftoverSizeCache.set(item.path, sizeBytes)
+    item.sizeBytes = sizeBytes
+  }
+}
+
+function confidenceRank(confidence: AppLeftoverDataItem['confidence']): number {
+  switch (confidence) {
+    case 'high':
+      return 0
+    case 'medium':
+      return 1
+    case 'low':
+      return 2
   }
 }

@@ -67,6 +67,14 @@ export async function listInstalledApps(): Promise<InstalledApp[]> {
   return apps.sort((a, b) => a.name.localeCompare(b.name))
 }
 
+async function getInstalledAppsSnapshot(): Promise<InstalledApp[]> {
+  if (installedAppsCache.size > 0) {
+    return [...installedAppsCache.values()].sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  return listInstalledApps()
+}
+
 export function getInstalledAppById(appId: string): InstalledApp | null {
   return installedAppsCache.get(appId) ?? null
 }
@@ -81,7 +89,7 @@ export async function getInstalledAppRelatedData(appId: string): Promise<AppRela
 }
 
 export async function listLeftoverAppData(): Promise<AppLeftoverDataItem[]> {
-  const installedApps = await listInstalledApps()
+  const installedApps = await getInstalledAppsSnapshot()
   const leftovers = getPlatform() === 'darwin'
     ? await listMacLeftoverAppData(installedApps)
     : getPlatform() === 'win32'
