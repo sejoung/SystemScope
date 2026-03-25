@@ -8,6 +8,7 @@ type ElectronFixtures = {
 
 export const test = base.extend<ElectronFixtures>({
   electronApp: [
+    // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
       const app = await _electron.launch({
         args: [path.join(__dirname, '../../../out/main/index.js')],

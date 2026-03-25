@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const processes = vi.hoisted(() => vi.fn())
-const networkConnections = vi.hoisted(() => vi.fn())
+const processes = vi.hoisted(() => vi.fn<any>())
+const networkConnections = vi.hoisted(() => vi.fn<any>())
 
 vi.mock('systeminformation', () => ({
   default: {
@@ -114,7 +114,7 @@ describe('processMonitor process caching', () => {
     ]
 
     let resolveProcesses: ((value: { list: typeof sampleList }) => void) | null = null
-    processes.mockImplementation(() => new Promise((resolve) => {
+    processes.mockImplementation(() => new Promise<{ list: typeof sampleList }>((resolve) => {
       resolveProcesses = resolve
     }))
 
@@ -127,7 +127,7 @@ describe('processMonitor process caching', () => {
     ])
 
     expect(processes).toHaveBeenCalledTimes(1)
-    resolveProcesses?.({ list: sampleList })
+    resolveProcesses!({ list: sampleList })
 
     const [all, topCpu, topMemory] = await pending
     expect(topCpu.map((entry) => entry.pid)).toEqual([2, 3])
