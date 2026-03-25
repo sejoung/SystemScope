@@ -1,13 +1,16 @@
 import si from 'systeminformation'
 import { platform } from 'os'
 import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo } from '@shared/types'
-import { logDebug, logWarn } from './logging'
+import { logDebug, logInfo, logWarn } from './logging'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'
 let hasLoggedApfsContainerFallback = false
+let hasLoggedWindowsGpuDiagnostics = false
 
 let lastDiskStats: DriveInfo[] | null = null
 let lastDiskFetchTime = 0
 const DISK_CACHE_TTL = 30 * 1000 // 30초 캐시
+
+type GraphicsController = Awaited<ReturnType<typeof si.graphics>>['controllers'][number]
 
 export async function getSystemStats(): Promise<SystemStats> {
   const [cpuLoad, cpuInfo, mem, gpu] = await Promise.all([
@@ -91,7 +94,11 @@ export async function getSystemStats(): Promise<SystemStats> {
     swapUsed: mem.swapused
   }
 
-  const primaryGpu = gpu.controllers[0]
+  const primaryGpu = pickPrimaryGpuController(gpu.controllers)
+  const hasUsageData = primaryGpu ? controllerHasUsageData(primaryGpu) : false
+
+  logWindowsGpuDiagnostics(gpu.controllers, primaryGpu)
+
   const gpuInfo: GpuInfo = primaryGpu && primaryGpu.model
     ? {
         available: true,
@@ -99,7 +106,8 @@ export async function getSystemStats(): Promise<SystemStats> {
         usage: primaryGpu.utilizationGpu ?? null,
         memoryTotal: primaryGpu.memoryTotal ? primaryGpu.memoryTotal * 1024 * 1024 : null,
         memoryUsed: primaryGpu.memoryUsed ? primaryGpu.memoryUsed * 1024 * 1024 : null,
-        temperature: primaryGpu.temperatureGpu ?? null
+        temperature: primaryGpu.temperatureGpu ?? null,
+        unavailableReason: hasUsageData ? null : detectGpuUnavailableReason(primaryGpu)
       }
     : {
         available: false,
@@ -107,7 +115,8 @@ export async function getSystemStats(): Promise<SystemStats> {
         usage: null,
         memoryTotal: null,
         memoryUsed: null,
-        temperature: null
+        temperature: null,
+        unavailableReason: null
       }
 
   return {
@@ -117,6 +126,70 @@ export async function getSystemStats(): Promise<SystemStats> {
     disk: { drives },
     timestamp: Date.now()
   }
+}
+
+function logWindowsGpuDiagnostics(
+  controllers: GraphicsController[],
+  primaryGpu: GraphicsController | null
+): void {
+  if (platform() !== 'win32' || hasLoggedWindowsGpuDiagnostics) return
+
+  hasLoggedWindowsGpuDiagnostics = true
+  logInfo('system-monitor', 'Windows GPU controller diagnostics', {
+    controllerCount: controllers.length,
+    selectedModel: primaryGpu?.model ?? null,
+    selectedHasUsageData: primaryGpu ? controllerHasUsageData(primaryGpu) : false,
+    selectedIsVirtualAdapter: primaryGpu ? isVirtualGpuModel(primaryGpu.model) : false,
+    controllers: controllers.map((controller) => ({
+      model: controller.model ?? null,
+      vendor: controller.vendor ?? null,
+      bus: controller.bus ?? null,
+      vram: controller.vram ?? null,
+      utilizationGpu: controller.utilizationGpu ?? null,
+      memoryTotal: controller.memoryTotal ?? null,
+      memoryUsed: controller.memoryUsed ?? null
+    }))
+  })
+}
+
+function pickPrimaryGpuController(controllers: GraphicsController[]): GraphicsController | null {
+  const candidates = controllers.filter((controller) => Boolean(controller.model))
+  if (candidates.length === 0) return null
+
+  return candidates
+    .slice()
+    .sort((a, b) => scoreGpuController(b) - scoreGpuController(a))[0]
+}
+
+function scoreGpuController(controller: GraphicsController): number {
+  let score = 0
+
+  if (controllerHasUsageData(controller)) score += 100
+  if (!isVirtualGpuModel(controller.model)) score += 50
+  if (controller.vram) score += 10
+  if (controller.memoryTotal || controller.memoryUsed) score += 10
+
+  return score
+}
+
+function controllerHasUsageData(controller: GraphicsController): boolean {
+  return controller.utilizationGpu !== null || controller.memoryTotal !== null || controller.memoryUsed !== null
+}
+
+function detectGpuUnavailableReason(controller: GraphicsController): GpuInfo['unavailableReason'] {
+  if (platform() === 'darwin' && /apple/i.test(controller.model)) {
+    return 'apple_silicon'
+  }
+
+  if (isVirtualGpuModel(controller.model)) {
+    return 'virtual_adapter'
+  }
+
+  return 'metrics_unavailable'
+}
+
+function isVirtualGpuModel(model: string): boolean {
+  return /(microsoft remote display adapter|microsoft basic display adapter|microsoft basic render driver|parallels display adapter|vmware svga|virtualbox graphics adapter|virtio gpu)/i.test(model)
 }
 
 // macOS APFS 컨테이너 정보 가져오기

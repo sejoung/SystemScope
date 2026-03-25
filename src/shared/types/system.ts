@@ -24,6 +24,7 @@ export interface GpuInfo {
   memoryTotal: number | null
   memoryUsed: number | null
   temperature: number | null
+  unavailableReason?: 'apple_silicon' | 'virtual_adapter' | 'metrics_unavailable' | null
 }
 
 export interface DriveInfo {

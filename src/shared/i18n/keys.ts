@@ -431,6 +431,10 @@ export const MESSAGE_KEYS = {
   "monitoring.gpu.missing": "Unable to detect a GPU",
   "monitoring.gpu.apple_silicon":
     "On Apple Silicon, the GPU shares unified memory with the CPU, so separate GPU utilization metrics are not available.",
+  "monitoring.gpu.virtual_adapter":
+    "Windows is reporting a virtual display adapter, so GPU utilization metrics are not available.",
+  "monitoring.gpu.metrics_unavailable":
+    "This GPU was detected, but the operating system did not provide utilization or VRAM metrics.",
   "monitoring.gpu.utilization": "Utilization",
   "monitoring.gpu.vram": "VRAM",
   "common.pause": "Pause",

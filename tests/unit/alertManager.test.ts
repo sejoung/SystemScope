@@ -26,7 +26,8 @@ function makeStats(overrides: Partial<{
       usage: null,
       memoryTotal: gpuMemTotal || null,
       memoryUsed: gpuMemUsed || null,
-      temperature: null
+      temperature: null,
+      unavailableReason: null
     },
     disk: {
       drives: [{

@@ -207,6 +207,10 @@ export const KO_MESSAGES = {
   "Unable to detect a GPU": "GPU를 감지할 수 없습니다",
   "On Apple Silicon, the GPU shares unified memory with the CPU, so separate GPU utilization metrics are not available.":
     "Apple Silicon은 CPU와 통합 메모리(Unified Memory)를 공유하여 별도 GPU 사용률 모니터링이 제공되지 않습니다.",
+  "Windows is reporting a virtual display adapter, so GPU utilization metrics are not available.":
+    "Windows가 가상 디스플레이 어댑터를 보고하고 있어 GPU 사용률 메트릭을 가져올 수 없습니다.",
+  "This GPU was detected, but the operating system did not provide utilization or VRAM metrics.":
+    "GPU는 감지되었지만 운영체제가 사용률 또는 VRAM 메트릭을 제공하지 않았습니다.",
   Utilization: "활용률",
   VRAM: "VRAM",
   "Collecting data...": "데이터 수집 중...",

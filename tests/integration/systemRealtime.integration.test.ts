@@ -52,7 +52,7 @@ describe('system realtime integration', () => {
     const stats = {
       cpu: { usage: 10, cores: [10], temperature: null, model: 'test', speed: 3.2 },
       memory: { total: 100, used: 60, active: 60, available: 40, cached: 0, usage: 60, swapTotal: 0, swapUsed: 0 },
-      gpu: { available: false, model: null, usage: null, memoryTotal: null, memoryUsed: null, temperature: null },
+      gpu: { available: false, model: null, usage: null, memoryTotal: null, memoryUsed: null, temperature: null, unavailableReason: null },
       disk: { drives: [{ fs: '/', type: 'apfs', size: 1000, used: 600, available: 400, usage: 60, mount: '/', purgeable: null, realUsage: 60 }] },
       timestamp: 1
     }

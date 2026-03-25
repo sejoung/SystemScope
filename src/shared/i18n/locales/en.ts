@@ -207,6 +207,10 @@ export const EN_MESSAGES = {
   "Unable to detect a GPU": "Unable to detect a GPU",
   "On Apple Silicon, the GPU shares unified memory with the CPU, so separate GPU utilization metrics are not available.":
     "On Apple Silicon, the GPU shares unified memory with the CPU, so separate GPU utilization metrics are not available.",
+  "Windows is reporting a virtual display adapter, so GPU utilization metrics are not available.":
+    "Windows is reporting a virtual display adapter, so GPU utilization metrics are not available.",
+  "This GPU was detected, but the operating system did not provide utilization or VRAM metrics.":
+    "This GPU was detected, but the operating system did not provide utilization or VRAM metrics.",
   Utilization: "Utilization",
   VRAM: "VRAM",
   "Collecting data...": "Collecting data...",

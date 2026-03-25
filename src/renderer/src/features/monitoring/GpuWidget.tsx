@@ -27,8 +27,13 @@ export function GpuWidget() {
   }
 
   const hasUsageData = gpu.usage !== null || (gpu.memoryTotal !== null && gpu.memoryUsed !== null)
+  const unavailableMessage =
+    gpu.unavailableReason === 'apple_silicon'
+      ? tk('monitoring.gpu.apple_silicon')
+      : gpu.unavailableReason === 'virtual_adapter'
+        ? tk('monitoring.gpu.virtual_adapter')
+        : tk('monitoring.gpu.metrics_unavailable')
 
-  // Apple Silicon: 모델은 감지되지만 사용률/VRAM 데이터 없음
   if (!hasUsageData) {
     return (
       <Accordion title={tk('monitoring.gpu.title')} defaultOpen>
@@ -37,7 +42,7 @@ export function GpuWidget() {
             {gpu.model}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-            {tk('monitoring.gpu.apple_silicon')}
+            {unavailableMessage}
           </div>
         </div>
       </Accordion>

@@ -30,6 +30,7 @@ export function createE2EMockApi(): SystemScopeApi {
       memoryTotal: null,
       memoryUsed: null,
       temperature: null,
+      unavailableReason: null,
     },
     disk: {
       drives: [

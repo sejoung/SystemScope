@@ -122,7 +122,8 @@ describe('settings flow integration', () => {
         usage: null,
         memoryTotal: null,
         memoryUsed: null,
-        temperature: null
+        temperature: null,
+        unavailableReason: null
       },
       disk: {
         drives: [{

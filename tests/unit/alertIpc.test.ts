@@ -52,7 +52,8 @@ describe('registerAlertIpc', () => {
         usage: null,
         memoryTotal: null,
         memoryUsed: null,
-        temperature: null
+        temperature: null,
+        unavailableReason: null
       },
       disk: {
         drives: [{
