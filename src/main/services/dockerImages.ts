@@ -11,6 +11,7 @@ import type {
   DockerVolumesScanResult,
   DockerVolumeSummary
 } from '@shared/types'
+import path from 'path'
 import { logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'
@@ -48,6 +49,8 @@ interface DockerSystemDfRow {
   Size?: string
   Reclaimable?: string
 }
+
+let hasLoggedDockerLookupDiagnostics = false
 
 export async function listDockerImages(): Promise<DockerImagesScanResult> {
   const imageResult = await runDockerJsonLines<DockerImageRow>(['image', 'ls', '--all', '--no-trunc', '--format', '{{json .}}'])
@@ -360,6 +363,7 @@ async function runDockerJsonLines<T>(args: string[]): Promise<
     }
   } catch (error) {
     const status = detectDockerStatus(error)
+    logDockerLookupDiagnostics(status, error)
     return {
       status,
       rows: [],
@@ -369,7 +373,61 @@ async function runDockerJsonLines<T>(args: string[]): Promise<
 }
 
 function runDockerCommand(args: string[]): Promise<{ stdout: string; stderr: string }> {
-  return runExternalCommand('docker', args)
+  return runExternalCommand('docker', args, {
+    env: buildDockerCommandEnv()
+  })
+}
+
+function buildDockerCommandEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env }
+  const pathEntries = [
+    ...(env.PATH ? env.PATH.split(path.delimiter) : []),
+    ...getDockerCandidatePaths()
+  ].filter(Boolean)
+
+  env.PATH = Array.from(new Set(pathEntries)).join(path.delimiter)
+  return env
+}
+
+function getDockerCandidatePaths(): string[] {
+  if (process.platform === 'darwin') {
+    return [
+      '/usr/local/bin',
+      '/opt/homebrew/bin',
+      '/Applications/Docker.app/Contents/Resources/bin',
+      `${process.env.HOME ?? ''}/.docker/bin`
+    ]
+  }
+
+  if (process.platform === 'win32') {
+    const roots = [
+      process.env.ProgramFiles,
+      process.env['ProgramFiles(x86)'],
+      process.env.ProgramW6432,
+      process.env.LOCALAPPDATA
+    ].filter((value): value is string => Boolean(value))
+
+    return roots.map((root) => path.join(root, 'Docker', 'Docker', 'resources', 'bin'))
+  }
+
+  return ['/usr/local/bin', '/usr/bin', '/snap/bin']
+}
+
+function logDockerLookupDiagnostics(
+  status: 'not_installed' | 'daemon_unavailable',
+  error: unknown
+): void {
+  if (hasLoggedDockerLookupDiagnostics) {
+    return
+  }
+
+  hasLoggedDockerLookupDiagnostics = true
+  logWarn('docker-images', 'Docker command lookup failed', {
+    status,
+    path: process.env.PATH ?? '',
+    candidatePaths: getDockerCandidatePaths(),
+    error: normalizeDockerError(error, 'docker command lookup failed')
+  })
 }
 
 function toDockerImageSummary(row: DockerImageRow, containersByImageId: Map<string, string[]>): DockerImageSummary | null {

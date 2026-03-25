@@ -161,4 +161,21 @@ describe('dockerImages service', () => {
       reclaimableLabel: '2.9 GB'
     })
   })
+
+  it('should include common docker installation paths when executing docker commands', async () => {
+    runExternalCommand.mockResolvedValue({ stdout: '', stderr: '' })
+
+    const { listDockerImages } = await import('../../src/main/services/dockerImages')
+    await listDockerImages()
+
+    expect(runExternalCommand).toHaveBeenCalledWith(
+      'docker',
+      expect.any(Array),
+      expect.objectContaining({
+        env: expect.objectContaining({
+          PATH: expect.stringContaining('/usr/local/bin')
+        })
+      })
+    )
+  })
 })
