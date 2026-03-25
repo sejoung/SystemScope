@@ -10,6 +10,7 @@
   "include": [
     "tests/**/*",
     "src/main/**/*",
+    "src/preload/**/*",
     "src/preload/**/*.d.ts",
     "src/renderer/**/*",
     "src/shared/**/*"
