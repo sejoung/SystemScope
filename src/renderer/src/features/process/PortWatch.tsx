@@ -216,8 +216,8 @@ export function PortWatch() {
               aria-pressed={watchScope === s}
               onClick={() => setWatchScope(s)}
               style={{
-                padding: "3px 8px",
-                fontSize: "11px",
+                padding: "4px 9px",
+                fontSize: "12px",
                 fontWeight: 600,
                 border: "none",
                 borderRadius: "4px",
@@ -292,8 +292,8 @@ export function PortWatch() {
                 aria-pressed={pollInterval === opt.value}
                 onClick={() => setPollInterval(opt.value)}
                 style={{
-                  padding: "3px 8px",
-                  fontSize: "11px",
+                  padding: "4px 9px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   border: "none",
                   borderRadius: "5px",
@@ -314,7 +314,7 @@ export function PortWatch() {
           </div>
         )}
         {monitoring && watches.length > 0 && (
-          <span style={{ fontSize: "12px", color: "var(--accent-green)" }}>
+          <span style={{ fontSize: "13px", color: "var(--accent-green)" }}>
             ● {tk("process.port_watch.monitoring")}
           </span>
         )}
@@ -333,7 +333,7 @@ export function PortWatch() {
       {watches.length === 0 ? (
         <div
           style={{
-            fontSize: "12px",
+            fontSize: "13px",
             color: "var(--text-muted)",
             padding: "4px 0",
           }}
@@ -397,7 +397,7 @@ export function PortWatch() {
                     >
                       <span
                         style={{
-                          fontSize: "11px",
+                          fontSize: "12px",
                           fontFamily: "monospace",
                           color: "var(--text-muted)",
                           flexShrink: 0,
@@ -427,7 +427,7 @@ export function PortWatch() {
                       />
                       <span
                         style={{
-                          fontSize: "11px",
+                          fontSize: "12px",
                           fontWeight: 700,
                           color: status?.matched
                             ? "var(--accent-green)"
@@ -450,9 +450,9 @@ export function PortWatch() {
                       </span>
                       <span
                         style={{
-                          fontSize: "11px",
+                          fontSize: "12px",
                           color: "var(--text-muted)",
-                          padding: "1px 5px",
+                          padding: "2px 6px",
                           borderRadius: "3px",
                           background: "var(--bg-card-hover)",
                         }}
@@ -497,7 +497,7 @@ export function PortWatch() {
                         )}
                         <span
                           style={{
-                            fontSize: "11px",
+                            fontSize: "12px",
                             color: "var(--text-muted)",
                             fontFamily: "monospace",
                             marginLeft: "4px",
@@ -568,7 +568,7 @@ export function PortWatch() {
                             style={{
                               width: "100%",
                               borderCollapse: "collapse",
-                              fontSize: "12px",
+                              fontSize: "13px",
                             }}
                           >
                             <thead>
@@ -653,7 +653,7 @@ export function PortWatch() {
                           <div
                             style={{
                               padding: "6px 0",
-                              fontSize: "11px",
+                              fontSize: "12px",
                               color: "var(--text-muted)",
                               textAlign: "center",
                             }}
@@ -763,6 +763,7 @@ export function PortWatch() {
                         fontWeight: 600,
                         color: "var(--accent-cyan)",
                         flexShrink: 0,
+                        fontSize: "13px",
                       }}
                     >
                       {entry.pattern}
@@ -770,6 +771,7 @@ export function PortWatch() {
                     <span
                       style={{
                         fontSize: "12px",
+                        lineHeight: 1.4,
                         fontWeight: 600,
                         padding: "1px 6px",
                         borderRadius: "3px",
@@ -840,7 +842,7 @@ function StateCount({
         alignItems: "center",
         gap: "3px",
         padding: "1px 6px",
-        fontSize: "11px",
+        fontSize: "12px",
         fontWeight: 600,
         border: active ? `1px solid ${color}` : "1px solid transparent",
         borderRadius: "4px",
@@ -898,7 +900,7 @@ function HistoryFilterButton({
       onClick={onClick}
       style={{
         padding: "4px 8px",
-        fontSize: "11px",
+        fontSize: "12px",
         fontWeight: 600,
         borderRadius: "6px",
         border: "1px solid var(--border)",
@@ -934,13 +936,13 @@ const errorTextStyle: React.CSSProperties = {
   background: "var(--alert-red-soft)",
   border: "1px solid var(--alert-red-border)",
   color: "var(--accent-red)",
-  fontSize: "12px",
+  fontSize: "13px",
   lineHeight: 1.5,
 };
 
 const btnStyle: React.CSSProperties = {
   padding: "6px 16px",
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   border: "none",
   borderRadius: "6px",
@@ -961,8 +963,8 @@ const removeBtnStyle: React.CSSProperties = {
 };
 
 const detailsBtn: React.CSSProperties = {
-  padding: "2px 8px",
-  fontSize: "11px",
+  padding: "3px 9px",
+  fontSize: "12px",
   fontWeight: 500,
   border: "none",
   borderRadius: "4px",
@@ -994,7 +996,7 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -1002,7 +1004,7 @@ const titleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 600,
   padding: "1px 8px",
   borderRadius: "4px",
@@ -1012,7 +1014,7 @@ const badgeStyle: React.CSSProperties = {
 };
 
 const sectionTitle: React.CSSProperties = {
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 600,
   color: "var(--text-secondary)",
   textTransform: "uppercase",
@@ -1022,16 +1024,16 @@ const sectionTitle: React.CSSProperties = {
 
 const thStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "6px 4px",
+  padding: "8px 6px",
   color: "var(--text-muted)",
   fontWeight: 500,
-  fontSize: "11px",
+  fontSize: "12px",
   textTransform: "uppercase",
   letterSpacing: "0.05em",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "5px 4px",
+  padding: "7px 6px",
   color: "var(--text-secondary)",
-  fontSize: "12px",
+  fontSize: "13px",
 };

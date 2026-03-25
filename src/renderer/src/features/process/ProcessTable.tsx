@@ -131,7 +131,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           style={{
             width: "100%",
             borderCollapse: "collapse",
-            fontSize: "12px",
+            fontSize: "13px",
           }}
         >
           <thead>
@@ -216,7 +216,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                     ...tdStyle,
                     color: "var(--text-muted)",
                     fontFamily: "monospace",
-                    fontSize: "11px",
+                    fontSize: "12px",
                   }}
                 >
                   {p.pid}
@@ -232,7 +232,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                   {p.command && p.command !== p.name && (
                     <div
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "var(--text-muted)",
                         marginTop: "4px",
                         maxWidth: "300px",
@@ -240,7 +240,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                     >
                       <CopyableValue
                         value={p.command}
-                        fontSize="10px"
+                        fontSize="11px"
                         color="var(--text-muted)"
                         multiline
                         maxWidth="300px"
@@ -408,7 +408,7 @@ function SortHeader({
 }
 
 const thStyle: React.CSSProperties = {
-  padding: "8px 4px",
+  padding: "10px 6px",
   fontWeight: 500,
   fontSize: "12px",
   textTransform: "uppercase",
@@ -416,8 +416,9 @@ const thStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "6px 4px",
+  padding: "8px 6px",
   color: "var(--text-secondary)",
+  fontSize: "13px",
 };
 
 const searchStyle: React.CSSProperties = {
@@ -445,19 +446,19 @@ const infoBarStyle: React.CSSProperties = {
 };
 
 const infoLabelStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   color: "var(--text-primary)",
 };
 
 const infoReasonStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   color: "var(--text-muted)",
 };
 
 const killBtnStyle: React.CSSProperties = {
   padding: "4px 10px",
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 600,
   border: "none",
   borderRadius: "6px",
@@ -490,7 +491,7 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -498,7 +499,7 @@ const titleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 600,
   padding: "1px 8px",
   borderRadius: "4px",

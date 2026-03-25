@@ -144,8 +144,8 @@ export function PortFinder() {
                 aria-pressed={searchScope === s}
                 onClick={() => setSearchScope(s)}
                 style={{
-                  padding: "3px 8px",
-                  fontSize: "10px",
+                  padding: "4px 9px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   border: "none",
                   borderRadius: "4px",
@@ -304,7 +304,7 @@ export function PortFinder() {
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: "12px",
+                  fontSize: "13px",
                 }}
               >
                 <thead>
@@ -342,7 +342,7 @@ export function PortFinder() {
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "11px",
+                          fontSize: "12px",
                           color: "var(--text-muted)",
                         }}
                       >
@@ -368,7 +368,7 @@ export function PortFinder() {
                       >
                         <CopyableValue
                           value={p.process}
-                          fontSize="11px"
+                          fontSize="12px"
                           color="var(--text-primary)"
                           maxWidth="150px"
                         />
@@ -377,7 +377,7 @@ export function PortFinder() {
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "11px",
+                          fontSize: "12px",
                           color: "var(--text-muted)",
                         }}
                       >
@@ -387,7 +387,7 @@ export function PortFinder() {
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "11px",
+                          fontSize: "12px",
                           color: "var(--text-muted)",
                         }}
                       >
@@ -438,9 +438,9 @@ function StateBadge({ state }: { state: string }) {
   return (
     <span
       style={{
-        fontSize: "10px",
+        fontSize: "12px",
         fontWeight: 600,
-        padding: "2px 6px",
+        padding: "3px 7px",
         borderRadius: "4px",
         background: s.bg,
         color: s.color,
@@ -468,8 +468,8 @@ function FilterBtn({
       aria-pressed={active}
       onClick={onClick}
       style={{
-        padding: "4px 10px",
-        fontSize: "11px",
+        padding: "5px 11px",
+        fontSize: "12px",
         fontWeight: active ? 600 : 400,
         border: "none",
         borderRadius: "5px",
@@ -487,7 +487,7 @@ function FilterBtn({
 
 const thStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "8px 4px",
+  padding: "10px 6px",
   color: "var(--text-muted)",
   fontWeight: 500,
   fontSize: "12px",
@@ -497,8 +497,9 @@ const thStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "6px 4px",
+  padding: "8px 6px",
   color: "var(--text-secondary)",
+  fontSize: "13px",
 };
 
 const searchStyle: React.CSSProperties = {
@@ -526,19 +527,19 @@ const infoBarStyle: React.CSSProperties = {
 };
 
 const infoLabelStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   color: "var(--text-primary)",
 };
 
 const infoReasonStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   color: "var(--text-muted)",
 };
 
 const btnStyle: React.CSSProperties = {
   padding: "5px 14px",
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   border: "none",
   borderRadius: "6px",
@@ -549,7 +550,7 @@ const btnStyle: React.CSSProperties = {
 
 const killBtnStyle: React.CSSProperties = {
   padding: "4px 10px",
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 600,
   border: "none",
   borderRadius: "6px",
@@ -582,7 +583,7 @@ const titleRowStyle: React.CSSProperties = {
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.05em",
@@ -590,7 +591,7 @@ const titleStyle: React.CSSProperties = {
 };
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: "11px",
+  fontSize: "12px",
   fontWeight: 600,
   padding: "1px 8px",
   borderRadius: "4px",
