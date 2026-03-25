@@ -617,6 +617,7 @@ export const MESSAGE_KEYS = {
   "disk.quick_cleanup.description":
     "Quickly inspect the size of major folders such as caches, logs, and downloads.",
   "disk.quick_cleanup.scan_failed": "Failed to scan quick cleanup candidates.",
+  "disk.quick_cleanup.empty": "No quick cleanup candidates were found.",
   "disk.quick_cleanup.total": "Total",
   "disk.quick_cleanup.cleanable": "Cleanable",
   "disk.quick_cleanup.cleanable_label": "CLEANABLE",

@@ -149,6 +149,8 @@ export const KO_MESSAGES = {
     "캐시, 로그, 다운로드 등 주요 폴더의 용량을 빠르게 확인합니다",
   "Failed to scan quick cleanup candidates.":
     "빠른 정리 후보 탐색에 실패했습니다.",
+  "No quick cleanup candidates were found.":
+    "빠른 정리 후보가 발견되지 않았습니다.",
   Cleanable: "정리 가능",
   CLEANABLE: "정리 가능",
   "Open in Finder / Explorer": "Finder / Explorer에서 열기",

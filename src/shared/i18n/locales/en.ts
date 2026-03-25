@@ -149,6 +149,8 @@ export const EN_MESSAGES = {
     "Quickly inspect the size of major folders such as caches, logs, and downloads.",
   "Failed to scan quick cleanup candidates.":
     "Failed to scan quick cleanup candidates.",
+  "No quick cleanup candidates were found.":
+    "No quick cleanup candidates were found.",
   Cleanable: "Cleanable",
   CLEANABLE: "CLEANABLE",
   "Open in Finder / Explorer": "Open in Finder / Explorer",
