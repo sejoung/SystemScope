@@ -12,16 +12,22 @@ import { startUpdateChecker, stopUpdateChecker } from '../services/updateChecker
 
 let appReadyForQuit = false
 
+const isE2ELightweight = process.env.E2E_LIGHTWEIGHT === '1'
+
 app.whenReady().then(() => {
   initializeLogging()
   initializeShutdownHandlers()
   initializeRuntimeSettings()
-  ensureSnapshotDir()
   registerAllIpc()
-  const { snapshotIntervalMin } = getSettings()
-  startSnapshotScheduler(snapshotIntervalMin * 60 * 1000)
-  startUpdateChecker()
-  createTray()
+
+  if (!isE2ELightweight) {
+    ensureSnapshotDir()
+    const { snapshotIntervalMin } = getSettings()
+    startSnapshotScheduler(snapshotIntervalMin * 60 * 1000)
+    startUpdateChecker()
+    createTray()
+  }
+
   createMainWindow()
 
   app.on('activate', () => {
