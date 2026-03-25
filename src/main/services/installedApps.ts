@@ -1,5 +1,4 @@
-import { app, shell } from 'electron'
-import { existsSync } from 'fs'
+import { shell } from 'electron'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform as getPlatform } from 'os'
@@ -13,13 +12,45 @@ import type {
   AppUninstallRequest,
   InstalledApp
 } from '@shared/types'
-import { logDebug, logError, logInfo, logWarn } from './logging'
+import { logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
+import {
+  listMacInstalledApps,
+  moveMacAppToTrashWithFinder,
+  getMacRelatedDataCandidates,
+  listMacLeftoverAppData,
+  inferMacLeftoverAppName
+} from './installedApps.mac'
+import {
+  listWindowsInstalledApps,
+  listWindowsLeftoverRegistryEntries,
+  launchWindowsUninstaller,
+  getWindowsRelatedDataCandidates,
+  listWindowsLeftoverAppData,
+  parseWindowsRegistryOutput,
+  parseUninstallCommand,
+  splitWindowsCommandArgs,
+  buildWindowsUninstallerPowerShellCommand
+} from './installedApps.windows'
 
 const execFileAsync = promisify(execFile)
 const installedAppsCache = new Map<string, InstalledApp>()
 const leftoverAppDataCache = new Map<string, AppLeftoverDataItem>()
 const leftoverRegistryCache = new Map<string, AppLeftoverRegistryItem>()
+
+// ─── Re-exports for tests ───
+
+export {
+  parseWindowsRegistryOutput,
+  parseUninstallCommand,
+  splitWindowsCommandArgs,
+  buildWindowsUninstallerPowerShellCommand,
+  getWindowsRelatedDataCandidates,
+  getMacRelatedDataCandidates,
+  inferMacLeftoverAppName
+}
+
+// ─── Public API ───
 
 export async function listInstalledApps(): Promise<InstalledApp[]> {
   const apps = getPlatform() === 'darwin'
@@ -74,7 +105,7 @@ export async function removeLeftoverAppData(itemIds: string[]): Promise<{ delete
 
   for (const item of uniqueItems) {
     try {
-      await trashPathWithFallback(item.path, 'leftover')
+      await trashPathWithFallback(item.path)
       leftoverAppDataCache.delete(item.id)
       deletedPaths.push(item.path)
     } catch (error) {
@@ -188,10 +219,7 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
       throw new Error(tk('main.apps.error.no_app_path'))
     }
 
-    await trashPathWithFallback(target.launchPath, 'mac-app', {
-      appId: request.appId,
-      name: target.name
-    })
+    await trashPathWithFallback(target.launchPath)
     const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataIds ?? [])
     installedAppsCache.delete(request.appId)
     logInfo('apps', 'Moved macOS app bundle to trash', {
@@ -257,327 +285,9 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
   }
 }
 
-export function parseWindowsRegistryOutput(raw: string): InstalledApp[] {
-  const blocks = raw.split(/\r?\n\r?\n+/).map((block) => block.trim()).filter(Boolean)
-  const apps: InstalledApp[] = []
-  const seen = new Set<string>()
-  const currentExe = app.getPath('exe')
+// ─── Internal helpers ───
 
-  for (const block of blocks) {
-    const lines = block.split(/\r?\n/).filter(Boolean)
-    const registryPath = lines[0]?.trim()
-    if (!registryPath?.startsWith('HKEY_')) {
-      continue
-    }
-
-    const values = new Map<string, string>()
-    for (const line of lines.slice(1)) {
-      const match = line.match(/^\s+([^\s]+)\s+REG_\w+\s+(.*)$/)
-      if (!match) continue
-      values.set(match[1], match[2].trim())
-    }
-
-    const name = values.get('DisplayName')
-    if (!name) continue
-
-    const installLocation = sanitizeRegistryValue(values.get('InstallLocation'))
-    const uninstallCommand = sanitizeRegistryValue(values.get('UninstallString'))
-    const quietUninstallCommand = sanitizeRegistryValue(values.get('QuietUninstallString'))
-    const launchPath = installLocation ? currentExeIfInside(currentExe, installLocation) : undefined
-    const isProtected = Boolean(launchPath)
-
-    const appRecord: InstalledApp = {
-      id: registryPath,
-      name,
-      version: sanitizeRegistryValue(values.get('DisplayVersion')) ?? undefined,
-      publisher: sanitizeRegistryValue(values.get('Publisher')) ?? undefined,
-      installLocation: installLocation ?? undefined,
-      launchPath,
-      uninstallCommand: uninstallCommand ?? undefined,
-      quietUninstallCommand: quietUninstallCommand ?? undefined,
-      uninstallRegistryPath: registryPath,
-      platform: 'windows',
-      uninstallKind: uninstallCommand ? 'uninstall_command' : 'open_settings',
-      protected: isProtected,
-      protectedReason: isProtected ? tk('main.apps.protected.current_app') : undefined
-    }
-
-    const dedupeKey = `${appRecord.name}::${appRecord.version ?? ''}::${appRecord.publisher ?? ''}`
-    if (seen.has(dedupeKey)) continue
-    seen.add(dedupeKey)
-    apps.push(appRecord)
-  }
-
-  return apps
-}
-
-async function listMacInstalledApps(): Promise<InstalledApp[]> {
-  const roots = ['/Applications', path.join(homedir(), 'Applications')]
-  const currentAppBundlePath = getCurrentMacAppBundlePath()
-  const apps: InstalledApp[] = []
-
-  for (const root of roots) {
-    let entries
-    try {
-      entries = await fsp.readdir(root, { withFileTypes: true })
-    } catch {
-      continue
-    }
-
-    for (const entry of entries) {
-      if (!entry.isDirectory() || !entry.name.endsWith('.app')) continue
-      const appPath = path.join(root, entry.name)
-      const metadata = await readMacAppMetadata(appPath)
-      const protectedApp = appPath.startsWith('/System/Applications') || appPath === currentAppBundlePath
-
-      apps.push({
-        id: appPath,
-        name: metadata.name,
-        version: metadata.version,
-        publisher: metadata.bundleId,
-        bundleId: metadata.bundleId,
-        installLocation: root,
-        launchPath: appPath,
-        platform: 'mac',
-        uninstallKind: 'trash_app',
-        protected: protectedApp,
-        protectedReason: protectedApp ? tk('main.apps.protected.system_app') : undefined
-      })
-    }
-  }
-
-  return apps
-}
-
-async function readMacAppMetadata(appPath: string): Promise<{ name: string; version?: string; bundleId?: string }> {
-  const fallbackName = path.basename(appPath, '.app')
-  const plistPath = path.join(appPath, 'Contents', 'Info.plist')
-
-  const version = await readMacPlistValue(plistPath, 'CFBundleShortVersionString')
-  const bundleId = await readMacPlistValue(plistPath, 'CFBundleIdentifier')
-
-  if (!version && !bundleId) {
-    logDebug('apps', 'macOS app metadata unavailable, using bundle name fallback', { appPath })
-  }
-
-  return {
-    name: fallbackName,
-    version,
-    bundleId
-  }
-}
-
-async function listWindowsInstalledApps(): Promise<InstalledApp[]> {
-  const registryRoots = [
-    'HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
-    'HKLM\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
-    'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall'
-  ]
-
-  const allApps: InstalledApp[] = []
-  for (const registryPath of registryRoots) {
-    try {
-      // PowerShell의 [Console]::OutputEncoding으로 UTF-8 출력 보장
-      const psCommand = `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; reg query "${registryPath}" /s`
-      const { stdout } = await execFileAsync('powershell', ['-NoProfile', '-Command', psCommand], {
-        encoding: 'utf-8',
-        maxBuffer: 10 * 1024 * 1024
-      })
-      const parsed = parseWindowsRegistryOutput(stdout)
-      allApps.push(...parsed)
-      logInfo('apps', 'Queried Windows uninstall registry root', {
-        registryPath,
-        count: parsed.length
-      })
-    } catch (error) {
-      logWarn('apps', 'Failed to query Windows uninstall registry', { registryPath, error })
-    }
-  }
-
-  logInfo('apps', 'Loaded Windows uninstall registry apps', {
-    count: allApps.length
-  })
-
-  return allApps
-}
-
-async function listWindowsLeftoverRegistryEntries(): Promise<AppLeftoverRegistryItem[]> {
-  const entries = await listWindowsInstalledApps()
-  const leftovers: AppLeftoverRegistryItem[] = []
-
-  for (const entry of entries) {
-    const installLocationExists = entry.installLocation ? pathExists(entry.installLocation) : false
-    const uninstallerExists = entry.uninstallCommand ? commandTargetExists(entry.uninstallCommand) : false
-
-    if (installLocationExists || uninstallerExists) {
-      continue
-    }
-
-    const registryPath = entry.uninstallRegistryPath ?? entry.id
-    leftovers.push({
-      id: registryPath,
-      appName: entry.name,
-      registryPath,
-      version: entry.version,
-      publisher: entry.publisher,
-      installLocation: entry.installLocation,
-      uninstallCommand: entry.uninstallCommand,
-      installLocationExists,
-      uninstallerExists
-    })
-  }
-
-  logInfo('apps', 'Filtered Windows leftover uninstall registry entries', {
-    scannedCount: entries.length,
-    leftoverCount: leftovers.length
-  })
-
-  return leftovers
-}
-
-function sanitizeRegistryValue(value?: string): string | null {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  return trimmed
-}
-
-function pathExists(targetPath: string): boolean {
-  if (!targetPath.trim()) return false
-  return existsSync(expandWindowsEnvVars(targetPath))
-}
-
-function commandTargetExists(command: string): boolean {
-  const { file } = parseUninstallCommand(expandWindowsEnvVars(command))
-  const normalized = file.trim().replace(/^"(.*)"$/, '$1')
-  if (!normalized) return false
-
-  const lower = normalized.toLowerCase()
-  if (lower === 'msiexec' || lower === 'msiexec.exe' || lower === 'rundll32' || lower === 'rundll32.exe') {
-    return true
-  }
-
-  if (!/[\\/]/.test(normalized)) {
-    return true
-  }
-
-  return existsSync(normalized)
-}
-
-function expandWindowsEnvVars(input: string): string {
-  return input.replace(/%([^%]+)%/g, (_match, name: string) => process.env[name] ?? `%${name}%`)
-}
-
-function currentExeIfInside(currentExe: string, installLocation: string): string | undefined {
-  const normalizedInstall = installLocation.replace(/[\\/]+/g, '\\').replace(/\\+$/, '').toLowerCase()
-  const normalizedExe = currentExe.replace(/[\\/]+/g, '\\').toLowerCase()
-  return normalizedExe.startsWith(normalizedInstall) ? currentExe : undefined
-}
-
-function getCurrentMacAppBundlePath(): string | null {
-  const exePath = app.getPath('exe')
-  const parts = exePath.split(path.sep)
-  const appIndex = parts.findIndex((part) => part.endsWith('.app'))
-  if (appIndex === -1) return null
-  return parts.slice(0, appIndex + 1).join(path.sep)
-}
-
-export function parseUninstallCommand(command: string): { file: string; args: string } {
-  // "C:\path\uninstall.exe" /arg1 /arg2
-  const quotedMatch = command.match(/^"([^"]+)"(.*)$/)
-  if (quotedMatch) {
-    return { file: quotedMatch[1], args: quotedMatch[2].trim() }
-  }
-
-  const executableMatch = command.match(/^(.+\.(?:exe|msi|bat|cmd|com))(?:\s+(.*))?$/i)
-  if (executableMatch) {
-    return {
-      file: executableMatch[1],
-      args: executableMatch[2]?.trim() ?? ''
-    }
-  }
-
-  return { file: command, args: '' }
-}
-
-export function splitWindowsCommandArgs(args: string): string[] {
-  const result: string[] = []
-  let current = ''
-  let inQuotes = false
-
-  for (let i = 0; i < args.length; i++) {
-    const char = args[i]
-
-    if (char === '"') {
-      inQuotes = !inQuotes
-      continue
-    }
-
-    if (!inQuotes && /\s/.test(char)) {
-      if (current) {
-        result.push(current)
-        current = ''
-      }
-      continue
-    }
-
-    current += char
-  }
-
-  if (current) {
-    result.push(current)
-  }
-
-  return result
-}
-
-export function buildWindowsUninstallerPowerShellCommand(file: string, args: string[]): string {
-  const escapedFile = file.replace(/'/g, "''")
-  const argListLiteral = args.length > 0
-    ? `-ArgumentList @(${args.map((arg) => `'${arg.replace(/'/g, "''")}'`).join(', ')})`
-    : ''
-  return [
-    '$ErrorActionPreference = \'Stop\'',
-    `$process = Start-Process -FilePath '${escapedFile}' ${argListLiteral} -WorkingDirectory '${path.dirname(escapedFile)}' -Verb RunAs -PassThru`,
-    'if ($null -eq $process) { throw \'Failed to launch uninstaller process.\' }'
-  ].join('; ')
-}
-
-async function launchWindowsUninstaller(command: string): Promise<void> {
-  try {
-    const { file, args } = parseUninstallCommand(command)
-    const argv = splitWindowsCommandArgs(args)
-    const psCommand = buildWindowsUninstallerPowerShellCommand(file, argv)
-
-    logInfo('apps', 'Launching uninstaller process', { file, args: argv, psCommand })
-
-    await execFileAsync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCommand], {
-      windowsHide: false
-    })
-  } catch (error) {
-    logError('apps', 'Failed to start Windows uninstall command', { command, error })
-    throw error
-  }
-}
-
-async function moveMacAppToTrashWithFinder(appPath: string): Promise<void> {
-  const script = [
-    'on run argv',
-    'set targetPath to POSIX file (item 1 of argv)',
-    'tell application "Finder"',
-    'delete targetPath',
-    'end tell',
-    'end run'
-  ].join('\n')
-
-  await execFileAsync('osascript', ['-e', script, appPath])
-}
-
-async function trashPathWithFallback(
-  targetPath: string,
-  reason: 'mac-app' | 'related-data' | 'leftover',
-  metadata?: Record<string, unknown>
-): Promise<void> {
+async function trashPathWithFallback(targetPath: string): Promise<void> {
   try {
     await shell.trashItem(targetPath)
   } catch (error) {
@@ -586,23 +296,11 @@ async function trashPathWithFallback(
     }
 
     logInfo('apps', 'shell.trashItem failed on macOS, trying Finder fallback', {
-      reason,
       path: targetPath,
-      ...metadata,
       error
     })
 
     await moveMacAppToTrashWithFinder(targetPath)
-  }
-}
-
-async function readMacPlistValue(plistPath: string, key: string): Promise<string | undefined> {
-  try {
-    const { stdout } = await execFileAsync('defaults', ['read', plistPath, key])
-    const value = stdout.trim()
-    return value || undefined
-  } catch {
-    return undefined
   }
 }
 
@@ -642,10 +340,7 @@ async function trashRelatedDataForApp(
 
   for (const item of uniqueSelectedItems) {
     try {
-      await trashPathWithFallback(item.path, 'related-data', {
-        appId: target.id,
-        name: target.name
-      })
+      await trashPathWithFallback(item.path)
       deletedPaths.push(item.path)
     } catch (error) {
       failedPaths.push(item.path)
@@ -676,248 +371,4 @@ function buildRemovalMessage(baseMessage: string, deletedCount: number, failedCo
     deletedCount,
     failedCount
   })
-}
-
-export function getMacRelatedDataCandidates(
-  target: Pick<InstalledApp, 'name' | 'bundleId'>,
-  homeDir: string
-): AppRelatedDataItem[] {
-  const libraryRoot = path.join(homeDir, 'Library')
-  const candidateNames = [...new Set([target.bundleId, target.name].filter(Boolean) as string[])]
-  const candidates: AppRelatedDataItem[] = []
-
-  for (const name of candidateNames) {
-    candidates.push(
-      createRelatedDataItem(path.join(libraryRoot, 'Application Support', name), 'Application Support', 'mac:application-support'),
-      createRelatedDataItem(path.join(libraryRoot, 'Caches', name), 'Caches', 'mac:caches'),
-      createRelatedDataItem(path.join(libraryRoot, 'Logs', name), 'Logs', 'mac:logs')
-    )
-  }
-
-  if (target.bundleId) {
-    candidates.push(
-      createRelatedDataItem(path.join(libraryRoot, 'Preferences', `${target.bundleId}.plist`), 'Preferences', 'mac:preferences'),
-      createRelatedDataItem(path.join(libraryRoot, 'Saved Application State', `${target.bundleId}.savedState`), 'Saved State', 'mac:saved-state'),
-      createRelatedDataItem(path.join(libraryRoot, 'Containers', target.bundleId), 'Container', 'mac:container')
-    )
-  }
-
-  return dedupeRelatedDataItems(candidates)
-}
-
-export function getWindowsRelatedDataCandidates(
-  target: Pick<InstalledApp, 'name' | 'installLocation'>
-): AppRelatedDataItem[] {
-  const appData = process.env.APPDATA
-  const localAppData = process.env.LOCALAPPDATA
-  const programData = process.env.ProgramData
-  const installBaseName = target.installLocation ? path.win32.basename(target.installLocation) : undefined
-  const candidateNames = [...new Set([target.name, installBaseName].filter(Boolean) as string[])]
-  const candidates: AppRelatedDataItem[] = []
-
-  for (const name of candidateNames) {
-    if (appData) {
-      candidates.push(createRelatedDataItem(path.win32.join(appData, name), 'AppData Roaming', 'win:appdata-roaming'))
-    }
-    if (localAppData) {
-      candidates.push(createRelatedDataItem(path.win32.join(localAppData, name), 'AppData Local', 'win:appdata-local'))
-      candidates.push(createRelatedDataItem(path.win32.join(localAppData, 'Programs', name), 'Local Programs', 'win:local-programs'))
-    }
-    if (programData) {
-      candidates.push(createRelatedDataItem(path.win32.join(programData, name), 'ProgramData', 'win:programdata'))
-    }
-  }
-
-  return dedupeRelatedDataItems(candidates)
-}
-
-function createRelatedDataItem(itemPath: string, label: string, source: string): AppRelatedDataItem {
-  return {
-    id: `${source}:${itemPath}`,
-    label,
-    path: itemPath,
-    source
-  }
-}
-
-function dedupeRelatedDataItems(items: AppRelatedDataItem[]): AppRelatedDataItem[] {
-  const seen = new Set<string>()
-  return items.filter((item) => {
-    if (seen.has(item.path)) return false
-    seen.add(item.path)
-    return true
-  })
-}
-
-async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
-  const knownNames = new Set(installedApps.map((app) => app.name.toLowerCase()))
-  const knownBundleIds = new Set(installedApps.map((app) => app.bundleId?.toLowerCase()).filter(Boolean))
-  const homeDir = homedir()
-  const specs = [
-    { root: path.join(homeDir, 'Library', 'Application Support'), type: 'dir', label: 'Application Support', source: 'mac:application-support' },
-    { root: path.join(homeDir, 'Library', 'Caches'), type: 'dir', label: 'Caches', source: 'mac:caches' },
-    { root: path.join(homeDir, 'Library', 'Logs'), type: 'dir', label: 'Logs', source: 'mac:logs' },
-    { root: path.join(homeDir, 'Library', 'Saved Application State'), type: 'dir', label: 'Saved State', source: 'mac:saved-state' },
-    { root: path.join(homeDir, 'Library', 'Preferences'), type: 'plist', label: 'Preferences', source: 'mac:preferences' }
-  ] as const
-
-  const items: AppLeftoverDataItem[] = []
-
-  for (const spec of specs) {
-    let entries
-    try {
-      entries = await fsp.readdir(spec.root, { withFileTypes: true })
-    } catch {
-      continue
-    }
-
-    for (const entry of entries) {
-      if (spec.type === 'dir' && !entry.isDirectory()) continue
-      if (spec.type === 'plist' && (!entry.isFile() || !entry.name.endsWith('.plist'))) continue
-
-      const appName = inferMacLeftoverAppName(entry.name)
-      if (!appName) continue
-
-      const normalized = appName.toLowerCase()
-      if (knownNames.has(normalized) || knownBundleIds.has(normalized)) continue
-
-      items.push({
-        id: `${spec.source}:${path.join(spec.root, entry.name)}`,
-        appName,
-        label: spec.label,
-        path: path.join(spec.root, entry.name),
-        source: spec.source,
-        platform: 'mac',
-        ...getMacLeftoverGuidance(spec.label, appName)
-      })
-    }
-  }
-
-  return dedupeLeftoverDataItems(items)
-}
-
-async function listWindowsLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
-  const knownNames = new Set(installedApps.flatMap((app) => {
-    const values = [app.name]
-    if (app.installLocation) values.push(path.win32.basename(app.installLocation))
-    return values.map((value) => value.toLowerCase())
-  }))
-
-  const roots = [
-    { root: process.env.APPDATA, label: 'AppData Roaming', source: 'win:appdata-roaming' },
-    { root: process.env.LOCALAPPDATA, label: 'AppData Local', source: 'win:appdata-local' },
-    { root: process.env.LOCALAPPDATA ? path.win32.join(process.env.LOCALAPPDATA, 'Programs') : undefined, label: 'Local Programs', source: 'win:local-programs' },
-    { root: process.env.ProgramData, label: 'ProgramData', source: 'win:programdata' }
-  ]
-
-  const items: AppLeftoverDataItem[] = []
-
-  for (const spec of roots) {
-    if (!spec.root) continue
-
-    let entries
-    try {
-      entries = await fsp.readdir(spec.root, { withFileTypes: true })
-    } catch {
-      continue
-    }
-
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-      const appName = entry.name.trim()
-      if (!appName) continue
-      if (knownNames.has(appName.toLowerCase())) continue
-
-      items.push({
-        id: `${spec.source}:${path.win32.join(spec.root, entry.name)}`,
-        appName,
-        label: spec.label,
-        path: path.win32.join(spec.root, entry.name),
-        source: spec.source,
-        platform: 'windows',
-        ...getWindowsLeftoverGuidance(spec.label)
-      })
-    }
-  }
-
-  return dedupeLeftoverDataItems(items)
-}
-
-export function inferMacLeftoverAppName(entryName: string): string | null {
-  const withoutPlist = entryName.endsWith('.plist') ? entryName.slice(0, -6) : entryName
-  const withoutSavedState = withoutPlist.endsWith('.savedState') ? withoutPlist.slice(0, -11) : withoutPlist
-  const trimmed = withoutSavedState.trim()
-  return trimmed || null
-}
-
-function dedupeLeftoverDataItems(items: AppLeftoverDataItem[]): AppLeftoverDataItem[] {
-  const seen = new Set<string>()
-  return items.filter((item) => {
-    if (seen.has(item.path)) return false
-    seen.add(item.path)
-    return true
-  })
-}
-
-function getMacLeftoverGuidance(
-  label: AppLeftoverDataItem['label'],
-  appName: string
-): Pick<AppLeftoverDataItem, 'confidence' | 'reason' | 'risk'> {
-  if (label === 'Container' || label === 'Saved State') {
-    return {
-      confidence: 'high',
-      reason: tk('main.apps.leftover.mac.container_reason', { label: label.toLowerCase() }),
-      risk: tk('main.apps.leftover.mac.container_risk')
-    }
-  }
-
-  if (label === 'Preferences') {
-    return {
-      confidence: appName.includes('.') ? 'high' : 'medium',
-      reason: appName.includes('.')
-        ? tk('main.apps.leftover.mac.pref_bundle_reason')
-        : tk('main.apps.leftover.mac.pref_name_reason'),
-      risk: tk('main.apps.leftover.mac.pref_risk')
-    }
-  }
-
-  if (label === 'Application Support') {
-    return {
-      confidence: 'medium',
-      reason: tk('main.apps.leftover.mac.support_reason'),
-      risk: tk('main.apps.leftover.mac.support_risk')
-    }
-  }
-
-  return {
-    confidence: 'medium',
-    reason: tk('main.apps.leftover.mac.default_reason', { label: label.toLowerCase() }),
-    risk: tk('main.apps.leftover.mac.default_risk')
-  }
-}
-
-function getWindowsLeftoverGuidance(
-  label: AppLeftoverDataItem['label']
-): Pick<AppLeftoverDataItem, 'confidence' | 'reason' | 'risk'> {
-  if (label === 'ProgramData') {
-    return {
-      confidence: 'medium',
-      reason: tk('main.apps.leftover.win.programdata_reason'),
-      risk: tk('main.apps.leftover.win.programdata_risk')
-    }
-  }
-
-  if (label === 'Local Programs') {
-    return {
-      confidence: 'high',
-      reason: tk('main.apps.leftover.win.local_programs_reason'),
-      risk: tk('main.apps.leftover.win.local_programs_risk')
-    }
-  }
-
-  return {
-    confidence: 'medium',
-    reason: tk('main.apps.leftover.win.default_reason', { label }),
-    risk: tk('main.apps.leftover.win.default_risk')
-  }
 }
