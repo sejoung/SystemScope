@@ -352,13 +352,13 @@ function SortHeader({
 const thStyle: React.CSSProperties = {
   padding: "8px 4px",
   fontWeight: 500,
-  fontSize: "11px",
+  fontSize: "12px",
   textTransform: "uppercase",
   letterSpacing: "0.05em",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "5px 4px",
+  padding: "6px 4px",
   color: "var(--text-secondary)",
 };
 

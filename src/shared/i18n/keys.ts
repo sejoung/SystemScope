@@ -30,6 +30,12 @@ export const MESSAGE_KEYS = {
   "process.page.title": "Activity",
   "process.page.description":
     "Search active processes, inspect ports, and watch specific connections over time.",
+  "process.page.tab.processes_help":
+    "Processes shows overall CPU and memory usage so you can identify heavy tasks first.",
+  "process.page.tab.ports_help":
+    "Ports is for one-time inspection of current listeners and active remote connections.",
+  "process.page.tab.watch_help":
+    "Watch keeps tracking specific ports or IP patterns over time and records connection changes.",
   "process.tab.processes": "Processes",
   "process.tab.ports": "Ports",
   "process.tab.watch": "Watch",
@@ -143,6 +149,10 @@ export const MESSAGE_KEYS = {
   "disk.scan.status_running": "Running",
   "disk.scan.status_complete": "Done",
   "disk.scan.status_cancelled": "Cancelled",
+  "disk.scan.scope_empty":
+    "Pick one folder to scan. The scan analyzes only that selected path and its subfolders.",
+  "disk.scan.scope_selected":
+    "The current scan covers the selected folder and all nested files and subfolders. Large folders may take longer to finish.",
   "disk.scan.empty":
     "Select a folder to analyze size distribution, large files, and duplicates right away.",
   "disk.scan.browse_folder": "Browse Folder",
@@ -181,6 +191,7 @@ export const MESSAGE_KEYS = {
   "settings.section.logs": "Logs",
   "settings.section.about": "About",
   "settings.badge.edited": "Edited",
+  "settings.note.save_required": "Applies after Save All",
   "settings.theme.description": "Choose the color theme used across the app.",
   "settings.language.description":
     "Change the app language. After saving, most UI text updates immediately.",

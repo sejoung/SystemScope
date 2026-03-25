@@ -82,6 +82,19 @@ export function ProcessPage() {
             {tk("process.tab.watch")}
           </PageTab>
         </div>
+        <div
+          style={{
+            fontSize: "12px",
+            color: "var(--text-muted)",
+            lineHeight: 1.6,
+          }}
+        >
+          {tab === "processes"
+            ? tk("process.page.tab.processes_help")
+            : tab === "ports"
+              ? tk("process.page.tab.ports_help")
+              : tk("process.page.tab.watch_help")}
+        </div>
       </div>
 
       {tab === "processes" && <ProcessTable processes={allProcesses} />}

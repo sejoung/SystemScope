@@ -217,7 +217,7 @@ export function PortWatch() {
               onClick={() => setWatchScope(s)}
               style={{
                 padding: "3px 8px",
-                fontSize: "10px",
+                fontSize: "11px",
                 fontWeight: 600,
                 border: "none",
                 borderRadius: "4px",
@@ -450,7 +450,7 @@ export function PortWatch() {
                       </span>
                       <span
                         style={{
-                          fontSize: "10px",
+                          fontSize: "11px",
                           color: "var(--text-muted)",
                           padding: "1px 5px",
                           borderRadius: "3px",
@@ -544,7 +544,7 @@ export function PortWatch() {
                         {activeFilter !== "all" && (
                           <div
                             style={{
-                              fontSize: "11px",
+                              fontSize: "12px",
                               color: "var(--text-muted)",
                               marginBottom: "6px",
                             }}
@@ -568,7 +568,7 @@ export function PortWatch() {
                             style={{
                               width: "100%",
                               borderCollapse: "collapse",
-                              fontSize: "11px",
+                              fontSize: "12px",
                             }}
                           >
                             <thead>
@@ -840,7 +840,7 @@ function StateCount({
         alignItems: "center",
         gap: "3px",
         padding: "1px 6px",
-        fontSize: "10px",
+        fontSize: "11px",
         fontWeight: 600,
         border: active ? `1px solid ${color}` : "1px solid transparent",
         borderRadius: "4px",
@@ -867,7 +867,7 @@ function StateBadge({ state }: { state: string }) {
   return (
     <span
       style={{
-        fontSize: "10px",
+        fontSize: "11px",
         fontWeight: 600,
         padding: "2px 6px",
         borderRadius: "4px",

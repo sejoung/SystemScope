@@ -1130,7 +1130,7 @@ export function AppsPage() {
                 {filteredLeftovers.map((item) => {
                   const checked = selectedLeftoverIds.includes(item.id);
                   return (
-                    <label key={item.id} style={leftoverCardStyle}>
+                    <div key={item.id} style={leftoverCardStyle}>
                       <div
                         style={{
                           display: "flex",
@@ -1139,6 +1139,7 @@ export function AppsPage() {
                         }}
                       >
                         <input
+                          id={`leftover-${item.id}`}
                           type="checkbox"
                           checked={checked}
                           onChange={() => handleToggleLeftoverId(item.id)}
@@ -1163,7 +1164,12 @@ export function AppsPage() {
                                   wordBreak: "break-word",
                                 }}
                               >
-                                {item.appName}
+                                <label
+                                  htmlFor={`leftover-${item.id}`}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  {item.appName}
+                                </label>
                               </div>
                               <div
                                 style={{
@@ -1197,8 +1203,7 @@ export function AppsPage() {
                             </div>
                             <button
                               type="button"
-                              onClick={(event) => {
-                                event.preventDefault();
+                              onClick={() => {
                                 void handleOpenLeftoverPath(item.path);
                               }}
                               style={{ ...openBtn, marginRight: 0 }}
@@ -1250,7 +1255,7 @@ export function AppsPage() {
                           </div>
                         </div>
                       </div>
-                    </label>
+                    </div>
                   );
                 })}
               </div>
@@ -1428,7 +1433,7 @@ export function AppsPage() {
                 {filteredRegistry.map((item) => {
                   const checked = selectedRegistryIds.includes(item.id);
                   return (
-                    <label key={item.id} style={leftoverCardStyle}>
+                    <div key={item.id} style={leftoverCardStyle}>
                       <div
                         style={{
                           display: "flex",
@@ -1437,6 +1442,7 @@ export function AppsPage() {
                         }}
                       >
                         <input
+                          id={`registry-${item.id}`}
                           type="checkbox"
                           checked={checked}
                           onChange={() => handleToggleRegistryId(item.id)}
@@ -1461,7 +1467,12 @@ export function AppsPage() {
                                   wordBreak: "break-word",
                                 }}
                               >
-                                {item.appName}
+                                <label
+                                  htmlFor={`registry-${item.id}`}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  {item.appName}
+                                </label>
                               </div>
                               <div
                                 style={{
@@ -1547,7 +1558,7 @@ export function AppsPage() {
                           </div>
                         </div>
                       </div>
-                    </label>
+                    </div>
                   );
                 })}
               </div>

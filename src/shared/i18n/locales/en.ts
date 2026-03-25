@@ -9,6 +9,12 @@ export const EN_MESSAGES = {
   Activity: "Activity",
   "Search active processes, inspect ports, and watch specific connections over time.":
     "Search active processes, inspect ports, and watch specific connections over time.",
+  "Processes shows overall CPU and memory usage so you can identify heavy tasks first.":
+    "Processes shows overall CPU and memory usage so you can identify heavy tasks first.",
+  "Ports is for one-time inspection of current listeners and active remote connections.":
+    "Ports is for one-time inspection of current listeners and active remote connections.",
+  "Watch keeps tracking specific ports or IP patterns over time and records connection changes.":
+    "Watch keeps tracking specific ports or IP patterns over time and records connection changes.",
   Applications: "Applications",
   Preferences: "Preferences",
   "Tune alerts, theme, language, and snapshot behavior from one place.":
@@ -33,6 +39,7 @@ export const EN_MESSAGES = {
   Dark: "Dark",
   Light: "Light",
   Edited: "Edited",
+  "Applies after Save All": "Applies after Save All",
   Open: "Open",
   Copy: "Copy",
   Copied: "Copied",
@@ -228,6 +235,10 @@ export const EN_MESSAGES = {
   Running: "Running",
   Done: "Done",
   Cancelled: "Cancelled",
+  "Pick one folder to scan. The scan analyzes only that selected path and its subfolders.":
+    "Pick one folder to scan. The scan analyzes only that selected path and its subfolders.",
+  "The current scan covers the selected folder and all nested files and subfolders. Large folders may take longer to finish.":
+    "The current scan covers the selected folder and all nested files and subfolders. Large folders may take longer to finish.",
   "Select a folder to analyze size distribution, large files, and duplicates right away.":
     "Select a folder to analyze size distribution, large files, and duplicates right away.",
   "After scanning a folder, you can clean up large, old, and duplicate files.":

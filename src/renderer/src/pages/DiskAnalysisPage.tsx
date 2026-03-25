@@ -428,10 +428,8 @@ function ScanTab({
       {/* Scan controls */}
       <div
         style={{
-          display: "flex",
+          display: "grid",
           gap: "8px",
-          alignItems: "center",
-          flexWrap: "wrap",
           padding: "12px 16px",
           marginBottom: "16px",
           background: "var(--bg-card)",
@@ -439,40 +437,64 @@ function ScanTab({
           border: "1px solid var(--border)",
         }}
       >
-        <button onClick={onSelectFolder} disabled={isScanning} style={btnStyle}>
-          {tk("disk.scan.browse_folder")}
-        </button>
-        {selectedFolder && (
-          <>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <CopyableValue
-                value={selectedFolder}
-                fontSize="13px"
-                color="var(--text-secondary)"
-                maxWidth="100%"
-              />
-            </div>
-            <button
-              onClick={() => window.systemScope.showInFolder(selectedFolder)}
-              style={{
-                ...btnStyle,
-                background: "transparent",
-                border: "1px solid var(--border)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {tk("disk.scan.open")}
-            </button>
-          </>
-        )}
-        {isScanning && (
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <button
-            onClick={onCancelScan}
-            style={{ ...btnStyle, background: "var(--accent-red)" }}
+            onClick={onSelectFolder}
+            disabled={isScanning}
+            style={btnStyle}
           >
-            {tk("disk.scan.cancel")}
+            {tk("disk.scan.browse_folder")}
           </button>
-        )}
+          {selectedFolder && (
+            <>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <CopyableValue
+                  value={selectedFolder}
+                  fontSize="13px"
+                  color="var(--text-secondary)"
+                  maxWidth="100%"
+                />
+              </div>
+              <button
+                onClick={() => window.systemScope.showInFolder(selectedFolder)}
+                style={{
+                  ...btnStyle,
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {tk("disk.scan.open")}
+              </button>
+            </>
+          )}
+          {isScanning && (
+            <button
+              onClick={onCancelScan}
+              style={{ ...btnStyle, background: "var(--accent-red)" }}
+            >
+              {tk("disk.scan.cancel")}
+            </button>
+          )}
+        </div>
+        <div
+          style={{
+            fontSize: "12px",
+            color: "var(--text-muted)",
+            lineHeight: 1.6,
+          }}
+        >
+          {selectedFolder
+            ? tk("disk.scan.scope_selected")
+            : tk("disk.scan.scope_empty")}
+        </div>
       </div>
 
       {!isScanning && scanOutcome === "cancelled" && (

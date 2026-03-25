@@ -9,6 +9,12 @@ export const KO_MESSAGES = {
   Activity: "활동",
   "Search active processes, inspect ports, and watch specific connections over time.":
     "실행 중인 프로세스를 찾고, 포트를 확인하고, 특정 연결 상태를 시간에 따라 감시할 수 있습니다.",
+  "Processes shows overall CPU and memory usage so you can identify heavy tasks first.":
+    "Processes 탭은 전체 CPU와 메모리 사용량을 보여줘서 무거운 작업을 먼저 찾는 데 적합합니다.",
+  "Ports is for one-time inspection of current listeners and active remote connections.":
+    "Ports 탭은 현재 열려 있는 포트와 활성 원격 연결을 일회성으로 점검할 때 적합합니다.",
+  "Watch keeps tracking specific ports or IP patterns over time and records connection changes.":
+    "Watch 탭은 특정 포트나 IP 패턴을 계속 추적하면서 연결 변화 이력을 기록합니다.",
   Applications: "앱",
   Preferences: "환경설정",
   "Tune alerts, theme, language, and snapshot behavior from one place.":
@@ -33,6 +39,7 @@ export const KO_MESSAGES = {
   Dark: "다크",
   Light: "라이트",
   Edited: "수정됨",
+  "Applies after Save All": "모두 저장 후 반영",
   Open: "열기",
   Copy: "복사",
   Copied: "복사됨",
@@ -228,6 +235,10 @@ export const KO_MESSAGES = {
   Running: "진행 중",
   Done: "완료",
   Cancelled: "취소됨",
+  "Pick one folder to scan. The scan analyzes only that selected path and its subfolders.":
+    "한 번에 하나의 폴더만 스캔합니다. 선택한 경로와 그 하위 폴더만 분석합니다.",
+  "The current scan covers the selected folder and all nested files and subfolders. Large folders may take longer to finish.":
+    "현재 스캔은 선택한 폴더와 그 안의 모든 파일 및 하위 폴더를 포함합니다. 폴더가 클수록 더 오래 걸릴 수 있습니다.",
   "Select a folder to analyze size distribution, large files, and duplicates right away.":
     "폴더를 선택하면 용량 분포, 대용량 파일, 중복 파일을 바로 분석합니다.",
   "After scanning a folder, you can clean up large, old, and duplicate files.":

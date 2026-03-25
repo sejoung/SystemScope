@@ -302,6 +302,7 @@ export function SettingsPage() {
           title={tk("settings.section.language")}
           badge={languageDirty ? tk("settings.badge.edited") : undefined}
         >
+          <SaveTimingNote text={tk("settings.note.save_required")} />
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.language.description")}
           </div>
@@ -347,6 +348,7 @@ export function SettingsPage() {
           title={tk("settings.section.appearance")}
           badge={appearanceDirty ? tk("settings.badge.edited") : undefined}
         >
+          <SaveTimingNote text={tk("settings.note.save_required")} />
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.theme.description")}
           </div>
@@ -392,6 +394,7 @@ export function SettingsPage() {
           title={tk("settings.section.alerts")}
           badge={alertsDirty ? tk("settings.badge.edited") : undefined}
         >
+          <SaveTimingNote text={tk("settings.note.save_required")} />
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.alerts.description")}
           </div>
@@ -427,6 +430,7 @@ export function SettingsPage() {
           title={tk("settings.section.snapshots")}
           badge={snapshotsDirty ? tk("settings.badge.edited") : undefined}
         >
+          <SaveTimingNote text={tk("settings.note.save_required")} />
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.snapshots.description")}
           </div>
@@ -796,6 +800,24 @@ function PathRow({
       <button onClick={onOpen} style={btnStyle}>
         {openLabel}
       </button>
+    </div>
+  );
+}
+
+function SaveTimingNote({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        fontSize: "11px",
+        fontWeight: 700,
+        color: "var(--accent-blue)",
+        background: "color-mix(in srgb, var(--accent-blue) 12%, transparent)",
+        borderRadius: "999px",
+        padding: "4px 10px",
+        alignSelf: "flex-start",
+      }}
+    >
+      {text}
     </div>
   );
 }
