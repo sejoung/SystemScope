@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useToast } from "../../components/Toast";
 import { usePortFinderStore } from "../../stores/usePortFinderStore";
 import { getStateStyle } from "./portStateStyles";
@@ -18,13 +18,13 @@ export function PortFinder() {
     error,
     requestState,
     stateFilter,
+    search,
+    searchScope,
     setStateFilter,
+    setSearch,
+    setSearchScope,
     fetchPorts,
   } = usePortFinderStore();
-  const [search, setSearch] = useState("");
-  const [searchScope, setSearchScope] = useState<"local" | "remote" | "all">(
-    "local",
-  );
 
   // 1단계: 검색어 필터 (scope 적용)
   const searchFiltered = useMemo(() => {

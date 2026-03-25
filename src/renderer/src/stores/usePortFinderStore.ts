@@ -3,6 +3,7 @@ import type { PortInfo } from '@shared/types'
 
 type StateFilter = 'all' | 'LISTEN' | 'ESTABLISHED' | 'other'
 type RequestState = 'idle' | 'started' | 'completed' | 'failed'
+type SearchScope = 'local' | 'remote' | 'all'
 
 interface PortFinderState {
   ports: PortInfo[]
@@ -11,12 +12,16 @@ interface PortFinderState {
   error: string | null
   requestState: RequestState
   stateFilter: StateFilter
+  search: string
+  searchScope: SearchScope
   setPorts: (ports: PortInfo[]) => void
   setLoading: (val: boolean) => void
   setScanned: (val: boolean) => void
   setError: (error: string | null) => void
   setRequestState: (state: RequestState) => void
   setStateFilter: (filter: StateFilter) => void
+  setSearch: (search: string) => void
+  setSearchScope: (scope: SearchScope) => void
   fetchPorts: () => Promise<void>
 }
 
@@ -27,6 +32,8 @@ export const usePortFinderStore = create<PortFinderState>((set, get) => ({
   error: null,
   requestState: 'idle',
   stateFilter: 'all',
+  search: '',
+  searchScope: 'local',
 
   setPorts: (ports) => set({ ports }),
   setLoading: (val) => set({ loading: val }),
@@ -34,6 +41,8 @@ export const usePortFinderStore = create<PortFinderState>((set, get) => ({
   setError: (error) => set({ error }),
   setRequestState: (requestState) => set({ requestState }),
   setStateFilter: (filter) => set({ stateFilter: filter }),
+  setSearch: (search) => set({ search }),
+  setSearchScope: (searchScope) => set({ searchScope }),
 
   fetchPorts: async () => {
     if (get().loading) return
