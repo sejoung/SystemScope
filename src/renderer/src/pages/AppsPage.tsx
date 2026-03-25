@@ -700,7 +700,7 @@ export function AppsPage() {
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: "12px",
+                  fontSize: "14px",
                 }}
               >
                 <thead>
@@ -728,7 +728,7 @@ export function AppsPage() {
                 <tbody>
                   {filteredApps.map((entry) => (
                     <Fragment key={entry.id}>
-                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      <tr style={rowStyle}>
                         <td style={tdStyle}>
                           <div
                             style={{
@@ -754,18 +754,33 @@ export function AppsPage() {
                           {entry.protectedReason && (
                             <div
                               style={{
-                                marginTop: "4px",
+                                marginTop: "6px",
                                 color: "var(--text-muted)",
+                                lineHeight: 1.5,
                               }}
                             >
                               {t(entry.protectedReason)}
                             </div>
                           )}
                         </td>
-                        <td style={tdStyle}>{entry.version ?? "-"}</td>
+                        <td
+                          style={{
+                            ...tdStyle,
+                            fontFamily: "monospace",
+                            fontVariantNumeric: "tabular-nums",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {entry.version ?? "-"}
+                        </td>
                         <td style={tdStyle}>
                           {entry.publisher ? (
-                            <span style={{ color: "var(--text-secondary)" }}>
+                            <span
+                              style={{
+                                color: "var(--text-secondary)",
+                                lineHeight: 1.45,
+                              }}
+                            >
                               {entry.publisher}
                             </span>
                           ) : (
@@ -792,8 +807,9 @@ export function AppsPage() {
                               entry.installLocation ?? entry.launchPath ?? ""
                             }
                             emptyValue="-"
-                            fontSize="11px"
+                            fontSize="12px"
                             color="var(--text-muted)"
+                            multiline
                             maxWidth="340px"
                           />
                         </td>
@@ -844,7 +860,7 @@ export function AppsPage() {
                         </td>
                       </tr>
                       {expandedAppId === entry.id && (
-                        <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        <tr style={rowStyle}>
                           <td colSpan={6} style={{ padding: "0 6px 12px 6px" }}>
                             <div style={relatedPanelStyle}>
                               <div
@@ -860,7 +876,7 @@ export function AppsPage() {
                                 <div>
                                   <div
                                     style={{
-                                      fontSize: "12px",
+                                      fontSize: "13px",
                                       fontWeight: 700,
                                       color: "var(--text-primary)",
                                     }}
@@ -869,9 +885,10 @@ export function AppsPage() {
                                   </div>
                                   <div
                                     style={{
-                                      fontSize: "11px",
+                                      fontSize: "12px",
                                       color: "var(--text-muted)",
                                       marginTop: "3px",
+                                      lineHeight: 1.5,
                                     }}
                                   >
                                     {tk("apps.related.description")}
@@ -879,7 +896,7 @@ export function AppsPage() {
                                 </div>
                                 <div
                                   style={{
-                                    fontSize: "11px",
+                                    fontSize: "12px",
                                     color: "var(--text-secondary)",
                                     fontWeight: 600,
                                   }}
@@ -932,7 +949,7 @@ export function AppsPage() {
                                           >
                                             <span
                                               style={{
-                                                fontSize: "12px",
+                                                fontSize: "13px",
                                                 fontWeight: 600,
                                                 color: "var(--text-primary)",
                                               }}
@@ -941,13 +958,13 @@ export function AppsPage() {
                                             </span>
                                             <div
                                               style={{
-                                                fontSize: "11px",
+                                                fontSize: "12px",
                                                 color: "var(--text-muted)",
                                               }}
                                             >
                                               <CopyableValue
                                                 value={item.path}
-                                                fontSize="11px"
+                                                fontSize="12px"
                                                 color="var(--text-muted)"
                                                 multiline
                                               />
@@ -1131,7 +1148,7 @@ export function AppsPage() {
                     })}
                   </span>
                 </label>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
                   {tk("apps.selection.leftover_summary", {
                     high: selectedLeftoverItems.filter(
                       (item) => item.confidence === "high",
@@ -1180,7 +1197,7 @@ export function AppsPage() {
                             <div style={{ minWidth: 0, flex: "1 1 220px" }}>
                               <div
                                 style={{
-                                  fontSize: "13px",
+                                  fontSize: "14px",
                                   fontWeight: 700,
                                   color: "var(--text-primary)",
                                   wordBreak: "break-word",
@@ -1246,7 +1263,7 @@ export function AppsPage() {
                           >
                             <CopyableValue
                               value={item.path}
-                              fontSize="11px"
+                              fontSize="12px"
                               color="var(--text-muted)"
                               multiline
                             />
@@ -1260,8 +1277,9 @@ export function AppsPage() {
                           >
                             <div
                               style={{
-                                fontSize: "11px",
+                                fontSize: "12px",
                                 color: "var(--text-secondary)",
+                                lineHeight: 1.55,
                               }}
                             >
                               <strong style={{ color: "var(--text-primary)" }}>
@@ -1271,8 +1289,9 @@ export function AppsPage() {
                             </div>
                             <div
                               style={{
-                                fontSize: "11px",
+                                fontSize: "12px",
                                 color: "var(--text-secondary)",
+                                lineHeight: 1.55,
                               }}
                             >
                               <strong style={{ color: "var(--text-primary)" }}>
@@ -1290,7 +1309,7 @@ export function AppsPage() {
               <div style={stickyActionBarStyle}>
                 <div
                   style={{
-                    fontSize: "12px",
+                    fontSize: "13px",
                     color: "var(--text-secondary)",
                     fontWeight: 600,
                   }}
@@ -1445,7 +1464,7 @@ export function AppsPage() {
                     })}
                   </span>
                 </label>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
                   {tk("apps.selection.registry_summary", {
                     count: selectedRegistryItems.length,
                   })}
@@ -1489,7 +1508,7 @@ export function AppsPage() {
                             <div style={{ minWidth: 0, flex: "1 1 220px" }}>
                               <div
                                 style={{
-                                  fontSize: "13px",
+                                  fontSize: "14px",
                                   fontWeight: 700,
                                   color: "var(--text-primary)",
                                   wordBreak: "break-word",
@@ -1549,7 +1568,7 @@ export function AppsPage() {
                               <div style={detailValueStyle}>
                                 <CopyableValue
                                   value={item.registryPath}
-                                  fontSize="11px"
+                                  fontSize="12px"
                                   color="var(--text-secondary)"
                                   multiline
                                 />
@@ -1563,7 +1582,7 @@ export function AppsPage() {
                                 <CopyableValue
                                   value={item.installLocation ?? ""}
                                   emptyValue="-"
-                                  fontSize="11px"
+                                  fontSize="12px"
                                   color="var(--text-secondary)"
                                   multiline
                                 />
@@ -1577,7 +1596,7 @@ export function AppsPage() {
                                 <CopyableValue
                                   value={item.uninstallCommand ?? ""}
                                   emptyValue="-"
-                                  fontSize="11px"
+                                  fontSize="12px"
                                   color="var(--text-secondary)"
                                   multiline
                                 />
@@ -1593,7 +1612,7 @@ export function AppsPage() {
               <div style={stickyActionBarStyle}>
                 <div
                   style={{
-                    fontSize: "12px",
+                    fontSize: "13px",
                     color: "var(--text-secondary)",
                     fontWeight: 600,
                   }}
@@ -1721,23 +1740,25 @@ function secondaryBtnStyle(disabled: boolean): React.CSSProperties {
 
 const thStyle: React.CSSProperties = {
   textAlign: "left",
-  padding: "10px 6px",
+  padding: "12px 8px",
   color: "var(--text-muted)",
-  fontWeight: 500,
-  fontSize: "11px",
+  fontWeight: 600,
+  fontSize: "12px",
   textTransform: "uppercase",
-  letterSpacing: "0.05em",
+  letterSpacing: "0.06em",
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "10px 6px",
+  padding: "12px 8px",
   color: "var(--text-secondary)",
   verticalAlign: "top",
+  fontSize: "14px",
+  lineHeight: 1.4,
 };
 
 const openBtn: React.CSSProperties = {
-  padding: "4px 10px",
-  fontSize: "11px",
+  padding: "6px 10px",
+  fontSize: "12px",
   fontWeight: 600,
   border: "none",
   borderRadius: "6px",
@@ -1748,8 +1769,8 @@ const openBtn: React.CSSProperties = {
 };
 
 const actionBtnStyle: React.CSSProperties = {
-  padding: "4px 10px",
-  fontSize: "11px",
+  padding: "6px 10px",
+  fontSize: "12px",
   fontWeight: 600,
   border: "none",
   borderRadius: "6px",
@@ -1759,9 +1780,9 @@ const actionBtnStyle: React.CSSProperties = {
 };
 
 const protectedBadgeStyle: React.CSSProperties = {
-  fontSize: "10px",
+  fontSize: "11px",
   fontWeight: 700,
-  padding: "2px 7px",
+  padding: "3px 8px",
   borderRadius: "999px",
   background: "var(--alert-yellow-soft)",
   color: "var(--accent-yellow)",
@@ -1769,10 +1790,14 @@ const protectedBadgeStyle: React.CSSProperties = {
 
 const relatedPanelStyle: React.CSSProperties = {
   marginTop: "4px",
-  padding: "12px",
+  padding: "14px",
   background: "var(--bg-card)",
   border: "1px solid var(--border)",
   borderRadius: "12px",
+};
+
+const rowStyle: React.CSSProperties = {
+  borderBottom: "1px solid var(--border)",
 };
 
 const relatedItemStyle: React.CSSProperties = {
@@ -1790,7 +1815,8 @@ const relatedItemStyle: React.CSSProperties = {
 const relatedEmptyStyle: React.CSSProperties = {
   padding: "14px 12px",
   color: "var(--text-muted)",
-  fontSize: "12px",
+  fontSize: "13px",
+  lineHeight: 1.5,
   background: "var(--bg-primary)",
   border: "1px solid var(--border)",
   borderRadius: "10px",
@@ -1831,12 +1857,13 @@ const bulkToggleRowStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "12px",
-  padding: "0 4px",
+  padding: "2px 4px",
+  flexWrap: "wrap",
 };
 
 const leftoverCardStyle: React.CSSProperties = {
   display: "block",
-  padding: "14px",
+  padding: "16px",
   background: "var(--bg-card)",
   border: "1px solid var(--border)",
   borderRadius: "12px",
@@ -1845,19 +1872,20 @@ const leftoverCardStyle: React.CSSProperties = {
 
 const detailBlockStyle: React.CSSProperties = {
   display: "grid",
-  gap: "4px",
+  gap: "6px",
 };
 
 const detailLabelStyle: React.CSSProperties = {
-  fontSize: "11px",
+  fontSize: "12px",
   color: "var(--text-secondary)",
 };
 
 const detailValueStyle: React.CSSProperties = {
-  fontSize: "11px",
+  fontSize: "12px",
   color: "var(--text-muted)",
   fontFamily: "monospace",
   wordBreak: "break-all",
+  lineHeight: 1.55,
 };
 
 const stickyActionBarStyle: React.CSSProperties = {
@@ -1880,9 +1908,9 @@ function Badge({ text, color }: { text: string; color: string }) {
   return (
     <span
       style={{
-        fontSize: "10px",
+        fontSize: "11px",
         fontWeight: 700,
-        padding: "2px 6px",
+        padding: "3px 8px",
         borderRadius: "999px",
         background: `${color}20`,
         color,
