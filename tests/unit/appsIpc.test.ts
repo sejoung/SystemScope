@@ -15,6 +15,7 @@ const logErrorActionMock = vi.hoisted(() => vi.fn())
 const logErrorMock = vi.hoisted(() => vi.fn())
 const logInfoActionMock = vi.hoisted(() => vi.fn())
 const logInfoMock = vi.hoisted(() => vi.fn())
+const logProductMetricMock = vi.hoisted(() => vi.fn())
 const logWarnActionMock = vi.hoisted(() => vi.fn())
 const logWarnMock = vi.hoisted(() => vi.fn())
 
@@ -49,6 +50,7 @@ vi.mock('../../src/main/services/logging', () => ({
   logError: logErrorMock,
   logInfoAction: logInfoActionMock,
   logInfo: logInfoMock,
+  logProductMetric: logProductMetricMock,
   logWarnAction: logWarnActionMock,
   logWarn: logWarnMock
 }))
@@ -70,6 +72,7 @@ describe('registerAppsIpc', () => {
     logErrorMock.mockReset()
     logInfoActionMock.mockReset()
     logInfoMock.mockReset()
+    logProductMetricMock.mockReset()
     logWarnActionMock.mockReset()
     logWarnMock.mockReset()
   })
