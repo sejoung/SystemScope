@@ -1650,7 +1650,7 @@ export function AppsPage() {
   );
 }
 
-function getConfidenceLabel(
+export function getConfidenceLabel(
   confidence: AppLeftoverDataItem["confidence"],
   tk: (
     key:
@@ -1669,7 +1669,7 @@ function getConfidenceLabel(
   }
 }
 
-function getConfidenceColor(
+export function getConfidenceColor(
   confidence: AppLeftoverDataItem["confidence"],
 ): string {
   switch (confidence) {
