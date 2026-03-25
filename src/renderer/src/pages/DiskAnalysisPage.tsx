@@ -51,13 +51,6 @@ interface QuickScanState {
   scanned: boolean;
   error: string | null;
 }
-
-const QUICK_SCAN_INITIAL: QuickScanState = {
-  results: [],
-  scanning: false,
-  scanned: false,
-  error: null,
-};
 type ScanOutcome = "idle" | "running" | "completed" | "failed" | "cancelled";
 
 export function shouldShowCancelledScanMessage(
@@ -91,12 +84,13 @@ export function DiskAnalysisPage() {
     setSelectedFolder,
     removeLargeFilesByPaths,
     clearScan,
+    quickScan: quickScanState,
+    setQuickScanState,
   } = useDiskStore();
 
   const showToast = useToast((s) => s.show);
   const [tab, setTab] = useState<StorageTab>("overview");
   const [scanOutcome, setScanOutcome] = useState<ScanOutcome>("idle");
-  const [quickScanState, setQuickScanState] = useState<QuickScanState>(QUICK_SCAN_INITIAL);
   const { tk: tkPage } = useI18n();
 
   const handleQuickScan = useCallback(async () => {

@@ -4,6 +4,8 @@ import { homedir, tmpdir, platform } from 'os'
 import * as fsSync from 'fs'
 import type { ScanCategory, QuickScanFolder } from '@shared/types'
 import { getDirSize, getDirSizeRecursive } from '../utils/getDirSize'
+import { isExternalCommandError, runExternalCommand } from './externalCommand'
+import { logDebug } from './logging'
 
 interface ScanTarget {
   name: string
@@ -97,6 +99,9 @@ function getWindowsTargets(home: string): ScanTarget[] {
 }
 
 const SCAN_BATCH_SIZE = 8
+const QUICK_SCAN_CACHE_TTL_MS = 5 * 60 * 1000
+
+let quickScanCache: { key: string; timestamp: number; results: QuickScanFolder[] } | null = null
 
 export async function runQuickScan(
   onProgress?: (name: string, index: number, total: number) => void
@@ -104,49 +109,169 @@ export async function runQuickScan(
   const home = homedir()
   const isMacOrLinux = platform() === 'darwin' || platform() === 'linux'
   const targets = platform() === 'darwin' ? getMacTargets(home) : getWindowsTargets(home)
-  const results: QuickScanFolder[] = []
+  const cacheKey = `${platform()}:${home}`
 
-  // 배치 단위로 병렬 처리
+  if (quickScanCache && quickScanCache.key === cacheKey && Date.now() - quickScanCache.timestamp < QUICK_SCAN_CACHE_TTL_MS) {
+    return quickScanCache.results
+  }
+
+  const resolvedTargets = await resolveQuickScanTargets(targets, onProgress)
+  let results: QuickScanFolder[]
+
+  if (isMacOrLinux) {
+    results = await buildQuickScanResultsWithBatchDu(resolvedTargets)
+  } else {
+    results = await buildQuickScanResultsWithRecursiveScan(resolvedTargets)
+  }
+
+  results = results.sort((a, b) => b.size - a.size)
+  quickScanCache = {
+    key: cacheKey,
+    timestamp: Date.now(),
+    results
+  }
+  return results
+}
+
+interface ResolvedQuickScanTarget extends Omit<ScanTarget, 'paths'> {
+  path: string
+}
+
+async function resolveQuickScanTargets(
+  targets: ScanTarget[],
+  onProgress?: (name: string, index: number, total: number) => void
+): Promise<ResolvedQuickScanTarget[]> {
+  const resolvedTargets: ResolvedQuickScanTarget[] = []
+
   for (let i = 0; i < targets.length; i += SCAN_BATCH_SIZE) {
     const batch = targets.slice(i, i + SCAN_BATCH_SIZE)
     const batchResults = await Promise.all(
       batch.map(async (target, batchIdx) => {
         onProgress?.(target.name, i + batchIdx, targets.length)
 
-        // 후보 경로 중 첫 번째로 존재하는 경로 사용
-        let foundPath: string | null = null
-        for (const p of target.paths) {
+        for (const candidatePath of target.paths) {
           try {
-            await fs.access(p)
-            foundPath = p
-            break
+            await fs.access(candidatePath)
+            return {
+              name: target.name,
+              path: candidatePath,
+              description: target.description,
+              cleanable: target.cleanable,
+              category: target.category
+            } satisfies ResolvedQuickScanTarget
           } catch {
-            // 다음 경로 시도
+            // try next candidate
           }
         }
 
-        if (!foundPath) return null
-
-        // macOS/Linux: du -sk로 빠르게 측정, Windows: 재귀 탐색
-        const size = isMacOrLinux
-          ? await getDirSize(foundPath)
-          : await getDirSizeRecursive(foundPath, 2)
-        return {
-          name: target.name,
-          path: foundPath,
-          description: target.description,
-          size,
-          exists: true,
-          cleanable: target.cleanable,
-          category: target.category
-        } satisfies QuickScanFolder
+        return null
       })
     )
 
     for (const result of batchResults) {
-      if (result) results.push(result)
+      if (result) {
+        resolvedTargets.push(result)
+      }
     }
   }
 
-  return results.sort((a, b) => b.size - a.size)
+  return resolvedTargets
+}
+
+async function buildQuickScanResultsWithBatchDu(
+  targets: ResolvedQuickScanTarget[]
+): Promise<QuickScanFolder[]> {
+  const sizes = await getDirSizesBatchDu(targets.map((target) => target.path))
+
+  return targets
+    .map((target) => ({
+      name: target.name,
+      path: target.path,
+      description: target.description,
+      size: sizes.get(target.path) ?? 0,
+      exists: true,
+      cleanable: target.cleanable,
+      category: target.category
+    }) satisfies QuickScanFolder)
+    .filter((target) => target.size > 0)
+}
+
+async function buildQuickScanResultsWithRecursiveScan(
+  targets: ResolvedQuickScanTarget[]
+): Promise<QuickScanFolder[]> {
+  const results: QuickScanFolder[] = []
+
+  for (let i = 0; i < targets.length; i += SCAN_BATCH_SIZE) {
+    const batch = targets.slice(i, i + SCAN_BATCH_SIZE)
+    const batchResults = await Promise.all(
+      batch.map(async (target) => ({
+        name: target.name,
+        path: target.path,
+        description: target.description,
+        size: await getDirSizeRecursive(target.path, 2),
+        exists: true,
+        cleanable: target.cleanable,
+        category: target.category
+      }) satisfies QuickScanFolder)
+    )
+
+    for (const result of batchResults) {
+      if (result.size > 0) {
+        results.push(result)
+      }
+    }
+  }
+
+  return results
+}
+
+async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>()
+  if (paths.length === 0) {
+    return result
+  }
+
+  try {
+    const { stdout } = await runExternalCommand('du', ['-sk', ...paths], {
+      timeout: 60_000,
+      env: { ...process.env, LANG: 'C' },
+      maxBuffer: 1024 * 1024
+    })
+    consumeDuOutput(stdout, result)
+    return result
+  } catch (err) {
+    const stdout = isExternalCommandError(err) ? err.stdout : ''
+    if (stdout) {
+      consumeDuOutput(stdout, result)
+    }
+
+    if (isExternalCommandError(err) && err.kind === 'command_not_found') {
+      logDebug('quick-scan', 'du is unavailable, falling back to per-path directory scans', { pathCount: paths.length })
+    } else if (!stdout) {
+      logDebug('quick-scan', 'Bulk quick-scan du failed, falling back to per-path directory scans', {
+        pathCount: paths.length,
+        error: err
+      })
+    }
+  }
+
+  const fallbackResults = await Promise.all(
+    paths.map(async (targetPath) => [targetPath, await getDirSize(targetPath)] as const)
+  )
+  for (const [targetPath, size] of fallbackResults) {
+    result.set(targetPath, size)
+  }
+  return result
+}
+
+function consumeDuOutput(stdout: string, result: Map<string, number>): void {
+  for (const line of stdout.trim().split('\n')) {
+    const tabIndex = line.indexOf('\t')
+    if (tabIndex === -1) continue
+    const kb = Number.parseInt(line.slice(0, tabIndex), 10)
+    const targetPath = line.slice(tabIndex + 1)
+    if (!Number.isNaN(kb)) {
+      result.set(targetPath, kb * 1024)
+    }
+  }
 }

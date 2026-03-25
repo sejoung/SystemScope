@@ -39,24 +39,43 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
   const { tk, t } = useI18n();
   const { results, scanning, scanned, error } = state;
 
-  const totalSize = results.reduce((acc, r) => acc + r.size, 0);
-  const cleanableSize = results
-    .filter((r) => r.cleanable)
-    .reduce((acc, r) => acc + r.size, 0);
+  const { totalSize, cleanableSize, grouped } = useMemo(() => {
+    const groups = new Map<ScanCategory, QuickScanFolder[]>();
+    let nextTotalSize = 0;
+    let nextCleanableSize = 0;
 
-  // Group by category, preserve order, only categories that have results
-  const grouped = useMemo(() => {
-    return CATEGORY_ORDER.map((cat) => ({
-      category: cat,
-      label: tk(`disk.quick_cleanup.category.${cat}` as const),
-      items: results
-        .filter((r) => r.category === cat)
-        .sort((a, b) => b.size - a.size),
-      total: results
-        .filter((r) => r.category === cat)
-        .reduce((acc, r) => acc + r.size, 0),
-    })).filter((g) => g.items.length > 0);
-  }, [results]);
+    for (const result of results) {
+      nextTotalSize += result.size;
+      if (result.cleanable) {
+        nextCleanableSize += result.size;
+      }
+
+      const items = groups.get(result.category) ?? [];
+      items.push(result);
+      groups.set(result.category, items);
+    }
+
+    const nextGrouped = CATEGORY_ORDER.map((category) => {
+      const items = groups.get(category);
+      if (!items || items.length === 0) {
+        return null;
+      }
+
+      const sortedItems = items.slice().sort((a, b) => b.size - a.size);
+      return {
+        category,
+        label: tk(`disk.quick_cleanup.category.${category}` as const),
+        items: sortedItems,
+        total: sortedItems.reduce((acc, item) => acc + item.size, 0),
+      };
+    }).filter((group): group is NonNullable<typeof group> => group !== null);
+
+    return {
+      totalSize: nextTotalSize,
+      cleanableSize: nextCleanableSize,
+      grouped: nextGrouped,
+    };
+  }, [results, tk]);
 
   return (
     <Accordion

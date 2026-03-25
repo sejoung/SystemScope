@@ -1,5 +1,19 @@
 import { create } from 'zustand'
-import type { DiskScanResult, LargeFile, ExtensionGroup, UserSpaceInfo, GrowthViewResult } from '@shared/types'
+import type { DiskScanResult, LargeFile, ExtensionGroup, UserSpaceInfo, GrowthViewResult, QuickScanFolder } from '@shared/types'
+
+interface QuickScanState {
+  results: QuickScanFolder[]
+  scanning: boolean
+  scanned: boolean
+  error: string | null
+}
+
+const QUICK_SCAN_INITIAL: QuickScanState = {
+  results: [],
+  scanning: false,
+  scanned: false,
+  error: null
+}
 
 interface DiskState {
   scanResult: DiskScanResult | null
@@ -20,6 +34,8 @@ interface DiskState {
   growthViewLoading: boolean
   growthViewPeriod: string
 
+  quickScan: QuickScanState
+
   setScanResult: (result: DiskScanResult) => void
   setLargeFiles: (files: LargeFile[]) => void
   setExtensions: (groups: ExtensionGroup[]) => void
@@ -35,6 +51,9 @@ interface DiskState {
 
   setGrowthViewPeriod: (period: string) => void
   fetchGrowthView: (period?: string) => Promise<void>
+
+  setQuickScanState: (state: QuickScanState | ((state: QuickScanState) => QuickScanState)) => void
+  resetQuickScan: () => void
 }
 
 export const useDiskStore = create<DiskState>((set, get) => ({
@@ -51,6 +70,7 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   growthView: null,
   growthViewLoading: false,
   growthViewPeriod: '7d',
+  quickScan: QUICK_SCAN_INITIAL,
 
   setScanResult: (result) => set({ scanResult: result, isScanning: false }),
   setLargeFiles: (files) => set({ largeFiles: files }),
@@ -100,5 +120,13 @@ export const useDiskStore = create<DiskState>((set, get) => ({
     } else {
       set({ growthViewLoading: false })
     }
-  }
+  },
+
+  setQuickScanState: (nextState) => set((state) => ({
+    quickScan: typeof nextState === 'function'
+      ? nextState(state.quickScan)
+      : nextState
+  })),
+
+  resetQuickScan: () => set({ quickScan: QUICK_SCAN_INITIAL })
 }))
