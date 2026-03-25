@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useToast } from "../components/Toast";
-import type { AlertThresholds, AppSettings, SnapshotIntervalMin } from "@shared/types";
+import type {
+  AlertThresholds,
+  AppSettings,
+  SnapshotIntervalMin,
+} from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import type { AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
@@ -33,7 +37,8 @@ export function SettingsPage() {
     (s) => s.setHasUnsavedSettings,
   );
   const [local, setLocal] = useState<AlertThresholds>(thresholds);
-  const [snapshotInterval, setSnapshotInterval] = useState<SnapshotIntervalMin>(60);
+  const [snapshotInterval, setSnapshotInterval] =
+    useState<SnapshotIntervalMin>(60);
   const [localTheme, setLocalTheme] = useState<"dark" | "light">(theme);
   const [localLocale, setLocalLocale] = useState<AppLocale>(locale);
   const [saved, setSaved] = useState(false);
@@ -80,26 +85,40 @@ export function SettingsPage() {
   useEffect(() => {
     void Promise.all([
       loadAppSettings("settings-page"),
-      loadPathValue("settings-page", "dataPath", () => window.systemScope.getDataPath()),
-      loadPathValue("settings-page", "systemLogPath", () => window.systemScope.getSystemLogPath()),
-      loadPathValue("settings-page", "accessLogPath", () => window.systemScope.getAccessLogPath()),
+      loadPathValue("settings-page", "dataPath", () =>
+        window.systemScope.getDataPath(),
+      ),
+      loadPathValue("settings-page", "systemLogPath", () =>
+        window.systemScope.getSystemLogPath(),
+      ),
+      loadPathValue("settings-page", "accessLogPath", () =>
+        window.systemScope.getAccessLogPath(),
+      ),
       loadAboutInfo("settings-page"),
-    ]).then(([settings, nextDataPath, nextSystemLogPath, nextAccessLogPath, nextAboutInfo]) => {
-      if (settings) {
-        applyPersistedSettings(settings);
-        applySettingsToStore(settings);
-      } else {
-        showToast(t("Failed to load settings."), "danger");
-      }
+    ]).then(
+      ([
+        settings,
+        nextDataPath,
+        nextSystemLogPath,
+        nextAccessLogPath,
+        nextAboutInfo,
+      ]) => {
+        if (settings) {
+          applyPersistedSettings(settings);
+          applySettingsToStore(settings);
+        } else {
+          showToast(t("Failed to load settings."), "danger");
+        }
 
-      setDataPath(nextDataPath);
-      setSystemLogPath(nextSystemLogPath);
-      setAccessLogPath(nextAccessLogPath);
+        setDataPath(nextDataPath);
+        setSystemLogPath(nextSystemLogPath);
+        setAccessLogPath(nextAccessLogPath);
 
-      if (nextAboutInfo) {
-        setAboutInfo(nextAboutInfo);
-      }
-    });
+        if (nextAboutInfo) {
+          setAboutInfo(nextAboutInfo);
+        }
+      },
+    );
 
     return () => {
       if (savedTimerRef.current) {
@@ -245,7 +264,9 @@ export function SettingsPage() {
     try {
       const res = await window.systemScope.checkForUpdate();
       if (!res.ok) {
-        showToast(res.error?.message ?? t("Unable to check for updates right now."));
+        showToast(
+          res.error?.message ?? t("Unable to check for updates right now."),
+        );
         return;
       }
 
@@ -262,9 +283,13 @@ export function SettingsPage() {
 
   const handleOpenUpdateRelease = async () => {
     if (!updateInfo?.releaseUrl) return;
-    const res = await window.systemScope.openUpdateRelease(updateInfo.releaseUrl);
+    const res = await window.systemScope.openUpdateRelease(
+      updateInfo.releaseUrl,
+    );
     if (!res.ok) {
-      showToast(res.error?.message ?? t("Unable to open the release download page."));
+      showToast(
+        res.error?.message ?? t("Unable to open the release download page."),
+      );
     }
   };
 
@@ -482,10 +507,10 @@ export function SettingsPage() {
                       : "var(--text-secondary)",
                   cursor: "pointer",
                 }}
-                >
-                  {tk(opt.labelKey)}
-                </button>
-              ))}
+              >
+                {tk(opt.labelKey)}
+              </button>
+            ))}
           </div>
           <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
             {tk("settings.snapshots.current", {
@@ -601,7 +626,9 @@ export function SettingsPage() {
         {/* About */}
         <Section title={t("Updates")}>
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {t("Check for a newer version and open the official download page in your browser.")}
+            {t(
+              "Check for a newer version and open the official download page in your browser.",
+            )}
           </div>
           <div
             style={{
@@ -614,15 +641,24 @@ export function SettingsPage() {
             }}
           >
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              {t("Current version")}: {aboutInfo?.version ?? updateInfo?.currentVersion ?? "-"}
+              {t("Current version")}:{" "}
+              {aboutInfo?.version ?? updateInfo?.currentVersion ?? "-"}
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              {t("Latest version")}: {updateInfo?.latestVersion ?? t("Not checked yet")}
+              {t("Latest version")}:{" "}
+              {updateInfo?.latestVersion ?? t("Not checked yet")}
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
               {t("Last checked")}: {formattedCheckedAt ?? t("Not checked yet")}
             </div>
-            <div style={{ fontSize: "12px", color: updateInfo?.hasUpdate ? "var(--accent-blue)" : "var(--text-secondary)" }}>
+            <div
+              style={{
+                fontSize: "12px",
+                color: updateInfo?.hasUpdate
+                  ? "var(--accent-blue)"
+                  : "var(--text-secondary)",
+              }}
+            >
               {updateInfo?.hasUpdate
                 ? t("A new version v{version} is available.", {
                     version: updateInfo.latestVersion,
@@ -645,7 +681,10 @@ export function SettingsPage() {
               {checkingUpdate ? t("Checking...") : t("Check for Updates")}
             </button>
             {updateInfo?.hasUpdate ? (
-              <button onClick={() => void handleOpenUpdateRelease()} style={btnStyle}>
+              <button
+                onClick={() => void handleOpenUpdateRelease()}
+                style={btnStyle}
+              >
                 {t("Download")}
               </button>
             ) : null}

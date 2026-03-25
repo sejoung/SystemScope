@@ -6,6 +6,7 @@ import { isPathInsideParent } from '../ipc/settingsPathUtils'
 import type { TrashResult } from '@shared/types'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
+import { getDirSize } from '../utils/getDirSize'
 
 export async function trashItemsWithConfirm(
   filePaths: string[],
@@ -27,7 +28,10 @@ export async function trashItemsWithConfirm(
 
     try {
       const stat = await fs.stat(resolved)
-      validPaths.push({ path: resolved, size: stat.size })
+      const size = stat.isDirectory()
+        ? await getDirSize(resolved)
+        : stat.size
+      validPaths.push({ path: resolved, size })
     } catch {
       invalidPaths.push(p)
     }
