@@ -68,8 +68,8 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
 
   return (
     <svg width={width} height={height} style={{ borderRadius: 'var(--radius)' }}>
-      {rects.map((r, i) => (
-        <g key={i}>
+      {rects.map((r) => (
+        <g key={r.node.path ?? r.node.name}>
           <rect
             x={r.x + 1}
             y={r.y + 1}

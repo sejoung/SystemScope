@@ -30,11 +30,11 @@ export function CpuWidget() {
             {tk('monitoring.cpu.cores', { count: cpu.cores.length, speed: cpu.speed })}
             {cpu.temperature !== null && ` / ${cpu.temperature}°C`}
           </div>
-          {cpu.cores.slice(0, 8).map((core, i) => (
+          {cpu.cores.slice(0, 8).map((core, coreIndex) => (
             <ProgressBar
-              key={i}
+              key={`core-${coreIndex}`}
               value={core}
-              label={`Core ${i}`}
+              label={`Core ${coreIndex}`}
               height={4}
               color={core > 80 ? 'var(--accent-red)' : 'var(--accent-blue)'}
               showValue={false}

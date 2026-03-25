@@ -154,8 +154,8 @@ export function GrowthView() {
                     }}
                   />
                   <Bar dataKey="addedSize" radius={[0, 4, 4, 0]}>
-                    {top5.map((_, i) => (
-                      <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                    {top5.map((folder, i) => (
+                      <Cell key={folder.path} fill={BAR_COLORS[i % BAR_COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>

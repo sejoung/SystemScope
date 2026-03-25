@@ -249,8 +249,8 @@ export function PortWatch() {
                               </tr>
                             </thead>
                             <tbody>
-                              {display.map((m, i) => (
-                                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                              {display.map((m) => (
+                                <tr key={`${m.protocol}-${m.localAddress}-${m.localPort}-${m.peerAddress}-${m.peerPort}`} style={{ borderBottom: '1px solid var(--border)' }}>
                                   <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{m.protocol}</td>
                                   <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{formatPortAddress(m.localAddress, m.localPort)}</td>
                                   <td style={{ ...tdStyle, fontFamily: 'monospace' }}>{formatPortAddress(m.peerAddress, m.peerPort)}</td>
@@ -282,8 +282,8 @@ export function PortWatch() {
                 <button onClick={clearHistory} style={removeBtnStyle}>{tk('process.port_watch.clear')}</button>
               </div>
               <div style={{ maxHeight: '200px', overflow: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {history.map((entry, i) => (
-                  <div key={i} style={{
+                {history.map((entry) => (
+                  <div key={`${entry.timestamp}-${entry.watchId}-${entry.event}`} style={{
                     display: 'flex', gap: '8px', alignItems: 'center',
                     padding: '4px 8px', fontSize: '12px',
                     borderLeft: `3px solid ${entry.event === 'connected' ? 'var(--accent-green)' : 'var(--accent-red)'}`

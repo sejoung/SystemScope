@@ -246,8 +246,8 @@ function LargestTab({ files, showDelete = true, onTrash }: { files: LargeFile[];
           </tr>
         </thead>
         <tbody>
-          {files.map((f, i) => (
-            <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+          {files.map((f) => (
+            <tr key={f.path} style={{ borderBottom: '1px solid var(--border)' }}>
               <td style={tdStyle}>
                 <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{f.name}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{f.path}</div>
@@ -322,8 +322,8 @@ function OldFilesTab({ files, loading, scanned, error, days, onDaysChange, onSca
               </tr>
             </thead>
             <tbody>
-              {files.map((f, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+              {files.map((f) => (
+                <tr key={f.path} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{f.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{f.path}</div>
@@ -415,7 +415,7 @@ function DuplicatesTab({ groups, loading, scanned, error, expanded, onToggle, on
                 {isOpen && (
                   <div style={{ marginLeft: '26px', marginBottom: '4px' }}>
                     {group.files.map((file, fi) => (
-                      <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 10px', fontSize: '12px', borderLeft: '2px solid var(--border)' }}>
+                      <div key={file.path} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 10px', fontSize: '12px', borderLeft: '2px solid var(--border)' }}>
                         {fi === 0 && (
                           <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', background: 'var(--success-soft)', color: 'var(--accent-green)', fontWeight: 600, flexShrink: 0 }}>
                             {tk('disk.file_insights.keep')}
