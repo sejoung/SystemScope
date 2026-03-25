@@ -8,6 +8,7 @@ import { DockerImages } from "../features/disk/DockerImages";
 import { useI18n } from "../i18n/useI18n";
 import type { DockerContainersScanResult } from "@shared/types";
 import { StatusMessage } from "../components/StatusMessage";
+import { PageLoading } from "../components/PageLoading";
 
 type DockerTab =
   | "overview"
@@ -52,6 +53,13 @@ export function DockerPage() {
   useEffect(() => {
     void checkDocker();
   }, [checkDocker]);
+
+  // Auto-recheck Docker availability every 10s when unavailable
+  useEffect(() => {
+    if (availability !== "daemon_unavailable") return;
+    const timer = setInterval(() => void checkDocker(), 10_000);
+    return () => clearInterval(timer);
+  }, [availability, checkDocker]);
 
   const dockerUnavailable =
     availability === "not_installed" || availability === "daemon_unavailable";
@@ -132,9 +140,7 @@ export function DockerPage() {
         )}
       </div>
 
-      {availability === "checking" && (
-        <StatusMessage message={tk("docker.common.check_status")} />
-      )}
+      {availability === "checking" && <PageLoading />}
 
       {dockerUnavailable && (
         <StatusMessage

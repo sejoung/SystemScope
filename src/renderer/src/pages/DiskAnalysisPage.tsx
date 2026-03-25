@@ -564,9 +564,27 @@ function ScanTab({
             padding: "60px 20px",
             color: "var(--text-muted)",
             fontSize: "13px",
+            display: "grid",
+            gap: "16px",
+            justifyItems: "center",
           }}
         >
-          {tk("disk.scan.empty")}
+          <div>{tk("disk.scan.empty")}</div>
+          <button
+            onClick={onSelectFolder}
+            style={{
+              padding: "10px 24px",
+              fontSize: "13px",
+              fontWeight: 600,
+              border: "none",
+              borderRadius: "var(--radius)",
+              background: "var(--accent-blue)",
+              color: "var(--text-on-accent)",
+              cursor: "pointer",
+            }}
+          >
+            {tk("disk.scan.browse_folder")}
+          </button>
         </div>
       )}
 

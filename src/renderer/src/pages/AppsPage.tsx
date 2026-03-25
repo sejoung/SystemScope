@@ -19,6 +19,7 @@ import { useSettingsStore } from "../stores/useSettingsStore";
 import { useSearchFilter } from "../hooks/useSearchFilter";
 import { useTabRefresh } from "../hooks/useTabRefresh";
 import { StatusMessage } from "../components/StatusMessage";
+import { PageLoading } from "../components/PageLoading";
 import { CopyableValue } from "../components/CopyableValue";
 import { formatBytes } from "../utils/format";
 
@@ -626,7 +627,7 @@ export function AppsPage() {
       </div>
 
       {loading ? (
-        <StatusMessage
+        <PageLoading
           message={
             activeTab === "installed"
               ? tk("apps.loading.installed")

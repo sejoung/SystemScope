@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -23,6 +23,69 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Store previously focused element when dialog opens, restore on close
+  useEffect(() => {
+    if (open) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
+      // Auto-focus cancel button (safer default)
+      requestAnimationFrame(() => {
+        cancelButtonRef.current?.focus();
+      });
+    } else if (previousFocusRef.current) {
+      previousFocusRef.current.focus();
+      previousFocusRef.current = null;
+    }
+  }, [open]);
+
+  // Escape key to close + focus trap
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        const focusableElements = [
+          cancelButtonRef.current,
+          confirmButtonRef.current,
+        ].filter(Boolean) as HTMLElement[];
+
+        if (focusableElements.length === 0) return;
+
+        const currentIndex = focusableElements.indexOf(
+          document.activeElement as HTMLElement,
+        );
+
+        event.preventDefault();
+
+        if (event.shiftKey) {
+          const prevIndex =
+            currentIndex <= 0
+              ? focusableElements.length - 1
+              : currentIndex - 1;
+          focusableElements[prevIndex].focus();
+        } else {
+          const nextIndex =
+            currentIndex >= focusableElements.length - 1
+              ? 0
+              : currentIndex + 1;
+          focusableElements[nextIndex].focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onCancel]);
+
   if (!open) return null;
 
   return (
@@ -43,10 +106,16 @@ export function ConfirmDialog({
         </div>
         {details ? <div style={detailsStyle}>{details}</div> : null}
         <div style={actionsStyle}>
-          <button type="button" onClick={onCancel} style={secondaryButtonStyle}>
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            onClick={onCancel}
+            style={secondaryButtonStyle}
+          >
             {cancelLabel}
           </button>
           <button
+            ref={confirmButtonRef}
             type="button"
             onClick={onConfirm}
             style={{

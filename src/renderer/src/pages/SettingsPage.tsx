@@ -218,6 +218,7 @@ export function SettingsPage() {
         setTheme(localTheme);
         setLocale(localLocale);
         setSaved(true);
+        showToast(tk("settings.status.saved"), "success");
         if (savedTimerRef.current) {
           clearTimeout(savedTimerRef.current);
         }
@@ -235,7 +236,7 @@ export function SettingsPage() {
 
   const updateField = (key: keyof AlertThresholds, value: string) => {
     const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 0 && num <= 100) {
+    if (!isNaN(num) && num >= 5 && num <= 100) {
       hasEditedRef.current = true;
       setLocal({ ...local, [key]: num });
     }
@@ -947,6 +948,7 @@ function ThresholdGroup({
   onCriticalChange: (v: string) => void;
 }) {
   const { tk } = useI18n();
+  const hasError = warning >= critical;
 
   return (
     <div>
@@ -960,7 +962,7 @@ function ThresholdGroup({
       >
         {label}
       </div>
-      <div style={{ display: "flex", gap: "16px" }}>
+      <div style={{ display: "flex", gap: "16px", alignItems: "flex-end" }}>
         <div>
           <label
             style={{
@@ -974,11 +976,14 @@ function ThresholdGroup({
           </label>
           <input
             type="number"
-            min={0}
+            min={5}
             max={100}
             value={warning}
             onChange={(e) => onWarningChange(e.target.value)}
-            style={inputStyle}
+            style={{
+              ...inputStyle,
+              borderColor: hasError ? "var(--accent-red)" : undefined,
+            }}
           />
         </div>
         <div>
@@ -994,14 +999,28 @@ function ThresholdGroup({
           </label>
           <input
             type="number"
-            min={0}
+            min={5}
             max={100}
             value={critical}
             onChange={(e) => onCriticalChange(e.target.value)}
-            style={inputStyle}
+            style={{
+              ...inputStyle,
+              borderColor: hasError ? "var(--accent-red)" : undefined,
+            }}
           />
         </div>
       </div>
+      {hasError && (
+        <div
+          style={{
+            fontSize: "11px",
+            color: "var(--accent-red)",
+            marginTop: "6px",
+          }}
+        >
+          {tk("settings.validation.warning_before_critical", { label })}
+        </div>
+      )}
     </div>
   );
 }

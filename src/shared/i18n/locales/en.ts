@@ -214,6 +214,8 @@ export const EN_MESSAGES = {
   Utilization: "Utilization",
   VRAM: "VRAM",
   "Collecting data...": "Collecting data...",
+  "Collecting system information...": "Collecting system information...",
+  "Clear search": "Clear search",
   "Real-time system insights for developers":
     "Real-time system insights for developers",
   Homepage: "Homepage",
@@ -242,6 +244,8 @@ export const EN_MESSAGES = {
   "Unable to open the release download page.":
     "Unable to open the release download page.",
   Close: "Close",
+  CRITICAL: "CRITICAL",
+  WARNING: "WARNING",
   "Loading process data...": "Loading process data...",
   "GPU monitoring unavailable on unified memory":
     "GPU monitoring unavailable on unified memory",
@@ -909,4 +913,7 @@ export const EN_MESSAGES = {
   "Critical (%)": "Critical (%)",
   "(no extension)": "(no extension)",
   "... and {count} more": "... and {count} more",
+  "Unable to render this section. Other features remain available.":
+    "Unable to render this section. Other features remain available.",
+  "Retry": "Retry",
 } as const;

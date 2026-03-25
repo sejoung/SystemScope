@@ -58,8 +58,26 @@ function App() {
   const showToast = useToast((s) => s.show)
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
-  const { tk } = useI18n()
+  const { tk, t } = useI18n()
+  const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const isE2ELightweight = window.__E2E_LIGHTWEIGHT === true
+
+  // Keyboard shortcuts: Cmd/Ctrl + 1-6 for page navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) return
+      if (e.shiftKey || e.altKey) return
+      const pages = ['dashboard', 'disk', 'docker', 'process', 'apps', 'settings'] as const
+      const idx = parseInt(e.key, 10) - 1
+      if (idx >= 0 && idx < pages.length) {
+        e.preventDefault()
+        if (currentPage === 'settings' && hasUnsavedSettings) return
+        setCurrentPage(pages[idx])
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentPage, hasUnsavedSettings, setCurrentPage])
 
   useEffect(() => {
     if (isE2ELightweight) {
@@ -125,6 +143,18 @@ function App() {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [hasUnsavedSettings])
+
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      dashboard: t("Overview"),
+      disk: t("Storage"),
+      docker: t("Docker"),
+      process: t("Activity"),
+      apps: t("Applications"),
+      settings: t("Preferences"),
+    }
+    document.title = `SystemScope — ${titles[currentPage] ?? "SystemScope"}`
+  }, [currentPage, t])
 
   useEffect(() => {
     if (isE2ELightweight) {

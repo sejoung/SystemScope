@@ -66,8 +66,23 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             {this.props.title}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            {this.props.message ?? tr('이 섹션을 렌더링하지 못했습니다. 다른 기능은 계속 사용할 수 있습니다.')}
+            {this.props.message ?? tr('Unable to render this section. Other features remain available.')}
           </div>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            style={{
+              marginTop: '8px',
+              padding: '4px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              background: 'var(--bg-card)',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)'
+            }}
+          >
+            {tr('Retry')}
+          </button>
         </div>
       )
     }

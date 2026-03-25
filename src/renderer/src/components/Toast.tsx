@@ -52,14 +52,18 @@ export function ToastContainer() {
     if (nextVisibleIds.length === 0) return;
 
     setVisibleIds((current) => [...current, ...nextVisibleIds]);
-    const timers = nextVisibleIds.flatMap((id) => [
-      setTimeout(() => {
-        setVisibleIds((current) => current.filter((value) => value !== id));
-      }, 3000),
-      setTimeout(() => {
-        hide(id);
-      }, 3300),
-    ]);
+    const timers = nextVisibleIds.flatMap((id) => {
+      const message = messages.find((m) => m.id === id);
+      const duration = message?.tone === "danger" ? 6000 : 3000;
+      return [
+        setTimeout(() => {
+          setVisibleIds((current) => current.filter((value) => value !== id));
+        }, duration),
+        setTimeout(() => {
+          hide(id);
+        }, duration + 300),
+      ];
+    });
 
     return () => {
       timers.forEach((timer) => clearTimeout(timer));

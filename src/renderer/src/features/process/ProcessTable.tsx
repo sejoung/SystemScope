@@ -111,14 +111,36 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           )}
         </div>
         <div style={actionsStyle}>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={tk("process.table.search_placeholder")}
-            aria-label={tk("process.table.search_placeholder")}
-            style={searchStyle}
-          />
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tk("process.table.search_placeholder")}
+              aria-label={tk("process.table.search_placeholder")}
+              style={{ ...searchStyle, paddingRight: "30px" }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                style={{
+                  position: "absolute",
+                  right: "8px",
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  padding: "0 2px",
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <div style={{ marginBottom: "12px" }}>
@@ -128,7 +150,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
         <span style={infoLabelStyle}>{sortSummary.label}</span>
         <span style={infoReasonStyle}>{sortSummary.reason}</span>
       </div>
-      <div style={{ maxHeight: "500px", overflow: "auto" }}>
+      <div style={{ maxHeight: "calc(100vh - 340px)", minHeight: "200px", overflow: "auto" }}>
         <table
           style={{
             width: "100%",

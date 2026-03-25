@@ -214,6 +214,8 @@ export const KO_MESSAGES = {
   Utilization: "활용률",
   VRAM: "VRAM",
   "Collecting data...": "데이터 수집 중...",
+  "Collecting system information...": "시스템 정보를 수집하고 있습니다...",
+  "Clear search": "검색 초기화",
   "Real-time system insights for developers":
     "개발자를 위한 실시간 시스템 인사이트",
   Homepage: "홈페이지",
@@ -242,6 +244,8 @@ export const KO_MESSAGES = {
   "Unable to open the release download page.":
     "릴리즈 다운로드 페이지를 열 수 없습니다.",
   Close: "닫기",
+  CRITICAL: "심각",
+  WARNING: "경고",
   "Loading process data...": "프로세스 데이터 로딩 중...",
   "GPU monitoring unavailable on unified memory":
     "통합 메모리 환경에서는 GPU 모니터링을 제공할 수 없습니다",
@@ -907,4 +911,7 @@ export const KO_MESSAGES = {
   "Critical (%)": "위험 (%)",
   "(no extension)": "(확장자 없음)",
   "... and {count} more": "... 외 {count}개",
+  "Unable to render this section. Other features remain available.":
+    "이 섹션을 렌더링하지 못했습니다. 다른 기능은 계속 사용할 수 있습니다.",
+  "Retry": "다시 시도",
 } as const;

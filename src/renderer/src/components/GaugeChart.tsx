@@ -15,7 +15,7 @@ export function GaugeChart({ value, label, color, size = 120, subtitle }: GaugeC
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
       <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }} role="img" aria-label={`${label}: ${progress.toFixed(1)}%`}>
           <circle
             cx={size / 2}
             cy={size / 2}

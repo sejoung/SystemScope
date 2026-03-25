@@ -1,9 +1,17 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
+import { useSettingsStore } from "../stores/useSettingsStore";
 
 const IS_MAC = navigator.userAgent.includes("Macintosh");
 
 export function Layout({ children }: { children: ReactNode }) {
+  const mainRef = useRef<HTMLElement>(null);
+  const currentPage = useSettingsStore((s) => s.currentPage);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [currentPage]);
+
   return (
     <div
       className="app-shell"
@@ -25,6 +33,7 @@ export function Layout({ children }: { children: ReactNode }) {
       )}
       <Sidebar />
       <main
+        ref={mainRef}
         className="app-main"
         style={{
           flex: 1,

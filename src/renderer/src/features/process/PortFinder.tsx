@@ -163,21 +163,43 @@ export function PortFinder() {
               </button>
             ))}
           </div>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            placeholder={
-              searchScope === "local"
-                ? tk("process.port_finder.search_local")
-                : searchScope === "remote"
-                  ? tk("process.port_finder.search_remote")
-                  : tk("process.port_finder.search_all")
-            }
-            aria-label={tk("process.port_finder.title")}
-            style={searchStyle}
-          />
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              placeholder={
+                searchScope === "local"
+                  ? tk("process.port_finder.search_local")
+                  : searchScope === "remote"
+                    ? tk("process.port_finder.search_remote")
+                    : tk("process.port_finder.search_all")
+              }
+              aria-label={tk("process.port_finder.title")}
+              style={{ ...searchStyle, paddingRight: "30px" }}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                style={{
+                  position: "absolute",
+                  right: "8px",
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  padding: "0 2px",
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => fetchPorts()}

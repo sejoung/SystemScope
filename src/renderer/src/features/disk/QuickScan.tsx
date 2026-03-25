@@ -306,12 +306,12 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                               fontSize: "10px",
                               padding: "1px 6px",
                               borderRadius: "4px",
-                              background: `${getSafetyTone(folder).color}20`,
-                              color: getSafetyTone(folder).color,
+                              background: `${getSafetyTone(folder, t).color}20`,
+                              color: getSafetyTone(folder, t).color,
                               fontWeight: 700,
                             }}
                           >
-                            {t(getSafetyTone(folder).label)}
+                            {getSafetyTone(folder, t).label}
                           </span>
                         </div>
                         <div
@@ -330,7 +330,7 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
                             marginTop: "4px",
                           }}
                         >
-                          {t(getSafetyTone(folder).note)}
+                          {getSafetyTone(folder, t).note}
                         </div>
                       </div>
 
@@ -377,31 +377,34 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
   );
 }
 
-function getSafetyTone(folder: QuickScanFolder): {
+function getSafetyTone(
+  folder: QuickScanFolder,
+  t: (text: string) => string,
+): {
   label: string;
   color: string;
   note: string;
 } {
   if (!folder.cleanable) {
     return {
-      label: "REVIEW FIRST",
+      label: t("REVIEW FIRST"),
       color: "var(--accent-red)",
-      note: "Large app data or container folders can break environments if removed blindly.",
+      note: t("Large app data or container folders can break environments if removed blindly."),
     };
   }
 
   if (folder.category === "packages" || folder.category === "homebrew") {
     return {
-      label: "USE TOOL CLEANUP",
+      label: t("USE TOOL CLEANUP"),
       color: "var(--accent-yellow)",
-      note: "Prefer package-manager cleanup commands before deleting files directly.",
+      note: t("Prefer package-manager cleanup commands before deleting files directly."),
     };
   }
 
   return {
-    label: "GENERALLY SAFE",
+    label: t("GENERALLY SAFE"),
     color: "var(--accent-green)",
-    note: "Usually cache or temporary data, but still review the folder contents before deleting.",
+    note: t("Usually cache or temporary data, but still review the folder contents before deleting."),
   };
 }
 

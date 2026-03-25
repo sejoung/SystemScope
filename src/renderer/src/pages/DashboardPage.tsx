@@ -24,7 +24,7 @@ export function DashboardPage() {
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 
-  if (!current) return <PageLoading />;
+  if (!current) return <PageLoading message={t("Collecting system information...")} />;
 
   return (
     <div data-testid="page-dashboard">

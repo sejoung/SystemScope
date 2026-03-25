@@ -50,7 +50,7 @@ export function AlertBanner() {
                   : "var(--accent-yellow)",
             }}
           >
-            {alert.severity === "critical" ? "CRITICAL" : "WARNING"}:{" "}
+            {alert.severity === "critical" ? t("CRITICAL") : t("WARNING")}:{" "}
             {alert.message}
           </span>
           <button
