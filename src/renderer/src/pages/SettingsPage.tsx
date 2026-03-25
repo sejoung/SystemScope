@@ -20,7 +20,8 @@ export function SettingsPage() {
   const [localLocale, setLocalLocale] = useState<AppLocale>(locale)
   const [saved, setSaved] = useState(false)
   const [dataPath, setDataPath] = useState<string | null>(null)
-  const [logPath, setLogPath] = useState<string | null>(null)
+  const [systemLogPath, setSystemLogPath] = useState<string | null>(null)
+  const [accessLogPath, setAccessLogPath] = useState<string | null>(null)
   const [aboutInfo, setAboutInfo] = useState<SystemScopeAboutInfo | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -75,8 +76,11 @@ export function SettingsPage() {
     window.systemScope.getDataPath().then((res) => {
       if (res.ok && res.data) setDataPath(res.data as string)
     })
-    window.systemScope.getLogPath().then((res) => {
-      if (res.ok && res.data) setLogPath(res.data as string)
+    window.systemScope.getSystemLogPath().then((res) => {
+      if (res.ok && res.data) setSystemLogPath(res.data as string)
+    })
+    window.systemScope.getAccessLogPath().then((res) => {
+      if (res.ok && res.data) setAccessLogPath(res.data as string)
     })
     window.systemScope.getAboutInfo().then((res) => {
       if (res.ok && res.data) {
@@ -366,31 +370,25 @@ export function SettingsPage() {
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
             {tk('settings.logs.description')}
           </div>
-          {logPath && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '10px 14px',
-              background: 'var(--bg-primary)',
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)'
-            }}>
-              <span style={{
-                flex: 1, fontSize: '13px', fontFamily: 'monospace',
-                color: 'var(--text-primary)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-              }}>
-                {logPath}
-              </span>
-              <button
-                onClick={() => void handleOpenPath(logPath, tk('settings.logs.open_failed'))}
-                style={btnStyle}
-              >
-                {tk('common.open')}
-              </button>
-            </div>
+          {systemLogPath && (
+            <PathRow
+              label={tk('settings.logs.system_path')}
+              value={systemLogPath}
+              openLabel={tk('common.open')}
+              onOpen={() => void handleOpenPath(systemLogPath, tk('settings.logs.open_failed'))}
+            />
+          )}
+          {accessLogPath && (
+            <PathRow
+              label={tk('settings.logs.access_path')}
+              value={accessLogPath}
+              openLabel={tk('common.open')}
+              onOpen={() => void handleOpenPath(accessLogPath, tk('settings.logs.open_failed'))}
+            />
           )}
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-            <div>{tk('settings.logs.filename')}</div>
+            <div>{tk('settings.logs.system_filename')}</div>
+            <div>{tk('settings.logs.access_filename')}</div>
             <div>{tk('settings.logs.retention')}</div>
           </div>
         </Section>
@@ -495,6 +493,45 @@ function Section({ title, badge, children }: { title: string; badge?: string; ch
         )}
       </div>
       {children}
+    </div>
+  )
+}
+
+function PathRow({
+  label,
+  value,
+  openLabel,
+  onOpen
+}: {
+  label: string
+  value: string
+  openLabel: string
+  onOpen: () => void
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '10px',
+      padding: '10px 14px',
+      background: 'var(--bg-primary)',
+      borderRadius: 'var(--radius)',
+      border: '1px solid var(--border)'
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>{label}</div>
+        <div style={{
+          fontSize: '13px',
+          fontFamily: 'monospace',
+          color: 'var(--text-primary)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>
+          {value}
+        </div>
+      </div>
+      <button onClick={onOpen} style={btnStyle}>
+        {openLabel}
+      </button>
     </div>
   )
 }

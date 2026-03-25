@@ -67,7 +67,8 @@ export const IPC_CHANNELS = {
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
   SETTINGS_GET_DATA_PATH: 'settings:getDataPath',
-  SETTINGS_GET_LOG_PATH: 'settings:getLogPath',
+  SETTINGS_GET_SYSTEM_LOG_PATH: 'settings:getSystemLogPath',
+  SETTINGS_GET_ACCESS_LOG_PATH: 'settings:getAccessLogPath',
 
   // 다이얼로그
   DIALOG_SELECT_FOLDER: 'dialog:selectFolder',

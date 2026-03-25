@@ -9,7 +9,7 @@ import { success, failure } from '@shared/types'
 import { restartSnapshotScheduler } from '../services/growthAnalyzer'
 import { setThresholds } from '../services/alertManager'
 import { didShellOpenPathFail, isPathInsideAnyParent, isPathInsideParent } from './settingsPathUtils'
-import { getLogDir, logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
+import { getAccessLogDir, getSystemLogDir, logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
@@ -58,10 +58,17 @@ export function registerSettingsIpc(): void {
     return success(dataPath)
   })
 
-  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_LOG_PATH, (_event, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_SYSTEM_LOG_PATH, (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    const logPath = getLogDir()
-    logInfoAction('settings-ipc', 'paths.log.get', withRequestMeta(requestMeta, { path: logPath }))
+    const logPath = getSystemLogDir()
+    logInfoAction('settings-ipc', 'paths.system_log.get', withRequestMeta(requestMeta, { path: logPath }))
+    return success(logPath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_ACCESS_LOG_PATH, (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    const logPath = getAccessLogDir()
+    logInfoAction('settings-ipc', 'paths.access_log.get', withRequestMeta(requestMeta, { path: logPath }))
     return success(logPath)
   })
 

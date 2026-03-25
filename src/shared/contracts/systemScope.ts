@@ -112,7 +112,8 @@ export interface SystemScopeApi {
   getSettings: () => Promise<AppResult<Record<string, unknown>>>
   setSettings: (settings: SystemScopeSettingsPayload) => Promise<AppResult<Record<string, unknown>>>
   getDataPath: () => Promise<AppResult<string>>
-  getLogPath: () => Promise<AppResult<string>>
+  getSystemLogPath: () => Promise<AppResult<string>>
+  getAccessLogPath: () => Promise<AppResult<string>>
 
   selectFolder: () => Promise<AppResult<string | null>>
   showInFolder: (targetPath: string) => Promise<AppResult<boolean>>

@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IPC_CHANNELS } from '../../src/shared/contracts/channels'
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>())
-const logError = vi.hoisted(() => vi.fn())
-const logWarn = vi.hoisted(() => vi.fn())
-const logInfo = vi.hoisted(() => vi.fn())
+const logErrorAction = vi.hoisted(() => vi.fn())
+const logWarnAction = vi.hoisted(() => vi.fn())
+const logInfoAction = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -14,21 +14,19 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('electron-log', () => ({
-  default: {
-    error: logError,
-    warn: logWarn,
-    info: logInfo
-  }
+vi.mock('../../src/main/services/logging', () => ({
+  logErrorAction,
+  logWarnAction,
+  logInfoAction
 }))
 
 describe('registerAlertIpc', () => {
   beforeEach(() => {
     vi.resetModules()
     handlers.clear()
-    logError.mockReset()
-    logWarn.mockReset()
-    logInfo.mockReset()
+    logErrorAction.mockReset()
+    logWarnAction.mockReset()
+    logInfoAction.mockReset()
   })
 
   it('should return active alerts and allow dismissing them', async () => {
@@ -84,7 +82,7 @@ describe('registerAlertIpc', () => {
 
     const dismissResult = dismissHandler?.({}, activeResult.data[0].id) as { ok: boolean }
     expect(dismissResult.ok).toBe(true)
-    expect(logInfo).toHaveBeenCalled()
+    expect(logInfoAction).toHaveBeenCalled()
 
     const afterDismiss = getActiveHandler?.({}, undefined) as { ok: boolean; data: unknown[] }
     expect(afterDismiss.ok).toBe(true)
@@ -101,11 +99,11 @@ describe('registerAlertIpc', () => {
     const invalidResult = dismissHandler?.({}, '') as { ok: boolean; error?: { code: string } }
     expect(invalidResult.ok).toBe(false)
     expect(invalidResult.error?.code).toBe('INVALID_INPUT')
-    expect(logWarn).toHaveBeenCalled()
+    expect(logWarnAction).toHaveBeenCalled()
 
     const unknownResult = dismissHandler?.({}, 'missing-id') as { ok: boolean; error?: { code: string } }
     expect(unknownResult.ok).toBe(false)
     expect(unknownResult.error?.code).toBe('UNKNOWN_ERROR')
-    expect(logWarn).toHaveBeenCalled()
+    expect(logWarnAction).toHaveBeenCalled()
   })
 })

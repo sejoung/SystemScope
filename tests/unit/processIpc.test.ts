@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IPC_CHANNELS } from '../../src/shared/contracts/channels'
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>())
-const logError = vi.hoisted(() => vi.fn())
-const logWarn = vi.hoisted(() => vi.fn())
-const logInfo = vi.hoisted(() => vi.fn())
+const logErrorAction = vi.hoisted(() => vi.fn())
+const logWarnAction = vi.hoisted(() => vi.fn())
+const logInfoAction = vi.hoisted(() => vi.fn())
 const getNetworkPorts = vi.hoisted(() => vi.fn())
 const getProcessByPid = vi.hoisted(() => vi.fn())
 const showMessageBox = vi.hoisted(() => vi.fn())
@@ -32,12 +32,10 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('electron-log', () => ({
-  default: {
-    error: logError,
-    warn: logWarn,
-    info: logInfo
-  }
+vi.mock('../../src/main/services/logging', () => ({
+  logErrorAction,
+  logWarnAction,
+  logInfoAction
 }))
 
 vi.mock('../../src/main/services/processMonitor', () => ({
@@ -56,9 +54,9 @@ describe('registerProcessIpc', () => {
   beforeEach(() => {
     vi.resetModules()
     handlers.clear()
-    logError.mockReset()
-    logWarn.mockReset()
-    logInfo.mockReset()
+    logErrorAction.mockReset()
+    logWarnAction.mockReset()
+    logInfoAction.mockReset()
     getNetworkPorts.mockReset()
     getProcessByPid.mockReset()
     showMessageBox.mockReset()
@@ -103,7 +101,7 @@ describe('registerProcessIpc', () => {
     const result = await handler?.({}, undefined) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('UNKNOWN_ERROR')
-    expect(logError).toHaveBeenCalled()
+    expect(logErrorAction).toHaveBeenCalled()
   })
 
   it('should kill a process after confirmation', async () => {
@@ -123,7 +121,7 @@ describe('registerProcessIpc', () => {
     expect(result.data).toEqual({ pid: 4321, name: 'node', killed: true, cancelled: false })
     expect(showMessageBox).toHaveBeenCalled()
     expect(killSpy).toHaveBeenCalledWith(4321, 'SIGTERM')
-    expect(logInfo).toHaveBeenCalled()
+    expect(logInfoAction).toHaveBeenCalled()
     killSpy.mockRestore()
   })
 
@@ -142,7 +140,7 @@ describe('registerProcessIpc', () => {
     expect(result.ok).toBe(true)
     expect(result.data).toEqual({ pid: 4321, name: 'node', killed: false, cancelled: true })
     expect(killSpy).not.toHaveBeenCalled()
-    expect(logInfo).toHaveBeenCalled()
+    expect(logInfoAction).toHaveBeenCalled()
     killSpy.mockRestore()
   })
 
@@ -167,7 +165,7 @@ describe('registerProcessIpc', () => {
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('PERMISSION_DENIED')
     expect(killSpy).not.toHaveBeenCalled()
-    expect(logWarn).toHaveBeenCalled()
+    expect(logWarnAction).toHaveBeenCalled()
     killSpy.mockRestore()
   })
 

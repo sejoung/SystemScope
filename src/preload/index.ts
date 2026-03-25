@@ -108,7 +108,8 @@ const api: SystemScopeApi = {
   getSettings: () => invokeWithRequestId(IPC_CHANNELS.SETTINGS_GET),
   setSettings: (settings) => invokeWithRequestId(IPC_CHANNELS.SETTINGS_SET, settings),
   getDataPath: () => invokeWithRequestId(IPC_CHANNELS.SETTINGS_GET_DATA_PATH),
-  getLogPath: () => invokeWithRequestId(IPC_CHANNELS.SETTINGS_GET_LOG_PATH),
+  getSystemLogPath: () => invokeWithRequestId(IPC_CHANNELS.SETTINGS_GET_SYSTEM_LOG_PATH),
+  getAccessLogPath: () => invokeWithRequestId(IPC_CHANNELS.SETTINGS_GET_ACCESS_LOG_PATH),
 
   // 다이얼로그
   selectFolder: () => invokeWithRequestId(IPC_CHANNELS.DIALOG_SELECT_FOLDER),

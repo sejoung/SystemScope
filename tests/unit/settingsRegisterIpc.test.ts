@@ -7,8 +7,9 @@ const getSettingsMock = vi.hoisted(() => vi.fn())
 const validatePartialSettingsMock = vi.hoisted(() => vi.fn())
 const restartSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
 const setThresholdsMock = vi.hoisted(() => vi.fn())
-const getLogDirMock = vi.hoisted(() => vi.fn())
+const getAccessLogDirMock = vi.hoisted(() => vi.fn())
 const getPathMock = vi.hoisted(() => vi.fn())
+const getSystemLogDirMock = vi.hoisted(() => vi.fn())
 const logErrorActionMock = vi.hoisted(() => vi.fn())
 const logErrorMock = vi.hoisted(() => vi.fn())
 const logInfoActionMock = vi.hoisted(() => vi.fn())
@@ -47,7 +48,8 @@ vi.mock('../../src/main/services/alertManager', () => ({
 }))
 
 vi.mock('../../src/main/services/logging', () => ({
-  getLogDir: getLogDirMock,
+  getAccessLogDir: getAccessLogDirMock,
+  getSystemLogDir: getSystemLogDirMock,
   logErrorAction: logErrorActionMock,
   logError: logErrorMock,
   logInfoAction: logInfoActionMock,
@@ -63,8 +65,9 @@ describe('registerSettingsIpc', () => {
     validatePartialSettingsMock.mockReset()
     restartSnapshotSchedulerMock.mockReset()
     setThresholdsMock.mockReset()
-    getLogDirMock.mockReset()
+    getAccessLogDirMock.mockReset()
     getPathMock.mockReset()
+    getSystemLogDirMock.mockReset()
     logErrorActionMock.mockReset()
     logErrorMock.mockReset()
     logInfoActionMock.mockReset()
@@ -113,16 +116,29 @@ describe('registerSettingsIpc', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('should expose the log directory path through settings:getLogPath', async () => {
-    getLogDirMock.mockReturnValue('/tmp/systemscope/logs')
+  it('should expose the system log directory path through settings:getSystemLogPath', async () => {
+    getSystemLogDirMock.mockReturnValue('/tmp/systemscope/logs/system')
 
     const { registerSettingsIpc } = await import('../../src/main/ipc/settings.ipc')
     registerSettingsIpc()
 
-    const handler = handlers.get(IPC_CHANNELS.SETTINGS_GET_LOG_PATH)
+    const handler = handlers.get(IPC_CHANNELS.SETTINGS_GET_SYSTEM_LOG_PATH)
     expect(handler).toBeTypeOf('function')
 
     const result = handler?.({}, undefined) as { ok: boolean; data?: string }
-    expect(result).toEqual({ ok: true, data: '/tmp/systemscope/logs' })
+    expect(result).toEqual({ ok: true, data: '/tmp/systemscope/logs/system' })
+  })
+
+  it('should expose the access log directory path through settings:getAccessLogPath', async () => {
+    getAccessLogDirMock.mockReturnValue('/tmp/systemscope/logs/access')
+
+    const { registerSettingsIpc } = await import('../../src/main/ipc/settings.ipc')
+    registerSettingsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.SETTINGS_GET_ACCESS_LOG_PATH)
+    expect(handler).toBeTypeOf('function')
+
+    const result = handler?.({}, undefined) as { ok: boolean; data?: string }
+    expect(result).toEqual({ ok: true, data: '/tmp/systemscope/logs/access' })
   })
 })
