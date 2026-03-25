@@ -1,72 +1,139 @@
-import { useEffect, useState } from 'react'
-import { create } from 'zustand'
+import { useEffect, useState } from "react";
+import { create } from "zustand";
 
 interface ToastMessage {
-  id: string
-  text: string
+  id: string;
+  text: string;
+  tone?: "default" | "success" | "danger";
 }
 
 interface ToastState {
-  message: ToastMessage | null
-  show: (message: string) => void
-  hide: () => void
+  messages: ToastMessage[];
+  show: (message: string, tone?: ToastMessage["tone"]) => void;
+  hide: (id: string) => void;
 }
 
 export const useToast = create<ToastState>((set) => ({
-  message: null,
-  show: (message) =>
-    set({
-      message: {
-        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-        text: message
-      }
-    }),
-  hide: () => set({ message: null })
-}))
+  messages: [],
+  show: (message, tone = "default") =>
+    set((state) => ({
+      messages: [
+        ...state.messages,
+        {
+          id: crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()}`,
+          text: message,
+          tone,
+        },
+      ],
+    })),
+  hide: (id) =>
+    set((state) => ({
+      messages: state.messages.filter((message) => message.id !== id),
+    })),
+}));
 
 export function ToastContainer() {
-  const message = useToast((s) => s.message)
-  const hide = useToast((s) => s.hide)
-  const [visible, setVisible] = useState(false)
+  const messages = useToast((s) => s.messages);
+  const hide = useToast((s) => s.hide);
+  const [visibleIds, setVisibleIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!message) return
+    if (messages.length === 0) {
+      setVisibleIds([]);
+      return;
+    }
 
-    setVisible(true)
-    const hideTimer = setTimeout(() => {
-      setVisible(false)
-    }, 3000)
-    const clearTimer = setTimeout(() => {
-      hide()
-    }, 3300)
+    const nextVisibleIds = messages
+      .filter((message) => !visibleIds.includes(message.id))
+      .map((message) => message.id);
+
+    if (nextVisibleIds.length === 0) return;
+
+    setVisibleIds((current) => [...current, ...nextVisibleIds]);
+    const timers = nextVisibleIds.flatMap((id) => [
+      setTimeout(() => {
+        setVisibleIds((current) => current.filter((value) => value !== id));
+      }, 3000),
+      setTimeout(() => {
+        hide(id);
+      }, 3300),
+    ]);
 
     return () => {
-      clearTimeout(hideTimer)
-      clearTimeout(clearTimer)
-    }
-  }, [message, hide])
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [messages, hide, visibleIds]);
 
-  if (!message) return null
+  if (messages.length === 0) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '24px',
-      left: '50%',
-      transform: `translateX(-50%) translateY(${visible ? '0' : '20px'})`,
-      opacity: visible ? 1 : 0,
-      transition: 'all 0.3s ease',
-      padding: '10px 20px',
-      borderRadius: 'var(--radius)',
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border)',
-      boxShadow: 'var(--shadow-lg)',
-      fontSize: '13px',
-      color: 'var(--text-primary)',
-      zIndex: 9999,
-      pointerEvents: 'none'
-    }}>
-      {message.text}
+    <div
+      aria-live="polite"
+      aria-atomic="false"
+      style={{
+        position: "fixed",
+        right: "24px",
+        bottom: "24px",
+        display: "grid",
+        gap: "10px",
+        zIndex: 9999,
+      }}
+    >
+      {messages.map((message) => {
+        const visible = visibleIds.includes(message.id);
+        const accent =
+          message.tone === "danger"
+            ? "var(--accent-red)"
+            : message.tone === "success"
+              ? "var(--accent-green)"
+              : "var(--accent-blue)";
+
+        return (
+          <div
+            key={message.id}
+            role="status"
+            style={{
+              width: "min(420px, calc(100vw - 32px))",
+              transform: `translateY(${visible ? "0" : "14px"})`,
+              opacity: visible ? 1 : 0,
+              transition: "all 0.25s ease",
+              padding: "12px 14px",
+              borderRadius: "12px",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              borderLeft: `4px solid ${accent}`,
+              boxShadow: "var(--shadow-lg)",
+              fontSize: "13px",
+              color: "var(--text-primary)",
+              pointerEvents: "auto",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}
+            >
+              <div style={{ flex: 1, lineHeight: 1.5 }}>{message.text}</div>
+              <button
+                type="button"
+                onClick={() => hide(message.id)}
+                aria-label="Close"
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  lineHeight: 1,
+                  padding: 0,
+                }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        );
+      })}
     </div>
-  )
+  );
 }
