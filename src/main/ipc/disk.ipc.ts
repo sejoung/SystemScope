@@ -17,12 +17,15 @@ import { logErrorAction, logInfoAction, logProductMetric } from '../services/log
 import { trashItemsWithConfirm } from '../services/trashService'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { registerShellPath, registerShellPaths } from '../services/shellPathRegistry'
 
 const SCAN_CACHE_TTL_MS = 30 * 60 * 1000 // 30분
 const TRASH_TARGET_TTL_MS = 60 * 60 * 1000 // 1시간
 
 let lastScanResult: DiskScanResult | null = null
 let lastScanTimestamp = 0
+let lastDerivedLargeFiles: LargeFile[] | null = null
+let lastDerivedExtensionBreakdown: ReturnType<typeof getExtensionBreakdown> | null = null
 const registeredTrashTargets = new Map<string, { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate'; createdAt: number }>()
 
 function isScanCacheValid(folderPath: string): boolean {
@@ -40,6 +43,9 @@ const MAX_OLD_FILE_DAYS = 3650 // ~10년
 function setScanCache(result: DiskScanResult): void {
   lastScanResult = result
   lastScanTimestamp = Date.now()
+  lastDerivedLargeFiles = result.topLargeFiles ?? null
+  lastDerivedExtensionBreakdown = result.extensionBreakdown ?? null
+  registerShellPath(result.rootPath)
 }
 
 export function registerDiskIpc(): void {
@@ -50,6 +56,7 @@ export function registerDiskIpc(): void {
     }
 
     const resolved = path.resolve(folderPath)
+    registerShellPath(resolved)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
@@ -121,6 +128,8 @@ export function registerDiskIpc(): void {
     if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
       lastScanResult = null
       lastScanTimestamp = 0
+      lastDerivedLargeFiles = null
+      lastDerivedExtensionBreakdown = null
     }
     clearTrashTargetsForRootPath(resolved)
     logInfoAction('disk-ipc', 'scan_cache.invalidate', withRequestMeta(requestMeta, { path: resolved }))
@@ -141,7 +150,12 @@ export function registerDiskIpc(): void {
 
     // 해당 경로의 캐시된 결과가 있으면 사용
     if (isScanCacheValid(resolved)) {
-      const files = registerLargeFileTrashTargets(findLargeFiles(lastScanResult!.tree, limit), resolved, 'large')
+      const files = registerLargeFileTrashTargets(
+        (lastDerivedLargeFiles ?? findLargeFiles(lastScanResult!.tree, limit)).slice(0, limit),
+        resolved,
+        'large'
+      )
+      registerShellPaths(files.map((file) => file.path))
       logInfoAction('disk-ipc', 'large_files.list_cached', withRequestMeta(requestMeta, { path: resolved, limit, count: files.length }))
       return success(files)
     }
@@ -154,7 +168,12 @@ export function registerDiskIpc(): void {
     try {
       const result = await scanFolder(resolved)
       setScanCache(result)
-      const files = registerLargeFileTrashTargets(findLargeFiles(result.tree, limit), resolved, 'large')
+      const files = registerLargeFileTrashTargets(
+        (result.topLargeFiles ?? findLargeFiles(result.tree, limit)).slice(0, limit),
+        resolved,
+        'large'
+      )
+      registerShellPaths(files.map((file) => file.path))
       logInfoAction('disk-ipc', 'large_files.list', withRequestMeta(requestMeta, { path: resolved, limit, count: files.length }))
       return success(files)
     } catch (err) {
@@ -171,7 +190,7 @@ export function registerDiskIpc(): void {
 
     const resolved = path.resolve(folderPath)
     if (isScanCacheValid(resolved)) {
-      const extensions = getExtensionBreakdown(lastScanResult!.tree)
+      const extensions = lastDerivedExtensionBreakdown ?? getExtensionBreakdown(lastScanResult!.tree)
       logInfoAction('disk-ipc', 'extensions.list_cached', withRequestMeta(requestMeta, { path: resolved, count: extensions.length }))
       return success(extensions)
     }
@@ -184,7 +203,7 @@ export function registerDiskIpc(): void {
     try {
       const result = await scanFolder(resolved)
       setScanCache(result)
-      const extensions = getExtensionBreakdown(result.tree)
+      const extensions = result.extensionBreakdown ?? getExtensionBreakdown(result.tree)
       logInfoAction('disk-ipc', 'extensions.list', withRequestMeta(requestMeta, { path: resolved, count: extensions.length }))
       return success(extensions)
     } catch (err) {
@@ -197,6 +216,7 @@ export function registerDiskIpc(): void {
     const requestMeta = getRequestMeta(metaArg)
     try {
       const results = await runQuickScan()
+      registerShellPaths(results.map((result) => result.path))
       logInfoAction('disk-ipc', 'quick_scan.run', withRequestMeta(requestMeta, { count: results.length }))
       logProductMetric('disk-ipc', 'disk.quick_scan', 'succeeded', withRequestMeta(requestMeta, { count: results.length }))
       return success(results)
@@ -211,6 +231,8 @@ export function registerDiskIpc(): void {
     const requestMeta = getRequestMeta(metaArg)
     try {
       const info = await getUserSpaceInfo()
+      registerShellPath(info.homePath)
+      registerShellPaths(info.entries.map((entry) => entry.path))
       logInfoAction('disk-ipc', 'user_space.get', withRequestMeta(requestMeta, {
         diskTotal: info.diskTotal,
         diskUsage: info.diskUsage
@@ -238,6 +260,7 @@ export function registerDiskIpc(): void {
     }
     try {
       const results = await findRecentGrowth(resolved, days)
+      registerShellPaths(results.map((result) => result.path))
       logInfoAction('disk-ipc', 'recent_growth.list', withRequestMeta(requestMeta, { path: resolved, days, count: results.length }))
       return success(results)
     } catch (err) {
@@ -262,6 +285,7 @@ export function registerDiskIpc(): void {
     }
     try {
       const results = registerDuplicateTrashTargets(await findDuplicates(resolved, minSizeKB * 1024), resolved)
+      registerShellPaths(results.flatMap((group) => group.files.map((file) => file.path)))
       logInfoAction('disk-ipc', 'duplicates.list', withRequestMeta(requestMeta, { path: resolved, minSizeKB, count: results.length }))
       return success(results)
     } catch (err) {
@@ -277,6 +301,7 @@ export function registerDiskIpc(): void {
     }
     try {
       const result = await analyzeGrowth(period)
+      registerShellPaths(result.folders.map((folder) => folder.path))
       logInfoAction('disk-ipc', 'growth_analysis.get', withRequestMeta(requestMeta, { period, folderCount: result.folders.length, totalAdded: result.totalAdded }))
       return success(result)
     } catch (err) {
@@ -301,6 +326,7 @@ export function registerDiskIpc(): void {
     }
     try {
       const results = registerLargeFileTrashTargets(await findOldFiles(resolved, olderThanDays), resolved, 'old')
+      registerShellPaths(results.map((result) => result.path))
       logInfoAction('disk-ipc', 'old_files.list', withRequestMeta(requestMeta, { path: resolved, olderThanDays, count: results.length }))
       return success(results)
     } catch (err) {

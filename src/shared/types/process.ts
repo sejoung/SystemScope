@@ -7,6 +7,12 @@ export interface ProcessInfo {
   command: string
 }
 
+export interface ProcessSnapshot {
+  allProcesses: ProcessInfo[]
+  topCpuProcesses: ProcessInfo[]
+  topMemoryProcesses: ProcessInfo[]
+}
+
 export interface PortInfo {
   protocol: string
   localAddress: string

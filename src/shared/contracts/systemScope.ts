@@ -8,6 +8,7 @@ import type {
   ExtensionGroup,
   GrowthViewResult,
   LargeFile,
+  ProcessSnapshot,
   ProcessInfo,
   PortInfo,
   QuickScanFolder,
@@ -86,6 +87,7 @@ export interface SystemScopeApi {
   getTopCpuProcesses: (limit: number) => Promise<AppResult<ProcessInfo[]>>
   getTopMemoryProcesses: (limit: number) => Promise<AppResult<ProcessInfo[]>>
   getAllProcesses: () => Promise<AppResult<ProcessInfo[]>>
+  getProcessSnapshot: (limit: number) => Promise<AppResult<ProcessSnapshot>>
   getNetworkPorts: () => Promise<AppResult<PortInfo[]>>
   killProcess: (request: ProcessKillRequest) => Promise<AppResult<ProcessKillResult>>
 

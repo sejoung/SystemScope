@@ -14,7 +14,7 @@ import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
 import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import type { Alert, ShutdownState, SystemStats, UpdateInfo, UpdateStatus } from '@shared/types'
+import type { Alert, ShutdownState, SystemStats, UpdateInfo, UpdateStatus, ProcessSnapshot } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { useState } from 'react'
 import { useI18n } from './i18n/useI18n'
@@ -41,6 +41,14 @@ function isUpdateInfo(data: unknown): data is UpdateInfo {
 
 function isUpdateStatus(data: unknown): data is UpdateStatus {
   return data !== null && typeof data === 'object' && 'currentVersion' in data && 'checking' in data && 'lastCheckedAt' in data
+}
+
+function isProcessSnapshot(data: unknown): data is ProcessSnapshot {
+  return data !== null
+    && typeof data === 'object'
+    && 'allProcesses' in data
+    && 'topCpuProcesses' in data
+    && 'topMemoryProcesses' in data
 }
 
 function App() {
@@ -206,14 +214,12 @@ function App() {
   const shouldPollProcesses = !isE2ELightweight && (currentPage === 'dashboard' || currentPage === 'process')
 
   useInterval(() => {
-    void Promise.all([
-      window.systemScope.getAllProcesses(),
-      window.systemScope.getTopCpuProcesses(10),
-      window.systemScope.getTopMemoryProcesses(10)
-    ]).then(([allRes, cpuRes, memRes]) => {
-      if (allRes.ok && allRes.data) setAllProcesses(allRes.data)
-      if (cpuRes.ok && cpuRes.data) setCpuProcesses(cpuRes.data)
-      if (memRes.ok && memRes.data) setMemoryProcesses(memRes.data)
+    void window.systemScope.getProcessSnapshot(10).then((res) => {
+      if (res.ok && res.data && isProcessSnapshot(res.data)) {
+        setAllProcesses(res.data.allProcesses)
+        setCpuProcesses(res.data.topCpuProcesses)
+        setMemoryProcesses(res.data.topMemoryProcesses)
+      }
     }).catch((error) => {
       void reportRendererError('process-polling', 'Failed to refresh process lists', { error })
     })

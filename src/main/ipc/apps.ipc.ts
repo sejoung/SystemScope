@@ -18,6 +18,7 @@ import {
 import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { registerShellPaths } from '../services/shellPathRegistry'
 
 export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async (_event, metaArg?: IpcRequestMetaArg) => {
@@ -68,6 +69,7 @@ export function registerAppsIpc(): void {
 
     try {
       const items = await getInstalledAppRelatedData(appId)
+      registerShellPaths(items.map((item) => item.path))
       logInfoAction('apps-ipc', 'related_data.list', withRequestMeta(requestMeta, { appId, count: items.length }))
       return success(items)
     } catch (error) {
@@ -80,6 +82,7 @@ export function registerAppsIpc(): void {
     const requestMeta = getRequestMeta(metaArg)
     try {
       const items = await listLeftoverAppData()
+      registerShellPaths(items.map((item) => item.path))
       logInfoAction('apps-ipc', 'leftover_data.list', withRequestMeta(requestMeta, { count: items.length }))
       return success(items)
     } catch (error) {
@@ -96,6 +99,7 @@ export function registerAppsIpc(): void {
 
     try {
       const items = await hydrateLeftoverAppDataSizes(itemIds)
+      registerShellPaths(items.map((item) => item.path))
       logInfoAction('apps-ipc', 'leftover_data.hydrate_sizes', withRequestMeta(requestMeta, {
         requestedCount: itemIds.length,
         hydratedCount: items.length

@@ -17,6 +17,9 @@ export async function scanFolder(
   let inaccessibleCount = 0
   let lastProgressTime = 0
   const PROGRESS_THROTTLE_MS = 100
+  const extensionMap = new Map<string, { totalSize: number; count: number }>()
+  const noExtensionLabel = tk('common.no_extension')
+  const topFiles: LargeFile[] = []
 
   async function walk(dirPath: string, depth: number): Promise<FolderNode> {
     if (signal?.aborted) {
@@ -42,26 +45,35 @@ export async function scanFolder(
 
     if (depth >= maxDepth) {
       // 최대 깊이 도달 시 파일 크기 합산 + 하위 디렉토리는 getDirSize로 측정
-      const sizes = await Promise.all(
-        entries.map(async (entry) => {
-          try {
-            const fullPath = path.join(dirPath, entry.name)
-            if (entry.isSymbolicLink()) return 0
-            if (entry.isFile()) {
-              const stat = await fs.stat(fullPath)
-              fileCount++
-              return stat.size
+      for (let i = 0; i < entries.length; i += SCAN_CONCURRENCY) {
+        const batch = entries.slice(i, i + SCAN_CONCURRENCY)
+        const sizes = await Promise.all(
+          batch.map(async (entry) => {
+            try {
+              const fullPath = path.join(dirPath, entry.name)
+              if (entry.isSymbolicLink()) return 0
+              if (entry.isFile()) {
+                const stat = await fs.stat(fullPath)
+                fileCount++
+                trackDerivedFile({
+                  name: entry.name,
+                  path: fullPath,
+                  size: stat.size,
+                  modified: stat.mtimeMs
+                })
+                return stat.size
+              }
+              if (entry.isDirectory()) {
+                return getDirSize(fullPath)
+              }
+            } catch {
+              inaccessibleCount++
             }
-            if (entry.isDirectory()) {
-              return getDirSize(fullPath)
-            }
-          } catch {
-            inaccessibleCount++
-          }
-          return 0
-        })
-      )
-      node.size = sizes.reduce((a, b) => a + b, 0)
+            return 0
+          })
+        )
+        node.size += sizes.reduce((a, b) => a + b, 0)
+      }
       return node
     }
 
@@ -90,6 +102,12 @@ export async function scanFolder(
             if (entry.isFile()) {
               const stat = await fs.stat(fullPath)
               fileCount++
+              trackDerivedFile({
+                name: entry.name,
+                path: fullPath,
+                size: stat.size,
+                modified: stat.mtimeMs
+              })
               return {
                 name: entry.name,
                 path: fullPath,
@@ -114,9 +132,6 @@ export async function scanFolder(
       }
     }
 
-    // 크기 기준 내림차순 정렬
-    node.children.sort((a, b) => b.size - a.size)
-
     return node
   }
 
@@ -130,7 +145,25 @@ export async function scanFolder(
     fileCount,
     folderCount,
     inaccessibleCount,
-    scanDuration
+    scanDuration,
+    topLargeFiles: topFiles,
+    extensionBreakdown: Array.from(extensionMap.entries())
+      .map(([extension, data]) => ({ extension, ...data }))
+      .sort((a, b) => b.totalSize - a.totalSize)
+  }
+
+  function trackDerivedFile(file: LargeFile): void {
+    const ext = path.extname(file.name).toLowerCase() || noExtensionLabel
+    const group = extensionMap.get(ext) ?? { totalSize: 0, count: 0 }
+    group.totalSize += file.size
+    group.count++
+    extensionMap.set(ext, group)
+
+    topFiles.push(file)
+    topFiles.sort((left, right) => right.size - left.size)
+    if (topFiles.length > SCAN_LARGE_FILE_LIMIT) {
+      topFiles.length = SCAN_LARGE_FILE_LIMIT
+    }
   }
 }
 

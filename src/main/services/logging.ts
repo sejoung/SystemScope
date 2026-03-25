@@ -12,6 +12,9 @@ const ACCESS_LOG_FILE_PATTERN = /^systemscope-access-(\d{4})-(\d{2})-(\d{2})\.lo
 
 let cleanupTimer: NodeJS.Timeout | null = null
 let accessLogWriteQueue: Promise<void> = Promise.resolve()
+const LOG_METADATA_MAX_DEPTH = 4
+const LOG_METADATA_MAX_ENTRIES = 50
+const LOG_METADATA_MAX_STRING_LENGTH = 2000
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 type ProductMetricResult = 'started' | 'succeeded' | 'failed' | 'cancelled'
@@ -213,9 +216,18 @@ function writeAccessLog(level: LogLevel, scope: string, message: string, metadat
     })
 }
 
-function normalizeLogMetadata(level: LogLevel, metadata: unknown): unknown {
+function normalizeLogMetadata(
+  level: LogLevel,
+  metadata: unknown,
+  depth = 0,
+  seen = new WeakSet<object>()
+): unknown {
   if (metadata === undefined) {
     return undefined
+  }
+
+  if (depth >= LOG_METADATA_MAX_DEPTH) {
+    return '[MaxDepthExceeded]'
   }
 
   if (metadata instanceof Error) {
@@ -223,13 +235,28 @@ function normalizeLogMetadata(level: LogLevel, metadata: unknown): unknown {
   }
 
   if (Array.isArray(metadata)) {
-    return metadata.map((item) => normalizeLogMetadata(level, item))
+    return metadata
+      .slice(0, LOG_METADATA_MAX_ENTRIES)
+      .map((item) => normalizeLogMetadata(level, item, depth + 1, seen))
   }
 
   if (metadata && typeof metadata === 'object') {
+    if (seen.has(metadata)) {
+      return '[Circular]'
+    }
+    seen.add(metadata)
+
     return Object.fromEntries(
-      Object.entries(metadata).map(([key, value]) => [key, normalizeLogMetadata(level, value)])
+      Object.entries(metadata)
+        .slice(0, LOG_METADATA_MAX_ENTRIES)
+        .map(([key, value]) => [key, normalizeLogMetadata(level, value, depth + 1, seen)])
     )
+  }
+
+  if (typeof metadata === 'string') {
+    return metadata.length > LOG_METADATA_MAX_STRING_LENGTH
+      ? `${metadata.slice(0, LOG_METADATA_MAX_STRING_LENGTH)}…[truncated]`
+      : metadata
   }
 
   return metadata

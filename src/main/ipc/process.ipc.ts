@@ -1,7 +1,7 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
-import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid } from '../services/processMonitor'
+import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessSnapshot } from '../services/processMonitor'
 import { success, failure } from '@shared/types'
 import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
@@ -47,6 +47,24 @@ export function registerProcessIpc(): void {
       return success(processes)
     } catch (err) {
       logErrorAction('process-ipc', 'processes.all.list', withRequestMeta(requestMeta, { error: err }))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_SNAPSHOT, async (_event, limit: number = 10, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    if (typeof limit !== 'number' || limit < 1 || limit > 100) {
+      return failure('INVALID_INPUT', tk('main.process.error.invalid_limit'))
+    }
+    try {
+      const snapshot = await getProcessSnapshot(limit)
+      logInfoAction('process-ipc', 'processes.snapshot.get', withRequestMeta(requestMeta, {
+        limit,
+        allCount: snapshot.allProcesses.length
+      }))
+      return success(snapshot)
+    } catch (err) {
+      logErrorAction('process-ipc', 'processes.snapshot.get', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })

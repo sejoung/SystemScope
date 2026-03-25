@@ -1,6 +1,6 @@
 import si from 'systeminformation'
 import path from 'path'
-import type { ProcessInfo, PortInfo } from '@shared/types'
+import type { ProcessInfo, PortInfo, ProcessSnapshot } from '@shared/types'
 
 // si.processes() 중복 호출 방지를 위한 TTL 캐시 (500ms)
 const PROCESS_CACHE_TTL = 500
@@ -49,6 +49,22 @@ export async function getAllProcesses(): Promise<ProcessInfo[]> {
     .filter((p) => p.cpu > 0 || p.memRss > 0)
     .sort((a, b) => b.cpu - a.cpu)
     .map(toProcessInfo)
+}
+
+export async function getProcessSnapshot(limit: number = 10): Promise<ProcessSnapshot> {
+  const data = await getCachedProcesses()
+  const mapped = data.list
+    .filter((processInfo) => processInfo.cpu > 0 || processInfo.memRss > 0)
+    .map(toProcessInfo)
+
+  const byCpu = mapped.slice().sort((left, right) => right.cpu - left.cpu)
+  const byMemory = mapped.slice().sort((left, right) => right.memory - left.memory)
+
+  return {
+    allProcesses: byCpu,
+    topCpuProcesses: byCpu.slice(0, limit),
+    topMemoryProcesses: byMemory.slice(0, limit)
+  }
 }
 
 export async function getProcessByPid(pid: number): Promise<ProcessInfo | null> {

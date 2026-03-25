@@ -29,6 +29,8 @@ export interface DiskScanResult {
   folderCount: number
   inaccessibleCount: number
   scanDuration: number
+  topLargeFiles?: LargeFile[]
+  extensionBreakdown?: ExtensionGroup[]
 }
 
 export interface UserSpaceEntry {

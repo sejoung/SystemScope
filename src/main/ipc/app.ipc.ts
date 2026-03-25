@@ -7,6 +7,13 @@ import { tk } from '../i18n'
 import { getAboutInfo, getHomepageUrl, openAboutWindow } from '../app/aboutWindow'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
+const MAX_RENDERER_SCOPE_LENGTH = 120
+const MAX_RENDERER_MESSAGE_LENGTH = 1000
+const MAX_RENDERER_DETAIL_KEYS = 20
+const MAX_RENDERER_DETAIL_DEPTH = 3
+const MAX_RENDERER_DETAIL_ARRAY = 20
+const MAX_RENDERER_DETAIL_STRING_LENGTH = 500
+
 export function registerAppIpc(): void {
   ipcMain.handle(
     IPC_CHANNELS.APP_LOG_RENDERER_ERROR,
@@ -17,14 +24,16 @@ export function registerAppIpc(): void {
         return failure('INVALID_INPUT', tk('main.app.error.invalid_log_payload'))
       }
 
-      const scope = typeof payload.scope === 'string' ? payload.scope : 'renderer'
-      const message = typeof payload.message === 'string' ? payload.message : null
+      const scope = sanitizeRendererLogScope(payload.scope)
+      const message = typeof payload.message === 'string'
+        ? payload.message.trim().slice(0, MAX_RENDERER_MESSAGE_LENGTH)
+        : null
       if (!message) {
         logWarnAction('app-ipc', 'renderer_error.log', withRequestMeta(requestMeta, { scope, reason: 'invalid_message' }))
         return failure('INVALID_INPUT', tk('main.app.error.invalid_log_message'))
       }
 
-      logError(scope, message, payload.details)
+      logError(scope, message, sanitizeRendererLogDetails(payload.details))
       return success(true)
     }
   )
@@ -82,4 +91,56 @@ export function registerAppIpc(): void {
       return failure('UNKNOWN_ERROR', tk('main.app.error.open_homepage'))
     }
   })
+}
+
+function sanitizeRendererLogScope(scope: unknown): string {
+  if (typeof scope !== 'string') {
+    return 'renderer'
+  }
+
+  const trimmed = scope.trim()
+  return trimmed ? trimmed.slice(0, MAX_RENDERER_SCOPE_LENGTH) : 'renderer'
+}
+
+function sanitizeRendererLogDetails(value: unknown, depth = 0): unknown {
+  if (value === null || value === undefined) {
+    return value
+  }
+
+  if (depth >= MAX_RENDERER_DETAIL_DEPTH) {
+    return '[MaxDepthExceeded]'
+  }
+
+  if (typeof value === 'string') {
+    return value.length > MAX_RENDERER_DETAIL_STRING_LENGTH
+      ? `${value.slice(0, MAX_RENDERER_DETAIL_STRING_LENGTH)}…[truncated]`
+      : value
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return value
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .slice(0, MAX_RENDERER_DETAIL_ARRAY)
+      .map((entry) => sanitizeRendererLogDetails(entry, depth + 1))
+  }
+
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: value.message.slice(0, MAX_RENDERER_MESSAGE_LENGTH)
+    }
+  }
+
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .slice(0, MAX_RENDERER_DETAIL_KEYS)
+        .map(([key, entry]) => [key.slice(0, 80), sanitizeRendererLogDetails(entry, depth + 1)])
+    )
+  }
+
+  return String(value).slice(0, MAX_RENDERER_DETAIL_STRING_LENGTH)
 }

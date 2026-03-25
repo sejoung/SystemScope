@@ -5,6 +5,14 @@ import { logDebug, logInfo, logWarn } from './logging'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'
 let hasLoggedApfsContainerFallback = false
 let hasLoggedWindowsGpuDiagnostics = false
+let lastGpuStats: GpuInfo | null = null
+let lastGpuFetchTime = 0
+let pendingGpuStats: Promise<GpuInfo> | null = null
+const GPU_CACHE_TTL = 5 * 1000
+let lastCpuTemperature: number | null = null
+let lastCpuTemperatureFetchTime = 0
+let pendingCpuTemperature: Promise<number | null> | null = null
+const CPU_TEMPERATURE_CACHE_TTL = 5 * 1000
 
 let lastDiskStats: DriveInfo[] | null = null
 let lastDiskFetchTime = 0
@@ -13,11 +21,11 @@ const DISK_CACHE_TTL = 30 * 1000 // 30초 캐시
 type GraphicsController = Awaited<ReturnType<typeof si.graphics>>['controllers'][number]
 
 export async function getSystemStats(): Promise<SystemStats> {
-  const [cpuLoad, cpuInfo, mem, gpu] = await Promise.all([
+  const [cpuLoad, cpuInfo, mem, gpuInfo] = await Promise.all([
     si.currentLoad(),
     si.cpu(),
     si.mem(),
-    si.graphics()
+    getCachedGpuInfo()
   ])
 
   // 디스크 정보: 캐시가 유효하면 캐시 사용, 아니면 새로 가져옴
@@ -73,12 +81,7 @@ export async function getSystemStats(): Promise<SystemStats> {
     speed: cpuInfo.speed
   }
 
-  try {
-    const temp = await si.cpuTemperature()
-    cpu.temperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
-  } catch (err) {
-    logDebug('system-monitor', 'CPU temperature information is unavailable', { error: err })
-  }
+  cpu.temperature = await getCachedCpuTemperature()
 
   // macOS: mem.used에는 파일 캐시(inactive)가 포함되어 항상 높은 값을 보여줌
   // 실제 메모리 사용률 = (total - available) / total
@@ -94,31 +97,6 @@ export async function getSystemStats(): Promise<SystemStats> {
     swapUsed: mem.swapused
   }
 
-  const primaryGpu = pickPrimaryGpuController(gpu.controllers)
-  const hasUsageData = primaryGpu ? controllerHasUsageData(primaryGpu) : false
-
-  logWindowsGpuDiagnostics(gpu.controllers, primaryGpu)
-
-  const gpuInfo: GpuInfo = primaryGpu && primaryGpu.model
-    ? {
-        available: true,
-        model: primaryGpu.model,
-        usage: primaryGpu.utilizationGpu ?? null,
-        memoryTotal: primaryGpu.memoryTotal ? primaryGpu.memoryTotal * 1024 * 1024 : null,
-        memoryUsed: primaryGpu.memoryUsed ? primaryGpu.memoryUsed * 1024 * 1024 : null,
-        temperature: primaryGpu.temperatureGpu ?? null,
-        unavailableReason: hasUsageData ? null : detectGpuUnavailableReason(primaryGpu)
-      }
-    : {
-        available: false,
-        model: null,
-        usage: null,
-        memoryTotal: null,
-        memoryUsed: null,
-        temperature: null,
-        unavailableReason: null
-      }
-
   return {
     cpu,
     memory,
@@ -126,6 +104,80 @@ export async function getSystemStats(): Promise<SystemStats> {
     disk: { drives },
     timestamp: Date.now()
   }
+}
+
+async function getCachedGpuInfo(): Promise<GpuInfo> {
+  const now = Date.now()
+  if (lastGpuStats && now - lastGpuFetchTime < GPU_CACHE_TTL) {
+    return lastGpuStats
+  }
+  if (pendingGpuStats) {
+    return pendingGpuStats
+  }
+
+  pendingGpuStats = si.graphics()
+    .then((gpu) => {
+      const primaryGpu = pickPrimaryGpuController(gpu.controllers)
+      const hasUsageData = primaryGpu ? controllerHasUsageData(primaryGpu) : false
+
+      logWindowsGpuDiagnostics(gpu.controllers, primaryGpu)
+
+      const nextGpuInfo: GpuInfo = primaryGpu && primaryGpu.model
+        ? {
+            available: true,
+            model: primaryGpu.model,
+            usage: primaryGpu.utilizationGpu ?? null,
+            memoryTotal: primaryGpu.memoryTotal ? primaryGpu.memoryTotal * 1024 * 1024 : null,
+            memoryUsed: primaryGpu.memoryUsed ? primaryGpu.memoryUsed * 1024 * 1024 : null,
+            temperature: primaryGpu.temperatureGpu ?? null,
+            unavailableReason: hasUsageData ? null : detectGpuUnavailableReason(primaryGpu)
+          }
+        : {
+            available: false,
+            model: null,
+            usage: null,
+            memoryTotal: null,
+            memoryUsed: null,
+            temperature: null,
+            unavailableReason: null
+          }
+
+      lastGpuStats = nextGpuInfo
+      lastGpuFetchTime = Date.now()
+      return nextGpuInfo
+    })
+    .finally(() => {
+      pendingGpuStats = null
+    })
+
+  return pendingGpuStats
+}
+
+async function getCachedCpuTemperature(): Promise<number | null> {
+  const now = Date.now()
+  if (now - lastCpuTemperatureFetchTime < CPU_TEMPERATURE_CACHE_TTL) {
+    return lastCpuTemperature
+  }
+  if (pendingCpuTemperature) {
+    return pendingCpuTemperature
+  }
+
+  pendingCpuTemperature = si.cpuTemperature()
+    .then((temp) => {
+      lastCpuTemperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
+      lastCpuTemperatureFetchTime = Date.now()
+      return lastCpuTemperature
+    })
+    .catch((err) => {
+      logDebug('system-monitor', 'CPU temperature information is unavailable', { error: err })
+      lastCpuTemperatureFetchTime = Date.now()
+      return lastCpuTemperature
+    })
+    .finally(() => {
+      pendingCpuTemperature = null
+    })
+
+  return pendingCpuTemperature
 }
 
 function logWindowsGpuDiagnostics(

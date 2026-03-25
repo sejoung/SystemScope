@@ -83,6 +83,8 @@ export function createIpcApi(): SystemScopeApi {
     getTopMemoryProcesses: (limit: number) =>
       invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_TOP_MEMORY, limit),
     getAllProcesses: () => invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_ALL),
+    getProcessSnapshot: (limit: number) =>
+      invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_SNAPSHOT, limit),
     getNetworkPorts: () => invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_PORTS),
     killProcess: (request: {
       pid: number;

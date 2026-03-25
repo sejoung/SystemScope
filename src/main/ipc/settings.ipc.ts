@@ -1,17 +1,17 @@
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
-import { tmpdir } from 'os'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { getSettings, setSettings } from '../store/settingsStore'
 import { validatePartialSettings } from '../store/settingsSchema'
 import { success, failure } from '@shared/types'
 import { restartSnapshotScheduler } from '../services/growthAnalyzer'
 import { setThresholds } from '../services/alertManager'
-import { didShellOpenPathFail, isPathInsideAnyParent, isPathInsideParent } from './settingsPathUtils'
+import { didShellOpenPathFail, isPathInsideParent } from './settingsPathUtils'
 import { getAccessLogDir, getSystemLogDir, logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { tk } from '../i18n'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { isShellPathRegistered, registerShellPath } from '../services/shellPathRegistry'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, (_event, metaArg?: IpcRequestMetaArg) => {
@@ -54,6 +54,7 @@ export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_DATA_PATH, (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     const dataPath = app.getPath('userData')
+    registerShellPath(dataPath)
     logInfoAction('settings-ipc', 'paths.user_data.get', withRequestMeta(requestMeta, { path: dataPath }))
     return success(dataPath)
   })
@@ -61,6 +62,7 @@ export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_SYSTEM_LOG_PATH, (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     const logPath = getSystemLogDir()
+    registerShellPath(logPath)
     logInfoAction('settings-ipc', 'paths.system_log.get', withRequestMeta(requestMeta, { path: logPath }))
     return success(logPath)
   })
@@ -68,6 +70,7 @@ export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET_ACCESS_LOG_PATH, (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     const logPath = getAccessLogDir()
+    registerShellPath(logPath)
     logInfoAction('settings-ipc', 'paths.access_log.get', withRequestMeta(requestMeta, { path: logPath }))
     return success(logPath)
   })
@@ -86,6 +89,7 @@ export function registerSettingsIpc(): void {
       return success(null)
     }
     logInfoAction('settings-ipc', 'dialog.select_folder.complete', withRequestMeta(requestMeta, { path: result.filePaths[0] }))
+    registerShellPath(result.filePaths[0])
     return success(result.filePaths[0])
   })
 
@@ -100,7 +104,7 @@ export function registerSettingsIpc(): void {
     const resolved = path.resolve(targetPath)
     const userData = app.getPath('userData')
 
-    if (!isPathInsideParent(resolved, userData)) {
+    if (!isPathInsideParent(resolved, userData) || !isShellPathRegistered(resolved)) {
       return failure('PERMISSION_DENIED', tk('main.settings.error.permission_denied'))
     }
 
@@ -132,24 +136,8 @@ export function registerSettingsIpc(): void {
     }
 
     const resolved = path.resolve(targetPath)
-    const windowsSystemRoots = process.platform === 'win32'
-      ? [
-          tmpdir(),
-          process.env.SystemRoot ? path.join(process.env.SystemRoot, 'SoftwareDistribution') : undefined,
-          process.env.SystemDrive ? path.join(process.env.SystemDrive, '$Recycle.Bin') : undefined
-        ]
-      : []
-    const allowedRoots = [
-      app.getPath('home'),
-      app.getPath('userData'),
-      process.env.APPDATA,
-      process.env.LOCALAPPDATA,
-      process.env.ProgramData,
-      ...windowsSystemRoots
-    ]
-
-    if (!isPathInsideAnyParent(resolved, allowedRoots)) {
-      logWarnAction('settings-ipc', 'path.reveal', withRequestMeta(requestMeta, { reason: 'outside_allowed_roots', path: resolved }))
+    if (!isShellPathRegistered(resolved)) {
+      logWarnAction('settings-ipc', 'path.reveal', withRequestMeta(requestMeta, { reason: 'path_not_registered', path: resolved }))
       return failure('PERMISSION_DENIED', tk('main.settings.error.permission_denied'))
     }
 
