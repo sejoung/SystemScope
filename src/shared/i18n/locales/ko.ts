@@ -218,6 +218,29 @@ export const KO_MESSAGES = {
     "개발자를 위한 실시간 시스템 인사이트",
   Homepage: "홈페이지",
   GitHub: "GitHub",
+  Updates: "업데이트",
+  "A new version v{version} is available.":
+    "새 버전 v{version}이 있습니다.",
+  "Download the latest release from GitHub to update manually.":
+    "수동 업데이트를 위해 GitHub 최신 릴리즈를 브라우저에서 엽니다.",
+  "Check GitHub Releases for a newer version and open the download page in your browser.":
+    "GitHub Releases에서 새 버전을 확인하고 브라우저에서 다운로드 페이지를 엽니다.",
+  "Current version": "현재 버전",
+  "Latest version": "최신 버전",
+  "Last checked": "마지막 확인",
+  "Not checked yet": "아직 확인하지 않음",
+  "You are using the latest version.": "이미 최신 버전을 사용 중입니다.",
+  "No update check has been run yet.": "아직 업데이트 확인을 실행하지 않았습니다.",
+  "Checking...": "확인 중...",
+  "Check for Updates": "업데이트 확인",
+  "Release Notes": "릴리즈 노트",
+  Download: "다운로드",
+  Dismiss: "닫기",
+  "View Details": "자세히 보기",
+  "Unable to check for updates right now.":
+    "지금은 업데이트를 확인할 수 없습니다.",
+  "Unable to open the release download page.":
+    "릴리즈 다운로드 페이지를 열 수 없습니다.",
   Close: "닫기",
   "Loading process data...": "프로세스 데이터 로딩 중...",
   "GPU monitoring unavailable on unified memory":

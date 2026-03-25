@@ -6,9 +6,11 @@ import { registerProcessIpc } from './process.ipc'
 import { registerAlertIpc } from './alert.ipc'
 import { registerSettingsIpc } from './settings.ipc'
 import { registerAppsIpc } from './apps.ipc'
+import { registerUpdateIpc } from './update.ipc'
 
 export function registerAllIpc(): void {
   registerAppIpc()
+  registerUpdateIpc()
   registerSystemIpc()
   registerDiskIpc()
   registerDockerIpc()

@@ -6,6 +6,7 @@ import { useI18n } from "../i18n/useI18n";
 import type { AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
+import { useUpdateStore } from "../stores/useUpdateStore";
 
 export function SettingsPage() {
   const thresholds = useSettingsStore((s) => s.thresholds);
@@ -41,7 +42,12 @@ export function SettingsPage() {
     locale,
   });
   const showToast = useToast((s) => s.show);
-  const { tk } = useI18n();
+  const updateInfo = useUpdateStore((s) => s.updateInfo);
+  const checkingUpdate = useUpdateStore((s) => s.checking);
+  const lastCheckedAt = useUpdateStore((s) => s.lastCheckedAt);
+  const applyUpdateStatus = useUpdateStore((s) => s.applyStatus);
+  const setUpdateChecking = useUpdateStore((s) => s.setChecking);
+  const { t, tk } = useI18n();
 
   useEffect(() => {
     window.systemScope
@@ -250,6 +256,41 @@ export function SettingsPage() {
       showToast(res.error?.message ?? tk("settings.about.open_failed"));
     }
   };
+
+  const handleCheckForUpdates = async () => {
+    setUpdateChecking(true);
+    try {
+      const res = await window.systemScope.checkForUpdate();
+      if (!res.ok) {
+        showToast(res.error?.message ?? t("Unable to check for updates right now."));
+        return;
+      }
+
+      if (res.data) {
+        applyUpdateStatus(res.data);
+      } else {
+        setUpdateChecking(false);
+      }
+    } catch {
+      setUpdateChecking(false);
+      showToast(t("Unable to check for updates right now."));
+    }
+  };
+
+  const handleOpenUpdateRelease = async () => {
+    if (!updateInfo?.releaseUrl) return;
+    const res = await window.systemScope.openUpdateRelease(updateInfo.releaseUrl);
+    if (!res.ok) {
+      showToast(res.error?.message ?? t("Unable to open the release download page."));
+    }
+  };
+
+  const formattedCheckedAt = lastCheckedAt
+    ? new Intl.DateTimeFormat(localLocale === "ko" ? "ko-KR" : "en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(lastCheckedAt))
+    : null;
 
   return (
     <div data-testid="page-settings">
@@ -578,6 +619,91 @@ export function SettingsPage() {
             <div>{tk("settings.logs.access_filename")}</div>
             <div>{tk("settings.logs.retention")}</div>
           </div>
+        </Section>
+
+        {/* About */}
+        <Section title={t("Updates")}>
+          <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            {t("Check GitHub Releases for a newer version and open the download page in your browser.")}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gap: "8px",
+              padding: "12px 14px",
+              background: "var(--bg-primary)",
+              borderRadius: "var(--radius)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              {t("Current version")}: {aboutInfo?.version ?? updateInfo?.currentVersion ?? "-"}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              {t("Latest version")}: {updateInfo?.latestVersion ?? t("Not checked yet")}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              {t("Last checked")}: {formattedCheckedAt ?? t("Not checked yet")}
+            </div>
+            <div style={{ fontSize: "12px", color: updateInfo?.hasUpdate ? "var(--accent-blue)" : "var(--text-secondary)" }}>
+              {updateInfo?.hasUpdate
+                ? t("A new version v{version} is available.", {
+                    version: updateInfo.latestVersion,
+                  })
+                : formattedCheckedAt
+                  ? t("You are using the latest version.")
+                  : t("No update check has been run yet.")}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              onClick={() => void handleCheckForUpdates()}
+              disabled={checkingUpdate}
+              style={{
+                ...btnStyle,
+                opacity: checkingUpdate ? 0.6 : 1,
+                cursor: checkingUpdate ? "default" : "pointer",
+              }}
+            >
+              {checkingUpdate ? t("Checking...") : t("Check for Updates")}
+            </button>
+            {updateInfo?.hasUpdate ? (
+              <button onClick={() => void handleOpenUpdateRelease()} style={btnStyle}>
+                {t("Download")}
+              </button>
+            ) : null}
+          </div>
+          {updateInfo?.releaseNotes ? (
+            <div
+              style={{
+                display: "grid",
+                gap: "8px",
+                padding: "12px 14px",
+                background: "var(--bg-primary)",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>
+                {t("Release Notes")}
+              </div>
+              <pre
+                style={{
+                  margin: 0,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  fontSize: "12px",
+                  lineHeight: 1.55,
+                  color: "var(--text-secondary)",
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  maxHeight: "220px",
+                  overflow: "auto",
+                }}
+              >
+                {updateInfo.releaseNotes}
+              </pre>
+            </div>
+          ) : null}
         </Section>
 
         {/* About */}

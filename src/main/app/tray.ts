@@ -6,6 +6,7 @@ import { getSystemStats } from '../services/systemMonitor'
 import { getCpuMeterText } from './trayIconFactory'
 import { CPU_TRAY_THRESHOLDS } from '@shared/constants/thresholds'
 import { openAboutWindow } from './aboutWindow'
+import { checkForUpdates, getUpdateStatus, openReleasePage } from '../services/updateChecker'
 
 let tray: Tray | null = null
 let trayUpdateTimer: ReturnType<typeof setInterval> | null = null
@@ -26,34 +27,7 @@ export function createTray(): void {
   }
 
   tray.setToolTip('SystemScope')
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Show',
-      click: () => {
-        const win = BrowserWindow.getAllWindows()[0]
-        if (win) {
-          win.show()
-          win.focus()
-        }
-      }
-    },
-    {
-      label: 'About',
-      click: () => {
-        openAboutWindow()
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      click: () => {
-        app.quit()
-      }
-    }
-  ])
-
-  tray.setContextMenu(contextMenu)
+  rebuildTrayMenu()
 
   // Windows에서만 좌클릭 시 창 표시 (macOS는 좌클릭 = 메뉴 표시가 기본 동작)
   if (platform() !== 'darwin') {
@@ -118,9 +92,63 @@ async function refreshTrayIcon(): Promise<void> {
     }
 
     tray.setToolTip(`SystemScope\nCPU ${roundedUsage}%`)
+    rebuildTrayMenu()
   } catch (error) {
     logError('tray', 'Failed to refresh tray icon', error)
   }
+}
+
+function rebuildTrayMenu(): void {
+  if (!tray) return
+
+  const updateStatus = getUpdateStatus()
+  const updateInfo = updateStatus.updateInfo?.hasUpdate ? updateStatus.updateInfo : null
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show',
+      click: () => {
+        const win = BrowserWindow.getAllWindows()[0]
+        if (win) {
+          win.show()
+          win.focus()
+        }
+      }
+    },
+    {
+      label: 'Check for Updates',
+      click: () => {
+        void checkForUpdates({ source: 'manual' }).finally(() => {
+          rebuildTrayMenu()
+        })
+      }
+    },
+    ...(updateInfo
+      ? [
+          {
+            label: `Download v${updateInfo.latestVersion}`,
+            click: () => {
+              void openReleasePage(updateInfo.releaseUrl)
+            }
+          } as const
+        ]
+      : []),
+    {
+      label: 'About',
+      click: () => {
+        openAboutWindow()
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setContextMenu(contextMenu)
 }
 
 function getInitialTrayIcon(): Electron.NativeImage {

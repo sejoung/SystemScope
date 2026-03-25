@@ -14,10 +14,11 @@ import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
 import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import type { AlertThresholds, Alert, ShutdownState, SystemStats } from '@shared/types'
+import type { AlertThresholds, Alert, ShutdownState, SystemStats, UpdateInfo, UpdateStatus } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { useState } from 'react'
 import { useI18n } from './i18n/useI18n'
+import { useUpdateStore } from './stores/useUpdateStore'
 
 function isSystemStats(data: unknown): data is SystemStats {
   return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
@@ -29,6 +30,14 @@ function isAlertArray(data: unknown): data is Alert[] {
 
 function isShutdownState(data: unknown): data is ShutdownState {
   return data !== null && typeof data === 'object' && 'phase' in data && 'message' in data
+}
+
+function isUpdateInfo(data: unknown): data is UpdateInfo {
+  return data !== null && typeof data === 'object' && 'latestVersion' in data && 'releaseUrl' in data
+}
+
+function isUpdateStatus(data: unknown): data is UpdateStatus {
+  return data !== null && typeof data === 'object' && 'currentVersion' in data && 'checking' in data && 'lastCheckedAt' in data
 }
 
 function App() {
@@ -44,6 +53,8 @@ function App() {
   const pushStats = useSystemStore((s) => s.pushStats)
   const addAlerts = useAlertStore((s) => s.addAlerts)
   const setAlerts = useAlertStore((s) => s.setAlerts)
+  const applyUpdateStatus = useUpdateStore((s) => s.applyStatus)
+  const setUpdateInfo = useUpdateStore((s) => s.setUpdateInfo)
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
   const { tk } = useI18n()
@@ -51,8 +62,9 @@ function App() {
   useEffect(() => {
     void Promise.all([
       window.systemScope.getSettings(),
-      window.systemScope.getActiveAlerts()
-    ]).then(([settingsRes, alertsRes]) => {
+      window.systemScope.getActiveAlerts(),
+      window.systemScope.getUpdateStatus()
+    ]).then(([settingsRes, alertsRes, updateRes]) => {
       if (settingsRes.ok && settingsRes.data) {
         const settings = settingsRes.data as Record<string, unknown>
         if (settings.theme === 'dark' || settings.theme === 'light') setTheme(settings.theme)
@@ -63,11 +75,15 @@ function App() {
       if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
         setAlerts(alertsRes.data)
       }
+
+      if (updateRes.ok && updateRes.data && isUpdateStatus(updateRes.data)) {
+        applyUpdateStatus(updateRes.data)
+      }
     }).catch(() => {
     }).finally(() => {
       setBootstrapped(true)
     })
-  }, [setAlerts, setLocale, setTheme, setThresholds])
+  }, [applyUpdateStatus, setAlerts, setLocale, setTheme, setThresholds])
 
   useEffect(() => {
     document.body.dataset.e2eReady = bootstrapped ? '1' : '0'
@@ -127,6 +143,16 @@ function App() {
     []
   )
   useIpcListener(window.systemScope.onShutdownState, handleShutdownState)
+
+  const handleUpdateAvailable = useCallback(
+    (data: unknown) => {
+      if (isUpdateInfo(data)) {
+        setUpdateInfo(data)
+      }
+    },
+    [setUpdateInfo]
+  )
+  useIpcListener(window.systemScope.onUpdateAvailable, handleUpdateAvailable)
 
   // 프로세스 데이터 폴링 — 대시보드 또는 프로세스 페이지에서만 갱신
   const shouldPollProcesses = currentPage === 'dashboard' || currentPage === 'process'

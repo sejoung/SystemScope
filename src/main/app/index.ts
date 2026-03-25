@@ -8,6 +8,7 @@ import { getSettings } from '../store/settingsStore'
 import { createTray } from './tray'
 import { initializeLogging, logError } from '../services/logging'
 import { executeGracefulShutdown, initializeShutdownHandlers, markQuitAfterShutdown } from './shutdown'
+import { startUpdateChecker, stopUpdateChecker } from '../services/updateChecker'
 
 let appReadyForQuit = false
 
@@ -19,6 +20,7 @@ app.whenReady().then(() => {
   registerAllIpc()
   const { snapshotIntervalMin } = getSettings()
   startSnapshotScheduler(snapshotIntervalMin * 60 * 1000)
+  startUpdateChecker()
   createTray()
   createMainWindow()
 
@@ -37,6 +39,7 @@ app.whenReady().then(() => {
 })
 
 app.on('before-quit', (event) => {
+  stopUpdateChecker()
   if (!appReadyForQuit) {
     event.preventDefault()
     appReadyForQuit = true

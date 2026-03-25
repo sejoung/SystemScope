@@ -18,6 +18,11 @@ export function createIpcApi(): SystemScopeApi {
     getAboutInfo: () => invokeWithRequestId(IPC_CHANNELS.APP_GET_ABOUT_INFO),
     openAboutWindow: () => invokeWithRequestId(IPC_CHANNELS.APP_OPEN_ABOUT),
     openHomepage: () => invokeWithRequestId(IPC_CHANNELS.APP_OPEN_HOMEPAGE),
+    checkForUpdate: () => invokeWithRequestId(IPC_CHANNELS.UPDATE_CHECK),
+    getUpdateStatus: () => invokeWithRequestId(IPC_CHANNELS.UPDATE_GET_STATUS),
+    openUpdateRelease: (releaseUrl: string) =>
+      invokeWithRequestId(IPC_CHANNELS.UPDATE_OPEN_RELEASE, releaseUrl),
+    onUpdateAvailable: createListener(IPC_CHANNELS.EVENT_UPDATE_AVAILABLE),
 
     getSystemStats: () => invokeWithRequestId(IPC_CHANNELS.SYSTEM_GET_STATS),
     subscribeSystem: () => invokeWithRequestId(IPC_CHANNELS.SYSTEM_SUBSCRIBE),

@@ -29,7 +29,8 @@ import type {
   DockerVolumesScanResult,
   AppRemovalResult,
   ProcessKillRequest,
-  ProcessKillResult
+  ProcessKillResult,
+  UpdateStatus
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -55,6 +56,10 @@ export interface SystemScopeApi {
   getAboutInfo: () => Promise<AppResult<SystemScopeAboutInfo>>
   openAboutWindow: () => Promise<AppResult<boolean>>
   openHomepage: () => Promise<AppResult<boolean>>
+  checkForUpdate: () => Promise<AppResult<UpdateStatus>>
+  getUpdateStatus: () => Promise<AppResult<UpdateStatus>>
+  openUpdateRelease: (releaseUrl: string) => Promise<AppResult<boolean>>
+  onUpdateAvailable: IpcListener
 
   getSystemStats: () => Promise<AppResult<SystemStats>>
   subscribeSystem: () => Promise<AppResult<boolean>>

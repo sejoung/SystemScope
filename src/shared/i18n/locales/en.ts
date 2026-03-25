@@ -218,6 +218,29 @@ export const EN_MESSAGES = {
     "Real-time system insights for developers",
   Homepage: "Homepage",
   GitHub: "GitHub",
+  Updates: "Updates",
+  "A new version v{version} is available.":
+    "A new version v{version} is available.",
+  "Download the latest release from GitHub to update manually.":
+    "Download the latest release from GitHub to update manually.",
+  "Check GitHub Releases for a newer version and open the download page in your browser.":
+    "Check GitHub Releases for a newer version and open the download page in your browser.",
+  "Current version": "Current version",
+  "Latest version": "Latest version",
+  "Last checked": "Last checked",
+  "Not checked yet": "Not checked yet",
+  "You are using the latest version.": "You are using the latest version.",
+  "No update check has been run yet.": "No update check has been run yet.",
+  "Checking...": "Checking...",
+  "Check for Updates": "Check for Updates",
+  "Release Notes": "Release Notes",
+  Download: "Download",
+  Dismiss: "Dismiss",
+  "View Details": "View Details",
+  "Unable to check for updates right now.":
+    "Unable to check for updates right now.",
+  "Unable to open the release download page.":
+    "Unable to open the release download page.",
   Close: "Close",
   "Loading process data...": "Loading process data...",
   "GPU monitoring unavailable on unified memory":

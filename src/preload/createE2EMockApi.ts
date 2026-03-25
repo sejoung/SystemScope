@@ -76,6 +76,22 @@ export function createE2EMockApi(): SystemScopeApi {
         locale: "en" as const,
         snapshotIntervalMin: 60,
       }),
+    getUpdateStatus: () =>
+      successResult({
+        currentVersion: "1.1.2",
+        checking: false,
+        updateInfo: null,
+        lastCheckedAt: null,
+      }),
+    checkForUpdate: () =>
+      successResult({
+        currentVersion: "1.1.2",
+        checking: false,
+        updateInfo: null,
+        lastCheckedAt: new Date().toISOString(),
+      }),
+    openUpdateRelease: () => successResult(true),
+    onUpdateAvailable: () => () => {},
     getActiveAlerts: () => successResult([]),
     subscribeSystem: () => successResult(true),
     unsubscribeSystem: () => successResult(true),

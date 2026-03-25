@@ -5,6 +5,9 @@ export const IPC_CHANNELS = {
   APP_GET_ABOUT_INFO: 'app:getAboutInfo',
   APP_OPEN_ABOUT: 'app:openAbout',
   APP_OPEN_HOMEPAGE: 'app:openHomepage',
+  UPDATE_CHECK: 'update:check',
+  UPDATE_GET_STATUS: 'update:getStatus',
+  UPDATE_OPEN_RELEASE: 'update:openRelease',
 
   // 시스템 모니터링
   SYSTEM_GET_STATS: 'system:getStats',
@@ -81,5 +84,6 @@ export const IPC_CHANNELS = {
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',
-  EVENT_SHUTDOWN_STATE: 'event:shutdownState'
+  EVENT_SHUTDOWN_STATE: 'event:shutdownState',
+  EVENT_UPDATE_AVAILABLE: 'event:updateAvailable'
 } as const
