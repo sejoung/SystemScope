@@ -673,37 +673,6 @@ export function SettingsPage() {
               </button>
             ) : null}
           </div>
-          {updateInfo?.releaseNotes ? (
-            <div
-              style={{
-                display: "grid",
-                gap: "8px",
-                padding: "12px 14px",
-                background: "var(--bg-primary)",
-                borderRadius: "var(--radius)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)" }}>
-                {t("Release Notes")}
-              </div>
-              <pre
-                style={{
-                  margin: 0,
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  fontSize: "12px",
-                  lineHeight: 1.55,
-                  color: "var(--text-secondary)",
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                  maxHeight: "220px",
-                  overflow: "auto",
-                }}
-              >
-                {updateInfo.releaseNotes}
-              </pre>
-            </div>
-          ) : null}
         </Section>
 
         {/* About */}
