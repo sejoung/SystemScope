@@ -5,13 +5,13 @@ describe('usePortWatchStore', () => {
   beforeEach(() => {
     usePortWatchStore.setState({
       watches: [],
-      statuses: new Map(),
+      statuses: {},
       history: [],
       monitoring: false,
       pollInterval: 2000,
-      expandedWatch: new Set(),
-      watchFilters: new Map(),
-      prevMatched: new Map()
+      expandedWatch: {},
+      watchFilters: {},
+      prevMatched: {}
     })
   })
 
@@ -26,23 +26,23 @@ describe('usePortWatchStore', () => {
     expect(state.monitoring).toBe(true)
   })
 
-  it('should clean derived maps and sets when a watch is removed', () => {
+  it('should clean derived records when a watch is removed', () => {
     usePortWatchStore.setState({
       watches: [{ id: 'w1', pattern: '3000', type: 'port', scope: 'local' }],
-      statuses: new Map([['w1', { id: 'w1', matched: true, matches: [], lastChecked: 1 }]]),
-      expandedWatch: new Set(['w1']),
-      watchFilters: new Map([['w1', 'LISTEN']]),
-      prevMatched: new Map([['w1', true]])
+      statuses: { w1: { id: 'w1', matched: true, matches: [], lastChecked: 1 } },
+      expandedWatch: { w1: true },
+      watchFilters: { w1: 'LISTEN' },
+      prevMatched: { w1: true }
     })
 
     usePortWatchStore.getState().removeWatch('w1')
     const state = usePortWatchStore.getState()
 
     expect(state.watches).toHaveLength(0)
-    expect(state.statuses.has('w1')).toBe(false)
-    expect(state.expandedWatch.has('w1')).toBe(false)
-    expect(state.watchFilters.has('w1')).toBe(false)
-    expect(state.prevMatched.has('w1')).toBe(false)
+    expect(state.statuses).not.toHaveProperty('w1')
+    expect(state.expandedWatch).not.toHaveProperty('w1')
+    expect(state.watchFilters).not.toHaveProperty('w1')
+    expect(state.prevMatched).not.toHaveProperty('w1')
   })
 
   it('should cap history at 100 entries', () => {

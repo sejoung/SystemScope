@@ -51,7 +51,7 @@ export function PortWatch() {
     if (!res.ok || !res.data) return
     const ports = res.data as PortInfo[]
     const now = Date.now()
-    const newStatuses = new Map<string, { id: string; matched: boolean; matches: PortInfo[]; lastChecked: number }>()
+    const newStatuses: Record<string, { id: string; matched: boolean; matches: PortInfo[]; lastChecked: number }> = {}
     const newHistory: { timestamp: number; watchId: string; pattern: string; event: 'connected' | 'disconnected'; process: string; detail: string }[] = []
 
     // store에서 직접 읽어 의존성 루프 방지
@@ -60,9 +60,9 @@ export function PortWatch() {
     for (const watch of watches) {
       const matches = matchWatchPorts(watch, ports)
       const matched = matches.length > 0
-      const prev = currentPrevMatched.get(watch.id)
+      const prev = currentPrevMatched[watch.id]
 
-      newStatuses.set(watch.id, { id: watch.id, matched, matches, lastChecked: now })
+      newStatuses[watch.id] = { id: watch.id, matched, matches, lastChecked: now }
 
       if (prev !== undefined && prev !== matched) {
         const proc = matches[0]?.process ?? '-'
@@ -166,14 +166,14 @@ export function PortWatch() {
             <div style={sectionTitle}>{tk('process.port_watch.list')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {watches.map((watch) => {
-                const status = statuses.get(watch.id)
-                const isOpen = expandedWatch.has(watch.id)
+                const status = statuses[watch.id]
+                const isOpen = expandedWatch[watch.id]
                 const connCount = status?.matches.length ?? 0
                 const matches = status?.matches ?? []
                 const listenC = matches.filter((m) => m.state === 'LISTEN').length
                 const estC = matches.filter((m) => m.state === 'ESTABLISHED').length
                 const otherC = matches.length - listenC - estC
-                const activeFilter = watchFilters.get(watch.id) ?? 'all'
+                const activeFilter = watchFilters[watch.id] ?? 'all'
 
                 const filtered = activeFilter === 'all' ? matches
                   : activeFilter === 'other' ? matches.filter((m) => m.state !== 'LISTEN' && m.state !== 'ESTABLISHED')

@@ -26,17 +26,17 @@ interface HistoryEntry {
 
 interface PortWatchState {
   watches: WatchEntry[]
-  statuses: Map<string, WatchStatus>
+  statuses: Record<string, WatchStatus>
   history: HistoryEntry[]
   monitoring: boolean
   pollInterval: number
-  expandedWatch: Set<string>
-  watchFilters: Map<string, string>
-  prevMatched: Map<string, boolean>
+  expandedWatch: Record<string, true>
+  watchFilters: Record<string, string>
+  prevMatched: Record<string, boolean>
 
   addWatch: (entry: WatchEntry) => void
   removeWatch: (id: string) => void
-  setStatuses: (statuses: Map<string, WatchStatus>) => void
+  setStatuses: (statuses: Record<string, WatchStatus>) => void
   addHistory: (entries: HistoryEntry[]) => void
   clearHistory: () => void
   setMonitoring: (val: boolean) => void
@@ -48,13 +48,13 @@ interface PortWatchState {
 
 export const usePortWatchStore = create<PortWatchState>((set) => ({
   watches: [],
-  statuses: new Map(),
+  statuses: {},
   history: [],
   monitoring: false,
   pollInterval: 2000,
-  expandedWatch: new Set(),
-  watchFilters: new Map(),
-  prevMatched: new Map(),
+  expandedWatch: {},
+  watchFilters: {},
+  prevMatched: {},
 
   addWatch: (entry) => set((s) => {
     if (s.watches.some((w) => w.pattern === entry.pattern)) return s
@@ -62,14 +62,14 @@ export const usePortWatchStore = create<PortWatchState>((set) => ({
   }),
 
   removeWatch: (id) => set((s) => {
-    const statuses = new Map(s.statuses)
-    statuses.delete(id)
-    const expandedWatch = new Set(s.expandedWatch)
-    expandedWatch.delete(id)
-    const watchFilters = new Map(s.watchFilters)
-    watchFilters.delete(id)
-    const prevMatched = new Map(s.prevMatched)
-    prevMatched.delete(id)
+    const statuses = { ...s.statuses }
+    const expandedWatch = { ...s.expandedWatch }
+    const watchFilters = { ...s.watchFilters }
+    const prevMatched = { ...s.prevMatched }
+    delete statuses[id]
+    delete expandedWatch[id]
+    delete watchFilters[id]
+    delete prevMatched[id]
     return {
       watches: s.watches.filter((w) => w.id !== id),
       statuses, expandedWatch, watchFilters, prevMatched
@@ -87,21 +87,20 @@ export const usePortWatchStore = create<PortWatchState>((set) => ({
   setPollInterval: (ms) => set({ pollInterval: ms }),
 
   toggleExpanded: (id) => set((s) => {
-    const next = new Set(s.expandedWatch)
-    if (next.has(id)) next.delete(id); else next.add(id)
-    return { expandedWatch: next }
+    if (s.expandedWatch[id]) {
+      const next = { ...s.expandedWatch }
+      delete next[id]
+      return { expandedWatch: next }
+    }
+    return { expandedWatch: { ...s.expandedWatch, [id]: true } }
   }),
 
   setWatchFilter: (id, filter) => set((s) => {
-    const next = new Map(s.watchFilters)
-    const current = next.get(id) ?? 'all'
-    next.set(id, filter === current ? 'all' : filter)
-    return { watchFilters: next }
+    const current = s.watchFilters[id] ?? 'all'
+    return { watchFilters: { ...s.watchFilters, [id]: filter === current ? 'all' : filter } }
   }),
 
-  setPrevMatched: (id, matched) => set((s) => {
-    const next = new Map(s.prevMatched)
-    next.set(id, matched)
-    return { prevMatched: next }
-  })
+  setPrevMatched: (id, matched) => set((s) => ({
+    prevMatched: { ...s.prevMatched, [id]: matched }
+  }))
 }))
