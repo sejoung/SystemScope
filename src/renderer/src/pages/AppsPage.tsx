@@ -821,7 +821,12 @@ export function AppsPage() {
             </div>
           </div>
           {filteredRegistry.length === 0 ? (
-            <div style={emptyStyle}>{tk('apps.empty.registry')}</div>
+            <div style={registryEmptyStyle}>
+              <div>{tk('apps.empty.registry')}</div>
+              <div style={registryEmptyDetailStyle}>
+                {tk('apps.empty.registry_detail')}
+              </div>
+            </div>
           ) : (
             <>
             <div style={infoBarStyle}>
@@ -1191,6 +1196,21 @@ const emptyStyle: React.CSSProperties = {
   background: 'var(--bg-card)',
   borderRadius: 'var(--radius-lg)',
   border: '1px solid var(--border)'
+}
+
+const registryEmptyStyle: React.CSSProperties = {
+  ...emptyStyle,
+  display: 'grid',
+  gap: '8px',
+  justifyItems: 'center'
+}
+
+const registryEmptyDetailStyle: React.CSSProperties = {
+  fontSize: '12px',
+  color: 'var(--text-muted)',
+  maxWidth: '640px',
+  lineHeight: 1.5,
+  textAlign: 'center'
 }
 
 function Badge({ text, color }: { text: string; color: string }) {

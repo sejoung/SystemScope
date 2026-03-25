@@ -92,6 +92,9 @@ export async function listLeftoverAppRegistry(): Promise<AppLeftoverRegistryItem
   }
 
   const items = await listWindowsLeftoverRegistryEntries()
+  logInfo('apps', 'Loaded leftover uninstall registry entries', {
+    count: items.length
+  })
   leftoverRegistryCache.clear()
   for (const item of items) {
     leftoverRegistryCache.set(item.id, item)
@@ -380,11 +383,20 @@ async function listWindowsInstalledApps(): Promise<InstalledApp[]> {
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024
       })
-      allApps.push(...parseWindowsRegistryOutput(stdout))
+      const parsed = parseWindowsRegistryOutput(stdout)
+      allApps.push(...parsed)
+      logInfo('apps', 'Queried Windows uninstall registry root', {
+        registryPath,
+        count: parsed.length
+      })
     } catch (error) {
       logWarn('apps', 'Failed to query Windows uninstall registry', { registryPath, error })
     }
   }
+
+  logInfo('apps', 'Loaded Windows uninstall registry apps', {
+    count: allApps.length
+  })
 
   return allApps
 }
@@ -414,6 +426,11 @@ async function listWindowsLeftoverRegistryEntries(): Promise<AppLeftoverRegistry
       uninstallerExists
     })
   }
+
+  logInfo('apps', 'Filtered Windows leftover uninstall registry entries', {
+    scannedCount: entries.length,
+    leftoverCount: leftovers.length
+  })
 
   return leftovers
 }

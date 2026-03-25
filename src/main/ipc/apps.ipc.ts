@@ -88,7 +88,9 @@ export function registerAppsIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_LEFTOVER_REGISTRY, async () => {
     try {
-      return success(await listLeftoverAppRegistry())
+      const items = await listLeftoverAppRegistry()
+      logInfo('apps-ipc', 'Listed leftover app registry entries', { count: items.length })
+      return success(items)
     } catch (error) {
       logError('apps-ipc', 'Failed to list leftover app registry', error)
       return failure('UNKNOWN_ERROR', tk('apps.error.load_registry'))
