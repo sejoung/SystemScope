@@ -10,10 +10,11 @@ type ActivityTab = "processes" | "ports" | "watch";
 
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
+  const allProcessesLoaded = useProcessStore((s) => s.allProcessesLoaded);
   const [tab, setTab] = useState<ActivityTab>("processes");
   const { tk, t } = useI18n();
 
-  if (tab === "processes" && allProcesses.length === 0) {
+  if (tab === "processes" && !allProcessesLoaded) {
     return (
       <PageLoading
         message={t("Loading process data...")}

@@ -261,6 +261,8 @@ export const KO_MESSAGES = {
   Normal: "정상",
   Kill: "종료",
   '검색 결과 없음: "{query}"': '"{query}" 검색 결과 없음',
+  "No active processes are available right now.":
+    "현재 표시할 실행 중 프로세스가 없습니다.",
   "Port, address, process...": "포트, 주소, 프로세스...",
   "Local port, address, process...": "로컬 포트, 주소, 프로세스...",
   "Remote port, address, process...": "원격 포트, 주소, 프로세스...",

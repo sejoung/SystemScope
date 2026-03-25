@@ -54,6 +54,7 @@ export const MESSAGE_KEYS = {
   "process.table.cpu_medium": "Moderate",
   "process.table.cpu_normal": "Normal",
   "process.table.empty_search": '검색 결과 없음: "{query}"',
+  "process.table.empty": "No active processes are available right now.",
   "process.table.loading": "Loading process data...",
   "process.port_finder.title": "Port Finder",
   "process.port_finder.badge": "{count} listening",

@@ -196,7 +196,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                 >
                   {search
                     ? tk("process.table.empty_search", { query: search })
-                    : tk("process.table.loading")}
+                    : tk("process.table.empty")}
                 </td>
               </tr>
             )}

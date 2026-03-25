@@ -261,6 +261,8 @@ export const EN_MESSAGES = {
   Normal: "Normal",
   Kill: "Kill",
   '검색 결과 없음: "{query}"': '검색 결과 없음: "{query}"',
+  "No active processes are available right now.":
+    "No active processes are available right now.",
   "Port, address, process...": "Port, address, process...",
   "Local port, address, process...": "Local port, address, process...",
   "Remote port, address, process...": "Remote port, address, process...",
