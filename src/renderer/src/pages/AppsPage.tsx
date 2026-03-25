@@ -159,7 +159,8 @@ export function AppsPage() {
             .some((value) =>
               String(value).toLowerCase().includes(normalizedQuery),
             );
-        }),
+        })
+        .sort((left, right) => left.name.localeCompare(right.name)),
     [
       apps,
       installedSearch.applied,
@@ -662,6 +663,11 @@ export function AppsPage() {
                     </span>
                   ) : (
                     tk("apps.helper.installed")
+                  )}
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                  {t(
+                    "Sorted by app name, A to Z so known apps are easier to find.",
                   )}
                 </span>
                 <span

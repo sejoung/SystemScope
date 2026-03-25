@@ -52,20 +52,42 @@ export function PortFinder() {
     });
   }, [ports, search, searchScope]);
 
+  const orderedSearchFiltered = useMemo(() => {
+    const stateWeight = {
+      LISTEN: 0,
+      ESTABLISHED: 1,
+    } as const;
+
+    return [...searchFiltered].sort((left, right) => {
+      const stateDiff =
+        (stateWeight[left.state as keyof typeof stateWeight] ?? 2) -
+        (stateWeight[right.state as keyof typeof stateWeight] ?? 2);
+      if (stateDiff !== 0) return stateDiff;
+
+      const localPortDiff =
+        Number(left.localPort || 0) - Number(right.localPort || 0);
+      if (localPortDiff !== 0) return localPortDiff;
+
+      return left.process.localeCompare(right.process);
+    });
+  }, [searchFiltered]);
+
   // 2단계: 상태 필터 (검색 결과 기준 카운트)
   const filtered = useMemo(() => {
     if (stateFilter === "LISTEN")
-      return searchFiltered.filter((p) => p.state === "LISTEN");
+      return orderedSearchFiltered.filter((p) => p.state === "LISTEN");
     if (stateFilter === "ESTABLISHED")
-      return searchFiltered.filter((p) => p.state === "ESTABLISHED");
+      return orderedSearchFiltered.filter((p) => p.state === "ESTABLISHED");
     if (stateFilter === "other")
-      return searchFiltered.filter(
+      return orderedSearchFiltered.filter(
         (p) => p.state !== "LISTEN" && p.state !== "ESTABLISHED",
       );
-    return searchFiltered;
-  }, [searchFiltered, stateFilter]);
+    return orderedSearchFiltered;
+  }, [orderedSearchFiltered, stateFilter]);
 
-  const listenCount = searchFiltered.filter((p) => p.state === "LISTEN").length;
+  const listenCount = orderedSearchFiltered.filter(
+    (p) => p.state === "LISTEN",
+  ).length;
 
   const handleKill = async (portInfo: PortInfo) => {
     const remote = formatEndpoint(portInfo.peerAddress, portInfo.peerPort);
@@ -210,6 +232,16 @@ export function PortFinder() {
               <StatusMessage message={tk("process.port_finder.helper")} />
             )}
           </div>
+          <div style={infoBarStyle}>
+            <span style={infoLabelStyle}>
+              {t("Sorted by state first, then local port")}
+            </span>
+            <span style={infoReasonStyle}>
+              {t(
+                "Default order shows listening ports before active connections so server endpoints are easier to scan.",
+              )}
+            </span>
+          </div>
           {/* State filter tabs */}
           <div
             style={{
@@ -224,7 +256,7 @@ export function PortFinder() {
               onClick={() => setStateFilter("all")}
             >
               {tk("process.port_finder.filter.all", {
-                count: searchFiltered.length,
+                count: orderedSearchFiltered.length,
               })}
             </FilterBtn>
             <FilterBtn
@@ -240,7 +272,9 @@ export function PortFinder() {
               onClick={() => setStateFilter("ESTABLISHED")}
             >
               {tk("process.port_finder.filter.established", {
-                count: searchFiltered.filter((p) => p.state === "ESTABLISHED")
+                count: orderedSearchFiltered.filter(
+                  (p) => p.state === "ESTABLISHED",
+                )
                   .length,
               })}
             </FilterBtn>
@@ -249,7 +283,7 @@ export function PortFinder() {
               onClick={() => setStateFilter("other")}
             >
               {tk("process.port_finder.filter.other", {
-                count: searchFiltered.filter(
+                count: orderedSearchFiltered.filter(
                   (p) => p.state !== "LISTEN" && p.state !== "ESTABLISHED",
                 ).length,
               })}
@@ -476,6 +510,30 @@ const searchStyle: React.CSSProperties = {
   background: "var(--bg-primary)",
   color: "var(--text-primary)",
   outline: "none",
+};
+
+const infoBarStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  marginBottom: "12px",
+  padding: "10px 12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+  borderRadius: "10px",
+  flexWrap: "wrap",
+};
+
+const infoLabelStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "var(--text-primary)",
+};
+
+const infoReasonStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
 };
 
 const btnStyle: React.CSSProperties = {

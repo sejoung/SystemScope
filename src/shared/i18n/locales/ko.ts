@@ -462,6 +462,28 @@ export const KO_MESSAGES = {
     "포트 스캔을 시작했습니다. 리슨 중인 포트와 연결 정보를 수집하는 중입니다.",
   "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.":
     "포트 스캔이 완료되었습니다. 상태 필터나 로컬/원격 검색으로 결과를 확인하세요.",
+  "Sorted by CPU usage, highest first": "CPU 사용량 높은 순으로 정렬됨",
+  "Sorted by CPU usage, lowest first": "CPU 사용량 낮은 순으로 정렬됨",
+  "Default order starts with CPU-heavy processes so sudden load is easier to spot.":
+    "기본 순서는 CPU 사용량이 높은 프로세스를 먼저 보여줘 급격한 부하를 빨리 찾기 쉽습니다.",
+  "Sorted by memory usage, highest first": "메모리 사용량 높은 순으로 정렬됨",
+  "Sorted by memory usage, lowest first": "메모리 사용량 낮은 순으로 정렬됨",
+  "Memory sort helps compare which processes occupy the most space right now.":
+    "메모리 정렬은 지금 가장 많은 메모리를 차지하는 프로세스를 비교할 때 유용합니다.",
+  "Sorted by PID, highest first": "PID 큰 순으로 정렬됨",
+  "Sorted by PID, lowest first": "PID 작은 순으로 정렬됨",
+  "PID order is useful when you already know the target process number.":
+    "PID 정렬은 이미 찾는 프로세스 번호를 알고 있을 때 유용합니다.",
+  "Sorted by name, Z to A": "이름 Z-A 순으로 정렬됨",
+  "Sorted by name, A to Z": "이름 A-Z 순으로 정렬됨",
+  "Name order is useful when you already know the process name you want to inspect.":
+    "이름 정렬은 확인하려는 프로세스 이름을 이미 알고 있을 때 유용합니다.",
+  "Sorted by state first, then local port":
+    "상태 우선, 그다음 로컬 포트 순으로 정렬됨",
+  "Default order shows listening ports before active connections so server endpoints are easier to scan.":
+    "기본 순서는 listening 포트를 활성 연결보다 먼저 보여줘 서버 포트를 훑어보기 쉽습니다.",
+  "Sorted by app name, A to Z so known apps are easier to find.":
+    "앱 이름 A-Z 순으로 정렬해 찾는 앱을 더 빨리 찾을 수 있습니다.",
   "Loading installed apps.": "설치 앱 목록을 불러오는 중입니다.",
   "Loading leftover app data.": "잔여 앱 데이터를 불러오는 중입니다.",
   "No installed apps to display.": "표시할 설치 앱이 없습니다.",

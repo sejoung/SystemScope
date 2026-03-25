@@ -15,7 +15,7 @@ interface ProcessTableProps {
 
 export function ProcessTable({ processes }: ProcessTableProps) {
   const showToast = useToast((s) => s.show);
-  const { tk } = useI18n();
+  const { tk, t } = useI18n();
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("cpu");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -74,6 +74,8 @@ export function ProcessTable({ processes }: ProcessTableProps) {
     return sortDir === "desc" ? "descending" : "ascending";
   };
 
+  const sortSummary = getProcessSortSummary(sortField, sortDir, t);
+
   const handleKill = async (processInfo: ProcessInfo) => {
     const res = await window.systemScope.killProcess({
       pid: processInfo.pid,
@@ -119,6 +121,10 @@ export function ProcessTable({ processes }: ProcessTableProps) {
       </div>
       <div style={{ marginBottom: "12px" }}>
         <StatusMessage message={tk("process.table.helper")} />
+      </div>
+      <div style={infoBarStyle}>
+        <span style={infoLabelStyle}>{sortSummary.label}</span>
+        <span style={infoReasonStyle}>{sortSummary.reason}</span>
       </div>
       <div style={{ maxHeight: "500px", overflow: "auto" }}>
         <table
@@ -299,6 +305,58 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   );
 }
 
+function getProcessSortSummary(
+  sortField: SortField,
+  sortDir: SortDir,
+  t: (text: string, params?: Record<string, string | number>) => string,
+) {
+  if (sortField === "cpu") {
+    return {
+      label:
+        sortDir === "desc"
+          ? t("Sorted by CPU usage, highest first")
+          : t("Sorted by CPU usage, lowest first"),
+      reason: t(
+        "Default order starts with CPU-heavy processes so sudden load is easier to spot.",
+      ),
+    };
+  }
+
+  if (sortField === "memory") {
+    return {
+      label:
+        sortDir === "desc"
+          ? t("Sorted by memory usage, highest first")
+          : t("Sorted by memory usage, lowest first"),
+      reason: t(
+        "Memory sort helps compare which processes occupy the most space right now.",
+      ),
+    };
+  }
+
+  if (sortField === "pid") {
+    return {
+      label:
+        sortDir === "desc"
+          ? t("Sorted by PID, highest first")
+          : t("Sorted by PID, lowest first"),
+      reason: t(
+        "PID order is useful when you already know the target process number.",
+      ),
+    };
+  }
+
+  return {
+    label:
+      sortDir === "desc"
+        ? t("Sorted by name, Z to A")
+        : t("Sorted by name, A to Z"),
+    reason: t(
+      "Name order is useful when you already know the process name you want to inspect.",
+    ),
+  };
+}
+
 function SortHeader({
   field,
   current,
@@ -371,6 +429,30 @@ const searchStyle: React.CSSProperties = {
   background: "var(--bg-primary)",
   color: "var(--text-primary)",
   outline: "none",
+};
+
+const infoBarStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+  marginBottom: "12px",
+  padding: "10px 12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+  borderRadius: "10px",
+  flexWrap: "wrap",
+};
+
+const infoLabelStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "var(--text-primary)",
+};
+
+const infoReasonStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
 };
 
 const killBtnStyle: React.CSSProperties = {

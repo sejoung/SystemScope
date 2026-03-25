@@ -466,6 +466,30 @@ export const EN_MESSAGES = {
     "Port scan started. Collecting listening and connected socket information now.",
   "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.":
     "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.",
+  "Sorted by CPU usage, highest first": "Sorted by CPU usage, highest first",
+  "Sorted by CPU usage, lowest first": "Sorted by CPU usage, lowest first",
+  "Default order starts with CPU-heavy processes so sudden load is easier to spot.":
+    "Default order starts with CPU-heavy processes so sudden load is easier to spot.",
+  "Sorted by memory usage, highest first":
+    "Sorted by memory usage, highest first",
+  "Sorted by memory usage, lowest first":
+    "Sorted by memory usage, lowest first",
+  "Memory sort helps compare which processes occupy the most space right now.":
+    "Memory sort helps compare which processes occupy the most space right now.",
+  "Sorted by PID, highest first": "Sorted by PID, highest first",
+  "Sorted by PID, lowest first": "Sorted by PID, lowest first",
+  "PID order is useful when you already know the target process number.":
+    "PID order is useful when you already know the target process number.",
+  "Sorted by name, Z to A": "Sorted by name, Z to A",
+  "Sorted by name, A to Z": "Sorted by name, A to Z",
+  "Name order is useful when you already know the process name you want to inspect.":
+    "Name order is useful when you already know the process name you want to inspect.",
+  "Sorted by state first, then local port":
+    "Sorted by state first, then local port",
+  "Default order shows listening ports before active connections so server endpoints are easier to scan.":
+    "Default order shows listening ports before active connections so server endpoints are easier to scan.",
+  "Sorted by app name, A to Z so known apps are easier to find.":
+    "Sorted by app name, A to Z so known apps are easier to find.",
   "Loading installed apps.": "Loading installed apps.",
   "Loading leftover app data.": "Loading leftover app data.",
   "No installed apps to display.": "No installed apps to display.",
