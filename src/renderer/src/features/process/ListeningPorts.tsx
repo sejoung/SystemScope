@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useToast } from "../../components/Toast";
 import { usePortFinderStore } from "../../stores/usePortFinderStore";
 import { getStateStyle } from "./portStateStyles";
@@ -8,7 +8,7 @@ import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
 
-export function PortFinder() {
+export function ListeningPorts() {
   const showToast = useToast((s) => s.show);
   const { tk, t } = useI18n();
   const {
@@ -26,68 +26,45 @@ export function PortFinder() {
     fetchPorts,
   } = usePortFinderStore();
 
-  // 1단계: 검색어 필터 (scope 적용)
-  const searchFiltered = useMemo(() => {
-    if (!search.trim()) return ports;
-    const q = search.toLowerCase();
-    return ports.filter((p) => {
-      if (searchScope === "local") {
-        return (
-          p.localPort.toString().includes(q) ||
-          p.localAddress.toLowerCase().includes(q)
-        );
-      }
-      if (searchScope === "remote") {
-        return (
-          p.peerPort.toString().includes(q) ||
-          p.peerAddress.toLowerCase().includes(q)
-        );
-      }
-      return (
-        p.localPort.toString().includes(q) ||
-        p.localAddress.toLowerCase().includes(q) ||
-        p.peerPort.toString().includes(q) ||
-        p.peerAddress.toLowerCase().includes(q)
-      );
-    });
-  }, [ports, search, searchScope]);
+  useEffect(() => {
+    if (!scanned && !loading) {
+      void fetchPorts();
+    }
+  }, [fetchPorts, loading, scanned]);
+
+  const searchFiltered = useMemo(
+    () => filterPortsBySearch(ports, search, searchScope),
+    [ports, search, searchScope],
+  );
 
   const orderedSearchFiltered = useMemo(() => {
-    const stateWeight = {
-      LISTEN: 0,
-      ESTABLISHED: 1,
-    } as const;
-
-    return [...searchFiltered].sort((left, right) => {
-      const stateDiff =
-        (stateWeight[left.state as keyof typeof stateWeight] ?? 2) -
-        (stateWeight[right.state as keyof typeof stateWeight] ?? 2);
-      if (stateDiff !== 0) return stateDiff;
-
-      const localPortDiff =
-        Number(left.localPort || 0) - Number(right.localPort || 0);
-      if (localPortDiff !== 0) return localPortDiff;
-
-      return left.process.localeCompare(right.process);
-    });
+    return sortPortsForDisplay(searchFiltered);
   }, [searchFiltered]);
 
-  // 2단계: 상태 필터 (검색 결과 기준 카운트)
-  const filtered = useMemo(() => {
-    if (stateFilter === "LISTEN")
-      return orderedSearchFiltered.filter((p) => p.state === "LISTEN");
-    if (stateFilter === "ESTABLISHED")
-      return orderedSearchFiltered.filter((p) => p.state === "ESTABLISHED");
-    if (stateFilter === "other")
-      return orderedSearchFiltered.filter(
-        (p) => p.state !== "LISTEN" && p.state !== "ESTABLISHED",
-      );
-    return orderedSearchFiltered;
-  }, [orderedSearchFiltered, stateFilter]);
+  const displayRows = useMemo(() => {
+    return getDisplayedPorts(ports, search, searchScope, stateFilter);
+  }, [ports, search, searchScope, stateFilter]);
 
   const listenCount = orderedSearchFiltered.filter(
-    (p) => p.state === "LISTEN",
+    (p) => normalizePortState(p.state) === "LISTEN",
   ).length;
+  const establishedCount = orderedSearchFiltered.filter(
+    (p) => normalizePortState(p.state) === "ESTABLISHED",
+  ).length;
+  const otherCount = orderedSearchFiltered.length - listenCount - establishedCount;
+  const listeningPorts = useMemo(
+    () => filterPortsByState(orderedSearchFiltered, "LISTEN"),
+    [orderedSearchFiltered],
+  );
+  const localhostListenCount = listeningPorts.filter((port) =>
+    isLoopbackAddress(port.localAddress),
+  ).length;
+  const exposedListenCount = listeningPorts.filter((port) =>
+    !isLoopbackAddress(port.localAddress),
+  ).length;
+  const uniqueProcessCount = new Set(
+    listeningPorts.map((port) => port.pid),
+  ).size;
 
   const handleKill = async (portInfo: PortInfo) => {
     const remote = formatEndpoint(portInfo.peerAddress, portInfo.peerPort);
@@ -122,7 +99,7 @@ export function PortFinder() {
           <span style={titleStyle}>{tk("process.port_finder.title")}</span>
           {scanned && (
             <span style={badgeStyle}>
-              {tk("process.port_finder.badge", { count: listenCount })}
+              {t("Listening {count}", { count: listenCount })}
             </span>
           )}
         </div>
@@ -137,7 +114,7 @@ export function PortFinder() {
               padding: "2px",
             }}
           >
-            {(["local", "remote", "all"] as const).map((s) => (
+            {(["process", "local", "remote", "all"] as const).map((s) => (
               <button
                 key={s}
                 type="button"
@@ -159,7 +136,13 @@ export function PortFinder() {
                   textTransform: "capitalize",
                 }}
               >
-                {s}
+                {s === "process"
+                  ? t("Process")
+                  : s === "local"
+                    ? t("Local")
+                    : s === "remote"
+                      ? t("Remote")
+                      : t("All")}
               </button>
             ))}
           </div>
@@ -170,7 +153,9 @@ export function PortFinder() {
               onChange={(e) => setSearch(e.target.value)}
               onClick={(e) => e.stopPropagation()}
               placeholder={
-                searchScope === "local"
+                searchScope === "process"
+                  ? t("Search by process name or PID")
+                  : searchScope === "local"
                   ? tk("process.port_finder.search_local")
                   : searchScope === "remote"
                     ? tk("process.port_finder.search_remote")
@@ -215,7 +200,11 @@ export function PortFinder() {
         </div>
       </div>
       {!scanned && requestState !== "started" ? (
-        <StatusMessage message={tk("process.port_finder.description")} />
+        <StatusMessage
+          message={t(
+            "Scan listening ports and active connections, then kill the owning process directly from the table when needed.",
+          )}
+        />
       ) : (
         <div>
           <div style={{ marginBottom: "12px" }}>
@@ -224,7 +213,7 @@ export function PortFinder() {
                 stage="started"
                 taskLabel={tk("process.port_finder.title")}
                 message={t(
-                  "Port scan started. Collecting listening and connected socket information now.",
+                  "Listening port scan started. Collecting listeners and active socket information now.",
                 )}
               />
             ) : requestState === "failed" && error ? (
@@ -247,20 +236,50 @@ export function PortFinder() {
                 stage="completed"
                 taskLabel={tk("process.port_finder.title")}
                 message={t(
-                  "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.",
+                  "Listening port scan completed. Review exposed bindings first, then inspect or kill the owning process.",
                 )}
               />
             ) : (
-              <StatusMessage message={tk("process.port_finder.helper")} />
+              <StatusMessage
+                message={t(
+                  "Use the listening filter to focus on open ports, then expand your search to process, local, or remote values.",
+                )}
+              />
             )}
+          </div>
+          <div style={summaryGridStyle}>
+            <SummaryCard
+              label={t("Listening Ports")}
+              value={listenCount}
+              tone="var(--accent-cyan)"
+              note={t("Ports currently accepting inbound connections")}
+            />
+            <SummaryCard
+              label={t("Exposed Bindings")}
+              value={exposedListenCount}
+              tone="var(--accent-red)"
+              note={t("Listening on non-loopback addresses")}
+            />
+            <SummaryCard
+              label={t("Localhost Only")}
+              value={localhostListenCount}
+              tone="var(--accent-green)"
+              note={t("Bound only to 127.0.0.1, ::1, or localhost")}
+            />
+            <SummaryCard
+              label={t("Owning Processes")}
+              value={uniqueProcessCount}
+              tone="var(--accent-yellow)"
+              note={t("Unique PIDs currently holding listening ports")}
+            />
           </div>
           <div style={infoBarStyle}>
             <span style={infoLabelStyle}>
-              {t("Sorted by state first, then local port")}
+              {t("Listening ports are prioritized first, then sorted by local port")}
             </span>
             <span style={infoReasonStyle}>
               {t(
-                "Default order shows listening ports before active connections so server endpoints are easier to scan.",
+                "Start with listeners to find open services quickly. Switch to established connections only when you need connection-level troubleshooting.",
               )}
             </span>
           </div>
@@ -277,7 +296,7 @@ export function PortFinder() {
               active={stateFilter === "all"}
               onClick={() => setStateFilter("all")}
             >
-              {tk("process.port_finder.filter.all", {
+              {t("All ({count})", {
                 count: orderedSearchFiltered.length,
               })}
             </FilterBtn>
@@ -285,34 +304,23 @@ export function PortFinder() {
               active={stateFilter === "LISTEN"}
               onClick={() => setStateFilter("LISTEN")}
             >
-              {tk("process.port_finder.filter.listening", {
-                count: listenCount,
-              })}
+              {t("Listening ({count})", { count: listenCount })}
             </FilterBtn>
             <FilterBtn
               active={stateFilter === "ESTABLISHED"}
               onClick={() => setStateFilter("ESTABLISHED")}
             >
-              {tk("process.port_finder.filter.established", {
-                count: orderedSearchFiltered.filter(
-                  (p) => p.state === "ESTABLISHED",
-                )
-                  .length,
-              })}
+              {t("Established ({count})", { count: establishedCount })}
             </FilterBtn>
             <FilterBtn
               active={stateFilter === "other"}
               onClick={() => setStateFilter("other")}
             >
-              {tk("process.port_finder.filter.other", {
-                count: orderedSearchFiltered.filter(
-                  (p) => p.state !== "LISTEN" && p.state !== "ESTABLISHED",
-                ).length,
-              })}
+              {t("Other ({count})", { count: otherCount })}
             </FilterBtn>
           </div>
 
-          {filtered.length === 0 ? (
+          {displayRows.length === 0 ? (
             <StatusMessage
               message={
                 search
@@ -345,6 +353,7 @@ export function PortFinder() {
                     </th>
                     <th style={thStyle}>{tk("process.port_finder.process")}</th>
                     <th style={thStyle}>PID</th>
+                    <th style={thStyle}>{t("Exposure")}</th>
                     <th style={thStyle}>{tk("process.port_finder.remote")}</th>
                     <th style={thStyle}>{tk("process.port_finder.state")}</th>
                     <th
@@ -355,9 +364,9 @@ export function PortFinder() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((p) => (
+                  {displayRows.map((p) => (
                     <tr
-                      key={`${p.protocol}-${p.localAddress}-${p.localPort}-${p.pid}`}
+                      key={`${p.protocol}-${p.localAddress}-${p.localPort}-${p.peerAddress}-${p.peerPort}-${p.state}-${p.pid}`}
                       style={rowStyle}
                     >
                       <td
@@ -413,6 +422,14 @@ export function PortFinder() {
                       <td
                         style={{
                           ...tdStyle,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <ExposureBadge address={p.localAddress} />
+                      </td>
+                      <td
+                        style={{
+                          ...tdStyle,
                           fontFamily: "monospace",
                           fontSize: "13px",
                           color: "var(--text-muted)",
@@ -456,6 +473,256 @@ export function PortFinder() {
   );
 }
 
+export function filterPortsBySearch(
+  ports: PortInfo[],
+  rawQuery: string,
+  searchScope: "local" | "remote" | "process" | "all",
+): PortInfo[] {
+  const query = rawQuery.trim().toLowerCase();
+  if (!query) {
+    return ports;
+  }
+
+  return ports.filter((port) => {
+    if (searchScope === "local") {
+      return (
+        String(port.localPort).includes(query) ||
+        port.localAddress.toLowerCase().includes(query)
+      );
+    }
+
+    if (searchScope === "remote") {
+      return (
+        String(port.peerPort).includes(query) ||
+        port.peerAddress.toLowerCase().includes(query)
+      );
+    }
+
+    if (searchScope === "process") {
+      return (
+        port.process.toLowerCase().includes(query) ||
+        String(port.pid).includes(query)
+      );
+    }
+
+    return (
+      String(port.localPort).includes(query) ||
+      port.localAddress.toLowerCase().includes(query) ||
+      String(port.peerPort).includes(query) ||
+      port.peerAddress.toLowerCase().includes(query) ||
+      port.process.toLowerCase().includes(query) ||
+      String(port.pid).includes(query)
+    );
+  });
+}
+
+export function filterPortsByState(
+  ports: PortInfo[],
+  stateFilter: "all" | "LISTEN" | "ESTABLISHED" | "other",
+): PortInfo[] {
+  if (stateFilter === "LISTEN") {
+    return ports.filter((port) => normalizePortState(port.state) === "LISTEN");
+  }
+
+  if (stateFilter === "ESTABLISHED") {
+    return ports.filter((port) => normalizePortState(port.state) === "ESTABLISHED");
+  }
+
+  if (stateFilter === "other") {
+    return ports.filter(
+      (port) => {
+        const normalized = normalizePortState(port.state);
+        return normalized !== "LISTEN" && normalized !== "ESTABLISHED";
+      },
+    );
+  }
+
+  return ports;
+}
+
+export function sortPortsForDisplay(ports: PortInfo[]): PortInfo[] {
+  const stateWeight = {
+    LISTEN: 0,
+    ESTABLISHED: 1,
+  } as const;
+
+  return [...ports].sort((left, right) => {
+    const stateDiff =
+      (stateWeight[normalizePortState(left.state) as keyof typeof stateWeight] ?? 2) -
+      (stateWeight[normalizePortState(right.state) as keyof typeof stateWeight] ?? 2);
+    if (stateDiff !== 0) return stateDiff;
+
+    const localPortDiff =
+      getSortableLocalPort(left) - getSortableLocalPort(right);
+    if (localPortDiff !== 0) return localPortDiff;
+
+    return left.process.localeCompare(right.process);
+  });
+}
+
+export function normalizePortState(state: string): string {
+  const normalized = state.trim().toUpperCase();
+  if (normalized === "LISTENING") {
+    return "LISTEN";
+  }
+  return normalized;
+}
+
+export function dedupeListeningPorts(ports: PortInfo[]): PortInfo[] {
+  return dedupePassivePorts(ports);
+}
+
+export function dedupePassivePorts(ports: PortInfo[]): PortInfo[] {
+  const seen = new Set<string>();
+  const result: PortInfo[] = [];
+
+  for (const port of ports) {
+    const key = `${port.protocol}:${port.localAddress}:${port.localPort}:${port.pid}:${normalizePortState(port.state)}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(port);
+  }
+
+  return result;
+}
+
+export function getDisplayedPorts(
+  ports: PortInfo[],
+  search: string,
+  searchScope: "local" | "remote" | "process" | "all",
+  stateFilter: "all" | "LISTEN" | "ESTABLISHED" | "other",
+): PortInfo[] {
+  const searchFiltered = filterPortsBySearch(ports, search, searchScope);
+  const ordered = sortPortsForDisplay(searchFiltered);
+  const stateFiltered = filterPortsByState(ordered, stateFilter);
+
+  if (stateFilter === "LISTEN") {
+    return dedupePassivePorts(stateFiltered);
+  }
+
+  if (stateFilter === "other") {
+    return dedupePassivePorts(stateFiltered);
+  }
+
+  if (stateFilter === "all") {
+    const establishedRows = stateFiltered.filter(
+      (port) => normalizePortState(port.state) === "ESTABLISHED",
+    );
+    const passiveRows = dedupePassivePorts(
+      stateFiltered.filter(
+        (port) => normalizePortState(port.state) !== "ESTABLISHED",
+      ),
+    );
+
+    return sortPortsForDisplay([...passiveRows, ...establishedRows]);
+  }
+
+  return stateFiltered;
+}
+
+function ExposureBadge({ address }: { address: string }) {
+  const exposure = getExposure(address);
+  return (
+    <span
+      style={{
+        ...stateBadgeStyle,
+        minWidth: "96px",
+        background: exposure.bg,
+        color: exposure.color,
+        borderColor: exposure.color,
+      }}
+      title={exposure.note}
+    >
+      {exposure.label}
+    </span>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+  note,
+}: {
+  label: string;
+  value: number;
+  tone: string;
+  note: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: "12px 14px",
+        borderRadius: "10px",
+        border: "1px solid var(--border)",
+        background: "var(--bg-primary)",
+        display: "grid",
+        gap: "4px",
+      }}
+    >
+      <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        {label}
+      </div>
+      <div style={{ fontSize: "24px", fontWeight: 700, color: tone, fontVariantNumeric: "tabular-nums" }}>
+        {value}
+      </div>
+      <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+        {note}
+      </div>
+    </div>
+  );
+}
+
+function isLoopbackAddress(address: string): boolean {
+  const normalized = address.trim().toLowerCase();
+  return (
+    normalized === "127.0.0.1" ||
+    normalized === "::1" ||
+    normalized === "localhost"
+  );
+}
+
+function getExposure(address: string): {
+  label: string;
+  color: string;
+  bg: string;
+  note: string;
+} {
+  const normalized = address.trim().toLowerCase();
+
+  if (isLoopbackAddress(normalized)) {
+    return {
+      label: "Loopback",
+      color: "var(--accent-green)",
+      bg: "color-mix(in srgb, var(--accent-green) 16%, transparent)",
+      note: "Reachable only from this machine."
+    };
+  }
+
+  if (
+    normalized === "0.0.0.0" ||
+    normalized === "::" ||
+    normalized === "*" ||
+    normalized === ""
+  ) {
+    return {
+      label: "All Interfaces",
+      color: "var(--accent-red)",
+      bg: "color-mix(in srgb, var(--accent-red) 16%, transparent)",
+      note: "Bound broadly and potentially reachable from other hosts."
+    };
+  }
+
+  return {
+    label: "Specific Host",
+    color: "var(--accent-yellow)",
+    bg: "color-mix(in srgb, var(--accent-yellow) 16%, transparent)",
+    note: "Bound to a non-loopback interface."
+  };
+}
+
 // ─── Helpers ───
 
 export function formatEndpoint(addr: string, port: string): string {
@@ -465,6 +732,19 @@ export function formatEndpoint(addr: string, port: string): string {
   if (hasAddr) return addr;
   if (hasPort) return `:${port}`;
   return "-";
+}
+
+function getSortableLocalPort(port: PortInfo): number {
+  if (Number.isFinite(port.localPortNum) && port.localPortNum > 0) {
+    return port.localPortNum;
+  }
+
+  const parsed = Number(port.localPort);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return parsed;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
 }
 
 function StateBadge({ state }: { state: string }) {
@@ -556,6 +836,13 @@ const infoBarStyle: React.CSSProperties = {
   border: "1px solid var(--border)",
   borderRadius: "10px",
   flexWrap: "wrap",
+};
+
+const summaryGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+  marginBottom: "12px",
 };
 
 const infoLabelStyle: React.CSSProperties = {

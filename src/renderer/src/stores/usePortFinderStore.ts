@@ -3,7 +3,7 @@ import type { PortInfo } from '@shared/types'
 
 type StateFilter = 'all' | 'LISTEN' | 'ESTABLISHED' | 'other'
 type RequestState = 'idle' | 'started' | 'completed' | 'failed'
-type SearchScope = 'local' | 'remote' | 'all'
+type SearchScope = 'local' | 'remote' | 'process' | 'all'
 
 interface PortFinderState {
   ports: PortInfo[]
@@ -31,9 +31,9 @@ export const usePortFinderStore = create<PortFinderState>((set, get) => ({
   scanned: false,
   error: null,
   requestState: 'idle',
-  stateFilter: 'all',
+  stateFilter: 'LISTEN',
   search: '',
-  searchScope: 'local',
+  searchScope: 'process',
 
   setPorts: (ports) => set({ ports }),
   setLoading: (val) => set({ loading: val }),

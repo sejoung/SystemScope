@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useProcessStore } from "../stores/useProcessStore";
 import { ProcessTable } from "../features/process/ProcessTable";
-import { PortFinder } from "../features/process/PortFinder";
+import { ListeningPorts } from "../features/process/ListeningPorts";
 import { PortWatch } from "../features/process/PortWatch";
 import { PageLoading } from "../components/PageLoading";
 import { useI18n } from "../i18n/useI18n";
@@ -11,7 +11,7 @@ type ActivityTab = "processes" | "ports" | "watch";
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
   const allProcessesLoaded = useProcessStore((s) => s.allProcessesLoaded);
-  const [tab, setTab] = useState<ActivityTab>("processes");
+  const [tab, setTab] = useState<ActivityTab>("ports");
   const { tk, t } = useI18n();
 
   if (tab === "processes" && !allProcessesLoaded) {
@@ -62,13 +62,6 @@ export function ProcessPage() {
           }}
         >
           <PageTab
-            id="activity-processes"
-            active={tab === "processes"}
-            onClick={() => setTab("processes")}
-          >
-            {tk("process.tab.processes")}
-          </PageTab>
-          <PageTab
             id="activity-ports"
             active={tab === "ports"}
             onClick={() => setTab("ports")}
@@ -82,6 +75,13 @@ export function ProcessPage() {
           >
             {tk("process.tab.watch")}
           </PageTab>
+          <PageTab
+            id="activity-processes"
+            active={tab === "processes"}
+            onClick={() => setTab("processes")}
+          >
+            {tk("process.tab.processes")}
+          </PageTab>
         </div>
         <div
           style={{
@@ -93,13 +93,15 @@ export function ProcessPage() {
           {tab === "processes"
             ? tk("process.page.tab.processes_help")
             : tab === "ports"
-              ? tk("process.page.tab.ports_help")
+              ? t(
+                  "Review every listening port on this system, identify exposed bindings quickly, and terminate the owning process when needed.",
+                )
               : tk("process.page.tab.watch_help")}
         </div>
       </div>
 
       {tab === "processes" && <ProcessTable processes={allProcesses} />}
-      {tab === "ports" && <PortFinder />}
+      {tab === "ports" && <ListeningPorts />}
       {tab === "watch" && <PortWatch />}
     </div>
   );
