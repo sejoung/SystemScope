@@ -7,7 +7,7 @@ import type {
   SnapshotIntervalMin,
 } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
-import type { AppLocale } from "@shared/i18n";
+import { translateLiteral, type AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -108,7 +108,13 @@ export function SettingsPage() {
           applyPersistedSettings(settings);
           applySettingsToStore(settings);
         } else {
-          showToast(t("Failed to load settings."), "danger");
+          showToast(
+            translateLiteral(
+              useSettingsStore.getState().locale,
+              "Failed to load settings.",
+            ),
+            "danger",
+          );
         }
 
         setDataPath(nextDataPath);
@@ -128,7 +134,7 @@ export function SettingsPage() {
       }
       setHasUnsavedSettings(false);
     };
-  }, [setHasUnsavedSettings, showToast, t]);
+  }, [setHasUnsavedSettings, showToast]);
 
   const appearanceDirty = localTheme !== persistedRef.current.theme;
   const languageDirty = localLocale !== persistedRef.current.locale;

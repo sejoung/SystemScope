@@ -2,8 +2,34 @@ import type { SystemScopeApi } from '@shared/contracts/systemScope'
 import { createIpcApi } from './createIpcApi'
 import { successResult } from './helpers'
 
-export function createE2EMockApi(): SystemScopeApi {
+export interface E2EMockControls {
+  setUpdateAvailable: (value: boolean) => void
+  reset: () => void
+}
+
+export function createE2EMockApi(): {
+  api: SystemScopeApi
+  controls: E2EMockControls
+} {
   const api = createIpcApi()
+  const initialUpdateAvailable = process.env.E2E_UPDATE_AVAILABLE === '1'
+  let updateAvailable = initialUpdateAvailable
+
+  const buildUpdateStatus = () => ({
+    currentVersion: '1.1.2',
+    checking: false,
+    updateInfo: updateAvailable
+      ? {
+          currentVersion: '1.1.2',
+          latestVersion: '1.3.0',
+          hasUpdate: true,
+          releaseUrl: 'https://sejoung.github.io/SystemScope/',
+          releaseNotes: 'Test release',
+          publishedAt: '2026-03-26T00:00:00.000Z'
+        }
+      : null,
+    lastCheckedAt: updateAvailable ? new Date().toISOString() : null
+  } as const)
 
   const mockSystemStats = {
     cpu: {
@@ -77,17 +103,10 @@ export function createE2EMockApi(): SystemScopeApi {
         snapshotIntervalMin: 60
       }),
     getUpdateStatus: () =>
-      successResult({
-        currentVersion: '1.1.2',
-        checking: false,
-        updateInfo: null,
-        lastCheckedAt: null
-      }),
+      successResult(buildUpdateStatus()),
     checkForUpdate: () =>
       successResult({
-        currentVersion: '1.1.2',
-        checking: false,
-        updateInfo: null,
+        ...buildUpdateStatus(),
         lastCheckedAt: new Date().toISOString()
       }),
     openUpdateRelease: () => successResult(true),
@@ -168,5 +187,15 @@ export function createE2EMockApi(): SystemScopeApi {
     quickScan: () => successResult([])
   } satisfies Partial<SystemScopeApi>)
 
-  return api
+  return {
+    api,
+    controls: {
+      setUpdateAvailable: (value: boolean) => {
+        updateAvailable = value
+      },
+      reset: () => {
+        updateAvailable = initialUpdateAvailable
+      }
+    }
+  }
 }

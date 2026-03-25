@@ -22,6 +22,7 @@ import { useUpdateStore } from './stores/useUpdateStore'
 import { useToast } from './components/Toast'
 import { applySettingsToStore, loadAppSettings } from './utils/settingsBootstrap'
 import { reportRendererError } from './utils/rendererLogging'
+import { translateKey, translateLiteral } from '@shared/i18n'
 
 function isSystemStats(data: unknown): data is SystemStats {
   return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
@@ -66,7 +67,7 @@ function App() {
   const showToast = useToast((s) => s.show)
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
-  const { tk, t } = useI18n()
+  const { tk } = useI18n()
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const isE2ELightweight = window.__E2E_LIGHTWEIGHT === true
 
@@ -119,11 +120,14 @@ function App() {
       }
     }).catch((error) => {
       void reportRendererError('app-bootstrap', 'Failed to bootstrap app', { error })
-      showToast(tk('app.error_boundary.message'), 'danger')
+      showToast(
+        translateKey(useSettingsStore.getState().locale, 'app.error_boundary.message'),
+        'danger'
+      )
     }).finally(() => {
       setBootstrapped(true)
     })
-  }, [applyUpdateStatus, isE2ELightweight, setAlerts, showToast, tk])
+  }, [applyUpdateStatus, isE2ELightweight, setAlerts, showToast])
 
   useEffect(() => {
     document.body.dataset.e2eReady = bootstrapped ? '1' : '0'
@@ -153,16 +157,17 @@ function App() {
   }, [hasUnsavedSettings])
 
   useEffect(() => {
+    const locale = useSettingsStore.getState().locale
     const titles: Record<string, string> = {
-      dashboard: t("Overview"),
-      disk: t("Storage"),
-      docker: t("Docker"),
-      process: t("Activity"),
-      apps: t("Applications"),
-      settings: t("Preferences"),
+      dashboard: translateLiteral(locale, "Overview"),
+      disk: translateLiteral(locale, "Storage"),
+      docker: translateLiteral(locale, "Docker"),
+      process: translateLiteral(locale, "Activity"),
+      apps: translateLiteral(locale, "Applications"),
+      settings: translateLiteral(locale, "Preferences"),
     }
     document.title = `SystemScope — ${titles[currentPage] ?? "SystemScope"}`
-  }, [currentPage, t])
+  }, [currentPage])
 
   useEffect(() => {
     if (isE2ELightweight) {

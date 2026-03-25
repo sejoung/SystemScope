@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { translateLiteral } from '@shared/i18n'
 import type { SystemScopeAboutInfo } from '@shared/contracts/systemScope'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useI18n } from '../i18n/useI18n'
@@ -10,7 +11,7 @@ const appIconUrl = new URL('../../../../resources/systemscope_icon.svg', import.
 export function AboutPage() {
   const theme = useSettingsStore((state) => state.theme)
   const [aboutInfo, setAboutInfo] = useState<SystemScopeAboutInfo | null>(null)
-  const { t, tk } = useI18n()
+  const { tk } = useI18n()
   const showToast = useToast((state) => state.show)
 
   useEffect(() => {
@@ -25,16 +26,22 @@ export function AboutPage() {
       if (settings) {
         applySettingsToStore(settings)
       } else {
-        showToast(t('Failed to load settings.'), 'danger')
+        showToast(
+          translateLiteral(useSettingsStore.getState().locale, 'Failed to load settings.'),
+          'danger'
+        )
       }
 
       if (nextAboutInfo) {
         setAboutInfo(nextAboutInfo)
       } else {
-        showToast(t('Unable to load the About information.'), 'danger')
+        showToast(
+          translateLiteral(useSettingsStore.getState().locale, 'Unable to load the About information.'),
+          'danger'
+        )
       }
     })
-  }, [showToast, t])
+  }, [showToast])
 
   return (
     <div style={pageStyle}>
