@@ -450,6 +450,18 @@ export const KO_MESSAGES = {
   "{count} copies": "{count} copies",
   KEEP: "보관",
   "Delete all copies (keep first)": "Delete all copies (keep first)",
+  Started: "시작됨",
+  "In progress": "진행 중",
+  Completed: "완료됨",
+  Failed: "실패",
+  "Quick scan started. Reviewing common cleanup locations now.":
+    "빠른 스캔을 시작했습니다. 자주 정리하는 위치를 확인하는 중입니다.",
+  "Quick scan completed. Review size, safety guidance, and open a folder before deleting anything.":
+    "빠른 스캔이 완료되었습니다. 크기와 안전 안내를 확인한 뒤 폴더를 열어 검토하세요.",
+  "Port scan started. Collecting listening and connected socket information now.":
+    "포트 스캔을 시작했습니다. 리슨 중인 포트와 연결 정보를 수집하는 중입니다.",
+  "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.":
+    "포트 스캔이 완료되었습니다. 상태 필터나 로컬/원격 검색으로 결과를 확인하세요.",
   "Loading installed apps.": "설치 앱 목록을 불러오는 중입니다.",
   "Loading leftover app data.": "잔여 앱 데이터를 불러오는 중입니다.",
   "No installed apps to display.": "표시할 설치 앱이 없습니다.",

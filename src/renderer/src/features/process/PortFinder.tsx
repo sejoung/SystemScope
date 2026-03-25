@@ -6,12 +6,21 @@ import type { PortInfo, ProcessKillResult } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
+import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
 
 export function PortFinder() {
   const showToast = useToast((s) => s.show);
-  const { tk } = useI18n();
-  const { ports, loading, scanned, stateFilter, setStateFilter, fetchPorts } =
-    usePortFinderStore();
+  const { tk, t } = useI18n();
+  const {
+    ports,
+    loading,
+    scanned,
+    error,
+    requestState,
+    stateFilter,
+    setStateFilter,
+    fetchPorts,
+  } = usePortFinderStore();
   const [search, setSearch] = useState("");
   const [searchScope, setSearchScope] = useState<"local" | "remote" | "all">(
     "local",
@@ -161,12 +170,45 @@ export function PortFinder() {
           </button>
         </div>
       </div>
-      {!scanned ? (
+      {!scanned && requestState !== "started" ? (
         <StatusMessage message={tk("process.port_finder.description")} />
       ) : (
         <div>
           <div style={{ marginBottom: "12px" }}>
-            <StatusMessage message={tk("process.port_finder.helper")} />
+            {requestState === "started" ? (
+              <AsyncTaskStatus
+                stage="started"
+                taskLabel={tk("process.port_finder.title")}
+                message={t(
+                  "Port scan started. Collecting listening and connected socket information now.",
+                )}
+              />
+            ) : requestState === "failed" && error ? (
+              <AsyncTaskStatus
+                stage="failed"
+                taskLabel={tk("process.port_finder.title")}
+                message={error}
+                action={
+                  <button
+                    type="button"
+                    onClick={() => fetchPorts()}
+                    style={btnStyle}
+                  >
+                    {tk("apps.action.refresh")}
+                  </button>
+                }
+              />
+            ) : requestState === "completed" ? (
+              <AsyncTaskStatus
+                stage="completed"
+                taskLabel={tk("process.port_finder.title")}
+                message={t(
+                  "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.",
+                )}
+              />
+            ) : (
+              <StatusMessage message={tk("process.port_finder.helper")} />
+            )}
           </div>
           {/* State filter tabs */}
           <div

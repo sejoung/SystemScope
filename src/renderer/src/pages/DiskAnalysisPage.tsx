@@ -19,6 +19,7 @@ import type { DiskScanResult } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import { StatusMessage } from "../components/StatusMessage";
 import { CopyableValue } from "../components/CopyableValue";
+import { AsyncTaskStatus } from "../components/AsyncTaskStatus";
 
 const TreemapChart = lazy(async () =>
   import("../features/disk/TreemapChart").then((mod) => ({
@@ -517,9 +518,9 @@ function ScanTab({
 
       {!isScanning && scanOutcome === "failed" && scanProgress && (
         <div style={{ marginBottom: "16px" }}>
-          <StatusMessage
-            tone="error"
-            title={tk("disk.scan.failed")}
+          <AsyncTaskStatus
+            stage="failed"
+            taskLabel={tk("disk.tab.scan")}
             message={scanProgress}
           />
         </div>
@@ -527,32 +528,31 @@ function ScanTab({
 
       {/* Scan progress */}
       {isScanning && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 16px",
-            marginBottom: "16px",
-            background: "var(--bg-card)",
-            borderRadius: "var(--radius)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <div
-            style={{
-              width: "14px",
-              height: "14px",
-              border: "2px solid var(--accent-blue)",
-              borderTop: "2px solid transparent",
-              borderRadius: "50%",
-              animation: "spin 0.8s linear infinite",
-            }}
+        <div style={{ marginBottom: "16px" }}>
+          <AsyncTaskStatus
+            stage={scanProgress ? "running" : "started"}
+            taskLabel={tk("disk.tab.scan")}
+            message={scanProgress || tk("disk.scan.preparing")}
+            action={
+              <button
+                type="button"
+                onClick={onCancelScan}
+                style={{ ...btnStyle, background: "var(--accent-red)" }}
+              >
+                {tk("disk.scan.cancel")}
+              </button>
+            }
           />
-          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {scanProgress || tk("disk.scan.preparing")}
-          </span>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+
+      {!isScanning && scanOutcome === "completed" && scanResult && (
+        <div style={{ marginBottom: "16px" }}>
+          <AsyncTaskStatus
+            stage="completed"
+            taskLabel={tk("disk.tab.scan")}
+            message={tk("disk.scan.complete_label")}
+          />
         </div>
       )}
 

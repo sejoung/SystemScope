@@ -454,6 +454,18 @@ export const EN_MESSAGES = {
   "{count} copies": "{count} copies",
   KEEP: "KEEP",
   "Delete all copies (keep first)": "Delete all copies (keep first)",
+  Started: "Started",
+  "In progress": "In progress",
+  Completed: "Completed",
+  Failed: "Failed",
+  "Quick scan started. Reviewing common cleanup locations now.":
+    "Quick scan started. Reviewing common cleanup locations now.",
+  "Quick scan completed. Review size, safety guidance, and open a folder before deleting anything.":
+    "Quick scan completed. Review size, safety guidance, and open a folder before deleting anything.",
+  "Port scan started. Collecting listening and connected socket information now.":
+    "Port scan started. Collecting listening and connected socket information now.",
+  "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.":
+    "Port scan completed. Filter by state or search local and remote endpoints to inspect the results.",
   "Loading installed apps.": "Loading installed apps.",
   "Loading leftover app data.": "Loading leftover app data.",
   "No installed apps to display.": "No installed apps to display.",

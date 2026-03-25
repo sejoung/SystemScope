@@ -4,6 +4,7 @@ import { formatBytes } from "../../utils/format";
 import type { ScanCategory, QuickScanFolder } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
+import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
 
 const CATEGORY_ORDER: ScanCategory[] = [
   "system",
@@ -93,15 +94,43 @@ export function QuickScan({ onFolderClick }: QuickScanProps) {
       }
     >
       {scanning ? (
-        <StatusMessage message={tk("common.scanning")} />
+        <AsyncTaskStatus
+          stage="started"
+          taskLabel={tk("disk.section.quick_cleanup")}
+          message={t(
+            "Quick scan started. Reviewing common cleanup locations now.",
+          )}
+        />
       ) : !scanned ? (
         <StatusMessage message={tk("disk.quick_cleanup.description")} />
       ) : error ? (
-        <StatusMessage tone="error" message={error} />
+        <AsyncTaskStatus
+          stage="failed"
+          taskLabel={tk("disk.section.quick_cleanup")}
+          message={error}
+        />
       ) : grouped.length === 0 ? (
-        <StatusMessage message={tk("disk.quick_cleanup.empty")} />
+        <>
+          <div style={{ marginBottom: "12px" }}>
+            <AsyncTaskStatus
+              stage="completed"
+              taskLabel={tk("disk.section.quick_cleanup")}
+              message={tk("disk.quick_cleanup.empty")}
+            />
+          </div>
+          <StatusMessage message={tk("disk.quick_cleanup.empty")} />
+        </>
       ) : (
         <div>
+          <div style={{ marginBottom: "12px" }}>
+            <AsyncTaskStatus
+              stage="completed"
+              taskLabel={tk("disk.section.quick_cleanup")}
+              message={t(
+                "Quick scan completed. Review size, safety guidance, and open a folder before deleting anything.",
+              )}
+            />
+          </div>
           <div
             style={{
               marginBottom: "12px",
