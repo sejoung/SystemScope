@@ -92,6 +92,7 @@ export interface SystemScopeApi {
   listInstalledApps: () => Promise<AppResult<InstalledApp[]>>
   getAppRelatedData: (appId: string) => Promise<AppResult<AppRelatedDataItem[]>>
   listLeftoverAppData: () => Promise<AppResult<AppLeftoverDataItem[]>>
+  hydrateLeftoverAppDataSizes: (itemIds: string[]) => Promise<AppResult<AppLeftoverDataItem[]>>
   removeLeftoverAppData: (itemIds: string[]) => Promise<AppResult<{ deletedPaths: string[]; failedPaths: string[] }>>
   listLeftoverAppRegistry: () => Promise<AppResult<AppLeftoverRegistryItem[]>>
   removeLeftoverAppRegistry: (itemIds: string[]) => Promise<AppResult<{ deletedKeys: string[]; failedKeys: string[] }>>

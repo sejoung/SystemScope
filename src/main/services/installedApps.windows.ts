@@ -11,7 +11,6 @@ import { getDirSize } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
 const leftoverSizeCache = new Map<string, number>()
-const MAX_SIZE_MEASUREMENTS_PER_SCAN = 12
 
 export async function listWindowsInstalledApps(): Promise<InstalledApp[]> {
   const registryRoots = [
@@ -223,8 +222,21 @@ export async function listWindowsLeftoverAppData(installedApps: InstalledApp[]):
   }
 
   const dedupedItems = dedupeLeftoverByPath(items)
-  await hydrateLeftoverSizes(dedupedItems, (item) => getDirSize(item.path))
+  applyCachedLeftoverSizes(dedupedItems)
   return dedupedItems
+}
+
+export async function hydrateWindowsLeftoverItemSizes(items: AppLeftoverDataItem[]): Promise<AppLeftoverDataItem[]> {
+  applyCachedLeftoverSizes(items)
+
+  for (const item of items) {
+    if (item.sizeBytes !== undefined) continue
+    const sizeBytes = await getDirSize(item.path)
+    leftoverSizeCache.set(item.path, sizeBytes)
+    item.sizeBytes = sizeBytes
+  }
+
+  return items
 }
 
 // ─── Exported helpers (used in tests) ───
@@ -383,36 +395,11 @@ function dedupeLeftoverByPath(items: AppLeftoverDataItem[]): AppLeftoverDataItem
   })
 }
 
-async function hydrateLeftoverSizes(
-  items: AppLeftoverDataItem[],
-  measure: (item: AppLeftoverDataItem) => Promise<number>
-): Promise<void> {
+function applyCachedLeftoverSizes(items: AppLeftoverDataItem[]): void {
   for (const item of items) {
     const cachedSize = leftoverSizeCache.get(item.path)
     if (cachedSize !== undefined) {
       item.sizeBytes = cachedSize
     }
-  }
-
-  const pendingItems = items
-    .filter((item) => item.sizeBytes === undefined)
-    .sort((left, right) => confidenceRank(left.confidence) - confidenceRank(right.confidence) || left.appName.localeCompare(right.appName))
-    .slice(0, MAX_SIZE_MEASUREMENTS_PER_SCAN)
-
-  for (const item of pendingItems) {
-    const sizeBytes = await measure(item)
-    leftoverSizeCache.set(item.path, sizeBytes)
-    item.sizeBytes = sizeBytes
-  }
-}
-
-function confidenceRank(confidence: AppLeftoverDataItem['confidence']): number {
-  switch (confidence) {
-    case 'high':
-      return 0
-    case 'medium':
-      return 1
-    case 'low':
-      return 2
   }
 }

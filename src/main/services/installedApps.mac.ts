@@ -11,7 +11,6 @@ import { getDirSize } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
 const leftoverSizeCache = new Map<string, number>()
-const MAX_SIZE_MEASUREMENTS_PER_SCAN = 12
 
 export async function listMacInstalledApps(): Promise<InstalledApp[]> {
   const roots = ['/Applications', path.join(homedir(), 'Applications')]
@@ -173,11 +172,21 @@ export async function listMacLeftoverAppData(installedApps: InstalledApp[]): Pro
   }
 
   const dedupedItems = dedupeLeftoverByPath(items)
-  await hydrateLeftoverSizes(
-    dedupedItems,
-    (item) => getItemSize(item.path, item.label === 'Preferences' ? 'plist' : 'dir')
-  )
+  applyCachedLeftoverSizes(dedupedItems)
   return dedupedItems
+}
+
+export async function hydrateMacLeftoverItemSizes(items: AppLeftoverDataItem[]): Promise<AppLeftoverDataItem[]> {
+  applyCachedLeftoverSizes(items)
+
+  for (const item of items) {
+    if (item.sizeBytes !== undefined) continue
+    const sizeBytes = await getItemSize(item.path, item.label === 'Preferences' ? 'plist' : 'dir')
+    leftoverSizeCache.set(item.path, sizeBytes)
+    item.sizeBytes = sizeBytes
+  }
+
+  return items
 }
 
 export function inferMacLeftoverAppName(entryName: string): string | null {
@@ -266,36 +275,11 @@ async function getItemSize(targetPath: string, type: 'dir' | 'plist'): Promise<n
   }
 }
 
-async function hydrateLeftoverSizes(
-  items: AppLeftoverDataItem[],
-  measure: (item: AppLeftoverDataItem) => Promise<number>
-): Promise<void> {
+function applyCachedLeftoverSizes(items: AppLeftoverDataItem[]): void {
   for (const item of items) {
     const cachedSize = leftoverSizeCache.get(item.path)
     if (cachedSize !== undefined) {
       item.sizeBytes = cachedSize
     }
-  }
-
-  const pendingItems = items
-    .filter((item) => item.sizeBytes === undefined)
-    .sort((left, right) => confidenceRank(left.confidence) - confidenceRank(right.confidence) || left.appName.localeCompare(right.appName))
-    .slice(0, MAX_SIZE_MEASUREMENTS_PER_SCAN)
-
-  for (const item of pendingItems) {
-    const sizeBytes = await measure(item)
-    leftoverSizeCache.set(item.path, sizeBytes)
-    item.sizeBytes = sizeBytes
-  }
-}
-
-function confidenceRank(confidence: AppLeftoverDataItem['confidence']): number {
-  switch (confidence) {
-    case 'high':
-      return 0
-    case 'medium':
-      return 1
-    case 'low':
-      return 2
   }
 }

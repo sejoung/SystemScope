@@ -26,6 +26,7 @@ type PlatformFilter = "all" | "mac" | "windows";
 type AppsTab = "installed" | "leftover" | "registry";
 type ConfidenceFilter = "all" | "high" | "medium" | "low";
 type LeftoverSort = "priority" | "name" | "size";
+const LEFTOVER_SIZE_BATCH_SIZE = 12;
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show);
@@ -67,6 +68,7 @@ export function AppsPage() {
     Partial<Record<AppsTab, string>>
   >({});
   const uninstallRefreshTimersRef = useRef<number[]>([]);
+  const leftoverSizeHydratingRef = useRef(false);
   const showToastRef = useRef(showToast);
   showToastRef.current = showToast;
   const tkRef = useRef(tk);
@@ -142,6 +144,43 @@ export function AppsPage() {
       uninstallRefreshTimersRef.current = [];
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "leftover" || leftoverSizeHydratingRef.current) return;
+
+    const pendingIds = leftoverItems
+      .filter((item) => item.sizeBytes === undefined)
+      .slice(0, LEFTOVER_SIZE_BATCH_SIZE)
+      .map((item) => item.id);
+    if (pendingIds.length === 0) return;
+
+    let cancelled = false;
+    leftoverSizeHydratingRef.current = true;
+
+    void (async () => {
+      const res = await window.systemScope.hydrateLeftoverAppDataSizes(
+        pendingIds,
+      );
+      leftoverSizeHydratingRef.current = false;
+      if (cancelled) return;
+
+      if (res.ok && res.data) {
+        const hydratedItems = res.data as AppLeftoverDataItem[];
+        setLeftoverItems((current) =>
+          mergeHydratedLeftovers(current, hydratedItems),
+        );
+        return;
+      }
+
+      showToastRef.current(
+        res.error?.message ?? tkRef.current("apps.error.load_leftover"),
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, leftoverItems]);
 
   const filteredApps = useMemo(
     () =>
@@ -1667,6 +1706,14 @@ export function getConfidenceLabel(
     default:
       return tk("apps.confidence.low");
   }
+}
+
+function mergeHydratedLeftovers(
+  currentItems: AppLeftoverDataItem[],
+  hydratedItems: AppLeftoverDataItem[],
+): AppLeftoverDataItem[] {
+  const hydratedById = new Map(hydratedItems.map((item) => [item.id, item]));
+  return currentItems.map((item) => hydratedById.get(item.id) ?? item);
 }
 
 export function getConfidenceColor(

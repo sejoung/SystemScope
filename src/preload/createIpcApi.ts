@@ -92,6 +92,8 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.APPS_GET_RELATED_DATA, appId),
     listLeftoverAppData: () =>
       invokeWithRequestId(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA),
+    hydrateLeftoverAppDataSizes: (itemIds: string[]) =>
+      invokeWithRequestId(IPC_CHANNELS.APPS_HYDRATE_LEFTOVER_SIZES, itemIds),
     removeLeftoverAppData: (itemIds: string[]) =>
       invokeWithRequestId(IPC_CHANNELS.APPS_REMOVE_LEFTOVER_DATA, itemIds),
     listLeftoverAppRegistry: () =>

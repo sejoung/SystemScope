@@ -19,7 +19,8 @@ import {
   moveMacAppToTrashWithFinder,
   getMacRelatedDataCandidates,
   listMacLeftoverAppData,
-  inferMacLeftoverAppName
+  inferMacLeftoverAppName,
+  hydrateMacLeftoverItemSizes
 } from './installedApps.mac'
 import {
   listWindowsInstalledApps,
@@ -30,7 +31,8 @@ import {
   parseWindowsRegistryOutput,
   parseUninstallCommand,
   splitWindowsCommandArgs,
-  buildWindowsUninstallerPowerShellCommand
+  buildWindowsUninstallerPowerShellCommand,
+  hydrateWindowsLeftoverItemSizes
 } from './installedApps.windows'
 
 const execFileAsync = promisify(execFile)
@@ -123,6 +125,24 @@ export async function removeLeftoverAppData(itemIds: string[]): Promise<{ delete
   }
 
   return { deletedPaths, failedPaths }
+}
+
+export async function hydrateLeftoverAppDataSizes(itemIds: string[]): Promise<AppLeftoverDataItem[]> {
+  const uniqueItems = [...new Set(itemIds)]
+    .map((itemId) => leftoverAppDataCache.get(itemId))
+    .filter((item): item is AppLeftoverDataItem => item !== undefined)
+
+  const hydrated = getPlatform() === 'darwin'
+    ? await hydrateMacLeftoverItemSizes(uniqueItems)
+    : getPlatform() === 'win32'
+      ? await hydrateWindowsLeftoverItemSizes(uniqueItems)
+      : uniqueItems
+
+  for (const item of hydrated) {
+    leftoverAppDataCache.set(item.id, item)
+  }
+
+  return hydrated
 }
 
 export async function listLeftoverAppRegistry(): Promise<AppLeftoverRegistryItem[]> {

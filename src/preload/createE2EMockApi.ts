@@ -97,6 +97,7 @@ export function createE2EMockApi(): SystemScopeApi {
       ]),
     getAppRelatedData: () => successResult([]),
     listLeftoverAppData: () => successResult([]),
+    hydrateLeftoverAppDataSizes: () => successResult([]),
     listLeftoverAppRegistry: () => successResult([]),
     listDockerContainers: () =>
       successResult({

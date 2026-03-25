@@ -7,6 +7,7 @@ import {
   getInstalledAppRelatedData,
   listInstalledApps,
   listLeftoverAppData,
+  hydrateLeftoverAppDataSizes,
   listLeftoverAppRegistry,
   openInstalledAppLocation,
   removeLeftoverAppData,
@@ -83,6 +84,25 @@ export function registerAppsIpc(): void {
       return success(items)
     } catch (error) {
       logErrorAction('apps-ipc', 'leftover_data.list', withRequestMeta(requestMeta, { error }))
+      return failure('UNKNOWN_ERROR', tk('apps.error.load_leftover'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.APPS_HYDRATE_LEFTOVER_SIZES, async (_event, itemIds: string[], metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    if (!isValidStringArray(itemIds)) {
+      return failure('INVALID_INPUT', tk('apps.error.invalid_item_ids'))
+    }
+
+    try {
+      const items = await hydrateLeftoverAppDataSizes(itemIds)
+      logInfoAction('apps-ipc', 'leftover_data.hydrate_sizes', withRequestMeta(requestMeta, {
+        requestedCount: itemIds.length,
+        hydratedCount: items.length
+      }))
+      return success(items)
+    } catch (error) {
+      logErrorAction('apps-ipc', 'leftover_data.hydrate_sizes', withRequestMeta(requestMeta, { itemIds, error }))
       return failure('UNKNOWN_ERROR', tk('apps.error.load_leftover'))
     }
   })

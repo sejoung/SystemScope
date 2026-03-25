@@ -7,6 +7,7 @@ const listInstalledAppsMock = vi.hoisted(() => vi.fn())
 const getInstalledAppByIdMock = vi.hoisted(() => vi.fn())
 const getInstalledAppRelatedDataMock = vi.hoisted(() => vi.fn())
 const listLeftoverAppDataMock = vi.hoisted(() => vi.fn())
+const hydrateLeftoverAppDataSizesMock = vi.hoisted(() => vi.fn())
 const removeLeftoverAppDataMock = vi.hoisted(() => vi.fn())
 const openInstalledAppLocationMock = vi.hoisted(() => vi.fn())
 const openSystemUninstallSettingsMock = vi.hoisted(() => vi.fn())
@@ -39,6 +40,7 @@ vi.mock('../../src/main/services/installedApps', () => ({
   getInstalledAppById: getInstalledAppByIdMock,
   getInstalledAppRelatedData: getInstalledAppRelatedDataMock,
   listLeftoverAppData: listLeftoverAppDataMock,
+  hydrateLeftoverAppDataSizes: hydrateLeftoverAppDataSizesMock,
   removeLeftoverAppData: removeLeftoverAppDataMock,
   openInstalledAppLocation: openInstalledAppLocationMock,
   openSystemUninstallSettings: openSystemUninstallSettingsMock,
@@ -64,6 +66,7 @@ describe('registerAppsIpc', () => {
     getInstalledAppByIdMock.mockReset()
     getInstalledAppRelatedDataMock.mockReset()
     listLeftoverAppDataMock.mockReset()
+    hydrateLeftoverAppDataSizesMock.mockReset()
     removeLeftoverAppDataMock.mockReset()
     openInstalledAppLocationMock.mockReset()
     openSystemUninstallSettingsMock.mockReset()
@@ -125,6 +128,21 @@ describe('registerAppsIpc', () => {
 
     const handler = handlers.get(IPC_CHANNELS.APPS_LIST_LEFTOVER_DATA)
     const result = await handler?.({}, undefined) as { ok: boolean; data?: unknown[] }
+
+    expect(result.ok).toBe(true)
+    expect(result.data).toHaveLength(1)
+  })
+
+  it('should hydrate leftover app sizes', async () => {
+    hydrateLeftoverAppDataSizesMock.mockResolvedValue([
+      { id: 'left-1', appName: 'ToF', label: 'Caches', path: '/tmp/ToF', source: 'mac:caches', platform: 'mac', sizeBytes: 1024 }
+    ])
+
+    const { registerAppsIpc } = await import('../../src/main/ipc/apps.ipc')
+    registerAppsIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APPS_HYDRATE_LEFTOVER_SIZES)
+    const result = await handler?.({}, ['left-1'], undefined) as { ok: boolean; data?: unknown[] }
 
     expect(result.ok).toBe(true)
     expect(result.data).toHaveLength(1)

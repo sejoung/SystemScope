@@ -46,6 +46,7 @@ export const IPC_CHANNELS = {
   APPS_LIST_INSTALLED: 'apps:listInstalled',
   APPS_GET_RELATED_DATA: 'apps:getRelatedData',
   APPS_LIST_LEFTOVER_DATA: 'apps:listLeftoverData',
+  APPS_HYDRATE_LEFTOVER_SIZES: 'apps:hydrateLeftoverSizes',
   APPS_REMOVE_LEFTOVER_DATA: 'apps:removeLeftoverData',
   APPS_LIST_LEFTOVER_REGISTRY: 'apps:listLeftoverRegistry',
   APPS_REMOVE_LEFTOVER_REGISTRY: 'apps:removeLeftoverRegistry',
