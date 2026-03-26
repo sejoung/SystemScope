@@ -30,6 +30,12 @@ function makeStats(overrides: Partial<{
       unavailableReason: null
     },
     disk: {
+      io: {
+        readsPerSecond: null,
+        writesPerSecond: null,
+        totalPerSecond: null,
+        busyPercent: null
+      },
       drives: [{
         fs: '/dev/sda1',
         type: 'ext4',

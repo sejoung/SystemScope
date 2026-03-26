@@ -39,10 +39,20 @@ export interface DriveInfo {
   realUsage: number | null     // macOS: purgeable 제외한 실제 사용률
 }
 
+export interface DiskIoInfo {
+  readsPerSecond: number | null
+  writesPerSecond: number | null
+  totalPerSecond: number | null
+  busyPercent: number | null
+}
+
 export interface SystemStats {
   cpu: CpuInfo
   memory: MemoryInfo
   gpu: GpuInfo
-  disk: { drives: DriveInfo[] }
+  disk: {
+    drives: DriveInfo[]
+    io: DiskIoInfo
+  }
   timestamp: number
 }

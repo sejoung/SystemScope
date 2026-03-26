@@ -38,6 +38,14 @@ vi.mock('../../src/main/i18n', () => ({
 
 describe('createMainWindow', () => {
   let eventHandlers: Record<string, ((...args: unknown[]) => void) | undefined>
+  let webContentsHandlers: Record<string, ((...args: unknown[]) => void) | undefined>
+  let webContentsMock: {
+    id: number
+    on: ReturnType<typeof vi.fn>
+    openDevTools: ReturnType<typeof vi.fn>
+    closeDevTools: ReturnType<typeof vi.fn>
+    isDevToolsOpened: ReturnType<typeof vi.fn>
+  }
 
   beforeEach(() => {
     vi.resetModules()
@@ -51,14 +59,27 @@ describe('createMainWindow', () => {
     clearUnsavedSettingsStateMock.mockReset()
     tkMock.mockClear()
     eventHandlers = {}
+    webContentsHandlers = {}
 
     restoreWindowStateMock.mockReturnValue(null)
     getSettingsMock.mockReturnValue({ theme: 'dark' })
     getUnsavedSettingsStateMock.mockReturnValue(false)
+    delete process.env.NODE_ENV
+    delete process.env.ELECTRON_RENDERER_URL
+
+    webContentsMock = {
+      id: 42,
+      on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+        webContentsHandlers[event] = handler
+      }),
+      openDevTools: vi.fn(),
+      closeDevTools: vi.fn(),
+      isDevToolsOpened: vi.fn(() => false)
+    }
 
     browserWindowMock.mockImplementation(function mockBrowserWindow(_options: unknown) {
       return {
-        webContents: { id: 42 },
+        webContents: webContentsMock,
         once: vi.fn(),
         on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
           eventHandlers[event] = handler
@@ -101,5 +122,34 @@ describe('createMainWindow', () => {
     eventHandlers.closed?.()
 
     expect(clearUnsavedSettingsStateMock).toHaveBeenCalledWith(42)
+  })
+
+  it('should register a devtools shortcut only in development mode', async () => {
+    process.env.NODE_ENV = 'development'
+    process.env.ELECTRON_RENDERER_URL = 'http://localhost:5173'
+
+    const { createMainWindow } = await import('../../src/main/app/createWindow')
+    createMainWindow()
+
+    expect(webContentsMock.on).toHaveBeenCalledWith('before-input-event', expect.any(Function))
+    expect(webContentsHandlers['before-input-event']).toBeTypeOf('function')
+  })
+
+  it('should open devtools on F12 in development mode', async () => {
+    process.env.NODE_ENV = 'development'
+    process.env.ELECTRON_RENDERER_URL = 'http://localhost:5173'
+
+    const { createMainWindow } = await import('../../src/main/app/createWindow')
+    createMainWindow()
+
+    webContentsHandlers['before-input-event']?.({}, {
+      type: 'keyDown',
+      key: 'F12',
+      shift: false,
+      control: false,
+      meta: false
+    })
+
+    expect(webContentsMock.openDevTools).toHaveBeenCalledWith({ mode: 'detach' })
   })
 })

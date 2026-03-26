@@ -77,6 +77,12 @@ export function createE2EMockApi(): {
       unavailableReason: null
     },
     disk: {
+      io: {
+        readsPerSecond: 140,
+        writesPerSecond: 45,
+        totalPerSecond: 185,
+        busyPercent: null
+      },
       drives: [
         {
           fs: '/dev/disk1s1',

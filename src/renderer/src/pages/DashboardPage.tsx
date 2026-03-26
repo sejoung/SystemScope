@@ -3,6 +3,7 @@ import { useSystemStore } from "../stores/useSystemStore";
 import { CpuWidget } from "../features/monitoring/CpuWidget";
 import { MemoryWidget } from "../features/monitoring/MemoryWidget";
 import { GpuWidget } from "../features/monitoring/GpuWidget";
+import { DiskWidget } from "../features/monitoring/DiskWidget";
 import { RealtimeChart } from "../features/monitoring/RealtimeChart";
 import { YourStorage } from "../features/disk/YourStorage";
 import { GrowthView } from "../features/disk/GrowthView";
@@ -95,10 +96,11 @@ export function DashboardPage() {
       <AlertBanner />
 
       {/* Top: Gauges */}
-      <div className="dashboard-grid-3">
+      <div className="dashboard-grid-4">
         <CpuWidget />
         <MemoryWidget />
         <GpuWidget />
+        <DiskWidget />
       </div>
 
       {/* Middle: Realtime chart */}

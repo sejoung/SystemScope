@@ -14,7 +14,8 @@ export function RealtimeChart() {
     idx: i,
     cpu: h.cpu.usage,
     memory: h.memory.usage,
-    gpu: h.gpu?.usage ?? 0
+    gpu: h.gpu?.usage ?? 0,
+    iops: h.disk.io.totalPerSecond ?? 0
   })), [history])
 
   return (
@@ -51,6 +52,15 @@ export function RealtimeChart() {
               tickFormatter={(val) => `${val}%`}
               width={40}
             />
+            <YAxis
+              yAxisId="iops"
+              orientation="right"
+              axisLine={{ stroke: 'var(--chart-grid)' }}
+              tickLine={{ stroke: 'var(--chart-grid)' }}
+              tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
+              tickFormatter={(val) => `${val}`}
+              width={48}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'var(--chart-tooltip-bg)',
@@ -60,15 +70,18 @@ export function RealtimeChart() {
                 color: 'var(--text-primary)',
                 fontSize: '12px'
               }}
-              formatter={(value) => {
+              formatter={(value, name) => {
                 const numericValue = typeof value === 'number' ? value : 0
-                return `${numericValue.toFixed(1)}%`
+                return name === tk('monitoring.disk.total_iops')
+                  ? numericValue.toFixed(1)
+                  : `${numericValue.toFixed(1)}%`
               }}
             />
             <Legend wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)' }} />
             <Line type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name={tk('monitoring.cpu.title')} />
             <Line type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name={tk('settings.alerts.memory')} />
             <Line type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name={tk('monitoring.gpu.title')} />
+            <Line yAxisId="iops" type="monotone" dataKey="iops" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} name={tk('monitoring.disk.total_iops')} />
           </LineChart>
       ) : null}
       </div>

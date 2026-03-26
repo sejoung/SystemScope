@@ -1,6 +1,6 @@
 import si from 'systeminformation'
 import { platform } from 'os'
-import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo } from '@shared/types'
+import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo, DiskIoInfo } from '@shared/types'
 import { logDebug, logInfo, logWarn } from './logging'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'
 let hasLoggedApfsContainerFallback = false
@@ -34,11 +34,12 @@ export async function getSystemStats(): Promise<SystemStats> {
   }
 
   pendingSystemStats = (async () => {
-    const [cpuLoad, cpuInfo, mem, gpuInfo] = await Promise.all([
+    const [cpuLoad, cpuInfo, mem, gpuInfo, diskIo] = await Promise.all([
       si.currentLoad(),
       si.cpu(),
       si.mem(),
-      getCachedGpuInfo()
+      getCachedGpuInfo(),
+      getDiskIoInfo()
     ])
 
     // 디스크 정보: 캐시가 유효하면 캐시 사용, 아니면 새로 가져옴
@@ -114,7 +115,10 @@ export async function getSystemStats(): Promise<SystemStats> {
       cpu,
       memory,
       gpu: gpuInfo,
-      disk: { drives },
+      disk: {
+        drives,
+        io: diskIo
+      },
       timestamp: Date.now()
     }
 
@@ -126,6 +130,33 @@ export async function getSystemStats(): Promise<SystemStats> {
   })
 
   return pendingSystemStats
+}
+
+async function getDiskIoInfo(): Promise<DiskIoInfo> {
+  try {
+    const stats = await si.disksIO()
+    return {
+      readsPerSecond: sanitizeRate(stats.rIO_sec),
+      writesPerSecond: sanitizeRate(stats.wIO_sec),
+      totalPerSecond: sanitizeRate(stats.tIO_sec),
+      busyPercent: sanitizeRate(stats.tWaitPercent)
+    }
+  } catch (err) {
+    logDebug('system-monitor', 'Disk I/O information is unavailable', { error: err })
+    return {
+      readsPerSecond: null,
+      writesPerSecond: null,
+      totalPerSecond: null,
+      busyPercent: null
+    }
+  }
+}
+
+function sanitizeRate(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null
+  }
+  return Math.round(value * 100) / 100
 }
 
 async function getCachedGpuInfo(): Promise<GpuInfo> {

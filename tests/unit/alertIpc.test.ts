@@ -56,6 +56,12 @@ describe('registerAlertIpc', () => {
         unavailableReason: null
       },
       disk: {
+        io: {
+          readsPerSecond: null,
+          writesPerSecond: null,
+          totalPerSecond: null,
+          busyPercent: null
+        },
         drives: [{
           fs: '/dev/disk1s1',
           type: 'apfs',

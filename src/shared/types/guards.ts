@@ -69,7 +69,7 @@ export function isAppLeftoverRegistryArray(data: unknown): data is AppLeftoverRe
 
 /** SystemStats */
 export function isSystemStats(data: unknown): data is SystemStats {
-  return isObj(data) && 'cpu' in data && 'memory' in data && 'timestamp' in data
+  return isObj(data) && 'cpu' in data && 'memory' in data && 'disk' in data && 'timestamp' in data
 }
 
 /** Alert[] */
