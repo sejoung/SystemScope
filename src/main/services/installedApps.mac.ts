@@ -11,6 +11,7 @@ import { getDirSize } from '../utils/getDirSize'
 
 const execFileAsync = promisify(execFile)
 const leftoverSizeCache = new Map<string, number>()
+const LEFTOVER_SIZE_HYDRATE_CONCURRENCY = 2
 
 export async function listMacInstalledApps(): Promise<InstalledApp[]> {
   const roots = ['/Applications', path.join(homedir(), 'Applications')]
@@ -179,12 +180,12 @@ export async function listMacLeftoverAppData(installedApps: InstalledApp[]): Pro
 export async function hydrateMacLeftoverItemSizes(items: AppLeftoverDataItem[]): Promise<AppLeftoverDataItem[]> {
   applyCachedLeftoverSizes(items)
 
-  for (const item of items) {
-    if (item.sizeBytes !== undefined) continue
+  const pendingItems = items.filter((item) => item.sizeBytes === undefined)
+  await runWithConcurrency(pendingItems, LEFTOVER_SIZE_HYDRATE_CONCURRENCY, async (item) => {
     const sizeBytes = await getItemSize(item.path, item.label === 'Preferences' ? 'plist' : 'dir')
     leftoverSizeCache.set(item.path, sizeBytes)
     item.sizeBytes = sizeBytes
-  }
+  })
 
   return items
 }
@@ -282,4 +283,23 @@ function applyCachedLeftoverSizes(items: AppLeftoverDataItem[]): void {
       item.sizeBytes = cachedSize
     }
   }
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>
+): Promise<void> {
+  if (items.length === 0) return
+
+  let currentIndex = 0
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (currentIndex < items.length) {
+      const index = currentIndex
+      currentIndex += 1
+      await worker(items[index])
+    }
+  })
+
+  await Promise.all(runners)
 }

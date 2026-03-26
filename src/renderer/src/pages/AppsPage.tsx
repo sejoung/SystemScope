@@ -28,7 +28,7 @@ type AppsTab = "installed" | "leftover" | "registry";
 type ConfidenceFilter = "all" | "high" | "medium" | "low";
 type LeftoverSort = "priority" | "name" | "size";
 
-const LEFTOVER_SIZE_BATCH_SIZE = 12;
+const LEFTOVER_SIZE_BATCH_SIZE = 2;
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show);
@@ -1010,7 +1010,11 @@ export function AppsPage() {
                               />
                             </td>
                             <td style={{ ...monoCellStyle, textAlign: "right" }}>
-                              {item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : "-"}
+                              {item.sizeBytes !== undefined ? (
+                                formatBytes(item.sizeBytes)
+                              ) : (
+                                <span style={pendingValueStyle}>{t("Calculating...")}</span>
+                              )}
                             </td>
                             <td style={{ ...tdStyle, maxWidth: "340px" }}>
                               <CopyableValue
@@ -1704,6 +1708,12 @@ const detailsMetaStyle: React.CSSProperties = {
   fontSize: "12px",
   color: "var(--text-secondary)",
   fontWeight: 600,
+};
+
+const pendingValueStyle: React.CSSProperties = {
+  color: "var(--text-muted)",
+  fontFamily: "inherit",
+  fontStyle: "italic",
 };
 
 function SearchInput({
