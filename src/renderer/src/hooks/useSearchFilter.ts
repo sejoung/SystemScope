@@ -1,4 +1,4 @@
-import { startTransition, useState } from "react";
+import { useState } from "react";
 
 export function useSearchFilter() {
   const [draft, setDraft] = useState("");
@@ -6,22 +6,16 @@ export function useSearchFilter() {
 
   const updateDraft = (value: string) => {
     setDraft(value);
-    startTransition(() => {
-      setApplied(value);
-    });
+    setApplied(value);
   };
 
   const apply = () => {
-    startTransition(() => {
-      setApplied(draft);
-    });
+    setApplied(draft);
   };
 
   const clear = () => {
     setDraft("");
-    startTransition(() => {
-      setApplied("");
-    });
+    setApplied("");
   };
 
   const isEmpty = !draft && !applied;
