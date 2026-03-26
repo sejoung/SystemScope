@@ -1,10 +1,10 @@
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useCallback,
 } from "react";
 import type {
   AppLeftoverDataItem,
@@ -27,6 +27,7 @@ type PlatformFilter = "all" | "mac" | "windows";
 type AppsTab = "installed" | "leftover" | "registry";
 type ConfidenceFilter = "all" | "high" | "medium" | "low";
 type LeftoverSort = "priority" | "name" | "size";
+
 const LEFTOVER_SIZE_BATCH_SIZE = 12;
 
 export function AppsPage() {
@@ -53,6 +54,12 @@ export function AppsPage() {
   const [leftoverBusy, setLeftoverBusy] = useState(false);
   const [registryBusy, setRegistryBusy] = useState(false);
   const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
+  const [expandedLeftoverId, setExpandedLeftoverId] = useState<string | null>(
+    null,
+  );
+  const [expandedRegistryId, setExpandedRegistryId] = useState<string | null>(
+    null,
+  );
   const [relatedLoadingAppId, setRelatedLoadingAppId] = useState<string | null>(
     null,
   );
@@ -204,8 +211,8 @@ export function AppsPage() {
         .sort((left, right) => left.name.localeCompare(right.name)),
     [
       apps,
-      installedSearch.applied,
       installedPlatformFilter,
+      installedSearch.applied,
       pendingUninstallIds,
     ],
   );
@@ -278,35 +285,37 @@ export function AppsPage() {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(normalizedQuery));
     });
-  }, [registrySearch.applied, registryItems]);
+  }, [registryItems, registrySearch.applied]);
+
+  const leftoverSizePendingCount = useMemo(
+    () => leftoverItems.filter((item) => item.sizeBytes === undefined).length,
+    [leftoverItems],
+  );
+  const leftoverSizeReadyCount = leftoverItems.length - leftoverSizePendingCount;
+
   const selectedFilteredLeftoverCount = useMemo(
     () =>
       filteredLeftovers.filter((item) => selectedLeftoverIds.includes(item.id))
         .length,
     [filteredLeftovers, selectedLeftoverIds],
   );
-  const leftoverSizePendingCount = useMemo(
-    () => leftoverItems.filter((item) => item.sizeBytes === undefined).length,
-    [leftoverItems],
-  );
-  const leftoverSizeReadyCount = leftoverItems.length - leftoverSizePendingCount;
-  const allFilteredLeftoversChecked =
-    filteredLeftovers.length > 0 &&
-    selectedFilteredLeftoverCount === filteredLeftovers.length;
   const selectedFilteredRegistryCount = useMemo(
     () =>
       filteredRegistry.filter((item) => selectedRegistryIds.includes(item.id))
         .length,
     [filteredRegistry, selectedRegistryIds],
   );
+  const allFilteredLeftoversChecked =
+    filteredLeftovers.length > 0 &&
+    selectedFilteredLeftoverCount === filteredLeftovers.length;
   const allFilteredRegistryChecked =
     filteredRegistry.length > 0 &&
     selectedFilteredRegistryCount === filteredRegistry.length;
-  const selectedLeftoverItems = filteredLeftovers.filter((item) =>
-    selectedLeftoverIds.includes(item.id),
-  );
-  const selectedRegistryItems = filteredRegistry.filter((item) =>
-    selectedRegistryIds.includes(item.id),
+
+  const selectedLeftoverItems = useMemo(
+    () =>
+      filteredLeftovers.filter((item) => selectedLeftoverIds.includes(item.id)),
+    [filteredLeftovers, selectedLeftoverIds],
   );
 
   const handleUninstall = async (app: InstalledApp) => {
@@ -332,6 +341,7 @@ export function AppsPage() {
           ? tk("apps.toast.removed")
           : tk("apps.toast.uninstaller_started"),
     );
+
     if (
       !result.completed &&
       app.platform === "windows" &&
@@ -348,6 +358,7 @@ export function AppsPage() {
         uninstallRefreshTimersRef.current.push(timerId);
       }
     }
+
     await loadApps();
     await loadLeftovers();
     if (isWindows) {
@@ -430,11 +441,8 @@ export function AppsPage() {
   const handleToggleRelatedId = (appId: string, itemId: string) => {
     setSelectedRelatedIdsByAppId((current) => {
       const selected = new Set(current[appId] ?? []);
-      if (selected.has(itemId)) {
-        selected.delete(itemId);
-      } else {
-        selected.add(itemId);
-      }
+      if (selected.has(itemId)) selected.delete(itemId);
+      else selected.add(itemId);
 
       return {
         ...current,
@@ -494,135 +502,52 @@ export function AppsPage() {
 
   return (
     <div data-testid="page-apps">
-      <div style={stickyHeaderStyle}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            marginBottom: "16px",
-            flexWrap: "wrap",
-          }}
-        >
+      <div style={pageHeaderStyle}>
+        <div style={{ display: "grid", gap: "6px" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
             {tk("apps.page.title")}
           </h2>
-          <div
-            role="tablist"
-            aria-label={tk("apps.page.title")}
-            style={{
-              display: "flex",
-              gap: "4px",
-              background: "var(--bg-secondary)",
-              borderRadius: "8px",
-              padding: "3px",
-            }}
-          >
-            <PageTab
-              id="apps-installed"
-              active={activeTab === "installed"}
-              onClick={() => setActiveTab("installed")}
-            >
-              {tk("apps.tab.installed")}
-            </PageTab>
-            <PageTab
-              id="apps-leftover"
-              active={activeTab === "leftover"}
-              onClick={() => setActiveTab("leftover")}
-            >
-              {tk("apps.tab.leftover")}
-            </PageTab>
-            {isWindows && (
-              <PageTab
-                id="apps-registry"
-                active={activeTab === "registry"}
-                onClick={() => setActiveTab("registry")}
-              >
-                {tk("apps.tab.registry")}
-              </PageTab>
+          <div style={pageDescriptionStyle}>
+            {t(
+              "Review installed apps, inspect leftover data, and clean obsolete uninstall metadata from one place.",
             )}
           </div>
         </div>
-
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            marginBottom: "14px",
-            padding: "10px 14px",
-            background: "var(--bg-card)",
-            borderRadius: "var(--radius)",
-            border: "1px solid var(--border)",
-          }}
+          role="tablist"
+          aria-label={tk("apps.page.title")}
+          style={pageTabsStyle}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
+          <PageTab
+            id="apps-installed"
+            active={activeTab === "installed"}
+            onClick={() => setActiveTab("installed")}
           >
-            <StepBadge
-              active={activeTab === "installed"}
-              text={tk("apps.flow.installed")}
-            />
-            <StepBadge
-              active={activeTab === "leftover"}
-              text={tk("apps.flow.leftover")}
-            />
-            {isWindows ? (
-              <StepBadge
-                active={activeTab === "registry"}
-                text={tk("apps.flow.registry")}
-              />
-            ) : null}
-          </div>
-          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {activeTab === "installed"
-              ? tk("apps.description.installed")
-              : activeTab === "leftover"
-                ? tk("apps.description.leftover")
-                : tk("apps.description.registry")}
-          </span>
-          <span
-            style={{
-              marginLeft: "auto",
-              fontSize: "12px",
-              color: "var(--text-secondary)",
-              fontWeight: 600,
-            }}
+            {tk("apps.tab.installed")}
+          </PageTab>
+          <PageTab
+            id="apps-leftover"
+            active={activeTab === "leftover"}
+            onClick={() => setActiveTab("leftover")}
           >
-            {activeTab === "installed"
-              ? tk("apps.count.apps", { count: filteredApps.length })
-              : activeTab === "leftover"
-                ? tk("apps.count.items", { count: filteredLeftovers.length })
-                : tk("apps.count.items", { count: filteredRegistry.length })}
-          </span>
-          {activeTab === "installed" && installedSearch.applied && (
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              {tk("apps.search.label")}:{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {installedSearch.applied}
-              </strong>
-            </span>
+            {tk("apps.tab.leftover")}
+          </PageTab>
+          {isWindows && (
+            <PageTab
+              id="apps-registry"
+              active={activeTab === "registry"}
+              onClick={() => setActiveTab("registry")}
+            >
+              {tk("apps.tab.registry")}
+            </PageTab>
           )}
-          {activeTab === "leftover" && leftoverSearch.applied && (
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              {tk("apps.search.label")}:{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {leftoverSearch.applied}
-              </strong>
-            </span>
-          )}
-          {activeTab === "registry" && registrySearch.applied && (
-            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              {tk("apps.search.label")}:{" "}
-              <strong style={{ color: "var(--text-primary)" }}>
-                {registrySearch.applied}
-              </strong>
-            </span>
-          )}
+        </div>
+        <div style={pageHelpStyle}>
+          {activeTab === "installed"
+            ? tk("apps.description.installed")
+            : activeTab === "leftover"
+              ? tk("apps.description.leftover")
+              : tk("apps.description.registry")}
         </div>
       </div>
 
@@ -637,10 +562,15 @@ export function AppsPage() {
           }
         />
       ) : activeTab === "installed" ? (
-        <div>
-          <div style={stickyTabControlsWrapStyle}>
-            <div style={tabControlsStyle}>
+        <section style={sectionStyle}>
+          <div style={headerStyle}>
+            <div style={titleRowStyle}>
+              <span style={titleStyle}>{tk("apps.tab.installed")}</span>
+              <span style={badgeStyle}>{filteredApps.length}</span>
+            </div>
+            <div style={actionsStyle}>
               <button
+                type="button"
                 onClick={() => void refresh("installed")}
                 disabled={refreshingTab === "installed"}
                 style={secondaryBtnStyle(refreshingTab === "installed")}
@@ -649,38 +579,21 @@ export function AppsPage() {
                   ? tk("common.refreshing")
                   : tk("apps.action.refresh")}
               </button>
-              {isWindows && (
+              {isWindows ? (
                 <button
+                  type="button"
                   onClick={() => void handleOpenSystemSettings()}
-                  style={{
-                    ...btnStyle,
-                    background: "var(--bg-card-hover)",
-                    color: "var(--text-primary)",
-                  }}
+                  style={secondaryButtonStyle}
                 >
                   {tk("apps.action.open_system_settings")}
                 </button>
-              )}
-              <input
+              ) : null}
+              <SearchInput
                 value={installedSearch.draft}
-                onChange={(e) => installedSearch.setDraft(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") installedSearch.apply();
-                }}
+                onChange={installedSearch.setDraft}
+                onClear={installedSearch.clear}
                 placeholder={tk("apps.search.installed_placeholder")}
-                aria-label={tk("apps.search.installed_placeholder")}
-                style={{ ...inputStyle, minWidth: "220px", flex: "1 1 220px" }}
               />
-              <button onClick={installedSearch.apply} style={btnStyle}>
-                {tk("common.search")}
-              </button>
-              <button
-                onClick={installedSearch.clear}
-                disabled={installedSearch.isEmpty}
-                style={secondaryBtnStyle(installedSearch.isEmpty)}
-              >
-                {tk("common.clear")}
-              </button>
               <select
                 value={installedPlatformFilter}
                 onChange={(e) =>
@@ -694,6 +607,21 @@ export function AppsPage() {
               </select>
             </div>
           </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <StatusMessage message={tk("apps.helper.installed")} />
+          </div>
+          <div style={infoBarStyle}>
+            <span style={infoLabelStyle}>
+              {t("Installed apps are sorted by name so known tools are easier to find.")}
+            </span>
+            <span style={infoReasonStyle}>
+              {installedSearch.applied
+                ? `${tk("apps.search.label")}: ${installedSearch.applied}`
+                : tk("apps.count.installed_summary", { count: filteredApps.length })}
+            </span>
+          </div>
+
           {loadErrors.installed && apps.length === 0 ? (
             <StatusMessage
               tone="error"
@@ -712,301 +640,147 @@ export function AppsPage() {
             <StatusMessage message={tk("apps.empty.installed")} />
           ) : (
             <>
-              <div style={infoBarStyle}>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {refreshingTab === "installed" ? (
-                    <span style={refreshingHintStyle}>
-                      <span style={refreshDotStyle} />
-                      {tk("common.refreshing")}
-                    </span>
-                  ) : (
-                    tk("apps.helper.installed")
-                  )}
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {t(
-                    "Sorted by app name, A to Z so known apps are easier to find.",
-                  )}
-                </span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {tk("apps.count.installed_summary", {
-                    count: filteredApps.length,
-                  })}
-                </span>
-              </div>
               <StatusMessage message={tk("apps.danger.installed")} />
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "14px",
-                }}
-              >
-                <thead>
-                  <tr
-                    style={{
-                      borderBottom: "1px solid var(--border)",
-                      position: "sticky",
-                      top: 0,
-                      background: "var(--bg-card)",
-                      zIndex: 1,
-                    }}
-                  >
-                    <th style={thStyle}>{tk("apps.table.name")}</th>
-                    <th style={thStyle}>{tk("apps.table.version")}</th>
-                    <th style={thStyle}>{tk("apps.table.publisher")}</th>
-                    <th style={thStyle}>{tk("apps.table.platform")}</th>
-                    <th style={thStyle}>{tk("apps.table.location")}</th>
-                    <th
-                      style={{ ...thStyle, width: "210px", textAlign: "right" }}
-                    >
-                      {tk("apps.table.actions")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredApps.map((entry) => (
-                    <Fragment key={entry.id}>
-                      <tr style={rowStyle}>
-                        <td style={tdStyle}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontWeight: 600,
-                                color: "var(--text-primary)",
-                              }}
-                            >
-                              {entry.name}
-                            </span>
-                            {entry.protected && (
-                              <span style={protectedBadgeStyle}>
-                                {tk("apps.badge.protected")}
-                              </span>
-                            )}
-                          </div>
-                          {entry.protectedReason && (
-                            <div
-                              style={{
-                                marginTop: "6px",
-                                color: "var(--text-muted)",
-                                lineHeight: 1.5,
-                              }}
-                            >
-                              {t(entry.protectedReason)}
-                            </div>
-                          )}
-                        </td>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            fontFamily: "monospace",
-                            fontVariantNumeric: "tabular-nums",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {entry.version ?? "-"}
-                        </td>
-                        <td style={tdStyle}>
-                          {entry.publisher ? (
-                            <span
-                              style={{
-                                color: "var(--text-secondary)",
-                                lineHeight: 1.45,
-                              }}
-                            >
-                              {entry.publisher}
-                            </span>
-                          ) : (
-                            <span style={{ color: "var(--text-muted)" }}>
-                              -
-                            </span>
-                          )}
-                        </td>
-                        <td style={tdStyle}>
-                          <Badge
-                            text={
-                              entry.platform === "mac" ? "macOS" : "Windows"
-                            }
-                            color={
-                              entry.platform === "mac"
-                                ? "var(--accent-cyan)"
-                                : "var(--accent-yellow)"
-                            }
-                          />
-                        </td>
-                        <td style={{ ...tdStyle, maxWidth: "340px" }}>
-                          <CopyableValue
-                            value={
-                              entry.installLocation ?? entry.launchPath ?? ""
-                            }
-                            emptyValue="-"
-                            fontSize="12px"
-                            color="var(--text-muted)"
-                            multiline
-                            maxWidth="340px"
-                          />
-                        </td>
-                        <td
-                          style={{
-                            ...tdStyle,
-                            textAlign: "right",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <button
-                            onClick={() => void handleToggleRelatedData(entry)}
-                            style={openBtn}
-                          >
-                            {expandedAppId === entry.id
-                              ? tk("apps.action.hide_data")
-                              : tk("apps.action.related_data")}
-                          </button>
-                          <button
-                            onClick={() => void handleOpenLocation(entry.id)}
-                            style={openBtn}
-                          >
-                            {tk("apps.action.open")}
-                          </button>
-                          <button
-                            onClick={() => void handleUninstall(entry)}
-                            disabled={entry.protected || busyAppId === entry.id}
-                            style={{
-                              ...actionBtnStyle,
-                              opacity:
-                                entry.protected || busyAppId === entry.id
-                                  ? 0.55
-                                  : 1,
-                              cursor:
-                                entry.protected || busyAppId === entry.id
-                                  ? "default"
-                                  : "pointer",
-                            }}
-                          >
-                            {busyAppId === entry.id
-                              ? tk("apps.action.working")
-                              : entry.platform === "mac"
-                                ? tk("apps.action.move_to_trash")
-                                : entry.uninstallKind === "open_settings"
-                                  ? tk("apps.action.open_system_settings")
-                                  : tk("apps.action.uninstall")}
-                          </button>
-                        </td>
-                      </tr>
-                      {expandedAppId === entry.id && (
+              <div style={tableWrapStyle}>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr style={stickyHeaderRowStyle}>
+                      <th style={thStyle}>{tk("apps.table.name")}</th>
+                      <th style={thStyle}>{tk("apps.table.version")}</th>
+                      <th style={thStyle}>{tk("apps.table.publisher")}</th>
+                      <th style={thStyle}>{tk("apps.table.platform")}</th>
+                      <th style={thStyle}>{tk("apps.table.location")}</th>
+                      <th style={{ ...thStyle, textAlign: "right", width: "220px" }}>
+                        {tk("apps.table.actions")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredApps.map((entry) => (
+                      <Fragment key={entry.id}>
                         <tr style={rowStyle}>
-                          <td colSpan={6} style={{ padding: "0 6px 12px 6px" }}>
-                            <div style={relatedPanelStyle}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  marginBottom: "10px",
-                                  gap: "10px",
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                <div>
-                                  <div
-                                    style={{
-                                      fontSize: "13px",
-                                      fontWeight: 700,
-                                      color: "var(--text-primary)",
-                                    }}
-                                  >
-                                    {tk("apps.related.title")}
+                          <td style={tdStyle}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                {entry.name}
+                              </span>
+                              {entry.protected ? (
+                                <span style={protectedBadgeStyle}>
+                                  {tk("apps.badge.protected")}
+                                </span>
+                              ) : null}
+                            </div>
+                            {entry.protectedReason ? (
+                              <div style={subtleTextStyle}>{t(entry.protectedReason)}</div>
+                            ) : null}
+                          </td>
+                          <td style={monoCellStyle}>{entry.version ?? "-"}</td>
+                          <td style={tdStyle}>{entry.publisher ?? "-"}</td>
+                          <td style={tdStyle}>
+                            <Badge
+                              text={entry.platform === "mac" ? "macOS" : "Windows"}
+                              color={
+                                entry.platform === "mac"
+                                  ? "var(--accent-cyan)"
+                                  : "var(--accent-yellow)"
+                              }
+                            />
+                          </td>
+                          <td style={{ ...tdStyle, maxWidth: "340px" }}>
+                            <CopyableValue
+                              value={entry.installLocation ?? entry.launchPath ?? ""}
+                              emptyValue="-"
+                              fontSize="12px"
+                              color="var(--text-muted)"
+                              multiline
+                              maxWidth="340px"
+                            />
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                            <button
+                              type="button"
+                              onClick={() => void handleToggleRelatedData(entry)}
+                              style={openBtn}
+                            >
+                              {expandedAppId === entry.id
+                                ? tk("apps.action.hide_data")
+                                : tk("apps.action.related_data")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleOpenLocation(entry.id)}
+                              style={openBtn}
+                            >
+                              {tk("apps.action.open")}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleUninstall(entry)}
+                              disabled={entry.protected || busyAppId === entry.id}
+                              style={{
+                                ...actionBtnStyle,
+                                opacity:
+                                  entry.protected || busyAppId === entry.id ? 0.55 : 1,
+                                cursor:
+                                  entry.protected || busyAppId === entry.id
+                                    ? "default"
+                                    : "pointer",
+                              }}
+                            >
+                              {busyAppId === entry.id
+                                ? tk("apps.action.working")
+                                : entry.platform === "mac"
+                                  ? tk("apps.action.move_to_trash")
+                                  : entry.uninstallKind === "open_settings"
+                                    ? tk("apps.action.open_system_settings")
+                                    : tk("apps.action.uninstall")}
+                            </button>
+                          </td>
+                        </tr>
+                        {expandedAppId === entry.id ? (
+                          <tr style={rowStyle}>
+                            <td colSpan={6} style={{ padding: "0 6px 12px 6px" }}>
+                              <div style={relatedPanelStyle}>
+                                <div style={detailsHeaderStyle}>
+                                  <div>
+                                    <div style={detailsTitleStyle}>{tk("apps.related.title")}</div>
+                                    <div style={detailsBodyTextStyle}>
+                                      {tk("apps.related.description")}
+                                    </div>
                                   </div>
-                                  <div
-                                    style={{
-                                      fontSize: "12px",
-                                      color: "var(--text-muted)",
-                                      marginTop: "3px",
-                                      lineHeight: 1.5,
-                                    }}
-                                  >
-                                    {tk("apps.related.description")}
+                                  <div style={detailsMetaStyle}>
+                                    {tk("common.selected", {
+                                      count:
+                                        (selectedRelatedIdsByAppId[entry.id] ?? []).length,
+                                    })}
                                   </div>
                                 </div>
-                                <div
-                                  style={{
-                                    fontSize: "12px",
-                                    color: "var(--text-secondary)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {tk("common.selected", {
-                                    count: (
-                                      selectedRelatedIdsByAppId[entry.id] ?? []
-                                    ).length,
-                                  })}
-                                </div>
-                              </div>
-
-                              {relatedLoadingAppId === entry.id ? (
-                                <div style={relatedEmptyStyle}>
-                                  {tk("apps.related.loading")}
-                                </div>
-                              ) : (relatedDataByAppId[entry.id] ?? [])
-                                  .length === 0 ? (
-                                <div style={relatedEmptyStyle}>
-                                  {tk("apps.related.empty")}
-                                </div>
-                              ) : (
-                                <div style={{ display: "grid", gap: "8px" }}>
-                                  {(relatedDataByAppId[entry.id] ?? []).map(
-                                    (item) => {
+                                {relatedLoadingAppId === entry.id ? (
+                                  <div style={relatedEmptyStyle}>
+                                    {tk("apps.related.loading")}
+                                  </div>
+                                ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
+                                  <div style={relatedEmptyStyle}>
+                                    {tk("apps.related.empty")}
+                                  </div>
+                                ) : (
+                                  <div style={{ display: "grid", gap: "8px" }}>
+                                    {(relatedDataByAppId[entry.id] ?? []).map((item) => {
                                       const checked = (
-                                        selectedRelatedIdsByAppId[entry.id] ??
-                                        []
+                                        selectedRelatedIdsByAppId[entry.id] ?? []
                                       ).includes(item.id);
                                       return (
-                                        <label
-                                          key={item.id}
-                                          style={relatedItemStyle}
-                                        >
+                                        <label key={item.id} style={relatedItemStyle}>
                                           <input
                                             type="checkbox"
                                             checked={checked}
                                             onChange={() =>
-                                              handleToggleRelatedId(
-                                                entry.id,
-                                                item.id,
-                                              )
+                                              handleToggleRelatedId(entry.id, item.id)
                                             }
                                           />
-                                          <div
-                                            style={{
-                                              display: "grid",
-                                              gap: "3px",
-                                            }}
-                                          >
-                                            <span
-                                              style={{
-                                                fontSize: "13px",
-                                                fontWeight: 600,
-                                                color: "var(--text-primary)",
-                                              }}
-                                            >
-                                              {item.label}
-                                            </span>
-                                            <div
-                                              style={{
-                                                fontSize: "12px",
-                                                color: "var(--text-muted)",
-                                              }}
-                                            >
+                                          <div style={{ display: "grid", gap: "3px" }}>
+                                            <span style={detailsTitleStyle}>{item.label}</span>
+                                            <div style={detailsBodyTextStyle}>
                                               <CopyableValue
                                                 value={item.path}
                                                 fontSize="12px"
@@ -1017,26 +791,31 @@ export function AppsPage() {
                                           </div>
                                         </label>
                                       );
-                                    },
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
-        </div>
+        </section>
       ) : activeTab === "leftover" ? (
-        <div style={{ display: "grid", gap: "12px" }}>
-          <div style={stickyTabControlsWrapStyle}>
-            <div style={tabControlsStyle}>
+        <section style={sectionStyle}>
+          <div style={headerStyle}>
+            <div style={titleRowStyle}>
+              <span style={titleStyle}>{tk("apps.tab.leftover")}</span>
+              <span style={badgeStyle}>{filteredLeftovers.length}</span>
+            </div>
+            <div style={actionsStyle}>
               <button
+                type="button"
                 onClick={() => void refresh("leftover")}
                 disabled={refreshingTab === "leftover"}
                 style={secondaryBtnStyle(refreshingTab === "leftover")}
@@ -1045,26 +824,12 @@ export function AppsPage() {
                   ? tk("common.refreshing")
                   : tk("apps.action.refresh")}
               </button>
-              <input
+              <SearchInput
                 value={leftoverSearch.draft}
-                onChange={(e) => leftoverSearch.setDraft(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") leftoverSearch.apply();
-                }}
+                onChange={leftoverSearch.setDraft}
+                onClear={leftoverSearch.clear}
                 placeholder={tk("apps.search.leftover_placeholder")}
-                aria-label={tk("apps.search.leftover_placeholder")}
-                style={{ ...inputStyle, minWidth: "220px", flex: "1 1 220px" }}
               />
-              <button onClick={leftoverSearch.apply} style={btnStyle}>
-                {tk("common.search")}
-              </button>
-              <button
-                onClick={leftoverSearch.clear}
-                disabled={leftoverSearch.isEmpty}
-                style={secondaryBtnStyle(leftoverSearch.isEmpty)}
-              >
-                {tk("common.clear")}
-              </button>
               <select
                 value={leftoverPlatformFilter}
                 onChange={(e) =>
@@ -1079,9 +844,7 @@ export function AppsPage() {
               <select
                 value={leftoverConfidenceFilter}
                 onChange={(e) =>
-                  setLeftoverConfidenceFilter(
-                    e.target.value as ConfidenceFilter,
-                  )
+                  setLeftoverConfidenceFilter(e.target.value as ConfidenceFilter)
                 }
                 style={inputStyle}
               >
@@ -1092,17 +855,66 @@ export function AppsPage() {
               </select>
               <select
                 value={leftoverSort}
-                onChange={(e) =>
-                  setLeftoverSort(e.target.value as LeftoverSort)
-                }
+                onChange={(e) => setLeftoverSort(e.target.value as LeftoverSort)}
                 style={inputStyle}
               >
                 <option value="size">{tk("apps.sort.size")}</option>
                 <option value="priority">{tk("apps.sort.priority")}</option>
                 <option value="name">{tk("apps.sort.name")}</option>
               </select>
+              <button
+                type="button"
+                onClick={() => void handleRemoveSelectedLeftovers()}
+                disabled={leftoverBusy || selectedLeftoverIds.length === 0}
+                style={{
+                  ...actionBtnStyle,
+                  opacity:
+                    leftoverBusy || selectedLeftoverIds.length === 0 ? 0.55 : 1,
+                  cursor:
+                    leftoverBusy || selectedLeftoverIds.length === 0
+                      ? "default"
+                      : "pointer",
+                }}
+              >
+                {leftoverBusy
+                  ? tk("apps.action.working")
+                  : tk("apps.action.move_selected_to_trash")}
+              </button>
             </div>
           </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <StatusMessage message={tk("apps.helper.leftover")} />
+          </div>
+          <div style={infoBarStyle}>
+            <span style={infoLabelStyle}>
+              {leftoverSizePendingCount > 0
+                ? tk("apps.status.leftover_sizes_loading", {
+                    ready: leftoverSizeReadyCount,
+                    total: leftoverItems.length,
+                    remaining: leftoverSizePendingCount,
+                  })
+                : tk("apps.status.leftover_sizes_ready", {
+                    count: leftoverItems.length,
+                  })}
+            </span>
+            <span style={infoReasonStyle}>
+              {leftoverSearch.applied
+                ? `${tk("apps.search.label")}: ${leftoverSearch.applied}`
+                : tk("apps.selection.leftover_summary", {
+                    high: selectedLeftoverItems.filter(
+                      (item) => item.confidence === "high",
+                    ).length,
+                    medium: selectedLeftoverItems.filter(
+                      (item) => item.confidence === "medium",
+                    ).length,
+                    low: selectedLeftoverItems.filter(
+                      (item) => item.confidence === "low",
+                    ).length,
+                  })}
+            </span>
+          </div>
+
           {loadErrors.leftover && leftoverItems.length === 0 ? (
             <StatusMessage
               tone="error"
@@ -1121,295 +933,171 @@ export function AppsPage() {
             <StatusMessage message={tk("apps.empty.leftover")} />
           ) : (
             <>
-              <div style={infoBarStyle}>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {refreshingTab === "leftover" ? (
-                    <span style={refreshingHintStyle}>
-                      <span style={refreshDotStyle} />
-                      {tk("common.refreshing")}
-                    </span>
-                  ) : (
-                    tk("apps.helper.leftover")
-                  )}
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {leftoverSort === "size"
-                    ? leftoverSizePendingCount > 0
-                      ? tk("apps.sort.size_pending_detail")
-                      : tk("apps.sort.size_detail")
-                    : leftoverSort === "priority"
-                      ? tk("apps.sort.priority_detail")
-                      : tk("apps.sort.name_detail")}
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {leftoverSizePendingCount > 0 ? (
-                    <span style={refreshingHintStyle}>
-                      <span style={refreshDotStyle} />
-                      {tk("apps.status.leftover_sizes_loading", {
-                        ready: leftoverSizeReadyCount,
-                        total: leftoverItems.length,
-                        remaining: leftoverSizePendingCount,
-                      })}
-                    </span>
-                  ) : (
-                    tk("apps.status.leftover_sizes_ready", {
-                      count: leftoverItems.length,
-                    })
-                  )}
-                </span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {tk("common.selected", {
-                    count: selectedFilteredLeftoverCount,
-                  })}
-                </span>
-              </div>
-              <div style={bulkToggleRowStyle}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "var(--text-secondary)",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={allFilteredLeftoversChecked}
-                    disabled={filteredLeftovers.length === 0}
-                    onChange={(event) => {
-                      if (event.target.checked) {
-                        setSelectedLeftoverIds((current) => {
-                          const next = new Set(current);
-                          filteredLeftovers.forEach((item) =>
-                            next.add(item.id),
-                          );
-                          return [...next];
-                        });
-                      } else {
-                        setSelectedLeftoverIds((current) =>
-                          current.filter(
-                            (itemId) =>
-                              !filteredLeftovers.some(
-                                (item) => item.id === itemId,
-                              ),
-                          ),
-                        );
-                      }
-                    }}
-                  />
-                  <span>
-                    {tk("apps.count.leftover_summary", {
-                      count: filteredLeftovers.length,
-                    })}
-                  </span>
-                </label>
-                <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                  {tk("apps.selection.leftover_summary", {
-                    high: selectedLeftoverItems.filter(
-                      (item) => item.confidence === "high",
-                    ).length,
-                    medium: selectedLeftoverItems.filter(
-                      (item) => item.confidence === "medium",
-                    ).length,
-                    low: selectedLeftoverItems.filter(
-                      (item) => item.confidence === "low",
-                    ).length,
-                  })}
-                </span>
-              </div>
               <StatusMessage message={tk("apps.danger.leftover")} />
-              <div
-                style={{ display: "grid", gap: "10px", paddingBottom: "84px" }}
-              >
-                {filteredLeftovers.map((item) => {
-                  const checked = selectedLeftoverIds.includes(item.id);
-                  return (
-                    <div key={item.id} style={leftoverCardStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: "12px",
-                        }}
-                      >
+              <div style={tableWrapStyle}>
+                <table style={{ ...tableStyle, minWidth: "980px" }}>
+                  <thead>
+                    <tr style={stickyHeaderRowStyle}>
+                      <th style={{ ...thStyle, width: "44px" }}>
                         <input
-                          id={`leftover-${item.id}`}
                           type="checkbox"
-                          checked={checked}
-                          onChange={() => handleToggleLeftoverId(item.id)}
-                          style={{ marginTop: "3px" }}
+                          checked={allFilteredLeftoversChecked}
+                          disabled={filteredLeftovers.length === 0}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setSelectedLeftoverIds((current) => {
+                                const next = new Set(current);
+                                filteredLeftovers.forEach((item) => next.add(item.id));
+                                return [...next];
+                              });
+                            } else {
+                              setSelectedLeftoverIds((current) =>
+                                current.filter(
+                                  (itemId) =>
+                                    !filteredLeftovers.some((item) => item.id === itemId),
+                                ),
+                              );
+                            }
+                          }}
                         />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              gap: "12px",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <div style={{ minWidth: 0, flex: "1 1 220px" }}>
-                              <div
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: 700,
-                                  color: "var(--text-primary)",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                <label
-                                  htmlFor={`leftover-${item.id}`}
-                                  style={{ cursor: "pointer" }}
-                                >
+                      </th>
+                      <th style={thStyle}>{tk("apps.table.name")}</th>
+                      <th style={thStyle}>{tk("apps.confidence.all")}</th>
+                      <th style={thStyle}>{tk("apps.table.platform")}</th>
+                      <th style={{ ...thStyle, textAlign: "right" }}>{t("Size")}</th>
+                      <th style={thStyle}>{tk("apps.table.location")}</th>
+                      <th style={{ ...thStyle, textAlign: "right", width: "180px" }}>
+                        {tk("apps.table.actions")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLeftovers.map((item) => {
+                      const checked = selectedLeftoverIds.includes(item.id);
+                      return (
+                        <Fragment key={item.id}>
+                          <tr style={rowStyle}>
+                            <td style={tdStyle}>
+                              <input
+                                id={`leftover-${item.id}`}
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => handleToggleLeftoverId(item.id)}
+                              />
+                            </td>
+                            <td style={tdStyle}>
+                              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                <label htmlFor={`leftover-${item.id}`} style={{ cursor: "pointer" }}>
                                   {item.appName}
                                 </label>
                               </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "6px",
-                                  flexWrap: "wrap",
-                                  marginTop: "6px",
-                                }}
+                              <div style={subtleTextStyle}>{item.label}</div>
+                            </td>
+                            <td style={tdStyle}>
+                              <Badge
+                                text={getConfidenceLabel(item.confidence, tk)}
+                                color={getConfidenceColor(item.confidence)}
+                              />
+                            </td>
+                            <td style={tdStyle}>
+                              <Badge
+                                text={item.platform === "mac" ? "macOS" : "Windows"}
+                                color={
+                                  item.platform === "mac"
+                                    ? "var(--accent-cyan)"
+                                    : "var(--accent-yellow)"
+                                }
+                              />
+                            </td>
+                            <td style={{ ...monoCellStyle, textAlign: "right" }}>
+                              {item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : "-"}
+                            </td>
+                            <td style={{ ...tdStyle, maxWidth: "340px" }}>
+                              <CopyableValue
+                                value={item.path}
+                                fontSize="12px"
+                                color="var(--text-muted)"
+                                multiline
+                                maxWidth="340px"
+                              />
+                            </td>
+                            <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedLeftoverId((current) =>
+                                    current === item.id ? null : item.id,
+                                  )
+                                }
+                                style={openBtn}
                               >
-                                <Badge
-                                  text={
-                                    item.platform === "mac"
-                                      ? "macOS"
-                                      : "Windows"
-                                  }
-                                  color={
-                                    item.platform === "mac"
-                                      ? "var(--accent-cyan)"
-                                      : "var(--accent-yellow)"
-                                  }
-                                />
-                                <Badge
-                                  text={item.label}
-                                  color="var(--accent-green)"
-                                />
-                                {item.sizeBytes !== undefined && (
-                                  <Badge
-                                    text={formatBytes(item.sizeBytes)}
-                                    color="var(--accent-blue)"
-                                  />
-                                )}
-                                <Badge
-                                  text={getConfidenceLabel(item.confidence, tk)}
-                                  color={getConfidenceColor(item.confidence)}
-                                />
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                void handleOpenLeftoverPath(item.path);
-                              }}
-                              style={{ ...openBtn, marginRight: 0 }}
-                            >
-                              {tk("apps.action.open")}
-                            </button>
-                          </div>
-                          <div
-                            style={{
-                              marginTop: "10px",
-                            }}
-                          >
-                            <CopyableValue
-                              value={item.path}
-                              fontSize="12px"
-                              color="var(--text-muted)"
-                              multiline
-                            />
-                          </div>
-                          <div
-                            style={{
-                              display: "grid",
-                              gap: "6px",
-                              marginTop: "10px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "var(--text-secondary)",
-                                lineHeight: 1.55,
-                              }}
-                            >
-                              <strong style={{ color: "var(--text-primary)" }}>
-                                {tk("apps.reason.why")}
-                              </strong>{" "}
-                              {t(item.reason)}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "var(--text-secondary)",
-                                lineHeight: 1.55,
-                              }}
-                            >
-                              <strong style={{ color: "var(--text-primary)" }}>
-                                {tk("apps.reason.risk")}
-                              </strong>{" "}
-                              {t(item.risk)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={stickyActionBarStyle}>
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {tk("common.selected", {
-                    count: selectedFilteredLeftoverCount,
-                  })}
-                </div>
-                <button
-                  onClick={() => void handleRemoveSelectedLeftovers()}
-                  disabled={leftoverBusy || selectedLeftoverIds.length === 0}
-                  style={{
-                    ...actionBtnStyle,
-                    minWidth: "170px",
-                    opacity:
-                      leftoverBusy || selectedLeftoverIds.length === 0
-                        ? 0.55
-                        : 1,
-                    cursor:
-                      leftoverBusy || selectedLeftoverIds.length === 0
-                        ? "default"
-                        : "pointer",
-                  }}
-                >
-                  {leftoverBusy
-                    ? tk("apps.action.working")
-                    : tk("apps.action.move_selected_to_trash")}
-                </button>
+                                {expandedLeftoverId === item.id
+                                  ? tk("apps.action.hide_data")
+                                  : t("Details")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleOpenLeftoverPath(item.path)}
+                                style={openBtn}
+                              >
+                                {tk("apps.action.open")}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedLeftoverId === item.id ? (
+                            <tr style={rowStyle}>
+                              <td colSpan={7} style={{ padding: "0 8px 12px 8px" }}>
+                                <div style={detailPanelStyle}>
+                                  <div style={detailGridStyle}>
+                                    <div style={detailBlockStyle}>
+                                      <strong style={detailLabelStyle}>
+                                        {tk("apps.table.location")}
+                                      </strong>
+                                      <div style={detailValueStyle}>
+                                        <CopyableValue
+                                          value={item.path}
+                                          fontSize="12px"
+                                          color="var(--text-secondary)"
+                                          multiline
+                                        />
+                                      </div>
+                                    </div>
+                                    <div style={detailBlockStyle}>
+                                      <strong style={detailLabelStyle}>
+                                        {tk("apps.reason.why")}
+                                      </strong>
+                                      <div style={detailsBodyTextStyle}>{t(item.reason)}</div>
+                                    </div>
+                                    <div style={detailBlockStyle}>
+                                      <strong style={detailLabelStyle}>
+                                        {tk("apps.reason.risk")}
+                                      </strong>
+                                      <div style={detailsBodyTextStyle}>{t(item.risk)}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </>
           )}
-        </div>
+        </section>
       ) : (
-        <div style={{ display: "grid", gap: "12px" }}>
-          <div style={stickyTabControlsWrapStyle}>
-            <div style={tabControlsStyle}>
+        <section style={sectionStyle}>
+          <div style={headerStyle}>
+            <div style={titleRowStyle}>
+              <span style={titleStyle}>{tk("apps.tab.registry")}</span>
+              <span style={badgeStyle}>{filteredRegistry.length}</span>
+            </div>
+            <div style={actionsStyle}>
               <button
+                type="button"
                 onClick={() => void refresh("registry")}
                 disabled={refreshingTab === "registry"}
                 style={secondaryBtnStyle(refreshingTab === "registry")}
@@ -1418,28 +1106,45 @@ export function AppsPage() {
                   ? tk("common.refreshing")
                   : tk("apps.action.refresh")}
               </button>
-              <input
+              <SearchInput
                 value={registrySearch.draft}
-                onChange={(e) => registrySearch.setDraft(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") registrySearch.apply();
-                }}
+                onChange={registrySearch.setDraft}
+                onClear={registrySearch.clear}
                 placeholder={tk("apps.search.registry_placeholder")}
-                aria-label={tk("apps.search.registry_placeholder")}
-                style={{ ...inputStyle, minWidth: "220px", flex: "1 1 220px" }}
               />
-              <button onClick={registrySearch.apply} style={btnStyle}>
-                {tk("common.search")}
-              </button>
               <button
-                onClick={registrySearch.clear}
-                disabled={registrySearch.isEmpty}
-                style={secondaryBtnStyle(registrySearch.isEmpty)}
+                type="button"
+                onClick={() => void handleRemoveSelectedRegistry()}
+                disabled={registryBusy || selectedRegistryIds.length === 0}
+                style={{
+                  ...actionBtnStyle,
+                  opacity:
+                    registryBusy || selectedRegistryIds.length === 0 ? 0.55 : 1,
+                  cursor:
+                    registryBusy || selectedRegistryIds.length === 0
+                      ? "default"
+                      : "pointer",
+                }}
               >
-                {tk("common.clear")}
+                {registryBusy
+                  ? tk("apps.action.working")
+                  : tk("apps.action.remove_selected_registry")}
               </button>
             </div>
           </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <StatusMessage message={tk("apps.helper.registry")} />
+          </div>
+          <div style={infoBarStyle}>
+            <span style={infoLabelStyle}>{tk("apps.registry.warning")}</span>
+            <span style={infoReasonStyle}>
+              {registrySearch.applied
+                ? `${tk("apps.search.label")}: ${registrySearch.applied}`
+                : tk("common.selected", { count: selectedFilteredRegistryCount })}
+            </span>
+          </div>
+
           {loadErrors.registry && registryItems.length === 0 ? (
             <StatusMessage
               tone="error"
@@ -1461,144 +1166,68 @@ export function AppsPage() {
             />
           ) : (
             <>
-              <div style={infoBarStyle}>
-                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                  {refreshingTab === "registry" ? (
-                    <span style={refreshingHintStyle}>
-                      <span style={refreshDotStyle} />
-                      {tk("common.refreshing")}
-                    </span>
-                  ) : (
-                    tk("apps.helper.registry")
-                  )}
-                </span>
-                <span style={{ fontSize: "12px", color: "var(--accent-red)" }}>
-                  {tk("apps.registry.warning")}
-                </span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {tk("common.selected", {
-                    count: selectedFilteredRegistryCount,
-                  })}
-                </span>
-              </div>
-              <div style={bulkToggleRowStyle}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    color: "var(--text-secondary)",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={allFilteredRegistryChecked}
-                    disabled={filteredRegistry.length === 0}
-                    onChange={(event) => {
-                      if (event.target.checked) {
-                        setSelectedRegistryIds((current) => {
-                          const next = new Set(current);
-                          filteredRegistry.forEach((item) => next.add(item.id));
-                          return [...next];
-                        });
-                      } else {
-                        setSelectedRegistryIds((current) =>
-                          current.filter(
-                            (itemId) =>
-                              !filteredRegistry.some(
-                                (item) => item.id === itemId,
-                              ),
-                          ),
-                        );
-                      }
-                    }}
-                  />
-                  <span>
-                    {tk("apps.count.registry_summary", {
-                      count: filteredRegistry.length,
-                    })}
-                  </span>
-                </label>
-                <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                  {tk("apps.selection.registry_summary", {
-                    count: selectedRegistryItems.length,
-                  })}
-                </span>
-              </div>
-              <StatusMessage
-                tone="error"
-                message={tk("apps.danger.registry")}
-              />
-              <div
-                style={{ display: "grid", gap: "10px", paddingBottom: "84px" }}
-              >
-                {filteredRegistry.map((item) => {
-                  const checked = selectedRegistryIds.includes(item.id);
-                  return (
-                    <div key={item.id} style={leftoverCardStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: "12px",
-                        }}
-                      >
+              <StatusMessage tone="error" message={tk("apps.danger.registry")} />
+              <div style={tableWrapStyle}>
+                <table style={{ ...tableStyle, minWidth: "980px" }}>
+                  <thead>
+                    <tr style={stickyHeaderRowStyle}>
+                      <th style={{ ...thStyle, width: "44px" }}>
                         <input
-                          id={`registry-${item.id}`}
                           type="checkbox"
-                          checked={checked}
-                          onChange={() => handleToggleRegistryId(item.id)}
-                          style={{ marginTop: "3px" }}
+                          checked={allFilteredRegistryChecked}
+                          disabled={filteredRegistry.length === 0}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setSelectedRegistryIds((current) => {
+                                const next = new Set(current);
+                                filteredRegistry.forEach((item) => next.add(item.id));
+                                return [...next];
+                              });
+                            } else {
+                              setSelectedRegistryIds((current) =>
+                                current.filter(
+                                  (itemId) =>
+                                    !filteredRegistry.some((item) => item.id === itemId),
+                                ),
+                              );
+                            }
+                          }}
                         />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              gap: "12px",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <div style={{ minWidth: 0, flex: "1 1 220px" }}>
-                              <div
-                                style={{
-                                  fontSize: "14px",
-                                  fontWeight: 700,
-                                  color: "var(--text-primary)",
-                                  wordBreak: "break-word",
-                                }}
-                              >
-                                <label
-                                  htmlFor={`registry-${item.id}`}
-                                  style={{ cursor: "pointer" }}
-                                >
+                      </th>
+                      <th style={thStyle}>{tk("apps.table.name")}</th>
+                      <th style={thStyle}>{tk("apps.table.version")}</th>
+                      <th style={thStyle}>{tk("apps.table.publisher")}</th>
+                      <th style={thStyle}>{tk("apps.registry.install_location")}</th>
+                      <th style={{ ...thStyle, textAlign: "right", width: "140px" }}>
+                        {tk("apps.table.actions")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRegistry.map((item) => {
+                      const checked = selectedRegistryIds.includes(item.id);
+                      return (
+                        <Fragment key={item.id}>
+                          <tr style={rowStyle}>
+                            <td style={tdStyle}>
+                              <input
+                                id={`registry-${item.id}`}
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => handleToggleRegistryId(item.id)}
+                              />
+                            </td>
+                            <td style={tdStyle}>
+                              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                                <label htmlFor={`registry-${item.id}`} style={{ cursor: "pointer" }}>
                                   {item.appName}
                                 </label>
                               </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: "6px",
-                                  flexWrap: "wrap",
-                                  marginTop: "6px",
-                                }}
-                              >
-                                <Badge
-                                  text="Windows"
-                                  color="var(--accent-yellow)"
-                                />
+                              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "6px" }}>
+                                <Badge text="Windows" color="var(--accent-yellow)" />
                                 <Badge
                                   text={
-                                    item.installLocation
+                                    item.installLocationExists
                                       ? tk("apps.registry.install_missing")
                                       : tk("apps.registry.install_unavailable")
                                   }
@@ -1606,108 +1235,102 @@ export function AppsPage() {
                                 />
                                 <Badge
                                   text={
-                                    item.uninstallCommand
+                                    item.uninstallerExists
                                       ? tk("apps.registry.uninstaller_missing")
-                                      : tk(
-                                          "apps.registry.uninstall_unavailable",
-                                        )
+                                      : tk("apps.registry.uninstall_unavailable")
                                   }
                                   color="var(--accent-red)"
                                 />
                               </div>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              display: "grid",
-                              gap: "8px",
-                              marginTop: "10px",
-                            }}
-                          >
-                            <div style={detailBlockStyle}>
-                              <strong style={detailLabelStyle}>
-                                {tk("apps.registry.path")}
-                              </strong>
-                              <div style={detailValueStyle}>
-                                <CopyableValue
-                                  value={item.registryPath}
-                                  fontSize="12px"
-                                  color="var(--text-secondary)"
-                                  multiline
-                                />
-                              </div>
-                            </div>
-                            <div style={detailBlockStyle}>
-                              <strong style={detailLabelStyle}>
-                                {tk("apps.registry.install_location")}
-                              </strong>
-                              <div style={detailValueStyle}>
-                                <CopyableValue
-                                  value={item.installLocation ?? ""}
-                                  emptyValue="-"
-                                  fontSize="12px"
-                                  color="var(--text-secondary)"
-                                  multiline
-                                />
-                              </div>
-                            </div>
-                            <div style={detailBlockStyle}>
-                              <strong style={detailLabelStyle}>
-                                {tk("apps.registry.uninstall_command")}
-                              </strong>
-                              <div style={detailValueStyle}>
-                                <CopyableValue
-                                  value={item.uninstallCommand ?? ""}
-                                  emptyValue="-"
-                                  fontSize="12px"
-                                  color="var(--text-secondary)"
-                                  multiline
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={stickyActionBarStyle}>
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "var(--text-secondary)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {tk("common.selected", {
-                    count: selectedFilteredRegistryCount,
-                  })}
-                </div>
-                <button
-                  onClick={() => void handleRemoveSelectedRegistry()}
-                  disabled={registryBusy || selectedRegistryIds.length === 0}
-                  style={{
-                    ...actionBtnStyle,
-                    minWidth: "220px",
-                    opacity:
-                      registryBusy || selectedRegistryIds.length === 0
-                        ? 0.55
-                        : 1,
-                    cursor:
-                      registryBusy || selectedRegistryIds.length === 0
-                        ? "default"
-                        : "pointer",
-                  }}
-                >
-                  {registryBusy
-                    ? tk("apps.action.working")
-                    : tk("apps.action.remove_selected_registry")}
-                </button>
+                            </td>
+                            <td style={monoCellStyle}>{item.version ?? "-"}</td>
+                            <td style={tdStyle}>{item.publisher ?? "-"}</td>
+                            <td style={{ ...tdStyle, maxWidth: "320px" }}>
+                              <CopyableValue
+                                value={item.installLocation ?? ""}
+                                emptyValue="-"
+                                fontSize="12px"
+                                color="var(--text-muted)"
+                                multiline
+                                maxWidth="320px"
+                              />
+                            </td>
+                            <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedRegistryId((current) =>
+                                    current === item.id ? null : item.id,
+                                  )
+                                }
+                                style={openBtn}
+                              >
+                                {expandedRegistryId === item.id
+                                  ? tk("apps.action.hide_data")
+                                  : t("Details")}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedRegistryId === item.id ? (
+                            <tr style={rowStyle}>
+                              <td colSpan={6} style={{ padding: "0 8px 12px 8px" }}>
+                                <div style={detailPanelStyle}>
+                                  <div style={detailGridStyle}>
+                                    <div style={detailBlockStyle}>
+                                      <strong style={detailLabelStyle}>
+                                        {tk("apps.registry.path")}
+                                      </strong>
+                                      <div style={detailValueStyle}>
+                                        <CopyableValue
+                                          value={item.registryPath}
+                                          fontSize="12px"
+                                          color="var(--text-secondary)"
+                                          multiline
+                                        />
+                                      </div>
+                                    </div>
+                                    <div style={detailBlockStyle}>
+                                      <strong style={detailLabelStyle}>
+                                        {tk("apps.registry.install_location")}
+                                      </strong>
+                                      <div style={detailValueStyle}>
+                                        <CopyableValue
+                                          value={item.installLocation ?? ""}
+                                          emptyValue="-"
+                                          fontSize="12px"
+                                          color="var(--text-secondary)"
+                                          multiline
+                                        />
+                                      </div>
+                                    </div>
+                                    <div style={detailBlockStyle}>
+                                      <strong style={detailLabelStyle}>
+                                        {tk("apps.registry.uninstall_command")}
+                                      </strong>
+                                      <div style={detailValueStyle}>
+                                        <CopyableValue
+                                          value={item.uninstallCommand ?? ""}
+                                          emptyValue="-"
+                                          fontSize="12px"
+                                          color="var(--text-secondary)"
+                                          multiline
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </>
           )}
-        </div>
+        </section>
       )}
     </div>
   );
@@ -1764,6 +1387,17 @@ const btnStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const secondaryButtonStyle: React.CSSProperties = {
+  padding: "8px 14px",
+  fontSize: "13px",
+  fontWeight: 600,
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  background: "var(--bg-card-hover)",
+  color: "var(--text-primary)",
+  cursor: "pointer",
+};
+
 const inputStyle: React.CSSProperties = {
   padding: "7px 10px",
   fontSize: "12px",
@@ -1773,41 +1407,126 @@ const inputStyle: React.CSSProperties = {
   color: "var(--text-primary)",
 };
 
-const stickyHeaderStyle: React.CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 5,
-  paddingBottom: "8px",
-  marginBottom: "8px",
-  background: "color-mix(in srgb, var(--bg-primary) 92%, transparent)",
-  backdropFilter: "blur(10px)",
-};
-
-const tabControlsStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
+const pageHeaderStyle: React.CSSProperties = {
+  display: "grid",
   gap: "10px",
-  flexWrap: "wrap",
-  padding: "0 0 12px 0",
+  marginBottom: "16px",
 };
 
-const stickyTabControlsWrapStyle: React.CSSProperties = {
-  position: "sticky",
-  top: "112px",
-  zIndex: 4,
-  background: "color-mix(in srgb, var(--bg-primary) 94%, transparent)",
-  backdropFilter: "blur(10px)",
+const pageDescriptionStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-secondary)",
+  lineHeight: 1.6,
+};
+
+const pageTabsStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "4px",
+  background: "var(--bg-secondary)",
+  borderRadius: "8px",
+  padding: "3px",
+};
+
+const pageHelpStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
+  lineHeight: 1.6,
 };
 
 function secondaryBtnStyle(disabled: boolean): React.CSSProperties {
   return {
-    ...btnStyle,
-    background: "var(--bg-card-hover)",
-    color: "var(--text-primary)",
+    ...secondaryButtonStyle,
     opacity: disabled ? 0.55 : 1,
     cursor: disabled ? "default" : "pointer",
   };
 }
+
+const sectionStyle: React.CSSProperties = {
+  backgroundColor: "var(--bg-card)",
+  borderRadius: "var(--radius-lg)",
+  border: "1px solid var(--border)",
+  padding: "16px",
+};
+
+const headerStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "12px",
+  flexWrap: "wrap",
+  marginBottom: "16px",
+};
+
+const titleRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  minWidth: 0,
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: "14px",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-secondary)",
+};
+
+const badgeStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 600,
+  padding: "2px 8px",
+  borderRadius: "999px",
+  background: "var(--bg-card-hover)",
+  color: "var(--text-secondary)",
+  whiteSpace: "nowrap",
+};
+
+const actionsStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const searchWrapStyle: React.CSSProperties = {
+  position: "relative",
+  display: "inline-flex",
+  alignItems: "center",
+};
+
+const clearSearchButtonStyle: React.CSSProperties = {
+  position: "absolute",
+  right: "8px",
+  border: "none",
+  background: "transparent",
+  color: "var(--text-muted)",
+  cursor: "pointer",
+  fontSize: "14px",
+  padding: "0 2px",
+  lineHeight: 1,
+};
+
+const tableWrapStyle: React.CSSProperties = {
+  overflowX: "auto",
+  overflowY: "clip",
+};
+
+const tableStyle: React.CSSProperties = {
+  width: "100%",
+  minWidth: "860px",
+  borderCollapse: "collapse",
+  fontSize: "13px",
+};
+
+const stickyHeaderRowStyle: React.CSSProperties = {
+  borderBottom: "1px solid var(--border)",
+  position: "sticky",
+  top: 0,
+  background: "var(--bg-card)",
+  zIndex: 1,
+  boxShadow: "0 1px 0 var(--border)",
+};
 
 const thStyle: React.CSSProperties = {
   textAlign: "left",
@@ -1825,6 +1544,19 @@ const tdStyle: React.CSSProperties = {
   verticalAlign: "top",
   fontSize: "14px",
   lineHeight: 1.4,
+};
+
+const monoCellStyle: React.CSSProperties = {
+  ...tdStyle,
+  fontFamily: "monospace",
+  fontVariantNumeric: "tabular-nums",
+  whiteSpace: "nowrap",
+};
+
+const subtleTextStyle: React.CSSProperties = {
+  marginTop: "6px",
+  color: "var(--text-muted)",
+  lineHeight: 1.5,
 };
 
 const openBtn: React.CSSProperties = {
@@ -1900,45 +1632,33 @@ const infoBarStyle: React.CSSProperties = {
   gap: "10px",
   marginBottom: "12px",
   padding: "10px 14px",
-  background: "var(--bg-card)",
-  borderRadius: "var(--radius)",
+  background: "var(--bg-primary)",
+  borderRadius: "10px",
   border: "1px solid var(--border)",
   flexWrap: "wrap",
 };
 
-const refreshingHintStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "8px",
-  color: "var(--accent-blue)",
+const infoLabelStyle: React.CSSProperties = {
+  fontSize: "13px",
   fontWeight: 600,
+  color: "var(--text-primary)",
 };
 
-const refreshDotStyle: React.CSSProperties = {
-  width: "8px",
-  height: "8px",
-  borderRadius: "999px",
-  background: "var(--accent-blue)",
-  boxShadow: "0 0 0 0 color-mix(in srgb, var(--accent-blue) 36%, transparent)",
-  animation: "systemscope-refresh-pulse 1.1s ease-in-out infinite",
+const infoReasonStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-muted)",
 };
 
-const bulkToggleRowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  padding: "2px 4px",
-  flexWrap: "wrap",
-};
-
-const leftoverCardStyle: React.CSSProperties = {
-  display: "block",
-  padding: "16px",
-  background: "var(--bg-card)",
+const detailPanelStyle: React.CSSProperties = {
+  padding: "14px",
+  background: "var(--bg-primary)",
   border: "1px solid var(--border)",
   borderRadius: "12px",
-  cursor: "pointer",
+};
+
+const detailGridStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
 };
 
 const detailBlockStyle: React.CSSProperties = {
@@ -1959,21 +1679,66 @@ const detailValueStyle: React.CSSProperties = {
   lineHeight: 1.55,
 };
 
-const stickyActionBarStyle: React.CSSProperties = {
-  position: "sticky",
-  bottom: 0,
+const detailsHeaderStyle: React.CSSProperties = {
   display: "flex",
-  alignItems: "center",
   justifyContent: "space-between",
-  gap: "12px",
-  padding: "12px 14px",
-  background: "color-mix(in srgb, var(--bg-card) 92%, transparent)",
-  backdropFilter: "blur(12px)",
-  border: "1px solid var(--border)",
-  borderRadius: "12px",
-  boxShadow: "var(--shadow)",
+  alignItems: "center",
+  marginBottom: "10px",
+  gap: "10px",
   flexWrap: "wrap",
 };
+
+const detailsTitleStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+};
+
+const detailsBodyTextStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
+  lineHeight: 1.55,
+};
+
+const detailsMetaStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-secondary)",
+  fontWeight: 600,
+};
+
+function SearchInput({
+  value,
+  onChange,
+  onClear,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onClear: () => void;
+  placeholder: string;
+}) {
+  return (
+    <div style={searchWrapStyle}>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        style={{ ...inputStyle, minWidth: "240px", paddingRight: "30px" }}
+      />
+      {value ? (
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear search"
+          style={clearSearchButtonStyle}
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 function Badge({ text, color }: { text: string; color: string }) {
   return (
@@ -1986,26 +1751,6 @@ function Badge({ text, color }: { text: string; color: string }) {
         background: `${color}20`,
         color,
         whiteSpace: "nowrap",
-      }}
-    >
-      {text}
-    </span>
-  );
-}
-
-function StepBadge({ active, text }: { active: boolean; text: string }) {
-  return (
-    <span
-      style={{
-        fontSize: "11px",
-        fontWeight: 700,
-        padding: "2px 8px",
-        borderRadius: "999px",
-        background: active
-          ? "color-mix(in srgb, var(--accent-blue) 18%, transparent)"
-          : "var(--bg-primary)",
-        border: `1px solid ${active ? "var(--accent-blue)" : "var(--border)"}`,
-        color: active ? "var(--accent-blue)" : "var(--text-secondary)",
       }}
     >
       {text}
