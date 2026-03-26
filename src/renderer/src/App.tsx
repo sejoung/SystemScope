@@ -1,8 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Layout } from './components/Layout'
 import { ToastContainer } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { PageLoading } from './components/PageLoading'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessStore } from './stores/useProcessStore'
 import { useSystemStore } from './stores/useSystemStore'
@@ -10,12 +9,11 @@ import { useAlertStore } from './stores/useAlertStore'
 import { useInterval } from './hooks/useInterval'
 import { useIpcListener } from './hooks/useIpc'
 import { DashboardPage } from './pages/DashboardPage'
-
-const DiskAnalysisPage = lazy(() => import('./pages/DiskAnalysisPage').then((m) => ({ default: m.DiskAnalysisPage })))
-const DockerPage = lazy(() => import('./pages/DockerPage').then((m) => ({ default: m.DockerPage })))
-const ProcessPage = lazy(() => import('./pages/ProcessPage').then((m) => ({ default: m.ProcessPage })))
-const AppsPage = lazy(() => import('./pages/AppsPage').then((m) => ({ default: m.AppsPage })))
-const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
+import { DockerPage } from './pages/DockerPage'
+import { ProcessPage } from './pages/ProcessPage'
+import { AppsPage } from './pages/AppsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import type { ShutdownState } from '@shared/types'
 import { isSystemStats, isAlertArray, isShutdownState, isUpdateInfo, isUpdateStatus, isProcessSnapshot } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
@@ -238,13 +236,11 @@ function App() {
           resetKey={currentPage}
         >
           {currentPage === 'dashboard' && <DashboardPage />}
-          <Suspense fallback={<PageLoading />}>
-            {currentPage === 'disk' && <DiskAnalysisPage />}
-            {currentPage === 'docker' && <DockerPage />}
-            {currentPage === 'process' && <ProcessPage />}
-            {currentPage === 'apps' && <AppsPage />}
-            {currentPage === 'settings' && <SettingsPage />}
-          </Suspense>
+          {currentPage === 'disk' && <DiskAnalysisPage />}
+          {currentPage === 'docker' && <DockerPage />}
+          {currentPage === 'process' && <ProcessPage />}
+          {currentPage === 'apps' && <AppsPage />}
+          {currentPage === 'settings' && <SettingsPage />}
         </ErrorBoundary>
       </Layout>
       {shutdownState && <ShutdownOverlay state={shutdownState} title={tk('app.shutdown.title')} />}
