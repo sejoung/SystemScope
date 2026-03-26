@@ -69,7 +69,7 @@ export const useDiskStore = create<DiskState>((set, get) => ({
   userSpaceFetched: false,
   growthView: null,
   growthViewLoading: false,
-  growthViewPeriod: '7d',
+  growthViewPeriod: '24h',
   quickScan: QUICK_SCAN_INITIAL,
 
   setScanResult: (result) => set({ scanResult: result, isScanning: false }),
