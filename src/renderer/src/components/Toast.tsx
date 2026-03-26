@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 
 interface ToastMessage {
@@ -38,6 +38,15 @@ export function ToastContainer() {
   const messages = useToast((s) => s.messages);
   const hide = useToast((s) => s.hide);
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
+  const timersRef = useRef<
+    Map<
+      string,
+      {
+        hideVisibleTimer: ReturnType<typeof setTimeout>;
+        removeToastTimer: ReturnType<typeof setTimeout>;
+      }
+    >
+  >(new Map());
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -52,23 +61,50 @@ export function ToastContainer() {
     if (nextVisibleIds.length === 0) return;
 
     setVisibleIds((current) => [...current, ...nextVisibleIds]);
-    const timers = nextVisibleIds.flatMap((id) => {
+    nextVisibleIds.forEach((id) => {
       const message = messages.find((m) => m.id === id);
       const duration = message?.tone === "danger" ? 6000 : 3000;
-      return [
-        setTimeout(() => {
-          setVisibleIds((current) => current.filter((value) => value !== id));
-        }, duration),
-        setTimeout(() => {
-          hide(id);
-        }, duration + 300),
-      ];
-    });
 
-    return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-    };
+      const hideVisibleTimer = setTimeout(() => {
+        timersRef.current.delete(id);
+        setVisibleIds((current) => current.filter((value) => value !== id));
+      }, duration);
+
+      const removeToastTimer = setTimeout(() => {
+        timersRef.current.delete(id);
+        hide(id);
+      }, duration + 300);
+
+      timersRef.current.set(id, {
+        hideVisibleTimer,
+        removeToastTimer,
+      });
+    });
   }, [messages, hide, visibleIds]);
+
+  useEffect(() => {
+    const currentMessageIds = new Set(messages.map((message) => message.id));
+
+    for (const [id, timers] of timersRef.current) {
+      if (currentMessageIds.has(id)) {
+        continue;
+      }
+
+      clearTimeout(timers.hideVisibleTimer);
+      clearTimeout(timers.removeToastTimer);
+      timersRef.current.delete(id);
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      for (const timers of timersRef.current.values()) {
+        clearTimeout(timers.hideVisibleTimer);
+        clearTimeout(timers.removeToastTimer);
+      }
+      timersRef.current.clear();
+    };
+  }, []);
 
   if (messages.length === 0) return null;
 
