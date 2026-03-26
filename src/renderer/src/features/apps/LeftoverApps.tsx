@@ -1,17 +1,14 @@
 import {
   Fragment,
-  startTransition,
-  useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
-import type { AppLeftoverDataItem } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
 import { useVisibleIds } from "../../hooks/useVisibleIds";
+import { useLeftoverAppsStore } from "../../stores/useLeftoverAppsStore";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { formatBytes } from "../../utils/format";
@@ -54,17 +51,15 @@ import {
   titleStyle,
 } from "./appsShared";
 
-const LEFTOVER_SIZE_IDLE_BATCH_SIZE = 1;
-const LEFTOVER_SIZE_PRIORITY_BATCH_SIZE = 4;
-const LEFTOVER_SIZE_IDLE_DELAY_MS = 350;
-
 export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
   const { t, tk } = useI18n();
-
-  const [leftoverItems, setLeftoverItems] = useState<AppLeftoverDataItem[]>([]);
-  const [loadError, setLoadError] = useState<string | undefined>();
-  const [refreshing, setRefreshing] = useState(false);
+  const leftoverItems = useLeftoverAppsStore((state) => state.items);
+  const loadError = useLeftoverAppsStore((state) => state.loadError);
+  const refreshing = useLeftoverAppsStore((state) => state.refreshing);
+  const ensureLoaded = useLeftoverAppsStore((state) => state.ensureLoaded);
+  const refreshLeftovers = useLeftoverAppsStore((state) => state.refresh);
+  const setHydrationHints = useLeftoverAppsStore((state) => state.setHydrationHints);
   const search = useSearchFilter();
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("all");
@@ -72,31 +67,22 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const leftoverSizeHydratingRef = useRef(false);
-  const showToastRef = useRef(showToast);
-  showToastRef.current = showToast;
-  const tkRef = useRef(tk);
-  tkRef.current = tk;
-
-  const loadLeftovers = useCallback(async () => {
-    const res = await window.systemScope.listLeftoverAppData();
-    if (res.ok && res.data) {
-      const items = res.data as AppLeftoverDataItem[];
-      setLeftoverItems(items);
-      setLoadError(undefined);
-      setSelectedIds((current) =>
-        current.filter((id) => items.some((entry) => entry.id === id)),
-      );
-    } else {
-      const message = res.error?.message ?? tkRef.current("apps.error.load_leftover");
-      setLoadError(message);
-      showToastRef.current(message);
-    }
-  }, []);
 
   useEffect(() => {
-    void loadLeftovers();
-  }, [loadLeftovers, refreshToken]);
+    void ensureLoaded();
+  }, [ensureLoaded]);
+
+  useEffect(() => {
+    if (refreshToken !== undefined) {
+      void refreshLeftovers();
+    }
+  }, [refreshLeftovers, refreshToken]);
+
+  useEffect(() => {
+    setSelectedIds((current) =>
+      current.filter((id) => leftoverItems.some((entry) => entry.id === id)),
+    );
+  }, [leftoverItems]);
 
   const filteredLeftovers = useMemo(() => {
     const q = search.applied.trim().toLowerCase();
@@ -137,52 +123,15 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   const { visibleIdsRef, visibilityTrigger, observeRow } = useVisibleIds(leftoverPendingIdSet);
 
   useEffect(() => {
-    if (leftoverSizeHydratingRef.current) return;
-
-    const sourceItems = leftoverSort === "size" ? filteredLeftovers : leftoverItems;
-    const batchSize = leftoverSort === "size" ? LEFTOVER_SIZE_PRIORITY_BATCH_SIZE : LEFTOVER_SIZE_IDLE_BATCH_SIZE;
-    const allPending = sourceItems.filter((item) => item.sizeBytes === undefined);
-    if (allPending.length === 0) return;
-
-    const visiblePending = allPending.filter((item) => visibleIdsRef.current.has(item.id));
-    const pendingIds = (visiblePending.length > 0 ? visiblePending : allPending)
-      .slice(0, batchSize)
+    const visiblePendingIds = filteredLeftovers
+      .filter((item) => item.sizeBytes === undefined && visibleIdsRef.current.has(item.id))
       .map((item) => item.id);
-    if (pendingIds.length === 0) return;
-
-    let cancelled = false;
-    let idleTimerId: number | null = null;
-
-    const runHydration = () => {
-      leftoverSizeHydratingRef.current = true;
-      void (async () => {
-        const res = await window.systemScope.hydrateLeftoverAppDataSizes(pendingIds);
-        leftoverSizeHydratingRef.current = false;
-        if (cancelled) return;
-
-        if (res.ok && res.data) {
-          const hydratedItems = res.data as AppLeftoverDataItem[];
-          startTransition(() => {
-            setLeftoverItems((current) => mergeHydratedLeftovers(current, hydratedItems));
-          });
-          return;
-        }
-
-        showToastRef.current(res.error?.message ?? tkRef.current("apps.error.load_leftover"));
-      })();
-    };
-
-    if (leftoverSort === "size") {
-      runHydration();
-    } else {
-      idleTimerId = window.setTimeout(runHydration, LEFTOVER_SIZE_IDLE_DELAY_MS);
-    }
+    setHydrationHints(visiblePendingIds, leftoverSort === "size");
 
     return () => {
-      cancelled = true;
-      if (idleTimerId !== null) window.clearTimeout(idleTimerId);
+      setHydrationHints([], false);
     };
-  }, [filteredLeftovers, leftoverItems, leftoverSort, visibilityTrigger, visibleIdsRef]);
+  }, [filteredLeftovers, leftoverSort, setHydrationHints, visibilityTrigger, visibleIdsRef]);
 
   const selectedFilteredCount = useMemo(
     () => filteredLeftovers.filter((item) => selectedIds.includes(item.id)).length,
@@ -196,9 +145,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   );
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadLeftovers();
-    setRefreshing(false);
+    await refreshLeftovers();
   };
 
   const handleToggleId = (itemId: string) => {
@@ -225,7 +172,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
         ? tk("apps.toast.leftover_all", { count: result.deletedPaths.length })
         : tk("apps.toast.leftover_partial", { deletedCount: result.deletedPaths.length, failedCount: result.failedPaths.length }),
     );
-    await loadLeftovers();
+    await refreshLeftovers();
   };
 
   const handleOpenPath = async (targetPath: string) => {
@@ -401,12 +348,4 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
       )}
     </section>
   );
-}
-
-function mergeHydratedLeftovers(
-  currentItems: AppLeftoverDataItem[],
-  hydratedItems: AppLeftoverDataItem[],
-): AppLeftoverDataItem[] {
-  const hydratedById = new Map(hydratedItems.map((item) => [item.id, item]));
-  return currentItems.map((item) => hydratedById.get(item.id) ?? item);
 }
