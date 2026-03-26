@@ -1,7 +1,7 @@
 import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
 import { GaugeChart } from '../../components/GaugeChart'
-import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWidth'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 
@@ -9,6 +9,7 @@ export function MemoryWidget() {
   const memory = useSystemStore((s) => s.current?.memory)
   const { tk } = useI18n()
   const [ref, width] = useContainerWidth(280)
+  const isCompact = useCompactLayout(width)
 
   if (!memory) {
     return (
@@ -19,7 +20,6 @@ export function MemoryWidget() {
   }
 
   const color = memory.usage > 90 ? 'var(--accent-red)' : memory.usage > 70 ? 'var(--accent-yellow)' : 'var(--accent-green)'
-  const isCompact = width < 300
 
   return (
     <Accordion title={tk('monitoring.memory.title')} defaultOpen>

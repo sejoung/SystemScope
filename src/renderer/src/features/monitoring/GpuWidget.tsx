@@ -1,7 +1,7 @@
 import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
 import { GaugeChart } from '../../components/GaugeChart'
-import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWidth'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 
@@ -9,6 +9,7 @@ export function GpuWidget() {
   const gpu = useSystemStore((s) => s.current?.gpu)
   const { tk } = useI18n()
   const [ref, width] = useContainerWidth(280)
+  const isCompact = useCompactLayout(width)
 
   if (!gpu) {
     return (
@@ -55,7 +56,6 @@ export function GpuWidget() {
     gpu.memoryTotal && gpu.memoryUsed
       ? Math.round((gpu.memoryUsed / gpu.memoryTotal) * 10000) / 100
       : null
-  const isCompact = width < 300
   const primaryValue = gpu.usage ?? memUsage
   const primaryColor =
     primaryValue !== null && primaryValue > 80

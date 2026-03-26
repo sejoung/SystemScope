@@ -2,13 +2,14 @@ import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
 import { GaugeChart } from '../../components/GaugeChart'
 import { ProgressBar } from '../../components/ProgressBar'
-import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWidth'
 import { useI18n } from '../../i18n/useI18n'
 
 export function CpuWidget() {
   const cpu = useSystemStore((s) => s.current?.cpu)
   const { tk } = useI18n()
   const [ref, width] = useContainerWidth(280)
+  const isCompact = useCompactLayout(width)
 
   if (!cpu) {
     return (
@@ -18,7 +19,6 @@ export function CpuWidget() {
     )
   }
 
-  const isCompact = width < 300
   const avgCore = cpu.cores.length > 0
     ? cpu.cores.reduce((sum, value) => sum + value, 0) / cpu.cores.length
     : cpu.usage

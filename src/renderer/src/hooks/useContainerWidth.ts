@@ -25,3 +25,23 @@ export function useContainerWidth(defaultWidth: number = 400): [React.RefObject<
 
   return [ref, width]
 }
+
+export function useCompactLayout(
+  width: number,
+  options: { threshold?: number; hysteresis?: number } = {}
+): boolean {
+  const { threshold = 300, hysteresis = 24 } = options
+  const [compact, setCompact] = useState(width < threshold)
+
+  useEffect(() => {
+    setCompact((current) => {
+      if (current) {
+        return width <= threshold + hysteresis ? current : false
+      }
+
+      return width < threshold - hysteresis ? true : current
+    })
+  }, [hysteresis, threshold, width])
+
+  return compact
+}

@@ -50,7 +50,7 @@ export function ToastContainer() {
 
   useEffect(() => {
     if (messages.length === 0) {
-      setVisibleIds([]);
+      setVisibleIds((current) => (current.length === 0 ? current : []));
       return;
     }
 

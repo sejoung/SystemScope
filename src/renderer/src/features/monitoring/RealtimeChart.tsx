@@ -78,10 +78,10 @@ export function RealtimeChart() {
               }}
             />
             <Legend wrapperStyle={{ fontSize: '11px', color: 'var(--text-secondary)' }} />
-            <Line type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name={tk('monitoring.cpu.title')} />
-            <Line type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name={tk('settings.alerts.memory')} />
-            <Line type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name={tk('monitoring.gpu.title')} />
-            <Line yAxisId="iops" type="monotone" dataKey="iops" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} name={tk('monitoring.disk.total_iops')} />
+            <Line isAnimationActive={false} type="monotone" dataKey="cpu" stroke="var(--accent-blue)" strokeWidth={2} dot={false} name={tk('monitoring.cpu.title')} />
+            <Line isAnimationActive={false} type="monotone" dataKey="memory" stroke="var(--accent-green)" strokeWidth={2} dot={false} name={tk('settings.alerts.memory')} />
+            <Line isAnimationActive={false} type="monotone" dataKey="gpu" stroke="var(--accent-purple)" strokeWidth={2} dot={false} name={tk('monitoring.gpu.title')} />
+            <Line isAnimationActive={false} yAxisId="iops" type="monotone" dataKey="iops" stroke="var(--accent-cyan)" strokeWidth={2} dot={false} name={tk('monitoring.disk.total_iops')} />
           </LineChart>
       ) : null}
       </div>

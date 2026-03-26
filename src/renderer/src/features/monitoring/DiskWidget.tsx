@@ -1,5 +1,5 @@
 import { Accordion } from '../../components/Accordion'
-import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWidth'
 import { useI18n } from '../../i18n/useI18n'
 import { useSystemStore } from '../../stores/useSystemStore'
 
@@ -12,6 +12,7 @@ export function DiskWidget() {
   const disk = useSystemStore((s) => s.current?.disk)
   const { tk } = useI18n()
   const [ref, width] = useContainerWidth(280)
+  const isCompact = useCompactLayout(width)
 
   if (!disk) {
     return (
@@ -24,7 +25,6 @@ export function DiskWidget() {
   const io = disk.io
   const totalIops = io.totalPerSecond
   const busyPercent = io.busyPercent
-  const isCompact = width < 300
 
   return (
     <Accordion title={tk('monitoring.disk.title')} defaultOpen>
