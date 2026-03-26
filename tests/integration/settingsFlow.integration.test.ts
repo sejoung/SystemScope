@@ -144,6 +144,13 @@ describe('settings flow integration', () => {
           realUsage: null
         }]
       },
+      network: {
+        downloadBytesPerSecond: null,
+        uploadBytesPerSecond: null,
+        totalDownloadedBytes: null,
+        totalUploadedBytes: null,
+        interfaces: []
+      },
       timestamp: Date.now()
     })
     expect(alerts.some((alert) => alert.type === 'disk' && alert.severity === 'warning' && alert.threshold === payload.thresholds.diskWarning)).toBe(true)

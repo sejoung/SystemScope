@@ -74,6 +74,13 @@ describe('registerAlertIpc', () => {
           realUsage: null
         }]
       },
+      network: {
+        downloadBytesPerSecond: null,
+        uploadBytesPerSecond: null,
+        totalDownloadedBytes: null,
+        totalUploadedBytes: null,
+        interfaces: []
+      },
       timestamp: Date.now()
     })
 

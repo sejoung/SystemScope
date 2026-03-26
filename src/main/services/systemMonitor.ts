@@ -1,6 +1,6 @@
 import si from 'systeminformation'
 import { platform } from 'os'
-import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo, DiskIoInfo } from '@shared/types'
+import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo, DiskIoInfo, NetworkInfo } from '@shared/types'
 import { logDebug, logInfo, logWarn } from './logging'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'
 let hasLoggedApfsContainerFallback = false
@@ -34,12 +34,13 @@ export async function getSystemStats(): Promise<SystemStats> {
   }
 
   pendingSystemStats = (async () => {
-    const [cpuLoad, cpuInfo, mem, gpuInfo, diskIo] = await Promise.all([
+    const [cpuLoad, cpuInfo, mem, gpuInfo, diskIo, network] = await Promise.all([
       si.currentLoad(),
       si.cpu(),
       si.mem(),
       getCachedGpuInfo(),
-      getDiskIoInfo()
+      getDiskIoInfo(),
+      getNetworkInfo()
     ])
 
     // 디스크 정보: 캐시가 유효하면 캐시 사용, 아니면 새로 가져옴
@@ -119,6 +120,7 @@ export async function getSystemStats(): Promise<SystemStats> {
         drives,
         io: diskIo
       },
+      network,
       timestamp: Date.now()
     }
 
@@ -152,11 +154,51 @@ async function getDiskIoInfo(): Promise<DiskIoInfo> {
   }
 }
 
+async function getNetworkInfo(): Promise<NetworkInfo> {
+  try {
+    const stats = await si.networkStats('*')
+    const activeStats = stats.filter((item) => item.operstate === 'up')
+    const source = activeStats.length > 0 ? activeStats : stats
+
+    return {
+      downloadBytesPerSecond: sanitizeRate(sumNumeric(source.map((item) => item.rx_sec))),
+      uploadBytesPerSecond: sanitizeRate(sumNumeric(source.map((item) => item.tx_sec))),
+      totalDownloadedBytes: sanitizeTotal(sumNumeric(source.map((item) => item.rx_bytes))),
+      totalUploadedBytes: sanitizeTotal(sumNumeric(source.map((item) => item.tx_bytes))),
+      interfaces: source.map((item) => item.iface).filter(Boolean)
+    }
+  } catch (err) {
+    logDebug('system-monitor', 'Network information is unavailable', { error: err })
+    return {
+      downloadBytesPerSecond: null,
+      uploadBytesPerSecond: null,
+      totalDownloadedBytes: null,
+      totalUploadedBytes: null,
+      interfaces: []
+    }
+  }
+}
+
 function sanitizeRate(value: number | null | undefined): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     return null
   }
   return Math.round(value * 100) / 100
+}
+
+function sanitizeTotal(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null
+  }
+  return Math.round(value)
+}
+
+function sumNumeric(values: Array<number | null | undefined>): number | null {
+  const numericValues = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+  if (numericValues.length === 0) {
+    return null
+  }
+  return numericValues.reduce((sum, value) => sum + value, 0)
 }
 
 async function getCachedGpuInfo(): Promise<GpuInfo> {

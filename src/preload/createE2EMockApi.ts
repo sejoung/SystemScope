@@ -97,6 +97,13 @@ export function createE2EMockApi(): {
         }
       ]
     },
+    network: {
+      downloadBytesPerSecond: 12_500_000,
+      uploadBytesPerSecond: 1_200_000,
+      totalDownloadedBytes: 220_000_000_000,
+      totalUploadedBytes: 48_000_000_000,
+      interfaces: ['en0']
+    },
     timestamp: Date.now()
   }
 

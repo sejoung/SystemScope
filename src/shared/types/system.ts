@@ -46,6 +46,14 @@ export interface DiskIoInfo {
   busyPercent: number | null
 }
 
+export interface NetworkInfo {
+  downloadBytesPerSecond: number | null
+  uploadBytesPerSecond: number | null
+  totalDownloadedBytes: number | null
+  totalUploadedBytes: number | null
+  interfaces: string[]
+}
+
 export interface SystemStats {
   cpu: CpuInfo
   memory: MemoryInfo
@@ -54,5 +62,6 @@ export interface SystemStats {
     drives: DriveInfo[]
     io: DiskIoInfo
   }
+  network: NetworkInfo
   timestamp: number
 }
