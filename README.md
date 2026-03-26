@@ -46,13 +46,15 @@
 
 - **Real-time monitoring**: CPU, memory, GPU, and disk metrics with live charts
 - **Alerts**: configurable disk / memory / GPU usage alerts
-- **Disk analysis**: folder scan, treemap, large files, extension breakdown, duplicate detection
+- **Disk analysis**: folder scan, treemap, large files, extension breakdown, old file scan, recent growth, and duplicate detection
 - **Quick cleanup**: scan common cache, log, build, and temp locations
 - **Docker management**: inspect and clean up containers, images, volumes, and build cache
 - **Process tools**: search, inspect, and terminate processes
 - **Port tools**: inspect active ports and monitor specific ports/IPs
-- **Application cleanup**: uninstall installed apps and review leftover app data
+- **Application cleanup**: uninstall installed apps, review leftover app data, and clean leftover uninstall registry entries on Windows
 - **Growth tracking**: snapshot-based folder growth analysis over 1 hour / 24 hours / 7 days
+- **Update checks**: packaged builds can check for new releases and open the download page
+- **Localization**: English / Korean UI
 - **Tray resident UX**: restore the app from the menu bar or system tray
 - **Dark / light themes**
 
@@ -63,11 +65,11 @@ For more detailed behavior, see [docs/features.md](docs/features.md).
 | Page | Description |
 |------|------|
 | **Overview** | Live gauges, charts, alerts, storage summary, top consumers |
-| **Storage** | Folder scan, treemap, file insights, quick cleanup, file deletion |
+| **Storage** | Folder scan, treemap, large/old/duplicate file insights, recent growth, quick cleanup, file deletion |
 | **Docker** | Containers / images / volumes / build cache management |
 | **Activity** | Processes, ports, and live port watch |
-| **Applications** | Installed apps and leftover app data cleanup |
-| **Preferences** | Theme, alert thresholds, snapshot interval, app data/log paths |
+| **Applications** | Installed apps, related data cleanup, leftover data cleanup, Windows-only leftover registry cleanup |
+| **Preferences** | Theme, language, alert thresholds, snapshot interval, update check, app data/log paths |
 
 ## Getting Started
 
