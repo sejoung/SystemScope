@@ -70,8 +70,8 @@ export function openAboutWindow(): BrowserWindow {
 export function getAboutInfo(): AboutInfo {
   const metadata = readPackageMetadata()
   return {
-    appName: app.getName(),
-    version: app.getVersion(),
+    appName: metadata.appName || app.getName(),
+    version: metadata.version || app.getVersion(),
     author: metadata.author || 'Sejoung',
     homepage: metadata.homepage,
     license: metadata.license
@@ -82,18 +82,42 @@ export function getHomepageUrl(): string | null {
   return readPackageMetadata().homepage
 }
 
-function readPackageMetadata(): { author: string; homepage: string | null; license: string | null } {
+function readPackageMetadata(): {
+  appName: string
+  version: string
+  author: string
+  homepage: string | null
+  license: string | null
+} {
   try {
     const packagePath = join(app.getAppPath(), 'package.json')
     const raw = fs.readFileSync(packagePath, 'utf-8')
-    const parsed = JSON.parse(raw) as { author?: unknown; homepage?: unknown; license?: unknown }
+    const parsed = JSON.parse(raw) as {
+      name?: unknown
+      version?: unknown
+      author?: unknown
+      homepage?: unknown
+      license?: unknown
+      build?: {
+        productName?: unknown
+      }
+    }
     return {
+      appName:
+        typeof parsed.build?.productName === 'string'
+          ? parsed.build.productName
+          : typeof parsed.name === 'string'
+            ? parsed.name
+            : '',
+      version: typeof parsed.version === 'string' ? parsed.version : '',
       author: typeof parsed.author === 'string' ? parsed.author : '',
       homepage: typeof parsed.homepage === 'string' ? parsed.homepage : null,
       license: typeof parsed.license === 'string' ? parsed.license : null
     }
   } catch {
     return {
+      appName: '',
+      version: '',
       author: '',
       homepage: null,
       license: null

@@ -28,7 +28,9 @@ type AppsTab = "installed" | "leftover" | "registry";
 type ConfidenceFilter = "all" | "high" | "medium" | "low";
 type LeftoverSort = "priority" | "name" | "size";
 
-const LEFTOVER_SIZE_BATCH_SIZE = 2;
+const LEFTOVER_SIZE_IDLE_BATCH_SIZE = 1;
+const LEFTOVER_SIZE_PRIORITY_BATCH_SIZE = 4;
+const LEFTOVER_SIZE_IDLE_DELAY_MS = 350;
 
 export function AppsPage() {
   const showToast = useToast((s) => s.show);
@@ -153,43 +155,6 @@ export function AppsPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (activeTab !== "leftover" || leftoverSizeHydratingRef.current) return;
-
-    const pendingIds = leftoverItems
-      .filter((item) => item.sizeBytes === undefined)
-      .slice(0, LEFTOVER_SIZE_BATCH_SIZE)
-      .map((item) => item.id);
-    if (pendingIds.length === 0) return;
-
-    let cancelled = false;
-    leftoverSizeHydratingRef.current = true;
-
-    void (async () => {
-      const res = await window.systemScope.hydrateLeftoverAppDataSizes(
-        pendingIds,
-      );
-      leftoverSizeHydratingRef.current = false;
-      if (cancelled) return;
-
-      if (res.ok && res.data) {
-        const hydratedItems = res.data as AppLeftoverDataItem[];
-        setLeftoverItems((current) =>
-          mergeHydratedLeftovers(current, hydratedItems),
-        );
-        return;
-      }
-
-      showToastRef.current(
-        res.error?.message ?? tkRef.current("apps.error.load_leftover"),
-      );
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeTab, leftoverItems]);
-
   const filteredApps = useMemo(
     () =>
       apps
@@ -292,6 +257,61 @@ export function AppsPage() {
     [leftoverItems],
   );
   const leftoverSizeReadyCount = leftoverItems.length - leftoverSizePendingCount;
+
+  useEffect(() => {
+    if (activeTab !== "leftover" || leftoverSizeHydratingRef.current) return;
+
+    const prioritizedItems =
+      leftoverSort === "size" ? filteredLeftovers : leftoverItems;
+    const batchSize =
+      leftoverSort === "size"
+        ? LEFTOVER_SIZE_PRIORITY_BATCH_SIZE
+        : LEFTOVER_SIZE_IDLE_BATCH_SIZE;
+    const pendingIds = prioritizedItems
+      .filter((item) => item.sizeBytes === undefined)
+      .slice(0, batchSize)
+      .map((item) => item.id);
+    if (pendingIds.length === 0) return;
+
+    let cancelled = false;
+    let idleTimerId: number | null = null;
+
+    const runHydration = () => {
+      leftoverSizeHydratingRef.current = true;
+      void (async () => {
+        const res = await window.systemScope.hydrateLeftoverAppDataSizes(
+          pendingIds,
+        );
+        leftoverSizeHydratingRef.current = false;
+        if (cancelled) return;
+
+        if (res.ok && res.data) {
+          const hydratedItems = res.data as AppLeftoverDataItem[];
+          setLeftoverItems((current) =>
+            mergeHydratedLeftovers(current, hydratedItems),
+          );
+          return;
+        }
+
+        showToastRef.current(
+          res.error?.message ?? tkRef.current("apps.error.load_leftover"),
+        );
+      })();
+    };
+
+    if (leftoverSort === "size") {
+      runHydration();
+    } else {
+      idleTimerId = window.setTimeout(runHydration, LEFTOVER_SIZE_IDLE_DELAY_MS);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleTimerId !== null) {
+        window.clearTimeout(idleTimerId);
+      }
+    };
+  }, [activeTab, filteredLeftovers, leftoverItems, leftoverSort]);
 
   const selectedFilteredLeftoverCount = useMemo(
     () =>

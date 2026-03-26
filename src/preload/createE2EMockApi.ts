@@ -7,18 +7,36 @@ export interface E2EMockControls {
   reset: () => void
 }
 
+type E2EMockState = {
+  updateAvailable: boolean
+}
+
+function getE2EMockState(initialUpdateAvailable: boolean): E2EMockState {
+  const scopedGlobal = globalThis as typeof globalThis & {
+    __SYSTEMSCOPE_E2E_STATE__?: E2EMockState
+  }
+
+  if (!scopedGlobal.__SYSTEMSCOPE_E2E_STATE__) {
+    scopedGlobal.__SYSTEMSCOPE_E2E_STATE__ = {
+      updateAvailable: initialUpdateAvailable
+    }
+  }
+
+  return scopedGlobal.__SYSTEMSCOPE_E2E_STATE__
+}
+
 export function createE2EMockApi(): {
   api: SystemScopeApi
   controls: E2EMockControls
 } {
   const api = createIpcApi()
   const initialUpdateAvailable = process.env.E2E_UPDATE_AVAILABLE === '1'
-  let updateAvailable = initialUpdateAvailable
+  const mockState = getE2EMockState(initialUpdateAvailable)
 
   const buildUpdateStatus = () => ({
     currentVersion: '1.1.2',
     checking: false,
-    updateInfo: updateAvailable
+    updateInfo: mockState.updateAvailable
       ? {
           currentVersion: '1.1.2',
           latestVersion: '1.3.0',
@@ -28,7 +46,7 @@ export function createE2EMockApi(): {
           publishedAt: '2026-03-26T00:00:00.000Z'
         }
       : null,
-    lastCheckedAt: updateAvailable ? new Date().toISOString() : null
+    lastCheckedAt: mockState.updateAvailable ? new Date().toISOString() : null
   } as const)
 
   const mockSystemStats = {
@@ -191,10 +209,10 @@ export function createE2EMockApi(): {
     api,
     controls: {
       setUpdateAvailable: (value: boolean) => {
-        updateAvailable = value
+        mockState.updateAvailable = value
       },
       reset: () => {
-        updateAvailable = initialUpdateAvailable
+        mockState.updateAvailable = initialUpdateAvailable
       }
     }
   }
