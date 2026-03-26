@@ -6,14 +6,48 @@ type ElectronFixtures = {
   mainWindow: Page
 }
 
+function trimLogChunks(chunks: string[], maxChars = 8_000): string {
+  const joined = chunks.join('')
+  return joined.length <= maxChars ? joined : joined.slice(-maxChars)
+}
+
 export const test = base.extend<ElectronFixtures>({
   electronApp: [
     // eslint-disable-next-line no-empty-pattern
     async ({}, use) => {
-      const app = await _electron.launch({
-        args: [path.join(__dirname, '../../../out/main/index.js')],
-        env: { ...process.env, NODE_ENV: 'test', E2E_LIGHTWEIGHT: '1' }
+      const stdoutChunks: string[] = []
+      const stderrChunks: string[] = []
+      let app: ElectronApplication | null = null
+
+      try {
+        app = await _electron.launch({
+          args: [path.join(__dirname, '../../../out/main/index.js')],
+          env: {
+            ...process.env,
+            NODE_ENV: 'test',
+            E2E_LIGHTWEIGHT: '1',
+            ELECTRON_ENABLE_LOGGING: '1'
+          }
+        })
+      } catch (error) {
+        const details = [
+          'Electron process failed to launch.',
+          `entry=${path.join(__dirname, '../../../out/main/index.js')}`,
+          stderrChunks.length > 0 ? `stderr:\n${trimLogChunks(stderrChunks)}` : 'stderr: <empty>',
+          stdoutChunks.length > 0 ? `stdout:\n${trimLogChunks(stdoutChunks)}` : 'stdout: <empty>'
+        ].join('\n\n')
+
+        throw new Error(details, { cause: error })
+      }
+
+      const childProcess = app.process()
+      childProcess.stdout?.on('data', (chunk: Buffer | string) => {
+        stdoutChunks.push(chunk.toString())
       })
+      childProcess.stderr?.on('data', (chunk: Buffer | string) => {
+        stderrChunks.push(chunk.toString())
+      })
+
       await use(app)
       await app.close()
     },
