@@ -150,10 +150,11 @@ export function ProcessTable({ processes }: ProcessTableProps) {
         <span style={infoLabelStyle}>{sortSummary.label}</span>
         <span style={infoReasonStyle}>{sortSummary.reason}</span>
       </div>
-      <div style={{ maxHeight: "calc(100vh - 340px)", minHeight: "200px", overflow: "auto" }}>
+      <div style={{ minHeight: "200px", overflowX: "auto", overflowY: "clip" }}>
         <table
           style={{
             width: "100%",
+            minWidth: "720px",
             borderCollapse: "collapse",
             fontSize: "13px",
           }}
@@ -166,6 +167,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                 top: 0,
                 background: "var(--bg-card)",
                 zIndex: 1,
+                boxShadow: "0 1px 0 var(--border)",
               }}
             >
               <SortHeader

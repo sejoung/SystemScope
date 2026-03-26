@@ -329,10 +329,11 @@ export function ListeningPorts() {
               }
             />
           ) : (
-            <div style={{ maxHeight: "400px", overflow: "auto" }}>
+            <div style={{ overflowX: "auto", overflowY: "clip" }}>
               <table
                 style={{
                   width: "100%",
+                  minWidth: "980px",
                   borderCollapse: "collapse",
                   fontSize: "13px",
                 }}
@@ -345,6 +346,7 @@ export function ListeningPorts() {
                       top: 0,
                       background: "var(--bg-card)",
                       zIndex: 1,
+                      boxShadow: "0 1px 0 var(--border)",
                     }}
                   >
                     <th style={thStyle}>{tk("process.port_finder.proto")}</th>
