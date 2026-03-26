@@ -1,7 +1,8 @@
-import { useCallback, useEffect } from 'react'
+import { lazy, Suspense, useCallback, useEffect } from 'react'
 import { Layout } from './components/Layout'
 import { ToastContainer } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { PageLoading } from './components/PageLoading'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useProcessStore } from './stores/useProcessStore'
 import { useSystemStore } from './stores/useSystemStore'
@@ -9,11 +10,12 @@ import { useAlertStore } from './stores/useAlertStore'
 import { useInterval } from './hooks/useInterval'
 import { useIpcListener } from './hooks/useIpc'
 import { DashboardPage } from './pages/DashboardPage'
-import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
-import { DockerPage } from './pages/DockerPage'
-import { ProcessPage } from './pages/ProcessPage'
-import { AppsPage } from './pages/AppsPage'
-import { SettingsPage } from './pages/SettingsPage'
+
+const DiskAnalysisPage = lazy(() => import('./pages/DiskAnalysisPage').then((m) => ({ default: m.DiskAnalysisPage })))
+const DockerPage = lazy(() => import('./pages/DockerPage').then((m) => ({ default: m.DockerPage })))
+const ProcessPage = lazy(() => import('./pages/ProcessPage').then((m) => ({ default: m.ProcessPage })))
+const AppsPage = lazy(() => import('./pages/AppsPage').then((m) => ({ default: m.AppsPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 import type { ShutdownState } from '@shared/types'
 import { isSystemStats, isAlertArray, isShutdownState, isUpdateInfo, isUpdateStatus, isProcessSnapshot } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
@@ -31,6 +33,7 @@ function App() {
   const currentPage = useSettingsStore((s) => s.currentPage)
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const theme = useSettingsStore((s) => s.theme)
+  const locale = useSettingsStore((s) => s.locale)
   const setCpuProcesses = useProcessStore((s) => s.setCpuProcesses)
   const setMemoryProcesses = useProcessStore((s) => s.setMemoryProcesses)
   const setAllProcesses = useProcessStore((s) => s.setAllProcesses)
@@ -137,7 +140,6 @@ function App() {
   }, [hasUnsavedSettings])
 
   useEffect(() => {
-    const locale = useSettingsStore.getState().locale
     const titles: Record<string, string> = {
       dashboard: translateLiteral(locale, "Overview"),
       disk: translateLiteral(locale, "Storage"),
@@ -147,7 +149,7 @@ function App() {
       settings: translateLiteral(locale, "Preferences"),
     }
     document.title = `SystemScope — ${titles[currentPage] ?? "SystemScope"}`
-  }, [currentPage])
+  }, [currentPage, locale])
 
   useEffect(() => {
     if (isE2ELightweight) {
@@ -236,11 +238,13 @@ function App() {
           resetKey={currentPage}
         >
           {currentPage === 'dashboard' && <DashboardPage />}
-          {currentPage === 'disk' && <DiskAnalysisPage />}
-          {currentPage === 'docker' && <DockerPage />}
-          {currentPage === 'process' && <ProcessPage />}
-          {currentPage === 'apps' && <AppsPage />}
-          {currentPage === 'settings' && <SettingsPage />}
+          <Suspense fallback={<PageLoading />}>
+            {currentPage === 'disk' && <DiskAnalysisPage />}
+            {currentPage === 'docker' && <DockerPage />}
+            {currentPage === 'process' && <ProcessPage />}
+            {currentPage === 'apps' && <AppsPage />}
+            {currentPage === 'settings' && <SettingsPage />}
+          </Suspense>
         </ErrorBoundary>
       </Layout>
       {shutdownState && <ShutdownOverlay state={shutdownState} title={tk('app.shutdown.title')} />}

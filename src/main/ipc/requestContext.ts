@@ -19,8 +19,10 @@ export function getRequestMeta(value: unknown): IpcRequestMeta | null {
   return meta
 }
 
+const MAX_STRING_ARRAY_LENGTH = 500
+
 export function isValidStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.length > 0 && value.every((entry) => typeof entry === 'string' && entry.trim() !== '')
+  return Array.isArray(value) && value.length > 0 && value.length <= MAX_STRING_ARRAY_LENGTH && value.every((entry) => typeof entry === 'string' && entry.trim() !== '')
 }
 
 export function withRequestMeta(

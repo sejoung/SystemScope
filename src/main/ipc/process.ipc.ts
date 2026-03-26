@@ -193,5 +193,9 @@ function isProtectedProcess(target: { pid: number; name: string; command: string
   const targetName = target.name.toLowerCase()
   const targetCommand = target.command.toLowerCase()
 
-  return targetName.includes(appName) || targetCommand.includes(exePath)
+  // 정확한 이름 매칭 또는 단어 경계 확인 — "horoscope" 같은 오탐 방지
+  const nameMatch = targetName === appName
+    || targetName.startsWith(appName + '.')
+    || targetName.startsWith(appName + ' ')
+  return nameMatch || targetCommand.includes(exePath)
 }

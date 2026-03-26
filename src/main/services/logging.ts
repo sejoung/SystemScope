@@ -174,8 +174,9 @@ function parseLogDateFromFileName(fileName: string): Date | null {
 }
 
 function startOfDay(date: Date): Date {
-  date.setHours(0, 0, 0, 0)
-  return date
+  const copy = new Date(date)
+  copy.setHours(0, 0, 0, 0)
+  return copy
 }
 
 function formatActionMessage(action: string, result: 'success' | 'rejected' | 'failed'): string {

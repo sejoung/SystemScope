@@ -9,10 +9,6 @@ export function useSearchFilter() {
     setApplied(value);
   };
 
-  const apply = () => {
-    setApplied(draft);
-  };
-
   const clear = () => {
     setDraft("");
     setApplied("");
@@ -24,7 +20,6 @@ export function useSearchFilter() {
     draft,
     applied,
     setDraft: updateDraft,
-    apply,
     clear,
     isEmpty,
   } as const;

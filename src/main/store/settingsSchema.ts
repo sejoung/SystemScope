@@ -59,10 +59,18 @@ export function sanitizeAppSettings(value: unknown): AppSettings {
   }
 }
 
+const KNOWN_SETTINGS_KEYS = new Set<string>(['thresholds', 'theme', 'locale', 'snapshotIntervalMin'])
+
 export function validatePartialSettings(value: unknown): value is Partial<AppSettings> {
   if (!value || typeof value !== 'object') return false
 
   const raw = value as Record<string, unknown>
+
+  // unknown key가 포함되면 거부 (오타 방지)
+  for (const key of Object.keys(raw)) {
+    if (!KNOWN_SETTINGS_KEYS.has(key)) return false
+  }
+
   if ('thresholds' in raw && !isAlertThresholds(raw.thresholds)) {
     return false
   }
