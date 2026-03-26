@@ -2,7 +2,7 @@ import { BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
 import { getSettings } from '../store/settingsStore'
-import { getUnsavedSettingsState, setUnsavedSettingsState } from './rendererState'
+import { clearUnsavedSettingsState, getUnsavedSettingsState, setUnsavedSettingsState } from './rendererState'
 import { tk } from '../i18n'
 
 let forceQuit = false
@@ -43,6 +43,10 @@ export function createMainWindow(): BrowserWindow {
     win.show()
   })
 
+  win.on('closed', () => {
+    clearUnsavedSettingsState(win.webContents.id)
+  })
+
   // 창 닫기 시: 상태 저장 + 숨기기 (destroy하지 않음)
   // app.quit() 등 강제 종료 시에만 실제로 닫힘
   win.on('close', (e) => {
@@ -52,7 +56,7 @@ export function createMainWindow(): BrowserWindow {
       return
     }
 
-    if (getUnsavedSettingsState()) {
+    if (getUnsavedSettingsState(win.webContents.id)) {
       e.preventDefault()
       const response = dialog.showMessageBoxSync(win, {
         type: 'warning',
@@ -70,7 +74,7 @@ export function createMainWindow(): BrowserWindow {
         return
       }
 
-      setUnsavedSettingsState(false)
+      setUnsavedSettingsState(win.webContents.id, false)
       if (forceQuit) {
         bypassUnsavedSettingsPrompt = true
         win.close()

@@ -67,7 +67,7 @@ describe('growth analysis integration', () => {
     const now = Date.now()
     snapshotState.snapshots = [
       {
-        timestamp: now - 6 * 60 * 60 * 1000,
+        timestamp: now - 30 * 60 * 60 * 1000,
         folders: [
           { name: 'Documents', path: '/Users/test/Documents', size: 100 * 1024 },
           { name: 'Downloads', path: '/Users/test/Downloads', size: 200 * 1024 }
@@ -135,5 +135,31 @@ describe('growth analysis integration', () => {
     const result = await analyzeGrowth('24h')
 
     expect(result.totalAdded).toBe(180 * 1024)
+  })
+
+  it('should not infer full-period growth when there is no snapshot at or before the cutoff', async () => {
+    const now = Date.now()
+    snapshotState.snapshots = [
+      {
+        timestamp: now - 6 * 60 * 60 * 1000,
+        folders: [
+          { name: 'Documents', path: '/Users/test/Documents', size: 120 * 1024 }
+        ],
+        totalSize: 120 * 1024
+      },
+      {
+        timestamp: now - 2 * 60 * 1000,
+        folders: [
+          { name: 'Documents', path: '/Users/test/Documents', size: 180 * 1024 }
+        ],
+        totalSize: 180 * 1024
+      }
+    ]
+
+    const { analyzeGrowth } = await import('../../src/main/services/growthAnalyzer')
+    const result = await analyzeGrowth('24h')
+
+    expect(result.totalAdded).toBe(0)
+    expect(result.folders[0]?.growthRate).toBe(0)
   })
 })

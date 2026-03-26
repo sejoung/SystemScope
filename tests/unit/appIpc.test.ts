@@ -112,10 +112,10 @@ describe('registerAppIpc', () => {
     const handler = handlers.get(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS)
     expect(handler).toBeTypeOf('function')
 
-    const result = handler?.({}, { hasUnsavedSettings: true }) as { ok: boolean; data?: boolean }
+    const result = handler?.({ sender: { id: 7 } }, { hasUnsavedSettings: true }) as { ok: boolean; data?: boolean }
     expect(result.ok).toBe(true)
     expect(result.data).toBe(true)
-    expect(setUnsavedSettingsState).toHaveBeenCalledWith(true)
+    expect(setUnsavedSettingsState).toHaveBeenCalledWith(7, true)
   })
 
   it('should reject malformed unsaved settings payloads', async () => {
@@ -125,10 +125,22 @@ describe('registerAppIpc', () => {
     const handler = handlers.get(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS)
     expect(handler).toBeTypeOf('function')
 
-    const result = handler?.({}, { hasUnsavedSettings: 'yes' }) as { ok: boolean; error?: { code: string } }
+    const result = handler?.({ sender: { id: 7 } }, { hasUnsavedSettings: 'yes' }) as { ok: boolean; error?: { code: string } }
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('INVALID_INPUT')
     expect(logWarnAction).toHaveBeenCalled()
+  })
+
+  it('should reject unsaved settings updates without a sender id', async () => {
+    const { registerAppIpc } = await import('../../src/main/ipc/app.ipc')
+    registerAppIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS)
+    expect(handler).toBeTypeOf('function')
+
+    const result = handler?.({}, { hasUnsavedSettings: true }) as { ok: boolean; error?: { code: string } }
+    expect(result.ok).toBe(false)
+    expect(result.error?.code).toBe('INVALID_INPUT')
   })
 
   it('should return about info from the main process', async () => {

@@ -137,20 +137,14 @@ function findBaselineSnapshot(snapshots: Snapshot[], since: number): Snapshot | 
   }
 
   let latestBeforeOrAtCutoff: Snapshot | null = null
-  let earliestAfterCutoff: Snapshot | null = null
 
   for (const snapshot of snapshots) {
     if (snapshot.timestamp <= since) {
       latestBeforeOrAtCutoff = snapshot
-      continue
-    }
-
-    if (!earliestAfterCutoff) {
-      earliestAfterCutoff = snapshot
     }
   }
 
-  return latestBeforeOrAtCutoff ?? earliestAfterCutoff
+  return latestBeforeOrAtCutoff
 }
 
 // 주기적 스냅샷 스케줄러

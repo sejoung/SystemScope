@@ -38,15 +38,23 @@ export function registerAppIpc(): void {
     }
   )
 
-  ipcMain.handle(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, (_event, payload: { hasUnsavedSettings?: unknown }, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.APP_SET_UNSAVED_SETTINGS, (event, payload: { hasUnsavedSettings?: unknown }, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     if (!payload || typeof payload !== 'object' || typeof payload.hasUnsavedSettings !== 'boolean') {
       logWarnAction('app-ipc', 'settings.unsaved.update', withRequestMeta(requestMeta, { reason: 'invalid_payload', payload }))
       return failure('INVALID_INPUT', tk('main.app.error.invalid_unsaved_payload'))
     }
 
-    setUnsavedSettingsState(payload.hasUnsavedSettings)
-    logInfoAction('app-ipc', 'settings.unsaved.update', withRequestMeta(requestMeta, { hasUnsavedSettings: payload.hasUnsavedSettings }))
+    if (!event?.sender || typeof event.sender.id !== 'number') {
+      logWarnAction('app-ipc', 'settings.unsaved.update', withRequestMeta(requestMeta, { reason: 'invalid_sender' }))
+      return failure('INVALID_INPUT', tk('main.app.error.invalid_unsaved_payload'))
+    }
+
+    setUnsavedSettingsState(event.sender.id, payload.hasUnsavedSettings)
+    logInfoAction('app-ipc', 'settings.unsaved.update', withRequestMeta(requestMeta, {
+      senderId: event.sender.id,
+      hasUnsavedSettings: payload.hasUnsavedSettings
+    }))
     return success(true)
   })
 

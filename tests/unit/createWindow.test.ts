@@ -7,6 +7,7 @@ const saveWindowStateMock = vi.hoisted(() => vi.fn())
 const getSettingsMock = vi.hoisted(() => vi.fn())
 const getUnsavedSettingsStateMock = vi.hoisted(() => vi.fn())
 const setUnsavedSettingsStateMock = vi.hoisted(() => vi.fn())
+const clearUnsavedSettingsStateMock = vi.hoisted(() => vi.fn())
 const tkMock = vi.hoisted(() => vi.fn((key: string) => key))
 
 vi.mock('electron', () => ({
@@ -27,7 +28,8 @@ vi.mock('../../src/main/store/settingsStore', () => ({
 
 vi.mock('../../src/main/app/rendererState', () => ({
   getUnsavedSettingsState: getUnsavedSettingsStateMock,
-  setUnsavedSettingsState: setUnsavedSettingsStateMock
+  setUnsavedSettingsState: setUnsavedSettingsStateMock,
+  clearUnsavedSettingsState: clearUnsavedSettingsStateMock
 }))
 
 vi.mock('../../src/main/i18n', () => ({
@@ -35,6 +37,8 @@ vi.mock('../../src/main/i18n', () => ({
 }))
 
 describe('createMainWindow', () => {
+  let eventHandlers: Record<string, ((...args: unknown[]) => void) | undefined>
+
   beforeEach(() => {
     vi.resetModules()
     browserWindowMock.mockReset()
@@ -44,7 +48,9 @@ describe('createMainWindow', () => {
     getSettingsMock.mockReset()
     getUnsavedSettingsStateMock.mockReset()
     setUnsavedSettingsStateMock.mockReset()
+    clearUnsavedSettingsStateMock.mockReset()
     tkMock.mockClear()
+    eventHandlers = {}
 
     restoreWindowStateMock.mockReturnValue(null)
     getSettingsMock.mockReturnValue({ theme: 'dark' })
@@ -52,14 +58,17 @@ describe('createMainWindow', () => {
 
     browserWindowMock.mockImplementation(function mockBrowserWindow(_options: unknown) {
       return {
-      once: vi.fn(),
-      on: vi.fn(),
-      loadURL: vi.fn(),
-      loadFile: vi.fn(),
-      maximize: vi.fn(),
-      show: vi.fn(),
-      hide: vi.fn(),
-      close: vi.fn()
+        webContents: { id: 42 },
+        once: vi.fn(),
+        on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+          eventHandlers[event] = handler
+        }),
+        loadURL: vi.fn(),
+        loadFile: vi.fn(),
+        maximize: vi.fn(),
+        show: vi.fn(),
+        hide: vi.fn(),
+        close: vi.fn()
       }
     })
   })
@@ -73,5 +82,24 @@ describe('createMainWindow', () => {
       minWidth: 1100,
       minHeight: 700
     })
+  })
+
+  it('should read unsaved settings state for the current window sender id', async () => {
+    const { createMainWindow } = await import('../../src/main/app/createWindow')
+    createMainWindow()
+
+    const preventDefault = vi.fn()
+    eventHandlers.close?.({ preventDefault })
+
+    expect(getUnsavedSettingsStateMock).toHaveBeenCalledWith(42)
+  })
+
+  it('should clear unsaved settings state when the window is closed', async () => {
+    const { createMainWindow } = await import('../../src/main/app/createWindow')
+    createMainWindow()
+
+    eventHandlers.closed?.()
+
+    expect(clearUnsavedSettingsStateMock).toHaveBeenCalledWith(42)
   })
 })
