@@ -182,8 +182,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
       cancelled = true;
       if (idleTimerId !== null) window.clearTimeout(idleTimerId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredLeftovers, leftoverItems, leftoverSort, visibilityTrigger]);
+  }, [filteredLeftovers, leftoverItems, leftoverSort, visibilityTrigger, visibleIdsRef]);
 
   const selectedFilteredCount = useMemo(
     () => filteredLeftovers.filter((item) => selectedIds.includes(item.id)).length,
