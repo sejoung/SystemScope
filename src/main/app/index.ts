@@ -13,6 +13,9 @@ import { startUpdateChecker, stopUpdateChecker } from '../services/updateChecker
 let appReadyForQuit = false
 
 const isE2ELightweight = process.env.E2E_LIGHTWEIGHT === '1'
+const STARTUP_SNAPSHOT_DELAY_MS = 15_000
+const STARTUP_UPDATE_CHECK_DELAY_MS = 8_000
+const STARTUP_TRAY_REFRESH_DELAY_MS = 5_000
 
 app.whenReady().then(() => {
   initializeLogging()
@@ -23,9 +26,15 @@ app.whenReady().then(() => {
   if (!isE2ELightweight) {
     ensureSnapshotDir()
     const { snapshotIntervalMin } = getSettings()
-    startSnapshotScheduler(snapshotIntervalMin * 60 * 1000)
-    startUpdateChecker()
-    createTray()
+    startSnapshotScheduler(snapshotIntervalMin * 60 * 1000, {
+      initialDelayMs: STARTUP_SNAPSHOT_DELAY_MS
+    })
+    startUpdateChecker({
+      initialDelayMs: STARTUP_UPDATE_CHECK_DELAY_MS
+    })
+    createTray({
+      initialDelayMs: STARTUP_TRAY_REFRESH_DELAY_MS
+    })
   }
 
   createMainWindow()

@@ -4,6 +4,8 @@ import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 
+const DASHBOARD_STORAGE_LOAD_DELAY_MS = 1_500
+
 const BAR_COLORS = [
   '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#06b6d4',
   '#ef4444', '#f97316', '#ec4899', '#14b8a6', '#8b5cf6'
@@ -22,7 +24,13 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   useEffect(() => {
     if (!info && !loading && !fetched) {
-      fetchUserSpace()
+      const timer = window.setTimeout(() => {
+        void fetchUserSpace()
+      }, DASHBOARD_STORAGE_LOAD_DELAY_MS)
+
+      return () => {
+        window.clearTimeout(timer)
+      }
     }
   }, [info, loading, fetched, fetchUserSpace])
 

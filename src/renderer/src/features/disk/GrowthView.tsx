@@ -7,6 +7,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { GrowthFolder } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
 
+const DASHBOARD_GROWTH_LOAD_DELAY_MS = 2_500
+
 const PERIOD_LABELS: Record<string, string> = {
   '1h': '1 Hour',
   '24h': '24 Hours',
@@ -27,7 +29,13 @@ export function GrowthView() {
   // 캐시 없으면 자동 fetch (YourStorage와 동일 패턴)
   useEffect(() => {
     if (!result && !loading) {
-      fetchGrowthView()
+      const timer = window.setTimeout(() => {
+        void fetchGrowthView()
+      }, DASHBOARD_GROWTH_LOAD_DELAY_MS)
+
+      return () => {
+        window.clearTimeout(timer)
+      }
     }
   }, [result, loading, fetchGrowthView])
 

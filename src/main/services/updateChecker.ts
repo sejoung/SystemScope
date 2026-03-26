@@ -16,6 +16,7 @@ type GitHubReleaseResponse = {
 }
 
 let updateCheckTimer: NodeJS.Timeout | null = null
+let startupCheckTimer: NodeJS.Timeout | null = null
 let lastBroadcastVersion: string | null = null
 let currentStatus: UpdateStatus = {
   currentVersion: getCurrentVersion(),
@@ -24,12 +25,27 @@ let currentStatus: UpdateStatus = {
   lastCheckedAt: null
 }
 
-export function startUpdateChecker(): void {
+export function startUpdateChecker(options: { initialDelayMs?: number } = {}): void {
   if (!isPackagedApp()) {
     return
   }
 
-  void checkForUpdates({ source: 'startup' })
+  const initialDelayMs = Math.max(options.initialDelayMs ?? 0, 0)
+
+  if (startupCheckTimer) {
+    clearTimeout(startupCheckTimer)
+    startupCheckTimer = null
+  }
+
+  if (initialDelayMs === 0) {
+    void checkForUpdates({ source: 'startup' })
+  } else {
+    startupCheckTimer = setTimeout(() => {
+      startupCheckTimer = null
+      void checkForUpdates({ source: 'startup' })
+    }, initialDelayMs)
+    startupCheckTimer.unref?.()
+  }
 
   if (updateCheckTimer) {
     clearInterval(updateCheckTimer)
@@ -42,6 +58,10 @@ export function startUpdateChecker(): void {
 }
 
 export function stopUpdateChecker(): void {
+  if (startupCheckTimer) {
+    clearTimeout(startupCheckTimer)
+    startupCheckTimer = null
+  }
   if (updateCheckTimer) {
     clearInterval(updateCheckTimer)
     updateCheckTimer = null

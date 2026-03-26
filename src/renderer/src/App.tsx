@@ -24,6 +24,8 @@ import { applySettingsToStore, loadAppSettings } from './utils/settingsBootstrap
 import { reportRendererError } from './utils/rendererLogging'
 import { translateKey, translateLiteral } from '@shared/i18n'
 
+const PROCESS_POLLING_START_DELAY_MS = 2_500
+
 function isSystemStats(data: unknown): data is SystemStats {
   return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
 }
@@ -67,6 +69,7 @@ function App() {
   const showToast = useToast((s) => s.show)
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
+  const [processPollingReady, setProcessPollingReady] = useState(false)
   const { tk } = useI18n()
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const isE2ELightweight = window.__E2E_LIGHTWEIGHT === true
@@ -94,29 +97,9 @@ function App() {
       return
     }
 
-    void Promise.all([
-      loadAppSettings('app-bootstrap'),
-      window.systemScope.getActiveAlerts(),
-      window.systemScope.getUpdateStatus()
-    ]).then(([settings, alertsRes, updateRes]) => {
+    void loadAppSettings('app-bootstrap').then((settings) => {
       if (settings) {
         applySettingsToStore(settings)
-      }
-
-      if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
-        setAlerts(alertsRes.data)
-      } else if (!alertsRes.ok) {
-        void reportRendererError('app-bootstrap', 'Failed to load active alerts', {
-          error: alertsRes.error
-        })
-      }
-
-      if (updateRes.ok && updateRes.data && isUpdateStatus(updateRes.data)) {
-        applyUpdateStatus(updateRes.data)
-      } else if (!updateRes.ok) {
-        void reportRendererError('app-bootstrap', 'Failed to load update status', {
-          error: updateRes.error
-        })
       }
     }).catch((error) => {
       void reportRendererError('app-bootstrap', 'Failed to bootstrap app', { error })
@@ -126,6 +109,30 @@ function App() {
       )
     }).finally(() => {
       setBootstrapped(true)
+    })
+
+    void window.systemScope.getActiveAlerts().then((alertsRes) => {
+      if (alertsRes.ok && alertsRes.data && isAlertArray(alertsRes.data)) {
+        setAlerts(alertsRes.data)
+      } else if (!alertsRes.ok) {
+        void reportRendererError('app-bootstrap', 'Failed to load active alerts', {
+          error: alertsRes.error
+        })
+      }
+    }).catch((error) => {
+      void reportRendererError('app-bootstrap', 'Failed to load active alerts', { error })
+    })
+
+    void window.systemScope.getUpdateStatus().then((updateRes) => {
+      if (updateRes.ok && updateRes.data && isUpdateStatus(updateRes.data)) {
+        applyUpdateStatus(updateRes.data)
+      } else if (!updateRes.ok) {
+        void reportRendererError('app-bootstrap', 'Failed to load update status', {
+          error: updateRes.error
+        })
+      }
+    }).catch((error) => {
+      void reportRendererError('app-bootstrap', 'Failed to load update status', { error })
     })
   }, [applyUpdateStatus, isE2ELightweight, setAlerts, showToast])
 
@@ -216,7 +223,24 @@ function App() {
   useIpcListener(window.systemScope.onUpdateAvailable, handleUpdateAvailable)
 
   // 프로세스 데이터 폴링 — 대시보드 또는 프로세스 페이지에서만 갱신
-  const shouldPollProcesses = !isE2ELightweight && (currentPage === 'dashboard' || currentPage === 'process')
+  const shouldPollProcessesBase = !isE2ELightweight && (currentPage === 'dashboard' || currentPage === 'process')
+
+  useEffect(() => {
+    if (!shouldPollProcessesBase) {
+      setProcessPollingReady(false)
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setProcessPollingReady(true)
+    }, PROCESS_POLLING_START_DELAY_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [shouldPollProcessesBase])
+
+  const shouldPollProcesses = shouldPollProcessesBase && processPollingReady
 
   useInterval(() => {
     void window.systemScope.getProcessSnapshot(10).then((res) => {

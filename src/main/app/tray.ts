@@ -10,12 +10,13 @@ import { checkForUpdates, getUpdateStatus, openReleasePage } from '../services/u
 
 let tray: Tray | null = null
 let trayUpdateTimer: ReturnType<typeof setInterval> | null = null
+let trayStartupTimer: ReturnType<typeof setTimeout> | null = null
 let pulseFrame = false
 let lastVisualKey = ''
 let lastMenuKey = ''
 const cpuSamples: number[] = []
 
-export function createTray(): void {
+export function createTray(options: { initialDelayMs?: number } = {}): void {
   if (tray) return
 
   try {
@@ -29,6 +30,7 @@ export function createTray(): void {
 
   tray.setToolTip('SystemScope')
   rebuildTrayMenu()
+  const initialDelayMs = Math.max(options.initialDelayMs ?? 0, 0)
 
   // Windows에서만 좌클릭 시 창 표시 (macOS는 좌클릭 = 메뉴 표시가 기본 동작)
   if (platform() !== 'darwin') {
@@ -42,15 +44,35 @@ export function createTray(): void {
     })
   }
 
-  void refreshTrayIcon()
-  trayUpdateTimer = setInterval(() => {
-    void refreshTrayIcon()
-  }, 2000)
-  trayUpdateTimer.unref?.()
+  if (trayStartupTimer) {
+    clearTimeout(trayStartupTimer)
+    trayStartupTimer = null
+  }
 
+  const startRefreshing = () => {
+    void refreshTrayIcon()
+    trayUpdateTimer = setInterval(() => {
+      void refreshTrayIcon()
+    }, 2000)
+    trayUpdateTimer.unref?.()
+  }
+
+  if (initialDelayMs === 0) {
+    startRefreshing()
+  } else {
+    trayStartupTimer = setTimeout(() => {
+      trayStartupTimer = null
+      startRefreshing()
+    }, initialDelayMs)
+    trayStartupTimer.unref?.()
+  }
 }
 
 export function destroyTray(): void {
+  if (trayStartupTimer) {
+    clearTimeout(trayStartupTimer)
+    trayStartupTimer = null
+  }
   if (trayUpdateTimer) {
     clearInterval(trayUpdateTimer)
     trayUpdateTimer = null

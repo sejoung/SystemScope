@@ -6,6 +6,8 @@ const initializeRuntimeSettingsMock = vi.hoisted(() => vi.fn())
 const ensureSnapshotDirMock = vi.hoisted(() => vi.fn())
 const registerAllIpcMock = vi.hoisted(() => vi.fn())
 const startSnapshotSchedulerMock = vi.hoisted(() => vi.fn())
+const startUpdateCheckerMock = vi.hoisted(() => vi.fn())
+const stopUpdateCheckerMock = vi.hoisted(() => vi.fn())
 const getSettingsMock = vi.hoisted(() => vi.fn())
 const createTrayMock = vi.hoisted(() => vi.fn())
 const createMainWindowMock = vi.hoisted(() => vi.fn())
@@ -58,6 +60,11 @@ vi.mock('../../src/main/services/growthAnalyzer', () => ({
   startSnapshotScheduler: startSnapshotSchedulerMock
 }))
 
+vi.mock('../../src/main/services/updateChecker', () => ({
+  startUpdateChecker: startUpdateCheckerMock,
+  stopUpdateChecker: stopUpdateCheckerMock
+}))
+
 vi.mock('../../src/main/services/snapshotStore', () => ({
   ensureSnapshotDir: ensureSnapshotDirMock
 }))
@@ -90,6 +97,8 @@ describe('app startup integration', () => {
     ensureSnapshotDirMock.mockReset()
     registerAllIpcMock.mockReset()
     startSnapshotSchedulerMock.mockReset()
+    startUpdateCheckerMock.mockReset()
+    stopUpdateCheckerMock.mockReset()
     getSettingsMock.mockReset()
     createTrayMock.mockReset()
     createMainWindowMock.mockReset()
@@ -126,8 +135,15 @@ describe('app startup integration', () => {
     expect(initializeRuntimeSettingsMock).toHaveBeenCalledTimes(1)
     expect(ensureSnapshotDirMock).toHaveBeenCalledTimes(1)
     expect(registerAllIpcMock).toHaveBeenCalledTimes(1)
-    expect(startSnapshotSchedulerMock).toHaveBeenCalledWith(30 * 60 * 1000)
-    expect(createTrayMock).toHaveBeenCalledTimes(1)
+    expect(startSnapshotSchedulerMock).toHaveBeenCalledWith(30 * 60 * 1000, {
+      initialDelayMs: 15_000
+    })
+    expect(startUpdateCheckerMock).toHaveBeenCalledWith({
+      initialDelayMs: 8_000
+    })
+    expect(createTrayMock).toHaveBeenCalledWith({
+      initialDelayMs: 5_000
+    })
     expect(createMainWindowMock).toHaveBeenCalledTimes(1)
   })
 
@@ -146,6 +162,7 @@ describe('app startup integration', () => {
 
     // First call: preventDefault is called, graceful shutdown starts
     expect(mockEvent.preventDefault).toHaveBeenCalledTimes(1)
+    expect(stopUpdateCheckerMock).toHaveBeenCalledTimes(1)
     expect(markQuitAfterShutdownMock).toHaveBeenCalledTimes(1)
     expect(executeGracefulShutdownMock).toHaveBeenCalledWith('before-quit')
   })

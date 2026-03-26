@@ -155,12 +155,28 @@ function findBaselineSnapshot(snapshots: Snapshot[], since: number): Snapshot | 
 
 // 주기적 스냅샷 스케줄러
 let snapshotInterval: ReturnType<typeof setInterval> | null = null
+let initialSnapshotTimer: ReturnType<typeof setTimeout> | null = null
 
-export function startSnapshotScheduler(intervalMs: number = 60 * 60 * 1000): void {
+export function startSnapshotScheduler(
+  intervalMs: number = 60 * 60 * 1000,
+  options: { initialDelayMs?: number } = {}
+): void {
   if (snapshotInterval) return
 
-  // 앱 시작 시 즉시 1회 스냅샷
-  takeSnapshot().catch((err) => logError('snapshot', 'Initial snapshot failed', err))
+  const initialDelayMs = Math.max(options.initialDelayMs ?? 0, 0)
+  if (initialSnapshotTimer) {
+    clearTimeout(initialSnapshotTimer)
+    initialSnapshotTimer = null
+  }
+
+  if (initialDelayMs === 0) {
+    takeSnapshot().catch((err) => logError('snapshot', 'Initial snapshot failed', err))
+  } else {
+    initialSnapshotTimer = setTimeout(() => {
+      initialSnapshotTimer = null
+      takeSnapshot().catch((err) => logError('snapshot', 'Initial snapshot failed', err))
+    }, initialDelayMs)
+  }
 
   // 이후 설정된 주기마다
   snapshotInterval = setInterval(() => {
@@ -169,6 +185,10 @@ export function startSnapshotScheduler(intervalMs: number = 60 * 60 * 1000): voi
 }
 
 export function stopSnapshotScheduler(): void {
+  if (initialSnapshotTimer) {
+    clearTimeout(initialSnapshotTimer)
+    initialSnapshotTimer = null
+  }
   if (snapshotInterval) {
     clearInterval(snapshotInterval)
     snapshotInterval = null
