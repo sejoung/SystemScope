@@ -9,6 +9,7 @@ import { createTray } from './tray'
 import { initializeLogging, logError } from '../services/logging'
 import { executeGracefulShutdown, initializeShutdownHandlers, markQuitAfterShutdown } from './shutdown'
 import { startUpdateChecker, stopUpdateChecker } from '../services/updateChecker'
+import { startJobPruner, stopJobPruner } from '../jobs/jobManager'
 
 let appReadyForQuit = false
 
@@ -35,6 +36,7 @@ app.whenReady().then(() => {
     createTray({
       initialDelayMs: STARTUP_TRAY_REFRESH_DELAY_MS
     })
+    startJobPruner()
   }
 
   createMainWindow()
@@ -55,6 +57,7 @@ app.whenReady().then(() => {
 
 app.on('before-quit', (event) => {
   stopUpdateChecker()
+  stopJobPruner()
   if (!appReadyForQuit) {
     event.preventDefault()
     appReadyForQuit = true

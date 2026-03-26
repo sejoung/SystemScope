@@ -104,6 +104,8 @@ export function registerSettingsIpc(): void {
     const resolved = path.resolve(targetPath)
     const userData = app.getPath('userData')
 
+    // SECURITY: openPath는 userData 내부 + 등록된 경로만 허용 (이중 검증).
+    // showInFolder는 registry만 확인 — openPath가 더 위험한 작업이므로 의도적으로 더 엄격.
     if (!isPathInsideParent(resolved, userData) || !isShellPathRegistered(resolved)) {
       return failure('PERMISSION_DENIED', tk('main.settings.error.permission_denied'))
     }

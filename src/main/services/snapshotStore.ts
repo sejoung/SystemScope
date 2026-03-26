@@ -43,16 +43,18 @@ export function ensureSnapshotDir(): void {
   }
 }
 
-export function loadSnapshots(): Snapshot[] {
+export async function loadSnapshots(): Promise<Snapshot[]> {
   const filePath = getSnapshotFile()
   if (cachedSnapshots && cachedSnapshotFile === filePath) return cachedSnapshots
   cachedSnapshotFile = filePath
   try {
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fsp.access(filePath)
+    } catch {
       cachedSnapshots = []
       return cachedSnapshots
     }
-    const raw = fs.readFileSync(filePath, 'utf-8')
+    const raw = await fsp.readFile(filePath, 'utf-8')
     const data = parseSnapshotData(raw)
     if (!data) {
       logWarn('snapshot-store', 'Invalid snapshot file detected, backing it up and starting fresh')
@@ -79,7 +81,7 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
     // 동시에 여러 저장 요청이 와도 한 번에 하나씩 순서대로 처리한다.
     await fsp.mkdir(dir, { recursive: true })
 
-    const existing = loadSnapshots()
+    const existing = await loadSnapshots()
     const latest = existing[existing.length - 1]
     if (latest && areSnapshotsEquivalent(latest, snapshot)) {
       return
@@ -111,8 +113,9 @@ export function getMaxSnapshots(intervalMinutes = getSettings().snapshotInterval
   return Math.max(MIN_RETENTION_SNAPSHOTS, Math.ceil(RETENTION_WINDOW_MINUTES / intervalMinutes) + 1)
 }
 
-export function getSnapshotsInRange(since: number): Snapshot[] {
-  return loadSnapshots().filter((s) => s.timestamp >= since)
+export async function getSnapshotsInRange(since: number): Promise<Snapshot[]> {
+  const snapshots = await loadSnapshots()
+  return snapshots.filter((s) => s.timestamp >= since)
 }
 
 export function parseSnapshotData(raw: string): SnapshotData | null {

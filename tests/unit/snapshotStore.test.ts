@@ -128,9 +128,9 @@ describe('snapshotStore', () => {
 
     await Promise.all([saveSnapshot(first), saveSnapshot(second)])
 
-    const snapshots = loadSnapshots()
+    const snapshots = await loadSnapshots()
     expect(snapshots).toHaveLength(2)
-    expect(snapshots.map((snapshot) => snapshot.timestamp)).toEqual([1, 2])
+    expect(snapshots.map((snapshot: { timestamp: number }) => snapshot.timestamp)).toEqual([1, 2])
   })
 
   it('should retain enough snapshots to cover seven days for shorter intervals', () => {
@@ -144,7 +144,7 @@ describe('snapshotStore', () => {
     await fs.mkdir(snapshotDir, { recursive: true })
     await fs.writeFile(path.join(snapshotDir, 'growth.json'), '{"version":1,"snapshots":[]} trailing', 'utf-8')
 
-    const snapshots = loadSnapshots()
+    const snapshots = await loadSnapshots()
     const files = await fs.readdir(snapshotDir)
 
     expect(snapshots).toEqual([])

@@ -8,9 +8,9 @@ import {
 } from "react";
 import type {
   AppRelatedDataItem,
-  AppRemovalResult,
   InstalledApp,
 } from "@shared/types";
+import { isInstalledAppArray, isAppRelatedDataArray, isAppRemovalResult } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
@@ -73,8 +73,8 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
 
   const loadApps = useCallback(async () => {
     const res = await window.systemScope.listInstalledApps();
-    if (res.ok && res.data) {
-      const items = res.data as InstalledApp[];
+    if (res.ok && res.data && isInstalledAppArray(res.data)) {
+      const items = res.data;
       setApps(items);
       setLoadError(undefined);
       setPendingUninstallIds((current) =>
@@ -135,7 +135,8 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
       return;
     }
 
-    const result = res.data as AppRemovalResult;
+    if (!isAppRemovalResult(res.data)) return;
+    const result = res.data;
     if (result.cancelled) return;
 
     showToast(
@@ -184,7 +185,8 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
       return;
     }
 
-    const items = res.data as AppRelatedDataItem[];
+    if (!isAppRelatedDataArray(res.data)) return;
+    const items = res.data;
     setRelatedDataByAppId((current) => ({ ...current, [app.id]: items }));
     setSelectedRelatedIdsByAppId((current) => ({
       ...current,

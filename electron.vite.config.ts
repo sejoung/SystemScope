@@ -23,6 +23,9 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    define: {
+      'process.env.E2E_LIGHTWEIGHT': JSON.stringify(process.env.E2E_LIGHTWEIGHT ?? '')
+    },
     build: {
       lib: {
         entry: resolve(__dirname, 'src/preload/index.ts'),

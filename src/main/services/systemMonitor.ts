@@ -270,7 +270,10 @@ function isVirtualGpuModel(model: string): boolean {
 // diskutil info -plist / 결과를 JSON으로 변환하여 안전하게 파싱
 async function getApfsContainerInfo(): Promise<{ size: number; free: number } | null> {
   try {
-    // diskutil의 XML 출력을 plutil을 이용해 JSON으로 변환
+    // SECURITY NOTE: bash -c 사용은 이 하드코딩된 파이프라인에만 한정.
+    // diskutil → plutil 파이프는 execFile 두 번으로 분리할 수 없으므로
+    // (중간 stdout을 stdin으로 전달 불가) bash -c를 예외적으로 사용.
+    // 사용자 입력이 포함되지 않으므로 shell injection 위험 없음.
     const { stdout } = await runExternalCommand('bash', [
       '-c',
       'diskutil info -plist / | plutil -convert json -o - -- -'

@@ -22,8 +22,9 @@ export function initializeShutdownHandlers(): void {
   })
 
   process.once('uncaughtException', (error) => {
+    // 비정상 상태에서 async shutdown은 hang 위험 — 동기 로깅 후 즉시 종료
     logError('shutdown', 'Unhandled exception in main process', error)
-    void handleProcessTermination('uncaughtException', 1)
+    process.exit(1)
   })
 
   // unhandledRejection은 로깅만 수행 (앱 종료하지 않음)

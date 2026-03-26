@@ -16,10 +16,12 @@ import { YourStorage } from "../features/disk/YourStorage";
 import { GrowthView } from "../features/disk/GrowthView";
 import type { TranslationKey } from "@shared/i18n";
 import type { DiskScanResult } from "@shared/types";
+import { isJobProgress, isJobCompleted, isJobFailed, isQuickScanFolderArray } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import { StatusMessage } from "../components/StatusMessage";
 import { CopyableValue } from "../components/CopyableValue";
 import { AsyncTaskStatus } from "../components/AsyncTaskStatus";
+import { PageTab } from "../components/PageTab";
 import type { QuickScanFolder } from "@shared/types";
 
 const TreemapChart = lazy(async () =>
@@ -96,8 +98,8 @@ export function DiskAnalysisPage() {
   const handleQuickScan = useCallback(async () => {
     setQuickScanState((prev) => ({ ...prev, scanning: true, error: null }));
     const res = await window.systemScope.quickScan();
-    if (res.ok && res.data) {
-      setQuickScanState({ results: res.data as QuickScanFolder[], scanning: false, scanned: true, error: null });
+    if (res.ok && res.data && isQuickScanFolderArray(res.data)) {
+      setQuickScanState({ results: res.data, scanning: false, scanned: true, error: null });
     } else {
       setQuickScanState({ results: [], scanning: false, scanned: true, error: res.error?.message ?? tkPage("disk.quick_cleanup.scan_failed") });
     }
@@ -141,7 +143,7 @@ export function DiskAnalysisPage() {
       setTab("scan"); // 스캔 시작하면 Scan 탭으로 자동 이동
       const res = await window.systemScope.scanFolder(folderPath);
       if (res.ok && res.data) {
-        setScanning(true, (res.data as { jobId: string }).jobId);
+        setScanning(true, (res.data as { jobId: string }).jobId /* jobId validated by IPC contract */);
       } else {
         setScanning(false);
         setScanOutcome("failed");
@@ -196,7 +198,7 @@ export function DiskAnalysisPage() {
 
       const res = await window.systemScope.scanFolder(folderPath);
       if (res.ok && res.data) {
-        setScanning(true, (res.data as { jobId: string }).jobId);
+        setScanning(true, (res.data as { jobId: string }).jobId /* jobId validated by IPC contract */);
         return;
       }
 
@@ -213,8 +215,8 @@ export function DiskAnalysisPage() {
   // --- IPC listeners ---
   const handleJobProgress = useCallback(
     (data: unknown) => {
-      const d = data as { id: string; currentStep: string };
-      if (d.id === scanJobId) setScanProgress(d.currentStep);
+      if (!isJobProgress(data)) return;
+      if (data.id === scanJobId) setScanProgress(data.currentStep);
     },
     [scanJobId, setScanProgress],
   );
@@ -222,9 +224,9 @@ export function DiskAnalysisPage() {
 
   const handleJobCompleted = useCallback(
     (data: unknown) => {
-      const d = data as { id: string; data: DiskScanResult };
-      if (d.id === scanJobId) {
-        setScanResult(d.data);
+      if (!isJobCompleted(data)) return;
+      if (data.id === scanJobId) {
+        setScanResult(data.data);
         setScanOutcome("completed");
         if (selectedFolder) {
           window.systemScope
@@ -263,11 +265,11 @@ export function DiskAnalysisPage() {
 
   const handleJobFailed = useCallback(
     (data: unknown) => {
-      const d = data as { id: string; error: string };
-      if (d.id === scanJobId) {
+      if (!isJobFailed(data)) return;
+      if (data.id === scanJobId) {
         setScanning(false);
         setScanOutcome("failed");
-        setScanProgress(d.error);
+        setScanProgress(data.error);
         if (pendingRefreshRef.current && selectedFolder) {
           pendingRefreshRef.current = false;
           void refreshScanInBackground(selectedFolder);
@@ -798,42 +800,6 @@ function CleanupTab({
 }
 
 // ─── Shared ───
-
-function PageTab({
-  id,
-  active,
-  onClick,
-  children,
-}: {
-  id: string;
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      id={id}
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      style={{
-        padding: "6px 16px",
-        fontSize: "13px",
-        fontWeight: active ? 600 : 400,
-        border: "none",
-        borderRadius: "6px",
-        background: active ? "var(--accent-blue)" : "transparent",
-        color: active ? "var(--text-on-accent)" : "var(--text-secondary)",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

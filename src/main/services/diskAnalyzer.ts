@@ -159,8 +159,17 @@ export async function scanFolder(
     group.count++
     extensionMap.set(ext, group)
 
-    topFiles.push(file)
-    topFiles.sort((left, right) => right.size - left.size)
+    // Binary insert로 정렬 유지 — O(log k) per file (전체 sort 대비 큰 개선)
+    if (topFiles.length >= SCAN_LARGE_FILE_LIMIT && file.size <= topFiles[topFiles.length - 1].size) {
+      return // 현재 최소값보다 작으면 skip
+    }
+    let lo = 0, hi = topFiles.length
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1
+      if (topFiles[mid].size > file.size) lo = mid + 1
+      else hi = mid
+    }
+    topFiles.splice(lo, 0, file)
     if (topFiles.length > SCAN_LARGE_FILE_LIMIT) {
       topFiles.length = SCAN_LARGE_FILE_LIMIT
     }

@@ -4,6 +4,7 @@ import { useToast } from "../../components/Toast";
 import { usePortWatchStore } from "../../stores/usePortWatchStore";
 import { getStateStyle } from "./portStateStyles";
 import type { PortInfo } from "@shared/types";
+import { isPortInfoArray } from "@shared/types";
 import {
   formatPortAddress,
   matchWatchPorts,
@@ -101,7 +102,8 @@ export function PortWatch() {
       return;
     }
     setStatusError(null);
-    const ports = res.data as PortInfo[];
+    if (!isPortInfoArray(res.data)) return;
+    const ports = res.data;
     const now = Date.now();
     const newStatuses: Record<
       string,
@@ -174,8 +176,8 @@ export function PortWatch() {
   }, [monitoring, watches.length, pollPorts]);
 
   useInterval(
-    monitoring && watches.length > 0 ? pollPorts : () => {},
-    pollInterval,
+    pollPorts,
+    monitoring && watches.length > 0 ? pollInterval : null,
   );
 
   return (

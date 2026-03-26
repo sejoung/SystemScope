@@ -63,8 +63,8 @@ export function registerDiskIpc(): void {
       return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
 
-    const win = BrowserWindow.getFocusedWindow()
-    if (!win) {
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+    if (!win || win.isDestroyed()) {
       return failure('UNKNOWN_ERROR', tk('disk.error.no_active_window'))
     }
 

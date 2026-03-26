@@ -42,5 +42,11 @@ export default tseslint.config(
       'no-undef': 'off',
       '@typescript-eslint/no-explicit-any': 'off'
     }
+  },
+  {
+    files: ['src/preload/**/*.ts', 'src/main/ipc/**/*.ts', 'src/shared/types/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn'
+    }
   }
 )

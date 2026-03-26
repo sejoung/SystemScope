@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useSystemStore } from '../../stores/useSystemStore'
 import { Accordion } from '../../components/Accordion'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
@@ -9,12 +10,12 @@ export function RealtimeChart() {
   const [ref, width] = useContainerWidth(600)
   const { tk } = useI18n()
 
-  const data = history.map((h, i) => ({
+  const data = useMemo(() => history.map((h, i) => ({
     idx: i,
     cpu: h.cpu.usage,
     memory: h.memory.usage,
     gpu: h.gpu?.usage ?? 0
-  }))
+  })), [history])
 
   return (
     <Accordion title={tk('monitoring.live_usage.title')} defaultOpen>

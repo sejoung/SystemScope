@@ -132,7 +132,10 @@ export function SettingsPage() {
         clearTimeout(savedTimerRef.current);
         savedTimerRef.current = null;
       }
-      setHasUnsavedSettings(false);
+      // hasEditedRef로 실제 변경 여부를 확인하여 strict mode remount 시 오동작 방지
+      if (!hasEditedRef.current) {
+        setHasUnsavedSettings(false);
+      }
     };
   }, [setHasUnsavedSettings, showToast]);
 

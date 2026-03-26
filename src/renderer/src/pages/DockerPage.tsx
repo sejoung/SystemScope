@@ -6,9 +6,10 @@ import { DockerVolumes } from "../features/docker/DockerVolumes";
 import { DockerBuildCache } from "../features/docker/DockerBuildCache";
 import { DockerImages } from "../features/disk/DockerImages";
 import { useI18n } from "../i18n/useI18n";
-import type { DockerContainersScanResult } from "@shared/types";
+import { isDockerContainersScanResult } from "@shared/types";
 import { StatusMessage } from "../components/StatusMessage";
 import { PageLoading } from "../components/PageLoading";
+import { PageTab } from "../components/PageTab";
 
 type DockerTab =
   | "overview"
@@ -40,7 +41,12 @@ export function DockerPage() {
       setStatusMessage(res.error?.message ?? null);
       return;
     }
-    const data = res.data as DockerContainersScanResult;
+    if (!isDockerContainersScanResult(res.data)) {
+      setAvailability("daemon_unavailable");
+      setStatusMessage(null);
+      return;
+    }
+    const data = res.data;
     if (data.status !== "ready") {
       setAvailability(data.status);
       setStatusMessage(data.message);
@@ -227,36 +233,3 @@ const retryBtnStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
-function PageTab({
-  id,
-  active,
-  onClick,
-  children,
-}: {
-  id: string;
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      id={id}
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      style={{
-        padding: "6px 16px",
-        fontSize: "13px",
-        fontWeight: active ? 600 : 400,
-        border: "none",
-        borderRadius: "6px",
-        background: active ? "var(--accent-blue)" : "transparent",
-        color: active ? "var(--text-on-accent)" : "var(--text-secondary)",
-        cursor: "pointer",
-      }}
-    >
-      {children}
-    </button>
-  );
-}

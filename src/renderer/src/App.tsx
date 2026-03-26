@@ -14,7 +14,8 @@ import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
 import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
-import type { Alert, ShutdownState, SystemStats, UpdateInfo, UpdateStatus, ProcessSnapshot } from '@shared/types'
+import type { ShutdownState } from '@shared/types'
+import { isSystemStats, isAlertArray, isShutdownState, isUpdateInfo, isUpdateStatus, isProcessSnapshot } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { useState } from 'react'
 import { useI18n } from './i18n/useI18n'
@@ -25,34 +26,6 @@ import { reportRendererError } from './utils/rendererLogging'
 import { translateKey, translateLiteral } from '@shared/i18n'
 
 const PROCESS_POLLING_START_DELAY_MS = 2_500
-
-function isSystemStats(data: unknown): data is SystemStats {
-  return data !== null && typeof data === 'object' && 'cpu' in data && 'memory' in data && 'timestamp' in data
-}
-
-function isAlertArray(data: unknown): data is Alert[] {
-  return Array.isArray(data) && data.every(item => typeof item === 'object' && item !== null && 'id' in item && 'type' in item)
-}
-
-function isShutdownState(data: unknown): data is ShutdownState {
-  return data !== null && typeof data === 'object' && 'phase' in data && 'message' in data
-}
-
-function isUpdateInfo(data: unknown): data is UpdateInfo {
-  return data !== null && typeof data === 'object' && 'latestVersion' in data && 'releaseUrl' in data
-}
-
-function isUpdateStatus(data: unknown): data is UpdateStatus {
-  return data !== null && typeof data === 'object' && 'currentVersion' in data && 'checking' in data && 'lastCheckedAt' in data
-}
-
-function isProcessSnapshot(data: unknown): data is ProcessSnapshot {
-  return data !== null
-    && typeof data === 'object'
-    && 'allProcesses' in data
-    && 'topCpuProcesses' in data
-    && 'topMemoryProcesses' in data
-}
 
 function App() {
   const currentPage = useSettingsStore((s) => s.currentPage)

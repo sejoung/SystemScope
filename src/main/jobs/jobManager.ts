@@ -12,6 +12,37 @@ export interface Job {
 
 const jobs = new Map<string, Job>()
 let jobCounter = 0
+const JOB_MAX_AGE_MS = 30 * 60 * 1000 // 30분
+let pruneTimer: ReturnType<typeof setInterval> | null = null
+
+/** 완료/실패 처리되지 않고 남은 orphaned job 정리 */
+export function pruneOrphanedJobs(): number {
+  const now = Date.now()
+  let pruned = 0
+  for (const [id, job] of jobs) {
+    const age = now - parseInt(id.split('-')[2] || '0', 10)
+    if (age > JOB_MAX_AGE_MS && (job.status === 'pending' || job.status === 'running')) {
+      job.abortController.abort()
+      job.status = 'cancelled'
+      jobs.delete(id)
+      pruned++
+    }
+  }
+  return pruned
+}
+
+export function startJobPruner(): void {
+  if (pruneTimer) return
+  pruneTimer = setInterval(pruneOrphanedJobs, 5 * 60 * 1000) // 5분마다
+  pruneTimer.unref?.()
+}
+
+export function stopJobPruner(): void {
+  if (pruneTimer) {
+    clearInterval(pruneTimer)
+    pruneTimer = null
+  }
+}
 
 export function createJob(type: string): Job {
   const id = `job-${++jobCounter}-${Date.now()}`

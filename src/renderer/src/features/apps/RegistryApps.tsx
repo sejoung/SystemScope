@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import type { AppLeftoverRegistryItem } from "@shared/types";
+import { isAppLeftoverRegistryArray } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
@@ -49,8 +50,8 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
 
   const loadRegistry = useCallback(async () => {
     const res = await window.systemScope.listLeftoverAppRegistry();
-    if (res.ok && res.data) {
-      const items = res.data as AppLeftoverRegistryItem[];
+    if (res.ok && res.data && isAppLeftoverRegistryArray(res.data)) {
+      const items = res.data;
       setRegistryItems(items);
       setLoadError(undefined);
       setSelectedIds((current) =>
