@@ -33,7 +33,7 @@ export const usePortFinderStore = create<PortFinderState>((set, get) => ({
   requestState: 'idle',
   stateFilter: 'LISTEN',
   search: '',
-  searchScope: 'process',
+  searchScope: 'local',
 
   setPorts: (ports) => set({ ports }),
   setLoading: (val) => set({ loading: val }),
