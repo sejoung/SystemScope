@@ -17,93 +17,115 @@ const CPU_TEMPERATURE_CACHE_TTL = 5 * 1000
 let lastDiskStats: DriveInfo[] | null = null
 let lastDiskFetchTime = 0
 const DISK_CACHE_TTL = 30 * 1000 // 30초 캐시
+let lastSystemStats: SystemStats | null = null
+let lastSystemStatsFetchTime = 0
+let pendingSystemStats: Promise<SystemStats> | null = null
+const SYSTEM_STATS_CACHE_TTL = 1000
 
 type GraphicsController = Awaited<ReturnType<typeof si.graphics>>['controllers'][number]
 
 export async function getSystemStats(): Promise<SystemStats> {
-  const [cpuLoad, cpuInfo, mem, gpuInfo] = await Promise.all([
-    si.currentLoad(),
-    si.cpu(),
-    si.mem(),
-    getCachedGpuInfo()
-  ])
-
-  // 디스크 정보: 캐시가 유효하면 캐시 사용, 아니면 새로 가져옴
   const now = Date.now()
-  let drives: DriveInfo[]
+  if (lastSystemStats && now - lastSystemStatsFetchTime < SYSTEM_STATS_CACHE_TTL) {
+    return lastSystemStats
+  }
+  if (pendingSystemStats) {
+    return pendingSystemStats
+  }
 
-  if (lastDiskStats && now - lastDiskFetchTime < DISK_CACHE_TTL) {
-    drives = lastDiskStats
-  } else {
-    try {
-      const disks = await si.fsSize()
-      const apfsInfo = platform() === 'darwin' ? await getApfsContainerInfo() : null
+  pendingSystemStats = (async () => {
+    const [cpuLoad, cpuInfo, mem, gpuInfo] = await Promise.all([
+      si.currentLoad(),
+      si.cpu(),
+      si.mem(),
+      getCachedGpuInfo()
+    ])
 
-      drives = disks.map((d) => {
-        let purgeable: number | null = null
-        let realUsage: number | null = null
+    // 디스크 정보: 캐시가 유효하면 캐시 사용, 아니면 새로 가져옴
+    const statsNow = Date.now()
+    let drives: DriveInfo[]
 
-        if (apfsInfo && d.mount === '/') {
-          const containerUsed = apfsInfo.size - apfsInfo.free
-          purgeable = containerUsed - d.used
-          if (purgeable < 0) purgeable = 0
-          const realUsed = d.used
-          realUsage = Math.round((realUsed / apfsInfo.size) * 10000) / 100
-        }
+    if (lastDiskStats && statsNow - lastDiskFetchTime < DISK_CACHE_TTL) {
+      drives = lastDiskStats
+    } else {
+      try {
+        const disks = await si.fsSize()
+        const apfsInfo = platform() === 'darwin' ? await getApfsContainerInfo() : null
 
-        return {
-          fs: d.fs,
-          type: d.type,
-          size: apfsInfo && d.mount === '/' ? apfsInfo.size : d.size,
-          used: d.used,
-          available: apfsInfo && d.mount === '/' ? apfsInfo.free : d.available,
-          usage: apfsInfo && d.mount === '/'
-            ? Math.round(((apfsInfo.size - apfsInfo.free) / apfsInfo.size) * 10000) / 100
-            : Math.round(d.use * 100) / 100,
-          mount: d.mount,
-          purgeable,
-          realUsage
-        }
-      })
-      lastDiskStats = drives
-      lastDiskFetchTime = now
-    } catch (err) {
-      logWarn('system-monitor', 'Failed to load disk information', { error: err })
-      drives = lastDiskStats || []
+        drives = disks.map((d) => {
+          let purgeable: number | null = null
+          let realUsage: number | null = null
+
+          if (apfsInfo && d.mount === '/') {
+            const containerUsed = apfsInfo.size - apfsInfo.free
+            purgeable = containerUsed - d.used
+            if (purgeable < 0) purgeable = 0
+            const realUsed = d.used
+            realUsage = Math.round((realUsed / apfsInfo.size) * 10000) / 100
+          }
+
+          return {
+            fs: d.fs,
+            type: d.type,
+            size: apfsInfo && d.mount === '/' ? apfsInfo.size : d.size,
+            used: d.used,
+            available: apfsInfo && d.mount === '/' ? apfsInfo.free : d.available,
+            usage: apfsInfo && d.mount === '/'
+              ? Math.round(((apfsInfo.size - apfsInfo.free) / apfsInfo.size) * 10000) / 100
+              : Math.round(d.use * 100) / 100,
+            mount: d.mount,
+            purgeable,
+            realUsage
+          }
+        })
+        lastDiskStats = drives
+        lastDiskFetchTime = statsNow
+      } catch (err) {
+        logWarn('system-monitor', 'Failed to load disk information', { error: err })
+        drives = lastDiskStats || []
+      }
     }
-  }
 
-  const cpu: CpuInfo = {
-    usage: Math.round(cpuLoad.currentLoad * 100) / 100,
-    cores: cpuLoad.cpus.map((c) => Math.round(c.load * 100) / 100),
-    temperature: null,
-    model: `${cpuInfo.manufacturer} ${cpuInfo.brand}`,
-    speed: cpuInfo.speed
-  }
+    const cpu: CpuInfo = {
+      usage: Math.round(cpuLoad.currentLoad * 100) / 100,
+      cores: cpuLoad.cpus.map((c) => Math.round(c.load * 100) / 100),
+      temperature: null,
+      model: `${cpuInfo.manufacturer} ${cpuInfo.brand}`,
+      speed: cpuInfo.speed
+    }
 
-  cpu.temperature = await getCachedCpuTemperature()
+    cpu.temperature = await getCachedCpuTemperature()
 
-  // macOS: mem.used에는 파일 캐시(inactive)가 포함되어 항상 높은 값을 보여줌
-  // 실제 메모리 사용률 = (total - available) / total
-  const cached = mem.used - mem.active
-  const memory: MemoryInfo = {
-    total: mem.total,
-    used: mem.used,
-    active: mem.active,
-    available: mem.available,
-    cached: cached > 0 ? cached : 0,
-    usage: Math.round(((mem.total - mem.available) / mem.total) * 10000) / 100,
-    swapTotal: mem.swaptotal,
-    swapUsed: mem.swapused
-  }
+    // macOS: mem.used에는 파일 캐시(inactive)가 포함되어 항상 높은 값을 보여줌
+    // 실제 메모리 사용률 = (total - available) / total
+    const cached = mem.used - mem.active
+    const memory: MemoryInfo = {
+      total: mem.total,
+      used: mem.used,
+      active: mem.active,
+      available: mem.available,
+      cached: cached > 0 ? cached : 0,
+      usage: Math.round(((mem.total - mem.available) / mem.total) * 10000) / 100,
+      swapTotal: mem.swaptotal,
+      swapUsed: mem.swapused
+    }
 
-  return {
-    cpu,
-    memory,
-    gpu: gpuInfo,
-    disk: { drives },
-    timestamp: Date.now()
-  }
+    const nextStats: SystemStats = {
+      cpu,
+      memory,
+      gpu: gpuInfo,
+      disk: { drives },
+      timestamp: Date.now()
+    }
+
+    lastSystemStats = nextStats
+    lastSystemStatsFetchTime = Date.now()
+    return nextStats
+  })().finally(() => {
+    pendingSystemStats = null
+  })
+
+  return pendingSystemStats
 }
 
 async function getCachedGpuInfo(): Promise<GpuInfo> {
