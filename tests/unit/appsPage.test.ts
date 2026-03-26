@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getConfidenceColor,
   getConfidenceLabel,
-} from "../../src/renderer/src/pages/AppsPage";
+} from "../../src/renderer/src/features/apps/appsShared";
 
 describe("AppsPage helpers", () => {
   it("maps confidence levels to localized labels", () => {
