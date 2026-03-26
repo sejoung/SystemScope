@@ -1,15 +1,22 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { List, type RowComponentProps } from "react-window";
 import type { ProcessInfo, ProcessKillResult } from "@shared/types";
 import { formatBytes } from "../../utils/format";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
+import { useContainerWidth } from "../../hooks/useContainerWidth";
 
 type SortField = "cpu" | "memory" | "name" | "pid";
 type SortDir = "asc" | "desc";
 
 type CpuUsageTone = "high" | "medium" | "normal";
+
+const ROW_HEIGHT = 56;
+const LIST_HEIGHT = 520;
+const COL_WIDTHS = { pid: "60px", name: "1fr", cpu: "100px", memory: "100px", action: "92px" };
+const GRID_TEMPLATE = `${COL_WIDTHS.pid} ${COL_WIDTHS.name} ${COL_WIDTHS.cpu} ${COL_WIDTHS.memory} ${COL_WIDTHS.action}`;
 
 interface ProcessTableProps {
   processes: ProcessInfo[];
@@ -21,6 +28,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("cpu");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [containerRef, containerWidth] = useContainerWidth(720);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -99,6 +107,105 @@ export function ProcessTable({ processes }: ProcessTableProps) {
     }
   };
 
+  const Row = useCallback(
+    ({ index, style }: RowComponentProps) => {
+      const p = filtered[index];
+      return (
+        <div
+          style={{
+            ...style,
+            display: "grid",
+            gridTemplateColumns: GRID_TEMPLATE,
+            alignItems: "center",
+            borderBottom: "1px solid var(--border)",
+            minWidth: "720px",
+          }}
+        >
+          <div
+            style={{
+              ...cellStyle,
+              color: "var(--text-muted)",
+              fontFamily: "monospace",
+              fontSize: "13px",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {p.pid}
+          </div>
+          <div
+            style={{
+              ...cellStyle,
+              fontWeight: 500,
+              color: "var(--text-primary)",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {p.name}
+            </div>
+            {p.command && p.command !== p.name && (
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--text-muted)",
+                  marginTop: "2px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "360px",
+                }}
+              >
+                <CopyableValue
+                  value={p.command}
+                  fontSize="12px"
+                  color="var(--text-muted)"
+                  maxWidth="360px"
+                />
+              </div>
+            )}
+          </div>
+          <div
+            style={{
+              ...cellStyle,
+              textAlign: "right",
+              fontFamily: "monospace",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            <div style={metricCellStyle}>
+              <span style={cpuValueStyle}>{p.cpu.toFixed(1)}%</span>
+              <span style={getCpuBadgeStyle(getCpuUsageTone(p.cpu))}>
+                {getCpuUsageToneLabel(getCpuUsageTone(p.cpu), tk)}
+              </span>
+            </div>
+          </div>
+          <div
+            style={{
+              ...cellStyle,
+              textAlign: "right",
+              fontFamily: "monospace",
+              fontVariantNumeric: "tabular-nums",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {formatBytes(p.memoryBytes)}
+          </div>
+          <div style={{ ...cellStyle, textAlign: "center" }}>
+            <button
+              onClick={() => void handleKill(p)}
+              style={killBtnStyle}
+            >
+              {tk("process.table.kill")}
+            </button>
+          </div>
+        </div>
+      );
+    },
+    [filtered, tk],
+  );
+
+  const listHeight = Math.min(LIST_HEIGHT, filtered.length * ROW_HEIGHT);
+
   return (
     <section style={sectionStyle}>
       <div style={headerStyle}>
@@ -150,176 +257,63 @@ export function ProcessTable({ processes }: ProcessTableProps) {
         <span style={infoLabelStyle}>{sortSummary.label}</span>
         <span style={infoReasonStyle}>{sortSummary.reason}</span>
       </div>
-      <div style={{ minHeight: "200px", overflowX: "auto", overflowY: "clip" }}>
-        <table
+
+      <div ref={containerRef} style={{ overflowX: "auto" }}>
+        {/* Header */}
+        <div
+          role="row"
           style={{
-            width: "100%",
+            display: "grid",
+            gridTemplateColumns: GRID_TEMPLATE,
+            borderBottom: "1px solid var(--border)",
+            background: "var(--bg-card)",
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
             minWidth: "720px",
-            borderCollapse: "collapse",
-            fontSize: "13px",
           }}
         >
-          <thead>
-            <tr
-              style={{
-                borderBottom: "1px solid var(--border)",
-                position: "sticky",
-                top: 0,
-                background: "var(--bg-card)",
-                zIndex: 1,
-                boxShadow: "0 1px 0 var(--border)",
-              }}
-            >
-              <SortHeader
-                field="pid"
-                current={sortField}
-                onClick={handleSort}
-                width="60px"
-                ariaSort={getAriaSort("pid")}
-              >
-                PID{sortIcon("pid")}
-              </SortHeader>
-              <SortHeader
-                field="name"
-                current={sortField}
-                onClick={handleSort}
-                ariaSort={getAriaSort("name")}
-              >
-                {tk("process.table.name")}
-                {sortIcon("name")}
-              </SortHeader>
-              <SortHeader
-                field="cpu"
-                current={sortField}
-                onClick={handleSort}
-                width="80px"
-                align="right"
-                ariaSort={getAriaSort("cpu")}
-              >
-                CPU %{sortIcon("cpu")}
-              </SortHeader>
-              <SortHeader
-                field="memory"
-                current={sortField}
-                onClick={handleSort}
-                width="90px"
-                align="right"
-                ariaSort={getAriaSort("memory")}
-              >
-                {tk("process.table.memory")}
-                {sortIcon("memory")}
-              </SortHeader>
-              <th style={{ ...thStyle, textAlign: "center", width: "92px" }}>
-                {tk("process.table.action")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  style={{
-                    ...tdStyle,
-                    textAlign: "center",
-                    color: "var(--text-muted)",
-                    padding: "20px",
-                  }}
-                >
-                  {search
-                    ? tk("process.table.empty_search", { query: search })
-                    : tk("process.table.empty")}
-                </td>
-              </tr>
-            )}
-            {filtered.map((p) => (
-              <tr
-                key={p.pid}
-                style={rowStyle}
-              >
-                <td
-                  style={{
-                    ...tdStyle,
-                    color: "var(--text-muted)",
-                    fontFamily: "monospace",
-                    fontSize: "13px",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {p.pid}
-                </td>
-                <td
-                  style={{
-                    ...tdStyle,
-                    fontWeight: 500,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  <div>{p.name}</div>
-                  {p.command && p.command !== p.name && (
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        lineHeight: 1.5,
-                        color: "var(--text-muted)",
-                        marginTop: "6px",
-                        maxWidth: "360px",
-                      }}
-                    >
-                      <CopyableValue
-                        value={p.command}
-                        fontSize="12px"
-                        color="var(--text-muted)"
-                        multiline
-                        maxWidth="360px"
-                      />
-                    </div>
-                  )}
-                </td>
-                <td
-                  style={{
-                    ...tdStyle,
-                    textAlign: "right",
-                    fontFamily: "monospace",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  <div style={metricCellStyle}>
-                    <span style={cpuValueStyle}>{p.cpu.toFixed(1)}%</span>
-                    <span style={getCpuBadgeStyle(getCpuUsageTone(p.cpu))}>
-                      {getCpuUsageToneLabel(getCpuUsageTone(p.cpu), tk)}
-                    </span>
-                  </div>
-                </td>
-                <td
-                  style={{
-                    ...tdStyle,
-                    textAlign: "right",
-                    fontFamily: "monospace",
-                    fontVariantNumeric: "tabular-nums",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {formatBytes(p.memoryBytes)}
-                </td>
-                <td
-                  style={{
-                    ...tdStyle,
-                    textAlign: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <button
-                    onClick={() => void handleKill(p)}
-                    style={killBtnStyle}
-                  >
-                    {tk("process.table.kill")}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          <SortHeader field="pid" current={sortField} onClick={handleSort} ariaSort={getAriaSort("pid")} align="left">
+            PID{sortIcon("pid")}
+          </SortHeader>
+          <SortHeader field="name" current={sortField} onClick={handleSort} ariaSort={getAriaSort("name")} align="left">
+            {tk("process.table.name")}{sortIcon("name")}
+          </SortHeader>
+          <SortHeader field="cpu" current={sortField} onClick={handleSort} ariaSort={getAriaSort("cpu")} align="right">
+            CPU %{sortIcon("cpu")}
+          </SortHeader>
+          <SortHeader field="memory" current={sortField} onClick={handleSort} ariaSort={getAriaSort("memory")} align="right">
+            {tk("process.table.memory")}{sortIcon("memory")}
+          </SortHeader>
+          <div style={{ ...thStyle, textAlign: "center" }}>
+            {tk("process.table.action")}
+          </div>
+        </div>
+
+        {/* Virtualized rows */}
+        {filtered.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              color: "var(--text-muted)",
+              padding: "20px",
+              fontSize: "13px",
+            }}
+          >
+            {search
+              ? tk("process.table.empty_search", { query: search })
+              : tk("process.table.empty")}
+          </div>
+        ) : (
+          <List
+            rowComponent={Row}
+            rowCount={filtered.length}
+            rowHeight={ROW_HEIGHT}
+            rowProps={{}}
+            overscanCount={10}
+            style={{ height: listHeight, width: Math.max(containerWidth, 720) }}
+          />
+        )}
       </div>
     </section>
   );
@@ -408,7 +402,6 @@ function SortHeader({
   current,
   onClick,
   ariaSort,
-  width,
   align,
   children,
 }: {
@@ -416,18 +409,17 @@ function SortHeader({
   current: SortField;
   onClick: (field: SortField) => void;
   ariaSort: React.AriaAttributes["aria-sort"];
-  width?: string;
   align?: string;
   children: React.ReactNode;
 }) {
   const isActive = current === field;
   return (
-    <th
+    <div
+      role="columnheader"
       aria-sort={ariaSort}
       style={{
         ...thStyle,
         textAlign: (align as React.CSSProperties["textAlign"]) ?? "left",
-        width,
         cursor: "pointer",
         color: isActive ? "var(--text-primary)" : "var(--text-muted)",
         userSelect: "none",
@@ -449,9 +441,18 @@ function SortHeader({
       >
         {children}
       </button>
-    </th>
+    </div>
   );
 }
+
+// ─── Styles ───
+
+const cellStyle: React.CSSProperties = {
+  padding: "8px 8px",
+  color: "var(--text-secondary)",
+  fontSize: "14px",
+  lineHeight: 1.4,
+};
 
 const thStyle: React.CSSProperties = {
   padding: "12px 8px",
@@ -459,13 +460,6 @@ const thStyle: React.CSSProperties = {
   fontSize: "12px",
   textTransform: "uppercase",
   letterSpacing: "0.06em",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "12px 8px",
-  color: "var(--text-secondary)",
-  fontSize: "14px",
-  lineHeight: 1.4,
 };
 
 const searchStyle: React.CSSProperties = {
@@ -560,10 +554,6 @@ const actionsStyle: React.CSSProperties = {
   alignItems: "center",
   gap: "6px",
   flexShrink: 0,
-};
-
-const rowStyle: React.CSSProperties = {
-  borderBottom: "1px solid var(--border)",
 };
 
 const metricCellStyle: React.CSSProperties = {
