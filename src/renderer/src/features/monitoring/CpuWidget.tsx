@@ -5,6 +5,8 @@ import { ProgressBar } from '../../components/ProgressBar'
 import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWidth'
 import { useI18n } from '../../i18n/useI18n'
 
+const COMPACT_HEADER_HEIGHT = 108
+
 export function CpuWidget() {
   const cpu = useSystemStore((s) => s.current?.cpu)
   const { tk } = useI18n()
@@ -41,8 +43,8 @@ export function CpuWidget() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '84px',
+              justifyContent: 'flex-start',
+              height: `${COMPACT_HEADER_HEIGHT}px`,
               padding: '4px 0 0'
             }}
           >
@@ -62,6 +64,10 @@ export function CpuWidget() {
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>
               {cpu.model}
             </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>
+              {tk('monitoring.cpu.cores', { count: cpu.cores.length, speed: cpu.speed })}
+              {cpu.temperature !== null && ` / ${cpu.temperature}°C`}
+            </div>
           </div>
         ) : (
           <GaugeChart
@@ -73,10 +79,6 @@ export function CpuWidget() {
           />
         )}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: isCompact ? '8px' : '6px', minWidth: 0 }}>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            {tk('monitoring.cpu.cores', { count: cpu.cores.length, speed: cpu.speed })}
-            {cpu.temperature !== null && ` / ${cpu.temperature}°C`}
-          </div>
           {isCompact ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
               <CompactStat

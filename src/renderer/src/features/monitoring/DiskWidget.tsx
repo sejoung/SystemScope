@@ -3,6 +3,8 @@ import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWid
 import { useI18n } from '../../i18n/useI18n'
 import { useSystemStore } from '../../stores/useSystemStore'
 
+const COMPACT_HEADER_HEIGHT = 108
+
 function formatIops(value: number | null): string {
   if (value === null) return 'N/A'
   return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toFixed(1)
@@ -40,8 +42,8 @@ export function DiskWidget() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: isCompact ? '84px' : '120px',
+              justifyContent: 'flex-start',
+              height: isCompact ? `${COMPACT_HEADER_HEIGHT}px` : '120px',
               padding: isCompact ? '4px 0 0' : '8px 0 4px'
             }}
           >

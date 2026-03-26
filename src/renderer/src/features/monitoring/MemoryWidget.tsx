@@ -5,6 +5,8 @@ import { useCompactLayout, useContainerWidth } from '../../hooks/useContainerWid
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 
+const COMPACT_HEADER_HEIGHT = 108
+
 export function MemoryWidget() {
   const memory = useSystemStore((s) => s.current?.memory)
   const { tk } = useI18n()
@@ -30,8 +32,8 @@ export function MemoryWidget() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '84px',
+              justifyContent: 'flex-start',
+              height: `${COMPACT_HEADER_HEIGHT}px`,
               padding: '4px 0 0'
             }}
           >
