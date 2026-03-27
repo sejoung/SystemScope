@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getScanScopeMessageKey,
   shouldShowCancelledScanMessage,
-} from "../../src/renderer/src/pages/DiskAnalysisPage";
+} from "../../src/renderer/src/features/disk/diskAnalysisHelpers";
 
 describe("DiskAnalysisPage helpers", () => {
   it("should keep the cancelled banner only when scanning is stopped after cancel", () => {

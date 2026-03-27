@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { DiskScanResult, LargeFile, ExtensionGroup, UserSpaceInfo, GrowthViewResult, QuickScanFolder } from '@shared/types'
 
-interface QuickScanState {
+export interface QuickScanState {
   results: QuickScanFolder[]
   scanning: boolean
   scanned: boolean
