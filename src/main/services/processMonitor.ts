@@ -1,5 +1,5 @@
 import si from 'systeminformation'
-import path from 'path'
+import path from 'node:path'
 import type { ProcessInfo, PortInfo, ProcessSnapshot } from '@shared/types'
 
 // si.processes() 중복 호출 방지를 위한 TTL 캐시 (500ms)

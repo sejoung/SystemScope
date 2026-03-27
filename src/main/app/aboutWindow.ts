@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron'
-import * as fs from 'fs'
-import { join } from 'path'
+import * as fs from 'node:fs'
+import { join } from 'node:path'
 import { getSettings } from '../store/settingsStore'
 
 let aboutWindow: BrowserWindow | null = null

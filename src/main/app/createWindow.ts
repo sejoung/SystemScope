@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog } from 'electron'
-import { join } from 'path'
+import { join } from 'node:path'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
 import { getSettings } from '../store/settingsStore'
 import { clearUnsavedSettingsState, getUnsavedSettingsState, setUnsavedSettingsState } from './rendererState'

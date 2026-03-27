@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import type { DiskScanResult } from "@shared/types";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { useI18n } from "../../i18n/useI18n";
-import { useDiskStore } from "../../stores/useDiskStore";
+import { type useDiskStore } from "../../stores/useDiskStore";
 import { SectionFallback } from "./DiskAnalysisShared";
 
 const FileInsights = lazy(async () =>

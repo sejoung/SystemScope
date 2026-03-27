@@ -1,6 +1,6 @@
 import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron'
-import * as path from 'path'
-import * as fs from 'fs'
+import * as path from 'node:path'
+import * as fs from 'node:fs'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { getSettings, setSettings } from '../store/settingsStore'
 import { validatePartialSettings } from '../store/settingsSchema'

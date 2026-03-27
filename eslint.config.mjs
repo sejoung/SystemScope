@@ -1,6 +1,7 @@
 import js from '@eslint/js'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
+import unicorn from 'eslint-plugin-unicorn'
 
 export default tseslint.config(
   {
@@ -38,9 +39,20 @@ export default tseslint.config(
     }
   },
   {
+    plugins: {
+      unicorn
+    },
     rules: {
       'no-undef': 'off',
-      '@typescript-eslint/no-explicit-any': 'off'
+      '@typescript-eslint/no-explicit-any': 'off',
+      'unicorn/prefer-node-protocol': 'error',
+      'eqeqeq': ['error', 'always'],
+      'no-template-curly-in-string': 'warn',
+      'no-promise-executor-return': 'error',
+      'no-self-compare': 'error',
+      'no-throw-literal': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports', disallowTypeAnnotations: false }]
     }
   },
   {

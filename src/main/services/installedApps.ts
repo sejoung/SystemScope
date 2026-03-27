@@ -1,9 +1,9 @@
 import { shell } from 'electron'
-import * as fsp from 'fs/promises'
-import * as path from 'path'
-import { homedir, platform as getPlatform } from 'os'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import * as fsp from 'node:fs/promises'
+import * as path from 'node:path'
+import { homedir, platform as getPlatform } from 'node:os'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import type {
   AppLeftoverDataItem,
   AppLeftoverRegistryItem,

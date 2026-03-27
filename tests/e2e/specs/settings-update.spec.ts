@@ -1,9 +1,16 @@
 import { test, expect } from '../fixtures/electronApp'
 
+type E2EWindow = Window & typeof globalThis & {
+  __E2E_CONTROLS__?: {
+    setUpdateAvailable: (value: boolean) => void
+    reset: () => void
+  }
+}
+
 test.describe('설정 페이지 업데이트 확인', () => {
   test.beforeEach(async ({ mainWindow }) => {
     await mainWindow.evaluate(() => {
-      window.__E2E_CONTROLS__?.reset()
+      (window as E2EWindow).__E2E_CONTROLS__?.reset()
     })
   })
 
@@ -26,7 +33,7 @@ test.describe('설정 페이지 업데이트 확인', () => {
 
   test('업데이트가 있을 때 다운로드 버튼이 나타나도 설정 화면이 유지된다', async ({ mainWindow }) => {
     await mainWindow.evaluate(() => {
-      window.__E2E_CONTROLS__?.setUpdateAvailable(true)
+      (window as E2EWindow).__E2E_CONTROLS__?.setUpdateAvailable(true)
     })
 
     const settingsNav = mainWindow.getByTestId('nav-settings')

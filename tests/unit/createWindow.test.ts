@@ -77,7 +77,7 @@ describe('createMainWindow', () => {
       isDevToolsOpened: vi.fn(() => false)
     }
 
-    browserWindowMock.mockImplementation(function mockBrowserWindow(_options: unknown) {
+    browserWindowMock.mockImplementation(function mockBrowserWindow() {
       return {
         webContents: webContentsMock,
         once: vi.fn(),

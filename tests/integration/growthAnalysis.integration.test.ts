@@ -12,7 +12,7 @@ const execFileMock = vi.hoisted(() => vi.fn())
 const accessMock = vi.hoisted(() => vi.fn())
 
 vi.mock('os', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('os')>()
+  const actual = await importOriginal<typeof import('node:os')>()
   return {
     ...actual,
     homedir: () => '/Users/test',

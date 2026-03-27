@@ -1,5 +1,5 @@
-import * as fs from 'fs/promises'
-import * as path from 'path'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import type { FolderNode, LargeFile, ExtensionGroup, DiskScanResult } from '@shared/types'
 import { SCAN_MAX_DEPTH, SCAN_CONCURRENCY, SCAN_LARGE_FILE_LIMIT } from '@shared/constants/thresholds'
 import { getDirSize } from '../utils/getDirSize'

@@ -6,7 +6,7 @@ import { CopyableValue } from "../../components/CopyableValue";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 import { StatusMessage } from "../../components/StatusMessage";
 import { useI18n } from "../../i18n/useI18n";
-import { useDiskStore } from "../../stores/useDiskStore";
+import { type useDiskStore } from "../../stores/useDiskStore";
 import { formatBytes } from "../../utils/format";
 import { SectionFallback, Stat } from "./DiskAnalysisShared";
 import {

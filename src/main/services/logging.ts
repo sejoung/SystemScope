@@ -1,6 +1,6 @@
 import { app } from 'electron'
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import log from 'electron-log'
 
 const LOG_RETENTION_DAYS = 10

@@ -1,6 +1,6 @@
 import { Tray, Menu, app, BrowserWindow, nativeImage } from 'electron'
-import { join } from 'path'
-import { platform } from 'os'
+import { join } from 'node:path'
+import { platform } from 'node:os'
 import { logError } from '../services/logging'
 import { getSystemStats } from '../services/systemMonitor'
 import { getCpuMeterText } from './trayIconFactory'

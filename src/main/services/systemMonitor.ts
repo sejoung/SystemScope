@@ -1,5 +1,5 @@
 import si from 'systeminformation'
-import { platform } from 'os'
+import { platform } from 'node:os'
 import type { SystemStats, CpuInfo, MemoryInfo, GpuInfo, DriveInfo, DiskIoInfo, NetworkInfo } from '@shared/types'
 import { logDebug, logInfo, logWarn } from './logging'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'

@@ -11,7 +11,7 @@ import type {
   DockerVolumesScanResult,
   DockerVolumeSummary
 } from '@shared/types'
-import path from 'path'
+import path from 'node:path'
 import { logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'

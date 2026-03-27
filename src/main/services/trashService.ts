@@ -1,6 +1,6 @@
 import { dialog, shell, BrowserWindow, app } from 'electron'
-import * as path from 'path'
-import * as fs from 'fs/promises'
+import * as path from 'node:path'
+import * as fs from 'node:fs/promises'
 import { logError, logInfo } from './logging'
 import { isPathInsideParent } from '../ipc/settingsPathUtils'
 import type { TrashResult } from '@shared/types'

@@ -1,6 +1,6 @@
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import * as crypto from 'crypto'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import * as crypto from 'node:crypto'
 import type { RecentGrowthEntry, DuplicateGroup } from '@shared/types'
 
 export async function findRecentGrowth(
@@ -231,7 +231,7 @@ async function hashFileSample(filePath: string, fileSize: number, signal?: Abort
 async function hashFileFull(filePath: string, signal?: AbortSignal): Promise<string> {
   if (signal?.aborted) throw new Error('Cancelled')
 
-  const { createReadStream } = await import('fs')
+  const { createReadStream } = await import('node:fs')
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('md5')
     const stream = createReadStream(filePath)

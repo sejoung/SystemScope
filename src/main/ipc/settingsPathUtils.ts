@@ -1,5 +1,5 @@
-import * as path from 'path'
-import * as fs from 'fs'
+import * as path from 'node:path'
+import * as fs from 'node:fs'
 
 export function isPathInsideParent(targetPath: string, parentPath: string): boolean {
   // fs.realpathSync로 심볼릭 링크를 해석하여 실제 경로 기반으로 비교

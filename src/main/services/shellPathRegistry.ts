@@ -1,4 +1,4 @@
-import * as path from 'path'
+import * as path from 'node:path'
 
 const MAX_REGISTERED_PATHS = 5000
 const PATH_TTL_MS = 2 * 60 * 60 * 1000

@@ -1,6 +1,6 @@
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import { platform } from 'os'
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { platform } from 'node:os'
 import { logDebug } from '../services/logging'
 import { isExternalCommandError, runExternalCommand } from '../services/externalCommand'
 
