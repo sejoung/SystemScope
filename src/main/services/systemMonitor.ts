@@ -134,14 +134,40 @@ export async function getSystemStats(): Promise<SystemStats> {
   return pendingSystemStats
 }
 
+async function getWindowsDiskIoInfo(): Promise<DiskIoInfo> {
+  const { stdout } = await runExternalCommand('powershell', [
+    '-NoProfile',
+    '-Command',
+    "Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter \"Name='_Total'\" | Select-Object DiskReadsPerSec,DiskWritesPerSec,DiskTransfersPerSec,PercentDiskTime | ConvertTo-Json"
+  ])
+  const data = JSON.parse(stdout)
+  return {
+    readsPerSecond: sanitizeRate(data.DiskReadsPerSec),
+    writesPerSecond: sanitizeRate(data.DiskWritesPerSec),
+    totalPerSecond: sanitizeRate(data.DiskTransfersPerSec),
+    busyPercent: sanitizeRate(data.PercentDiskTime)
+  }
+}
+
 async function getDiskIoInfo(): Promise<DiskIoInfo> {
   try {
     const stats = await si.disksIO()
+    if (stats) {
+      return {
+        readsPerSecond: sanitizeRate(stats.rIO_sec),
+        writesPerSecond: sanitizeRate(stats.wIO_sec),
+        totalPerSecond: sanitizeRate(stats.tIO_sec),
+        busyPercent: sanitizeRate(stats.tWaitPercent)
+      }
+    }
+    if (platform() === 'win32') {
+      return await getWindowsDiskIoInfo()
+    }
     return {
-      readsPerSecond: sanitizeRate(stats.rIO_sec),
-      writesPerSecond: sanitizeRate(stats.wIO_sec),
-      totalPerSecond: sanitizeRate(stats.tIO_sec),
-      busyPercent: sanitizeRate(stats.tWaitPercent)
+      readsPerSecond: null,
+      writesPerSecond: null,
+      totalPerSecond: null,
+      busyPercent: null
     }
   } catch (err) {
     logDebug('system-monitor', 'Disk I/O information is unavailable', { error: err })
