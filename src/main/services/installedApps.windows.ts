@@ -340,7 +340,11 @@ function expandWindowsEnvVars(input: string): string {
 function currentExeIfInside(currentExe: string, installLocation: string): string | undefined {
   const normalizedInstall = installLocation.replace(/[\\/]+/g, '\\').replace(/\\+$/, '').toLowerCase()
   const normalizedExe = currentExe.replace(/[\\/]+/g, '\\').toLowerCase()
-  return normalizedExe.startsWith(normalizedInstall) ? currentExe : undefined
+  if (normalizedExe === normalizedInstall) {
+    return currentExe
+  }
+
+  return normalizedExe.startsWith(normalizedInstall + '\\') ? currentExe : undefined
 }
 
 function getWindowsLeftoverGuidance(

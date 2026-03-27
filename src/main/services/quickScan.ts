@@ -3,7 +3,7 @@ import * as path from 'path'
 import { homedir, tmpdir, platform } from 'os'
 import * as fsSync from 'fs'
 import type { ScanCategory, QuickScanFolder } from '@shared/types'
-import { getDirSize, getDirSizeRecursive } from '../utils/getDirSize'
+import { getDirSizeEstimate, getDirSizeRecursive } from '../utils/getDirSize'
 import { isExternalCommandError, runExternalCommand } from './externalCommand'
 import { logDebug } from './logging'
 
@@ -256,7 +256,7 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
   }
 
   const fallbackResults = await Promise.all(
-    paths.map(async (targetPath) => [targetPath, await getDirSize(targetPath)] as const)
+    paths.map(async (targetPath) => [targetPath, await getDirSizeEstimate(targetPath, 4)] as const)
   )
   for (const [targetPath, size] of fallbackResults) {
     result.set(targetPath, size)

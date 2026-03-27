@@ -158,4 +158,21 @@ describe('installedApps helpers', () => {
       uninstallCommand: undefined
     })
   })
+
+  it('should not protect Windows apps whose install path only matches the current app by prefix', async () => {
+    const { parseWindowsRegistryOutput } = await import('../../src/main/services/installedApps')
+
+    const parsed = parseWindowsRegistryOutput([
+      'HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\PrefixOnlyApp',
+      '    DisplayName    REG_SZ    Prefix Only App',
+      '    InstallLocation    REG_SZ    C:\\Program Files\\System'
+    ].join('\n'))
+
+    expect(parsed).toHaveLength(1)
+    expect(parsed[0]).toMatchObject({
+      name: 'Prefix Only App',
+      protected: false,
+      launchPath: undefined
+    })
+  })
 })

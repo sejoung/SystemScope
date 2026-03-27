@@ -56,12 +56,12 @@ export function registerDiskIpc(): void {
     }
 
     const resolved = path.resolve(folderPath)
-    registerShellPath(resolved)
     try {
       await fs.access(resolved, fs.constants.R_OK)
     } catch {
       return failure('PERMISSION_DENIED', tk('disk.error.access_denied'))
     }
+    registerShellPath(resolved)
 
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
     if (!win || win.isDestroyed()) {

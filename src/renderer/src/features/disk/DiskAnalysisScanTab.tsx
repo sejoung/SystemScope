@@ -188,24 +188,9 @@ export function DiskAnalysisScanTab({
             padding: "60px 20px",
             color: "var(--text-muted)",
             fontSize: "13px",
-            display: "grid",
-            gap: "16px",
-            justifyItems: "center",
           }}
         >
           <div>{tk("disk.scan.empty")}</div>
-          <button
-            type="button"
-            onClick={onSelectFolder}
-            style={{
-              ...primaryButtonStyle,
-              padding: "10px 24px",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-          >
-            {tk("disk.scan.browse_folder")}
-          </button>
         </div>
       )}
 

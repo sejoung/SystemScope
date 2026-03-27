@@ -9,7 +9,15 @@ export async function getDirSize(dirPath: string): Promise<number> {
   if (platform() === 'darwin' || platform() === 'linux') {
     return getDirSizeDu(dirPath)
   }
-  return getDirSizeRecursive(dirPath, 4)
+  return getDirSizeRecursive(dirPath)
+}
+
+/** 빠른 추정이 필요할 때 사용하는 depth-limited 디렉토리 크기 측정 */
+export async function getDirSizeEstimate(
+  dirPath: string,
+  maxDepth: number = 4
+): Promise<number> {
+  return getDirSizeRecursive(dirPath, maxDepth)
 }
 
 /** macOS/Linux: du -sk 명령어로 빠르게 디렉토리 크기 측정 */
@@ -29,17 +37,17 @@ async function getDirSizeDu(dirPath: string): Promise<number> {
     }
     if (isExternalCommandError(err) && err.kind === 'command_not_found') {
       logDebug('dir-size', 'du is unavailable, falling back to recursive directory scan', { dirPath })
-      return getDirSizeRecursive(dirPath, 4)
+      return getDirSizeRecursive(dirPath)
     }
     logDebug('dir-size', 'Failed to measure directory size with du', { dirPath, error: err })
-    return getDirSizeRecursive(dirPath, 4)
+    return getDirSizeRecursive(dirPath)
   }
 }
 
 /** 순수 JS 재귀로 디렉토리 크기 측정 (Windows 또는 depth 제어 필요 시) */
 export async function getDirSizeRecursive(
   dirPath: string,
-  maxDepth: number = 4,
+  maxDepth: number = Number.POSITIVE_INFINITY,
   depth: number = 0
 ): Promise<number> {
   let total = 0
