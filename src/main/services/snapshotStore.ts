@@ -81,19 +81,21 @@ export function saveSnapshot(snapshot: Snapshot): Promise<void> {
     // 동시에 여러 저장 요청이 와도 한 번에 하나씩 순서대로 처리한다.
     await fsp.mkdir(dir, { recursive: true })
 
-    const existing = await loadSnapshots()
-    const latest = existing[existing.length - 1]
+    const loaded = await loadSnapshots()
+    const latest = loaded[loaded.length - 1]
     if (latest && areSnapshotsEquivalent(latest, snapshot)) {
       return
     }
-    existing.push(snapshot)
+    const updated = [...loaded, snapshot]
 
     const maxSnapshots = getMaxSnapshots()
-    while (existing.length > maxSnapshots) {
-      existing.shift()
-    }
+    const trimmed = updated.length > maxSnapshots
+      ? updated.slice(updated.length - maxSnapshots)
+      : updated
 
-    const data: SnapshotData = { version: 1, snapshots: existing }
+    cachedSnapshots = trimmed
+
+    const data: SnapshotData = { version: 1, snapshots: trimmed }
 
     try {
       await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 })

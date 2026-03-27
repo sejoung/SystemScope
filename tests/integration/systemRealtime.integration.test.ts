@@ -22,7 +22,8 @@ vi.mock('electron', () => ({
     }
   },
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [subscriberWindow])
+    getAllWindows: vi.fn(() => [subscriberWindow]),
+    fromWebContents: vi.fn(() => subscriberWindow)
   }
 }))
 

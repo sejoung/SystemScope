@@ -44,6 +44,7 @@ function App() {
   const [bootstrapped, setBootstrapped] = useState(false)
   const [shutdownState, setShutdownState] = useState<ShutdownState | null>(null)
   const [processPollingReady, setProcessPollingReady] = useState(false)
+  const [documentVisible, setDocumentVisible] = useState(true)
   const { tk } = useI18n()
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const isE2ELightweight = window.__E2E_LIGHTWEIGHT === true
@@ -195,8 +196,14 @@ function App() {
   )
   useIpcListener(window.systemScope.onUpdateAvailable, handleUpdateAvailable)
 
+  useEffect(() => {
+    const handleVisibility = () => setDocumentVisible(document.visibilityState === 'visible')
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
   // 프로세스 데이터 폴링 — 대시보드 또는 프로세스 페이지에서만 갱신
-  const shouldPollProcessesBase = !isE2ELightweight && (currentPage === 'dashboard' || currentPage === 'process')
+  const shouldPollProcessesBase = !isE2ELightweight && documentVisible && (currentPage === 'dashboard' || currentPage === 'process')
 
   useEffect(() => {
     if (!shouldPollProcessesBase) {

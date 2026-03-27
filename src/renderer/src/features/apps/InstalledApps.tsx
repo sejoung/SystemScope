@@ -73,17 +73,19 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
 
   const loadApps = useCallback(async () => {
     const res = await window.systemScope.listInstalledApps();
-    if (res.ok && res.data && isInstalledAppArray(res.data)) {
+    if (!res.ok) {
+      const message = res.error?.message ?? tk("apps.error.load_installed");
+      setLoadError(message);
+      showToast(message);
+      return;
+    }
+    if (isInstalledAppArray(res.data)) {
       const items = res.data;
       setApps(items);
       setLoadError(undefined);
       setPendingUninstallIds((current) =>
         current.filter((id) => items.some((app) => app.id === id)),
       );
-    } else {
-      const message = res.error?.message ?? tk("apps.error.load_installed");
-      setLoadError(message);
-      showToast(message);
     }
   }, [showToast, tk]);
 
@@ -130,12 +132,12 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
     });
     setBusyAppId(null);
 
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk("apps.error.uninstall_start"));
       return;
     }
 
-    if (!isAppRemovalResult(res.data)) return;
+    if (!res.data || !isAppRemovalResult(res.data)) return;
     const result = res.data;
     if (result.cancelled) return;
 
@@ -180,12 +182,12 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
     const res = await window.systemScope.getAppRelatedData(app.id);
     setRelatedLoadingAppId(null);
 
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk("apps.error.load_related"));
       return;
     }
 
-    if (!isAppRelatedDataArray(res.data)) return;
+    if (!res.data || !isAppRelatedDataArray(res.data)) return;
     const items = res.data;
     setRelatedDataByAppId((current) => ({ ...current, [app.id]: items }));
     setSelectedRelatedIdsByAppId((current) => ({

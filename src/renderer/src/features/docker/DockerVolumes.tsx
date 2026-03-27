@@ -30,10 +30,14 @@ export function DockerVolumes({
   const scanVolumes = async () => {
     setLoading(true)
     const res = await window.systemScope.listDockerVolumes()
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       setStatus('daemon_unavailable')
       setVolumes([])
       setMessage(res.error?.message ?? tk('docker.volumes.load_failed'))
+      setLoading(false)
+      return
+    }
+    if (!res.data) {
       setLoading(false)
       return
     }
@@ -52,10 +56,11 @@ export function DockerVolumes({
 
   const handleDelete = async (names: string[]) => {
     const res = await window.systemScope.removeDockerVolumes(names)
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk('docker.volumes.delete_failed'))
       return
     }
+    if (!res.data) return
 
     const result = res.data as DockerRemoveResult
     if (result.cancelled) return

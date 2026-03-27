@@ -83,12 +83,13 @@ async function runHydration() {
 
   try {
     const res = await window.systemScope.hydrateLeftoverAppDataSizes(pendingIds);
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       useToast
         .getState()
         .show(res.error?.message ?? LOAD_LEFTOVERS_FALLBACK_ERROR);
       return;
     }
+    if (!res.data) return;
 
     if (runVersion !== datasetVersion) return;
 
@@ -112,7 +113,13 @@ async function loadLeftovers(force: boolean) {
     useLeftoverAppsStore.setState({ refreshing: true });
 
     const res = await window.systemScope.listLeftoverAppData();
-    if (res.ok && res.data) {
+    if (!res.ok) {
+      const message = res.error?.message ?? LOAD_LEFTOVERS_FALLBACK_ERROR;
+      useLeftoverAppsStore.setState({ loadError: message, refreshing: false });
+      useToast.getState().show(message);
+      return;
+    }
+    if (res.data) {
       datasetVersion += 1;
       clearHydrationTimer();
       const items = res.data as AppLeftoverDataItem[];
@@ -125,7 +132,7 @@ async function loadLeftovers(force: boolean) {
       return;
     }
 
-    const message = res.error?.message ?? LOAD_LEFTOVERS_FALLBACK_ERROR;
+    const message = LOAD_LEFTOVERS_FALLBACK_ERROR;
     useLeftoverAppsStore.setState({ loadError: message, refreshing: false });
     useToast.getState().show(message);
   })();

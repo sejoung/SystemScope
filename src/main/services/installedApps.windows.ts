@@ -8,6 +8,13 @@ import type { AppLeftoverDataItem, AppLeftoverRegistryItem, AppRelatedDataItem, 
 import { logError, logInfo, logWarn } from './logging'
 import { tk } from '../i18n'
 import { getDirSize } from '../utils/getDirSize'
+import {
+  createRelatedDataItem,
+  dedupeByPath,
+  dedupeLeftoverByPath,
+  applyCachedLeftoverSizes,
+  runWithConcurrency
+} from './installedAppsShared'
 
 const execFileAsync = promisify(execFile)
 const leftoverSizeCache = new Map<string, number>()
@@ -223,12 +230,12 @@ export async function listWindowsLeftoverAppData(installedApps: InstalledApp[]):
   }
 
   const dedupedItems = dedupeLeftoverByPath(items)
-  applyCachedLeftoverSizes(dedupedItems)
+  applyCachedLeftoverSizes(dedupedItems, leftoverSizeCache)
   return dedupedItems
 }
 
 export async function hydrateWindowsLeftoverItemSizes(items: AppLeftoverDataItem[]): Promise<AppLeftoverDataItem[]> {
-  applyCachedLeftoverSizes(items)
+  applyCachedLeftoverSizes(items, leftoverSizeCache)
 
   const pendingItems = items.filter((item) => item.sizeBytes === undefined)
   await runWithConcurrency(pendingItems, LEFTOVER_SIZE_HYDRATE_CONCURRENCY, async (item) => {
@@ -373,57 +380,3 @@ function getWindowsLeftoverGuidance(
   }
 }
 
-function createRelatedDataItem(itemPath: string, label: string, source: string): AppRelatedDataItem {
-  return {
-    id: `${source}:${itemPath}`,
-    label,
-    path: itemPath,
-    source
-  }
-}
-
-function dedupeByPath(items: AppRelatedDataItem[]): AppRelatedDataItem[] {
-  const seen = new Set<string>()
-  return items.filter((item) => {
-    if (seen.has(item.path)) return false
-    seen.add(item.path)
-    return true
-  })
-}
-
-function dedupeLeftoverByPath(items: AppLeftoverDataItem[]): AppLeftoverDataItem[] {
-  const seen = new Set<string>()
-  return items.filter((item) => {
-    if (seen.has(item.path)) return false
-    seen.add(item.path)
-    return true
-  })
-}
-
-function applyCachedLeftoverSizes(items: AppLeftoverDataItem[]): void {
-  for (const item of items) {
-    const cachedSize = leftoverSizeCache.get(item.path)
-    if (cachedSize !== undefined) {
-      item.sizeBytes = cachedSize
-    }
-  }
-}
-
-async function runWithConcurrency<T>(
-  items: T[],
-  concurrency: number,
-  worker: (item: T) => Promise<void>
-): Promise<void> {
-  if (items.length === 0) return
-
-  let currentIndex = 0
-  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (currentIndex < items.length) {
-      const index = currentIndex
-      currentIndex += 1
-      await worker(items[index])
-    }
-  })
-
-  await Promise.all(runners)
-}

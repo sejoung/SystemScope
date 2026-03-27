@@ -12,11 +12,9 @@ export interface AppError {
   details?: unknown
 }
 
-export interface AppResult<T> {
-  ok: boolean
-  data?: T
-  error?: AppError
-}
+export type AppResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: AppError }
 
 export function success<T>(data: T): AppResult<T> {
   return { ok: true, data }

@@ -13,6 +13,7 @@ import type {
   InstalledApp
 } from '@shared/types'
 import { logInfo, logWarn } from './logging'
+import { registerShellPath } from './shellPathRegistry'
 import { tk } from '../i18n'
 import {
   listMacInstalledApps,
@@ -212,6 +213,8 @@ export async function openInstalledAppLocation(appId: string): Promise<void> {
   if (!stat) {
     throw new Error(tk('main.apps.error.no_install_path'))
   }
+
+  registerShellPath(targetPath)
 
   if (stat.isDirectory() && path.extname(targetPath).toLowerCase() !== '.app') {
     const openResult = await shell.openPath(targetPath)

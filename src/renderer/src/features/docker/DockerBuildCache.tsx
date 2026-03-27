@@ -21,10 +21,14 @@ export function DockerBuildCache({
   const scanBuildCache = async () => {
     setLoading(true)
     const res = await window.systemScope.getDockerBuildCache()
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       setStatus('daemon_unavailable')
       setSummary(null)
       setMessage(res.error?.message ?? tk('docker.build_cache.load_failed'))
+      setLoading(false)
+      return
+    }
+    if (!res.data) {
       setLoading(false)
       return
     }
@@ -42,10 +46,11 @@ export function DockerBuildCache({
 
   const handlePrune = async () => {
     const res = await window.systemScope.pruneDockerBuildCache()
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk('docker.build_cache.prune_failed'))
       return
     }
+    if (!res.data) return
 
     const result = res.data as DockerPruneResult
     if (result.cancelled) return

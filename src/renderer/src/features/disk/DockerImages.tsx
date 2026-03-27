@@ -32,7 +32,7 @@ export function DockerImages({
   const scanImages = async () => {
     setLoading(true)
     const res = await window.systemScope.listDockerImages()
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       setStatus('daemon_unavailable')
       setImages([])
       setMessage(res.error?.message ?? tk('docker.images.load_failed'))
@@ -54,10 +54,11 @@ export function DockerImages({
 
   const handleDelete = async (ids: string[]) => {
     const res = await window.systemScope.removeDockerImages(ids)
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk('docker.images.delete_failed'))
       return
     }
+    if (!res.data) return
 
     const result = res.data as DockerRemoveResult
     if (result.cancelled) return

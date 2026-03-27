@@ -13,14 +13,14 @@ export function applySettingsToStore(settings: AppSettings): void {
 export async function loadAppSettings(scope: string): Promise<AppSettings | null> {
   try {
     const result = await window.systemScope.getSettings()
-    if (!result.ok || !result.data) {
+    if (!result.ok) {
       await reportRendererError(scope, 'Failed to load settings', {
         error: result.error
       })
       return null
     }
 
-    return result.data
+    return result.data ?? null
   } catch (error) {
     await reportRendererError(scope, 'Failed to load settings', { error })
     return null
@@ -30,14 +30,14 @@ export async function loadAppSettings(scope: string): Promise<AppSettings | null
 export async function loadAboutInfo(scope: string): Promise<SystemScopeAboutInfo | null> {
   try {
     const result = await window.systemScope.getAboutInfo()
-    if (!result.ok || !result.data) {
+    if (!result.ok) {
       await reportRendererError(scope, 'Failed to load about info', {
         error: result.error
       })
       return null
     }
 
-    return result.data
+    return result.data ?? null
   } catch (error) {
     await reportRendererError(scope, 'Failed to load about info', { error })
     return null

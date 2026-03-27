@@ -22,7 +22,7 @@ export function RecentGrowth({ folderPath }: RecentGrowthProps) {
     const res = await window.systemScope.findRecentGrowth(folderPath, days)
     if (res.ok && res.data) {
       setResults(res.data as RecentGrowthEntry[])
-    } else {
+    } else if (!res.ok) {
       setResults([])
       setError(res.error?.message ?? tk('disk.recent_growth.scan_failed'))
     }

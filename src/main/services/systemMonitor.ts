@@ -365,28 +365,25 @@ function isVirtualGpuModel(model: string): boolean {
   return /(microsoft remote display adapter|microsoft basic display adapter|microsoft basic render driver|parallels display adapter|vmware svga|virtualbox graphics adapter|virtio gpu)/i.test(model)
 }
 
+function extractPlistInteger(xml: string, key: string): number | null {
+  const pattern = new RegExp(`<key>${key}</key>\\s*<integer>(\\d+)</integer>`)
+  const match = xml.match(pattern)
+  return match ? Number(match[1]) : null
+}
+
 // macOS APFS 컨테이너 정보 가져오기
-// diskutil info -plist / 결과를 JSON으로 변환하여 안전하게 파싱
 async function getApfsContainerInfo(): Promise<{ size: number; free: number } | null> {
   try {
-    // SECURITY NOTE: bash -c 사용은 이 하드코딩된 파이프라인에만 한정.
-    // diskutil → plutil 파이프는 execFile 두 번으로 분리할 수 없으므로
-    // (중간 stdout을 stdin으로 전달 불가) bash -c를 예외적으로 사용.
-    // 사용자 입력이 포함되지 않으므로 shell injection 위험 없음.
-    const { stdout } = await runExternalCommand('bash', [
-      '-c',
-      'diskutil info -plist / | plutil -convert json -o - -- -'
-    ])
+    const { stdout: plistXml } = await runExternalCommand('diskutil', ['info', '-plist', '/'])
 
-    const data = JSON.parse(stdout)
-    const size = data.APFSContainerSize
-    const free = data.APFSContainerFree
+    const size = extractPlistInteger(plistXml, 'APFSContainerSize')
+    const free = extractPlistInteger(plistXml, 'APFSContainerFree')
 
     if (typeof size === 'number' && typeof free === 'number') {
       return { size, free }
     }
 
-    logWarn('system-monitor', 'diskutil JSON data does not contain valid APFS size information', { data })
+    logWarn('system-monitor', 'diskutil JSON data does not contain valid APFS size information', { plistXml })
   } catch (err) {
     if (!hasLoggedApfsContainerFallback) {
       hasLoggedApfsContainerFallback = true

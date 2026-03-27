@@ -50,17 +50,19 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
 
   const loadRegistry = useCallback(async () => {
     const res = await window.systemScope.listLeftoverAppRegistry();
-    if (res.ok && res.data && isAppLeftoverRegistryArray(res.data)) {
+    if (!res.ok) {
+      const message = res.error?.message ?? tk("apps.error.load_registry");
+      setLoadError(message);
+      showToast(message);
+      return;
+    }
+    if (isAppLeftoverRegistryArray(res.data)) {
       const items = res.data;
       setRegistryItems(items);
       setLoadError(undefined);
       setSelectedIds((current) =>
         current.filter((id) => items.some((entry) => entry.id === id)),
       );
-    } else {
-      const message = res.error?.message ?? tk("apps.error.load_registry");
-      setLoadError(message);
-      showToast(message);
     }
   }, [showToast, tk]);
 
@@ -102,10 +104,11 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
     const res = await window.systemScope.removeLeftoverAppRegistry(selectedIds);
     setBusy(false);
 
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk("apps.error.remove_registry"));
       return;
     }
+    if (!res.data) return;
 
     const result = res.data as { deletedKeys: string[]; failedKeys: string[] };
     setSelectedIds([]);

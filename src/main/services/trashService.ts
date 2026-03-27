@@ -5,7 +5,7 @@ import { logError, logInfo } from './logging'
 import { isPathInsideParent } from '../ipc/settingsPathUtils'
 import type { TrashResult } from '@shared/types'
 import { formatBytes } from '@shared/utils/formatBytes'
-import { tk } from '../i18n'
+import { t, tk } from '../i18n'
 import { getDirSize } from '../utils/getDirSize'
 
 export async function trashItemsWithConfirm(
@@ -56,7 +56,7 @@ export async function trashItemsWithConfirm(
 
   const result = await dialog.showMessageBox(win, {
     type: 'warning',
-    buttons: ['Cancel', tk('main.trash.dialog.title')],
+    buttons: [t('Cancel'), tk('main.trash.dialog.title')],
     defaultId: 0,
     cancelId: 0,
     title: tk('main.trash.dialog.title'),

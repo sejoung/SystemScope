@@ -36,9 +36,14 @@ export function DockerPage() {
   const checkDocker = useCallback(async () => {
     setAvailability("checking");
     const res = await window.systemScope.listDockerContainers();
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       setAvailability("daemon_unavailable");
       setStatusMessage(res.error?.message ?? null);
+      return;
+    }
+    if (!res.data) {
+      setAvailability("daemon_unavailable");
+      setStatusMessage(null);
       return;
     }
     if (!isDockerContainersScanResult(res.data)) {

@@ -81,12 +81,13 @@ export function PortWatch() {
     if (watches.length === 0) return;
 
     const res = await window.systemScope.getNetworkPorts();
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       setStatusError(
         res.error?.message ?? t("Unable to refresh port watch status."),
       );
       return;
     }
+    if (!res.data) return;
     setStatusError(null);
     if (!isPortInfoArray(res.data)) return;
     const ports = res.data;

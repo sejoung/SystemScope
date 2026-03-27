@@ -34,12 +34,12 @@ export function isDockerContainersScanResult(data: unknown): data is DockerConta
 
 /** PortInfo[] */
 export function isPortInfoArray(data: unknown): data is PortInfo[] {
-  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'localPort' in data[0] && 'protocol' in data[0]))
+  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].localPort === 'number' && typeof data[0].protocol === 'string'))
 }
 
 /** InstalledApp[] */
 export function isInstalledAppArray(data: unknown): data is InstalledApp[] {
-  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'id' in data[0] && 'name' in data[0] && 'platform' in data[0]))
+  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].id === 'string' && typeof data[0].name === 'string' && typeof data[0].platform === 'string'))
 }
 
 /** AppRelatedDataItem[] */
@@ -69,7 +69,9 @@ export function isAppLeftoverRegistryArray(data: unknown): data is AppLeftoverRe
 
 /** SystemStats */
 export function isSystemStats(data: unknown): data is SystemStats {
-  return isObj(data) && 'cpu' in data && 'memory' in data && 'disk' in data && 'timestamp' in data
+  return isObj(data) && 'cpu' in data && 'memory' in data && 'disk' in data && typeof data.timestamp === 'number'
+    && isObj(data.cpu) && typeof (data.cpu as Record<string, unknown>).usage === 'number'
+    && isObj(data.memory) && typeof (data.memory as Record<string, unknown>).total === 'number'
 }
 
 /** Alert[] */
@@ -94,5 +96,5 @@ export function isUpdateStatus(data: unknown): data is UpdateStatus {
 
 /** ProcessSnapshot */
 export function isProcessSnapshot(data: unknown): data is ProcessSnapshot {
-  return isObj(data) && 'allProcesses' in data && 'topCpuProcesses' in data && 'topMemoryProcesses' in data
+  return isObj(data) && Array.isArray(data.allProcesses) && Array.isArray(data.topCpuProcesses) && Array.isArray(data.topMemoryProcesses)
 }

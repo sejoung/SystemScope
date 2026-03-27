@@ -160,10 +160,11 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
     const res = await window.systemScope.removeLeftoverAppData(selectedIds);
     setBusy(false);
 
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk("apps.error.remove_leftover"));
       return;
     }
+    if (!res.data) return;
 
     const result = res.data as { deletedPaths: string[]; failedPaths: string[] };
     setSelectedIds([]);

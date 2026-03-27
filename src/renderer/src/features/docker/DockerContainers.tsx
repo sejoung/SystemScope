@@ -34,10 +34,14 @@ export function DockerContainers({
   const scanContainers = async () => {
     setLoading(true)
     const res = await window.systemScope.listDockerContainers()
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       setStatus('daemon_unavailable')
       setContainers([])
       setMessage(res.error?.message ?? tk('docker.containers.load_failed'))
+      setLoading(false)
+      return
+    }
+    if (!res.data) {
       setLoading(false)
       return
     }
@@ -56,10 +60,11 @@ export function DockerContainers({
 
   const handleDelete = async (ids: string[]) => {
     const res = await window.systemScope.removeDockerContainers(ids)
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk('docker.containers.delete_failed'))
       return
     }
+    if (!res.data) return
 
     const result = res.data as DockerRemoveResult
     if (result.cancelled) return
@@ -81,10 +86,11 @@ export function DockerContainers({
 
   const handleStop = async (ids: string[]) => {
     const res = await window.systemScope.stopDockerContainers(ids)
-    if (!res.ok || !res.data) {
+    if (!res.ok) {
       showToast(res.error?.message ?? tk('docker.containers.stop_failed'))
       return
     }
+    if (!res.data) return
 
     const result = res.data as DockerActionResult
     if (result.cancelled) return

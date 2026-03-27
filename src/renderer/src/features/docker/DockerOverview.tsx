@@ -36,22 +36,22 @@ export function DockerOverview({
     setImageScan(
       imagesRes.ok && imagesRes.data
         ? (imagesRes.data as DockerImagesScanResult)
-        : { status: 'daemon_unavailable', images: [], message: imagesRes.error?.message ?? tk('docker.images.load_failed') }
+        : { status: 'daemon_unavailable', images: [], message: !imagesRes.ok ? (imagesRes.error?.message ?? tk('docker.images.load_failed')) : tk('docker.images.load_failed') }
     )
     setContainerScan(
       containersRes.ok && containersRes.data
         ? (containersRes.data as DockerContainersScanResult)
-        : { status: 'daemon_unavailable', containers: [], message: containersRes.error?.message ?? tk('docker.containers.load_failed') }
+        : { status: 'daemon_unavailable', containers: [], message: !containersRes.ok ? (containersRes.error?.message ?? tk('docker.containers.load_failed')) : tk('docker.containers.load_failed') }
     )
     setVolumeScan(
       volumesRes.ok && volumesRes.data
         ? (volumesRes.data as DockerVolumesScanResult)
-        : { status: 'daemon_unavailable', volumes: [], message: volumesRes.error?.message ?? tk('docker.volumes.load_failed') }
+        : { status: 'daemon_unavailable', volumes: [], message: !volumesRes.ok ? (volumesRes.error?.message ?? tk('docker.volumes.load_failed')) : tk('docker.volumes.load_failed') }
     )
     setBuildCacheScan(
       buildCacheRes.ok && buildCacheRes.data
         ? (buildCacheRes.data as DockerBuildCacheScanResult)
-        : { status: 'daemon_unavailable', summary: null, message: buildCacheRes.error?.message ?? tk('docker.build_cache.load_failed') }
+        : { status: 'daemon_unavailable', summary: null, message: !buildCacheRes.ok ? (buildCacheRes.error?.message ?? tk('docker.build_cache.load_failed')) : tk('docker.build_cache.load_failed') }
     )
     setLoading(false)
   }

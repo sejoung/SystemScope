@@ -40,7 +40,16 @@ export function useDiskAnalysisController() {
   const handleQuickScan = useCallback(async () => {
     setQuickScanState((prev) => ({ ...prev, scanning: true, error: null }));
     const res = await window.systemScope.quickScan();
-    if (res.ok && res.data && isQuickScanFolderArray(res.data)) {
+    if (!res.ok) {
+      setQuickScanState({
+        results: [],
+        scanning: false,
+        scanned: true,
+        error: res.error?.message ?? tk("disk.quick_cleanup.scan_failed"),
+      });
+      return;
+    }
+    if (isQuickScanFolderArray(res.data)) {
       setQuickScanState({
         results: res.data,
         scanning: false,
@@ -54,7 +63,7 @@ export function useDiskAnalysisController() {
       results: [],
       scanning: false,
       scanned: true,
-      error: res.error?.message ?? tk("disk.quick_cleanup.scan_failed"),
+      error: null,
     });
   }, [setQuickScanState, tk]);
 
@@ -67,7 +76,14 @@ export function useDiskAnalysisController() {
       setTab("scan");
 
       const res = await window.systemScope.scanFolder(folderPath);
-      if (res.ok && res.data) {
+      if (!res.ok) {
+        setScanning(false);
+        setScanOutcome("failed");
+        setScanProgress(res.error?.message ?? tk("disk.scan.failed"));
+        showToast(res.error?.message ?? tk("disk.scan.start_failed"));
+        return;
+      }
+      if (res.data) {
         setScanning(
           true,
           (res.data as { jobId: string }).jobId,
@@ -77,8 +93,6 @@ export function useDiskAnalysisController() {
 
       setScanning(false);
       setScanOutcome("failed");
-      setScanProgress(res.error?.message ?? tk("disk.scan.failed"));
-      showToast(res.error?.message ?? tk("disk.scan.start_failed"));
     },
     [
       clearScan,
@@ -133,15 +147,20 @@ export function useDiskAnalysisController() {
       setScanProgress(tk("disk.scan.refreshing_after_delete"));
 
       const res = await window.systemScope.scanFolder(folderPath);
-      if (res.ok && res.data) {
+      if (!res.ok) {
+        setScanning(false);
+        setScanOutcome("failed");
+        setScanProgress(res.error?.message ?? tk("disk.scan.refresh_failed_short"));
+        showToast(res.error?.message ?? tk("disk.scan.refresh_failed"));
+        return;
+      }
+      if (res.data) {
         setScanning(true, (res.data as { jobId: string }).jobId);
         return;
       }
 
       setScanning(false);
       setScanOutcome("failed");
-      setScanProgress(res.error?.message ?? tk("disk.scan.refresh_failed_short"));
-      showToast(res.error?.message ?? tk("disk.scan.refresh_failed"));
     },
     [isScanning, setScanProgress, setScanning, showToast, tk],
   );

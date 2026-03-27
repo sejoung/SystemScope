@@ -51,7 +51,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
     const res = await window.systemScope.findOldFiles(folderPath, oldDays)
     if (res.ok && res.data) {
       setOldFiles(res.data as LargeFile[])
-    } else {
+    } else if (!res.ok) {
       setOldFiles([])
       setOldFilesError(res.error?.message ?? tk('disk.file_insights.old_scan_failed'))
     }
@@ -65,7 +65,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
     const res = await window.systemScope.findDuplicates(folderPath, 100)
     if (res.ok && res.data) {
       setDuplicates(res.data as DuplicateGroup[])
-    } else {
+    } else if (!res.ok) {
       setDuplicates([])
       setDupError(res.error?.message ?? tk('disk.file_insights.dup_scan_failed'))
     }
@@ -108,7 +108,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
       } else {
         showToast(tk('disk.file_insights.delete_failed', { message: result.errors[0] ?? tk('disk.file_insights.unknown_error') }))
       }
-    } else {
+    } else if (!res.ok) {
       showToast(res.error?.message ?? tk('disk.file_insights.trash_failed'))
     }
   }

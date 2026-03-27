@@ -56,7 +56,7 @@ export const usePortFinderStore = create<PortFinderState>((set, get) => ({
         error: null,
         requestState: 'completed'
       })
-    } else {
+    } else if (!res.ok) {
       set({
         ports: [],
         loading: false,

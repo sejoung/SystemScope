@@ -34,6 +34,9 @@ export function registerSystemIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.SYSTEM_SUBSCRIBE, (event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
+    if (!BrowserWindow.fromWebContents(event.sender)) {
+      return failure('UNKNOWN_ERROR', 'Invalid sender')
+    }
     addSystemSubscriber(event.sender.id)
     logInfoAction('system-ipc', 'realtime.subscribe', withRequestMeta(requestMeta, { senderId: event.sender.id }))
     startRealtimeUpdates()
@@ -42,6 +45,9 @@ export function registerSystemIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.SYSTEM_UNSUBSCRIBE, (event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
+    if (!BrowserWindow.fromWebContents(event.sender)) {
+      return failure('UNKNOWN_ERROR', 'Invalid sender')
+    }
     removeSystemSubscriber(event.sender.id)
     logInfoAction('system-ipc', 'realtime.unsubscribe', withRequestMeta(requestMeta, { senderId: event.sender.id }))
     if (!hasSystemSubscribers()) {
