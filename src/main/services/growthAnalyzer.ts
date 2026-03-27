@@ -2,7 +2,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import { homedir, platform } from 'os'
 import type { GrowthFolder, GrowthViewResult } from '@shared/types'
-import { saveSnapshot, getSnapshotsInRange, loadSnapshots, type Snapshot, type FolderSnapshot } from './snapshotStore'
+import { saveSnapshot, loadSnapshots, type Snapshot, type FolderSnapshot } from './snapshotStore'
 import { logError, logInfo } from './logging'
 import { getDirSize } from '../utils/getDirSize'
 import { tk } from '../i18n'
@@ -76,13 +76,13 @@ export async function analyzeGrowth(period: string = '7d'): Promise<GrowthViewRe
   const since = Date.now() - ms
 
   // 최근 스냅샷이 5분 이내이면 재사용, 아니면 새로 찍기
-  const allSnapshots = await getSnapshotsInRange(0)
+  const allSnapshots = await loadSnapshots()
   const latest = allSnapshots[allSnapshots.length - 1]
   const current = (latest && Date.now() - latest.timestamp < 5 * 60 * 1000)
     ? latest
     : await takeSnapshot()
 
-  const baseline = findBaselineSnapshot(await loadSnapshots(), since)
+  const baseline = findBaselineSnapshot(allSnapshots, since)
 
   if (!baseline || baseline.timestamp === current.timestamp) {
     // 과거 데이터가 없음 → 첫 실행이거나 기간 내 스냅샷 없음

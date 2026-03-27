@@ -135,23 +135,6 @@ export async function scanFolder(
     return node
   }
 
-  const tree = await walk(folderPath, 0)
-  const scanDuration = Date.now() - start
-
-  return {
-    rootPath: folderPath,
-    tree,
-    totalSize: tree.size,
-    fileCount,
-    folderCount,
-    inaccessibleCount,
-    scanDuration,
-    topLargeFiles: topFiles,
-    extensionBreakdown: Array.from(extensionMap.entries())
-      .map(([extension, data]) => ({ extension, ...data }))
-      .sort((a, b) => b.totalSize - a.totalSize)
-  }
-
   function trackDerivedFile(file: LargeFile): void {
     const ext = path.extname(file.name).toLowerCase() || noExtensionLabel
     const group = extensionMap.get(ext) ?? { totalSize: 0, count: 0 }
@@ -173,6 +156,23 @@ export async function scanFolder(
     if (topFiles.length > SCAN_LARGE_FILE_LIMIT) {
       topFiles.length = SCAN_LARGE_FILE_LIMIT
     }
+  }
+
+  const tree = await walk(folderPath, 0)
+  const scanDuration = Date.now() - start
+
+  return {
+    rootPath: folderPath,
+    tree,
+    totalSize: tree.size,
+    fileCount,
+    folderCount,
+    inaccessibleCount,
+    scanDuration,
+    topLargeFiles: topFiles,
+    extensionBreakdown: Array.from(extensionMap.entries())
+      .map(([extension, data]) => ({ extension, ...data }))
+      .sort((a, b) => b.totalSize - a.totalSize)
   }
 }
 

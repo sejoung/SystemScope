@@ -140,12 +140,25 @@ async function getWindowsDiskIoInfo(): Promise<DiskIoInfo> {
     '-Command',
     "Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter \"Name='_Total'\" | Select-Object DiskReadsPerSec,DiskWritesPerSec,DiskTransfersPerSec,PercentDiskTime | ConvertTo-Json"
   ])
-  const data = JSON.parse(stdout)
+
+  const trimmed = stdout.trim()
+  if (!trimmed) {
+    return { readsPerSecond: null, writesPerSecond: null, totalPerSecond: null, busyPercent: null }
+  }
+
+  let data: Record<string, unknown>
+  try {
+    data = JSON.parse(trimmed)
+  } catch {
+    logWarn('system-monitor', 'Failed to parse Windows disk I/O output', { stdout: trimmed.slice(0, 200) })
+    return { readsPerSecond: null, writesPerSecond: null, totalPerSecond: null, busyPercent: null }
+  }
+
   return {
-    readsPerSecond: sanitizeRate(data.DiskReadsPerSec),
-    writesPerSecond: sanitizeRate(data.DiskWritesPerSec),
-    totalPerSecond: sanitizeRate(data.DiskTransfersPerSec),
-    busyPercent: sanitizeRate(data.PercentDiskTime)
+    readsPerSecond: sanitizeRate(data.DiskReadsPerSec as number | null | undefined),
+    writesPerSecond: sanitizeRate(data.DiskWritesPerSec as number | null | undefined),
+    totalPerSecond: sanitizeRate(data.DiskTransfersPerSec as number | null | undefined),
+    busyPercent: sanitizeRate(data.PercentDiskTime as number | null | undefined)
   }
 }
 

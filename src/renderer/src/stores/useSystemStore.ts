@@ -8,28 +8,31 @@ interface SystemState {
   pushStats: (stats: SystemStats) => void
 }
 
-// Ring buffer: 내부 배열을 mutate하고 새 참조만 생성
-const ringBuffer: SystemStats[] = []
-let ringIndex = 0
-let ringSize = 0
+function createRingBuffer() {
+  const buffer: SystemStats[] = []
+  let index = 0
+  let size = 0
 
-function pushToRing(stats: SystemStats): SystemStats[] {
-  if (ringSize < HISTORY_MAX_POINTS) {
-    ringBuffer.push(stats)
-    ringSize++
-  } else {
-    ringBuffer[ringIndex] = stats
-    ringIndex = (ringIndex + 1) % HISTORY_MAX_POINTS
+  return function push(stats: SystemStats): SystemStats[] {
+    if (size < HISTORY_MAX_POINTS) {
+      buffer.push(stats)
+      size++
+    } else {
+      buffer[index] = stats
+      index = (index + 1) % HISTORY_MAX_POINTS
+    }
+    // Zustand 구독을 위해 올바른 순서의 새 배열 참조 생성
+    if (size < HISTORY_MAX_POINTS) {
+      return buffer.slice()
+    }
+    return [
+      ...buffer.slice(index),
+      ...buffer.slice(0, index)
+    ]
   }
-  // Zustand 구독을 위해 올바른 순서의 새 배열 참조 생성
-  if (ringSize < HISTORY_MAX_POINTS) {
-    return ringBuffer.slice()
-  }
-  return [
-    ...ringBuffer.slice(ringIndex),
-    ...ringBuffer.slice(0, ringIndex)
-  ]
 }
+
+const pushToRing = createRingBuffer()
 
 export const useSystemStore = create<SystemState>((set) => ({
   current: null,

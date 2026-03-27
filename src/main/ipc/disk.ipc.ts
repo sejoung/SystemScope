@@ -21,17 +21,26 @@ import { registerShellPath, registerShellPaths } from '../services/shellPathRegi
 
 const SCAN_CACHE_TTL_MS = 30 * 60 * 1000 // 30분
 const TRASH_TARGET_TTL_MS = 60 * 60 * 1000 // 1시간
+const MAX_SCAN_CACHE_ENTRIES = 5
 
-let lastScanResult: DiskScanResult | null = null
-let lastScanTimestamp = 0
-let lastDerivedLargeFiles: LargeFile[] | null = null
-let lastDerivedExtensionBreakdown: ReturnType<typeof getExtensionBreakdown> | null = null
+interface ScanCacheEntry {
+  result: DiskScanResult
+  timestamp: number
+  derivedLargeFiles: LargeFile[] | null
+  derivedExtensionBreakdown: ReturnType<typeof getExtensionBreakdown> | null
+}
+
+const scanCacheMap = new Map<string, ScanCacheEntry>()
 const registeredTrashTargets = new Map<string, { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate'; createdAt: number }>()
 
-function isScanCacheValid(folderPath: string): boolean {
-  return lastScanResult !== null
-    && path.resolve(lastScanResult.rootPath) === folderPath
-    && (Date.now() - lastScanTimestamp) < SCAN_CACHE_TTL_MS
+function getScanCache(folderPath: string): ScanCacheEntry | null {
+  const entry = scanCacheMap.get(folderPath)
+  if (!entry) return null
+  if ((Date.now() - entry.timestamp) >= SCAN_CACHE_TTL_MS) {
+    scanCacheMap.delete(folderPath)
+    return null
+  }
+  return entry
 }
 
 const MAX_LARGE_FILE_LIMIT = 500
@@ -41,10 +50,19 @@ const DEFAULT_OLD_FILE_DAYS = 365
 const MAX_OLD_FILE_DAYS = 3650 // ~10년
 
 function setScanCache(result: DiskScanResult): void {
-  lastScanResult = result
-  lastScanTimestamp = Date.now()
-  lastDerivedLargeFiles = result.topLargeFiles ?? null
-  lastDerivedExtensionBreakdown = result.extensionBreakdown ?? null
+  const resolved = path.resolve(result.rootPath)
+  scanCacheMap.set(resolved, {
+    result,
+    timestamp: Date.now(),
+    derivedLargeFiles: result.topLargeFiles ?? null,
+    derivedExtensionBreakdown: result.extensionBreakdown ?? null
+  })
+  // 캐시 크기 제한
+  while (scanCacheMap.size > MAX_SCAN_CACHE_ENTRIES) {
+    const firstKey = scanCacheMap.keys().next().value
+    if (firstKey !== undefined) scanCacheMap.delete(firstKey)
+    else break
+  }
   registerShellPath(result.rootPath)
 }
 
@@ -125,12 +143,7 @@ export function registerDiskIpc(): void {
     }
 
     const resolved = path.resolve(folderPath)
-    if (lastScanResult && path.resolve(lastScanResult.rootPath) === resolved) {
-      lastScanResult = null
-      lastScanTimestamp = 0
-      lastDerivedLargeFiles = null
-      lastDerivedExtensionBreakdown = null
-    }
+    scanCacheMap.delete(resolved)
     clearTrashTargetsForRootPath(resolved)
     logInfoAction('disk-ipc', 'scan_cache.invalidate', withRequestMeta(requestMeta, { path: resolved }))
 
@@ -149,9 +162,10 @@ export function registerDiskIpc(): void {
     const resolved = path.resolve(folderPath)
 
     // 해당 경로의 캐시된 결과가 있으면 사용
-    if (isScanCacheValid(resolved)) {
+    const cached = getScanCache(resolved)
+    if (cached) {
       const files = registerLargeFileTrashTargets(
-        (lastDerivedLargeFiles ?? findLargeFiles(lastScanResult!.tree, limit)).slice(0, limit),
+        (cached.derivedLargeFiles ?? findLargeFiles(cached.result.tree, limit)).slice(0, limit),
         resolved,
         'large'
       )
@@ -189,8 +203,9 @@ export function registerDiskIpc(): void {
     }
 
     const resolved = path.resolve(folderPath)
-    if (isScanCacheValid(resolved)) {
-      const extensions = lastDerivedExtensionBreakdown ?? getExtensionBreakdown(lastScanResult!.tree)
+    const cachedExt = getScanCache(resolved)
+    if (cachedExt) {
+      const extensions = cachedExt.derivedExtensionBreakdown ?? getExtensionBreakdown(cachedExt.result.tree)
       logInfoAction('disk-ipc', 'extensions.list_cached', withRequestMeta(requestMeta, { path: resolved, count: extensions.length }))
       return success(extensions)
     }

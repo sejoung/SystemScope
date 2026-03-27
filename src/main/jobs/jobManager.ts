@@ -7,6 +7,7 @@ export interface Job {
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
   progress: number
   currentStep: string
+  createdAt: number
   abortController: AbortController
 }
 
@@ -20,7 +21,7 @@ export function pruneOrphanedJobs(): number {
   const now = Date.now()
   let pruned = 0
   for (const [id, job] of jobs) {
-    const age = now - parseInt(id.split('-')[2] || '0', 10)
+    const age = now - job.createdAt
     if (age > JOB_MAX_AGE_MS && (job.status === 'pending' || job.status === 'running')) {
       job.abortController.abort()
       job.status = 'cancelled'
@@ -45,13 +46,15 @@ export function stopJobPruner(): void {
 }
 
 export function createJob(type: string): Job {
-  const id = `job-${++jobCounter}-${Date.now()}`
+  const now = Date.now()
+  const id = `job-${++jobCounter}-${now}`
   const job: Job = {
     id,
     type,
     status: 'pending',
     progress: 0,
     currentStep: '',
+    createdAt: now,
     abortController: new AbortController()
   }
   jobs.set(id, job)

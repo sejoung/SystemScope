@@ -110,7 +110,7 @@ export async function findDuplicates(
   for (const file of candidates) {
     if (signal?.aborted) throw new Error('Cancelled')
     try {
-      const hash = await hashFileSample(file.path, file.size)
+      const hash = await hashFileSample(file.path, file.size, signal)
       const key = `${file.size}:${hash}`
       const group = sampleHashMap.get(key) ?? []
       group.push(file)
@@ -128,7 +128,7 @@ export async function findDuplicates(
     for (const file of files) {
       if (signal?.aborted) throw new Error('Cancelled')
       try {
-        const fullHash = await hashFileFull(file.path)
+        const fullHash = await hashFileFull(file.path, signal)
         const key = `${sizeAndSampleHash}:${fullHash}`
         const group = hashMap.get(key) ?? []
         group.push(file)
@@ -199,12 +199,14 @@ async function collectFilesBySize(
 }
 
 // 빠른 후보 축소용 샘플 해시
-async function hashFileSample(filePath: string, fileSize: number): Promise<string> {
+async function hashFileSample(filePath: string, fileSize: number, signal?: AbortSignal): Promise<string> {
   const SAMPLE_SIZE = 8192
 
   if (fileSize <= SAMPLE_SIZE * 2) {
-    return hashFileFull(filePath)
+    return hashFileFull(filePath, signal)
   }
+
+  if (signal?.aborted) throw new Error('Cancelled')
 
   const hash = crypto.createHash('md5')
   const fd = await fs.open(filePath, 'r')
@@ -226,13 +228,28 @@ async function hashFileSample(filePath: string, fileSize: number): Promise<strin
   return hash.digest('hex')
 }
 
-async function hashFileFull(filePath: string): Promise<string> {
+async function hashFileFull(filePath: string, signal?: AbortSignal): Promise<string> {
+  if (signal?.aborted) throw new Error('Cancelled')
+
   const { createReadStream } = await import('fs')
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('md5')
     const stream = createReadStream(filePath)
+
+    const onAbort = (): void => {
+      stream.destroy()
+      reject(new Error('Cancelled'))
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+
     stream.on('data', (chunk) => hash.update(chunk))
-    stream.on('end', () => resolve(hash.digest('hex')))
-    stream.on('error', reject)
+    stream.on('end', () => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve(hash.digest('hex'))
+    })
+    stream.on('error', (err) => {
+      signal?.removeEventListener('abort', onAbort)
+      reject(err)
+    })
   })
 }
