@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { Alert, AlertThresholds, AlertType, AlertSeverity, SystemStats } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 import { ALERT_COOLDOWN_MS, MAX_ACTIVE_ALERTS } from '@shared/constants/thresholds'
@@ -6,7 +7,6 @@ import { tk } from '../i18n'
 let thresholds: AlertThresholds = { ...DEFAULT_THRESHOLDS }
 const activeAlerts: Map<string, Alert> = new Map()
 const lastFired: Map<string, number> = new Map()
-let alertCounter = 0
 
 export function setThresholds(newThresholds: Partial<AlertThresholds>): void {
   thresholds = { ...thresholds, ...newThresholds }
@@ -22,6 +22,29 @@ export function dismissAlert(id: string): boolean {
 
 export function checkAlerts(stats: SystemStats): Alert[] {
   const newAlerts: Alert[] = []
+
+  // CPU 알림
+  if (stats.cpu.usage >= thresholds.cpuCritical) {
+    const alert = createAlertIfCooldown(
+      'cpu',
+      'cpu',
+      'critical',
+      tk('main.alert.message.cpu_usage', { usage: stats.cpu.usage }),
+      stats.cpu.usage,
+      thresholds.cpuCritical
+    )
+    if (alert) newAlerts.push(alert)
+  } else if (stats.cpu.usage >= thresholds.cpuWarning) {
+    const alert = createAlertIfCooldown(
+      'cpu',
+      'cpu',
+      'warning',
+      tk('main.alert.message.cpu_usage', { usage: stats.cpu.usage }),
+      stats.cpu.usage,
+      thresholds.cpuWarning
+    )
+    if (alert) newAlerts.push(alert)
+  }
 
   // 디스크 알림 — macOS에서는 purgeable 제외한 realUsage 기준으로 판단
   for (const drive of stats.disk.drives) {
@@ -122,7 +145,7 @@ function createAlertIfCooldown(
     if (oldestKey !== undefined) activeAlerts.delete(oldestKey)
   }
 
-  const id = `alert-${++alertCounter}-${now}`
+  const id = `alert-${randomUUID()}`
   const alert: Alert = { id, type, severity, message, value, threshold, timestamp: now, dismissed: false }
   activeAlerts.set(id, alert)
   return alert

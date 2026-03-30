@@ -7,6 +7,8 @@ const setThresholdsMock = vi.hoisted(() => vi.fn())
 const setSettingsMock = vi.hoisted(() => vi.fn())
 const storeState = vi.hoisted(() => ({
   thresholds: {
+    cpuWarning: 80,
+    cpuCritical: 90,
     diskWarning: 80,
     diskCritical: 90,
     memoryWarning: 80,

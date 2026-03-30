@@ -111,6 +111,8 @@ describe('app startup integration', () => {
     markQuitAfterShutdownMock.mockReset()
     getSettingsMock.mockReturnValue({
       thresholds: {
+        cpuWarning: 80,
+        cpuCritical: 90,
         diskWarning: 80,
         diskCritical: 90,
         memoryWarning: 80,

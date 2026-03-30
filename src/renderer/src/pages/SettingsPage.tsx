@@ -152,6 +152,11 @@ export function SettingsPage() {
     const issues: string[] = [];
     const thresholdGroups = [
       {
+        label: tk("settings.alerts.cpu"),
+        warning: local.cpuWarning,
+        critical: local.cpuCritical,
+      },
+      {
         label: tk("settings.alerts.storage"),
         warning: local.diskWarning,
         critical: local.diskCritical,
@@ -180,6 +185,8 @@ export function SettingsPage() {
 
     return issues;
   }, [
+    local.cpuCritical,
+    local.cpuWarning,
     local.diskCritical,
     local.diskWarning,
     local.gpuMemoryCritical,
@@ -455,6 +462,13 @@ export function SettingsPage() {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
+            <ThresholdGroup
+              label={tk("settings.alerts.cpu")}
+              warning={local.cpuWarning}
+              critical={local.cpuCritical}
+              onWarningChange={(v) => updateField("cpuWarning", v)}
+              onCriticalChange={(v) => updateField("cpuCritical", v)}
+            />
             <ThresholdGroup
               label={tk("settings.alerts.storage")}
               warning={local.diskWarning}

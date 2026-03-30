@@ -122,6 +122,8 @@ export function createE2EMockApi(): {
     getSettings: () =>
       successResult({
         thresholds: {
+          cpuWarning: 75,
+          cpuCritical: 85,
           diskWarning: 75,
           diskCritical: 85,
           memoryWarning: 75,

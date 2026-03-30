@@ -16,6 +16,8 @@ function isSnapshotInterval(value: unknown): value is SnapshotIntervalMin {
 }
 
 const THRESHOLD_KEYS = [
+  'cpuWarning',
+  'cpuCritical',
   'diskWarning',
   'diskCritical',
   'memoryWarning',

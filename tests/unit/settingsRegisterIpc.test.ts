@@ -79,6 +79,8 @@ describe('registerSettingsIpc', () => {
     validatePartialSettingsMock.mockReturnValue(true)
     getSettingsMock.mockReturnValue({
       thresholds: {
+        cpuWarning: 80,
+        cpuCritical: 90,
         diskWarning: 70,
         diskCritical: 85,
         memoryWarning: 75,
@@ -98,6 +100,8 @@ describe('registerSettingsIpc', () => {
 
     const payload = {
       thresholds: {
+        cpuWarning: 80,
+        cpuCritical: 90,
         diskWarning: 70,
         diskCritical: 85,
         memoryWarning: 75,

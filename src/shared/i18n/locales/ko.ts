@@ -573,6 +573,7 @@ export const KO_MESSAGES = {
   "Invalid alert ID.": "유효하지 않은 알림 ID입니다.",
   "Unable to find the alert.": "알림을 찾을 수 없습니다.",
   "Failed to dismiss the alert.": "알림 해제에 실패했습니다.",
+  "CPU usage {usage}%": "CPU 사용률 {usage}%",
   "Disk {mount} usage {usage}%": "디스크 {mount} 사용률 {usage}%",
   "Memory usage {usage}%": "메모리 사용률 {usage}%",
   "GPU memory usage {usage}%": "GPU 메모리 사용률 {usage}%",

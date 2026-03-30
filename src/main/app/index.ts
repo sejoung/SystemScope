@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app } from 'electron'
 import { createMainWindow, setForceQuit } from './createWindow'
 import { registerAllIpc } from '../ipc'
 import { initializeRuntimeSettings } from './initializeRuntimeSettings'
@@ -39,13 +39,12 @@ app.whenReady().then(() => {
     startJobPruner()
   }
 
-  createMainWindow()
+  const mainWindow = createMainWindow()
 
   app.on('activate', () => {
-    const win = BrowserWindow.getAllWindows()[0]
-    if (win) {
-      win.show()
-      win.focus()
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.show()
+      mainWindow.focus()
     } else {
       createMainWindow()
     }

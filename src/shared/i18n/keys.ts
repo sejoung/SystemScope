@@ -211,6 +211,7 @@ export const MESSAGE_KEYS = {
     "Current: every {interval} min / Max retention: 168 snapshots (about {days} days)",
   "settings.snapshots.guidance":
     "Shorter intervals catch change sooner but rotate history faster. Longer intervals keep a broader timeline with fewer points.",
+  "settings.alerts.cpu": "CPU",
   "settings.alerts.storage": "Storage",
   "settings.alerts.memory": "Memory",
   "settings.alerts.gpu_memory": "GPU Memory",
@@ -521,6 +522,7 @@ export const MESSAGE_KEYS = {
   "main.alert.error.invalid_id": "Invalid alert ID.",
   "main.alert.error.not_found": "Unable to find the alert.",
   "main.alert.error.dismiss_failed": "Unable to dismiss the alert.",
+  "main.alert.message.cpu_usage": "CPU usage {usage}%",
   "main.alert.message.disk_usage": "Disk {mount} usage {usage}%",
   "main.alert.message.memory_usage": "Memory usage {usage}%",
   "main.alert.message.gpu_memory_usage": "GPU memory usage {usage}%",

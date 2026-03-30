@@ -20,6 +20,8 @@ vi.mock('electron', () => ({
 vi.mock('../../src/main/store/settingsStore', () => ({
   getSettings: () => ({
     thresholds: {
+      cpuWarning: 80,
+      cpuCritical: 90,
       diskWarning: 75,
       diskCritical: 90,
       memoryWarning: 75,

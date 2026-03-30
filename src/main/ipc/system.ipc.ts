@@ -18,6 +18,8 @@ import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './reque
 
 let updateTimer: ReturnType<typeof setTimeout> | null = null
 let isRunning = false
+let consecutiveFailures = 0
+const MAX_BACKOFF_MS = 30_000
 
 export function registerSystemIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SYSTEM_GET_STATS, async (_event, metaArg?: IpcRequestMetaArg) => {
@@ -94,12 +96,16 @@ async function scheduleNextUpdate(): Promise<void> {
         }
       }
     }
+
+    consecutiveFailures = 0
   } catch (err) {
-    logErrorAction('system-ipc', 'realtime.tick', err)
+    consecutiveFailures++
+    logErrorAction('system-ipc', 'realtime.tick', { error: err, consecutiveFailures })
   }
 
   if (isRunning) {
-    updateTimer = setTimeout(() => { void scheduleNextUpdate() }, SYSTEM_UPDATE_INTERVAL_MS)
+    const backoff = Math.min(SYSTEM_UPDATE_INTERVAL_MS * 2 ** consecutiveFailures, MAX_BACKOFF_MS)
+    updateTimer = setTimeout(() => { void scheduleNextUpdate() }, backoff)
   }
 }
 

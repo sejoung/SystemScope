@@ -32,17 +32,17 @@ export function isDockerContainersScanResult(data: unknown): data is DockerConta
   return isObj(data) && 'status' in data && 'containers' in data
 }
 
-/** PortInfo[] */
+/** PortInfo[] — first-element sampling: validates only data[0] for performance */
 export function isPortInfoArray(data: unknown): data is PortInfo[] {
-  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].localPort === 'number' && typeof data[0].protocol === 'string'))
+  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].localPort === 'string' && typeof data[0].protocol === 'string'))
 }
 
-/** InstalledApp[] */
+/** InstalledApp[] — first-element sampling: validates only data[0] for performance */
 export function isInstalledAppArray(data: unknown): data is InstalledApp[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].id === 'string' && typeof data[0].name === 'string' && typeof data[0].platform === 'string'))
 }
 
-/** AppRelatedDataItem[] */
+/** AppRelatedDataItem[] — first-element sampling: validates only data[0] for performance */
 export function isAppRelatedDataArray(data: unknown): data is AppRelatedDataItem[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'id' in data[0] && 'label' in data[0] && 'path' in data[0]))
 }
@@ -52,17 +52,17 @@ export function isAppRemovalResult(data: unknown): data is AppRemovalResult {
   return isObj(data) && 'id' in data && 'started' in data && 'completed' in data && 'cancelled' in data
 }
 
-/** QuickScanFolder[] */
+/** QuickScanFolder[] — first-element sampling: validates only data[0] for performance */
 export function isQuickScanFolderArray(data: unknown): data is QuickScanFolder[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'category' in data[0] && 'cleanable' in data[0]))
 }
 
-/** AppLeftoverDataItem[] */
+/** AppLeftoverDataItem[] — first-element sampling: validates only data[0] for performance */
 export function isAppLeftoverDataArray(data: unknown): data is AppLeftoverDataItem[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'appName' in data[0] && 'confidence' in data[0]))
 }
 
-/** AppLeftoverRegistryItem[] */
+/** AppLeftoverRegistryItem[] — first-element sampling: validates only data[0] for performance */
 export function isAppLeftoverRegistryArray(data: unknown): data is AppLeftoverRegistryItem[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'registryPath' in data[0]))
 }

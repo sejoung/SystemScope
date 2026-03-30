@@ -1,4 +1,4 @@
-export type AlertType = 'disk' | 'memory' | 'gpu'
+export type AlertType = 'cpu' | 'disk' | 'memory' | 'gpu'
 export type AlertSeverity = 'warning' | 'critical'
 
 export interface Alert {
@@ -13,6 +13,8 @@ export interface Alert {
 }
 
 export interface AlertThresholds {
+  cpuWarning: number
+  cpuCritical: number
   diskWarning: number
   diskCritical: number
   memoryWarning: number
@@ -22,6 +24,8 @@ export interface AlertThresholds {
 }
 
 export const DEFAULT_THRESHOLDS: AlertThresholds = {
+  cpuWarning: 80,
+  cpuCritical: 90,
   diskWarning: 80,
   diskCritical: 90,
   memoryWarning: 80,

@@ -20,6 +20,8 @@ describe('initializeRuntimeSettings', () => {
   it('should apply persisted thresholds to alert runtime state on startup', async () => {
     getSettingsMock.mockReturnValue({
       thresholds: {
+        cpuWarning: 80,
+        cpuCritical: 90,
         diskWarning: 70,
         diskCritical: 85,
         memoryWarning: 75,
@@ -36,6 +38,8 @@ describe('initializeRuntimeSettings', () => {
 
     expect(setThresholdsMock).toHaveBeenCalledTimes(1)
     expect(setThresholdsMock).toHaveBeenCalledWith({
+      cpuWarning: 80,
+      cpuCritical: 90,
       diskWarning: 70,
       diskCritical: 85,
       memoryWarning: 75,
@@ -48,6 +52,8 @@ describe('initializeRuntimeSettings', () => {
   it('should fall back to safe defaults when persisted settings are malformed', async () => {
     getSettingsMock.mockReturnValue({
       thresholds: {
+        cpuWarning: 80,
+        cpuCritical: 90,
         diskWarning: 80,
         diskCritical: 90,
         memoryWarning: 80,
@@ -63,6 +69,8 @@ describe('initializeRuntimeSettings', () => {
     initializeRuntimeSettings()
 
     expect(setThresholdsMock).toHaveBeenCalledWith({
+      cpuWarning: 80,
+      cpuCritical: 90,
       diskWarning: 80,
       diskCritical: 90,
       memoryWarning: 80,
