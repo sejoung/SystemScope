@@ -134,6 +134,12 @@ textarea:focus-visible,
   }
 }
 
+@keyframes page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes systemscope-refresh-pulse {
   0% {
     transform: scale(0.9);

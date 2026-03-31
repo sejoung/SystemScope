@@ -9,6 +9,7 @@ interface ProcessState {
   setCpuProcesses: (procs: ProcessInfo[]) => void;
   setMemoryProcesses: (procs: ProcessInfo[]) => void;
   setAllProcesses: (procs: ProcessInfo[]) => void;
+  setProcessSnapshot: (all: ProcessInfo[], cpu: ProcessInfo[], memory: ProcessInfo[]) => void;
 }
 
 export const useProcessStore = create<ProcessState>((set) => ({
@@ -20,4 +21,6 @@ export const useProcessStore = create<ProcessState>((set) => ({
   setMemoryProcesses: (procs) => set({ memoryProcesses: procs }),
   setAllProcesses: (procs) =>
     set({ allProcesses: procs, allProcessesLoaded: true }),
+  setProcessSnapshot: (all, cpu, memory) =>
+    set({ allProcesses: all, allProcessesLoaded: true, cpuProcesses: cpu, memoryProcesses: memory }),
 }));

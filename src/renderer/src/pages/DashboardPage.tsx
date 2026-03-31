@@ -1,5 +1,6 @@
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useSystemStore } from "../stores/useSystemStore";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { CpuWidget } from "../features/monitoring/CpuWidget";
 import { MemoryWidget } from "../features/monitoring/MemoryWidget";
 import { GpuWidget } from "../features/monitoring/GpuWidget";
@@ -98,26 +99,26 @@ export function DashboardPage() {
 
       {/* Top: Gauges */}
       <div className="dashboard-grid-top">
-        <CpuWidget />
-        <MemoryWidget />
-        <GpuWidget />
-        <DiskWidget />
-        <NetworkWidget />
+        <ErrorBoundary title="CPU"><CpuWidget /></ErrorBoundary>
+        <ErrorBoundary title="Memory"><MemoryWidget /></ErrorBoundary>
+        <ErrorBoundary title="GPU"><GpuWidget /></ErrorBoundary>
+        <ErrorBoundary title="Disk"><DiskWidget /></ErrorBoundary>
+        <ErrorBoundary title="Network"><NetworkWidget /></ErrorBoundary>
       </div>
 
       {/* Middle: Realtime chart */}
       <div className="dashboard-section">
-        <RealtimeChart />
+        <ErrorBoundary title="Realtime Chart"><RealtimeChart /></ErrorBoundary>
       </div>
 
       {/* Bottom row 1: Storage + Growth */}
       <div className="dashboard-grid-responsive">
-        <YourStorage onFolderClick={() => setCurrentPage("disk")} />
-        <GrowthView />
+        <ErrorBoundary title="Storage"><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>
+        <ErrorBoundary title="Growth"><GrowthView /></ErrorBoundary>
       </div>
 
       <div>
-        <TopResourceConsumers />
+        <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>
       </div>
     </div>
   );

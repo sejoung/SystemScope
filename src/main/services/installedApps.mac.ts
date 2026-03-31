@@ -135,6 +135,7 @@ export function getMacRelatedDataCandidates(
 }
 
 export async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
+  leftoverSizeCache.clear()
   const knownNames = new Set(installedApps.map((a) => a.name.toLowerCase()))
   const knownBundleIds = new Set(installedApps.map((a) => a.bundleId?.toLowerCase()).filter(Boolean))
   const homeDir = homedir()

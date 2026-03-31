@@ -5,6 +5,7 @@ import { ListeningPorts } from "../features/process/ListeningPorts";
 import { PortWatch } from "../features/process/PortWatch";
 import { PageLoading } from "../components/PageLoading";
 import { PageTab } from "../components/PageTab";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
 
 type ActivityTab = "processes" | "ports" | "watch";
@@ -101,9 +102,9 @@ export function ProcessPage() {
         </div>
       </div>
 
-      {tab === "processes" && <ProcessTable processes={allProcesses} />}
-      {tab === "ports" && <ListeningPorts />}
-      {tab === "watch" && <PortWatch />}
+      {tab === "processes" && <ErrorBoundary title={tk("process.tab.processes")}><ProcessTable processes={allProcesses} /></ErrorBoundary>}
+      {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts /></ErrorBoundary>}
+      {tab === "watch" && <ErrorBoundary title={tk("process.tab.watch")}><PortWatch /></ErrorBoundary>}
     </div>
   );
 }

@@ -38,7 +38,7 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
   const result = new Map<string, number>()
   try {
     // du -sk path1 path2 path3... → 한 프로세스로 전부 측정
-    const { stdout } = await runExternalCommand('du', ['-sk', ...paths], {
+    const { stdout } = await runExternalCommand('du', ['-sk', '--', ...paths], {
       timeout: 60000,
       env: { ...process.env, LANG: 'C' },
       maxBuffer: 1024 * 1024

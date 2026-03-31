@@ -185,6 +185,7 @@ export function getWindowsRelatedDataCandidates(
 }
 
 export async function listWindowsLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
+  leftoverSizeCache.clear()
   const knownNames = new Set(installedApps.flatMap((a) => {
     const values = [a.name]
     if (a.installLocation) values.push(path.win32.basename(a.installLocation))
@@ -379,4 +380,3 @@ function getWindowsLeftoverGuidance(
     risk: tk('main.apps.leftover.win.default_risk')
   }
 }
-

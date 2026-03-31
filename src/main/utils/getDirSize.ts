@@ -23,7 +23,7 @@ export async function getDirSizeEstimate(
 /** macOS/Linux: du -sk 명령어로 빠르게 디렉토리 크기 측정 */
 async function getDirSizeDu(dirPath: string): Promise<number> {
   try {
-    const { stdout } = await runExternalCommand('du', ['-sk', dirPath], {
+    const { stdout } = await runExternalCommand('du', ['-sk', '--', dirPath], {
       timeout: 30000,
       env: { ...process.env, LANG: 'C' }
     })

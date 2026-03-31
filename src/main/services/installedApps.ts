@@ -175,7 +175,21 @@ export async function removeLeftoverAppRegistry(itemIds: string[]): Promise<{ de
   const deletedKeys: string[] = []
   const failedKeys: string[] = []
 
+  const ALLOWED_REG_PREFIXES = [
+    'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\',
+    'HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\',
+    'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\'
+  ]
+
   for (const item of uniqueItems) {
+    if (!ALLOWED_REG_PREFIXES.some((prefix) => item.registryPath.startsWith(prefix))) {
+      failedKeys.push(item.registryPath)
+      logWarn('apps', 'Blocked registry delete: path outside allowed roots', {
+        registryPath: item.registryPath,
+        itemId: item.id
+      })
+      continue
+    }
     try {
       await execFileAsync('reg', ['delete', item.registryPath, '/f'], {
         windowsHide: true

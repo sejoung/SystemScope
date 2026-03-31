@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -23,6 +23,9 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const id = useId();
+  const titleId = `${id}-confirm-title`;
+  const messageId = `${id}-confirm-message`;
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
   const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -93,15 +96,15 @@ export function ConfirmDialog({
       <div
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="systemscope-confirm-title"
-        aria-describedby="systemscope-confirm-message"
+        aria-labelledby={titleId}
+        aria-describedby={messageId}
         style={dialogStyle}
         onClick={(event) => event.stopPropagation()}
       >
-        <div style={titleStyle} id="systemscope-confirm-title">
+        <div style={titleStyle} id={titleId}>
           {title}
         </div>
-        <div style={messageStyle} id="systemscope-confirm-message">
+        <div style={messageStyle} id={messageId}>
           {message}
         </div>
         {details ? <div style={detailsStyle}>{details}</div> : null}

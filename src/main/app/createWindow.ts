@@ -45,8 +45,9 @@ export function createMainWindow(): BrowserWindow {
     win.show()
   })
 
+  const webContentsId = win.webContents.id
   win.on('closed', () => {
-    clearUnsavedSettingsState(win.webContents.id)
+    clearUnsavedSettingsState(webContentsId)
   })
 
   if (isDevelopment) {

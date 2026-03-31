@@ -62,7 +62,7 @@ jobs:
           DEBUG: pw:browser*
       - name: Upload Playwright artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-${{ matrix.os }}
           path: |

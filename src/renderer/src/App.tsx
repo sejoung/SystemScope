@@ -32,9 +32,7 @@ function App() {
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings)
   const theme = useSettingsStore((s) => s.theme)
   const locale = useSettingsStore((s) => s.locale)
-  const setCpuProcesses = useProcessStore((s) => s.setCpuProcesses)
-  const setMemoryProcesses = useProcessStore((s) => s.setMemoryProcesses)
-  const setAllProcesses = useProcessStore((s) => s.setAllProcesses)
+  const setProcessSnapshot = useProcessStore((s) => s.setProcessSnapshot)
   const pushStats = useSystemStore((s) => s.pushStats)
   const addAlerts = useAlertStore((s) => s.addAlerts)
   const setAlerts = useAlertStore((s) => s.setAlerts)
@@ -225,9 +223,7 @@ function App() {
   useInterval(() => {
     void window.systemScope.getProcessSnapshot(10).then((res) => {
       if (res.ok && res.data && isProcessSnapshot(res.data)) {
-        setAllProcesses(res.data.allProcesses)
-        setCpuProcesses(res.data.topCpuProcesses)
-        setMemoryProcesses(res.data.topMemoryProcesses)
+        setProcessSnapshot(res.data.allProcesses, res.data.topCpuProcesses, res.data.topMemoryProcesses)
       }
     }).catch((error) => {
       void reportRendererError('process-polling', 'Failed to refresh process lists', { error })

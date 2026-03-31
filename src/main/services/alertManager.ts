@@ -21,6 +21,14 @@ export function dismissAlert(id: string): boolean {
 }
 
 export function checkAlerts(stats: SystemStats): Alert[] {
+  // Evict expired entries from lastFired to prevent unbounded growth
+  const now = Date.now()
+  for (const [key, timestamp] of lastFired) {
+    if (now - timestamp > ALERT_COOLDOWN_MS) {
+      lastFired.delete(key)
+    }
+  }
+
   const newAlerts: Alert[] = []
 
   // CPU 알림

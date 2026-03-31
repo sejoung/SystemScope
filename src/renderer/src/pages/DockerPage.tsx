@@ -31,7 +31,7 @@ export function DockerPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const { tk, t } = useI18n();
 
-  const handleChanged = () => setRefreshToken((prev) => prev + 1);
+  const handleChanged = useCallback(() => setRefreshToken((prev) => prev + 1), []);
 
   const checkDocker = useCallback(async () => {
     setAvailability("checking");

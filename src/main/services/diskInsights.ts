@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
 import * as path from 'node:path'
 import * as crypto from 'node:crypto'
 import type { RecentGrowthEntry, DuplicateGroup } from '@shared/types'
@@ -231,7 +232,6 @@ async function hashFileSample(filePath: string, fileSize: number, signal?: Abort
 async function hashFileFull(filePath: string, signal?: AbortSignal): Promise<string> {
   if (signal?.aborted) throw new Error('Cancelled')
 
-  const { createReadStream } = await import('node:fs')
   return new Promise((resolve, reject) => {
     const hash = crypto.createHash('md5')
     const stream = createReadStream(filePath)

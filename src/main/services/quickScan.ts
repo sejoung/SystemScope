@@ -232,7 +232,7 @@ async function getDirSizesBatchDu(paths: string[]): Promise<Map<string, number>>
   }
 
   try {
-    const { stdout } = await runExternalCommand('du', ['-sk', ...paths], {
+    const { stdout } = await runExternalCommand('du', ['-sk', '--', ...paths], {
       timeout: 60_000,
       env: { ...process.env, LANG: 'C' },
       maxBuffer: 1024 * 1024

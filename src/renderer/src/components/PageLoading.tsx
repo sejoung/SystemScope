@@ -41,7 +41,6 @@ export function PageLoading({
           {detail}
         </span>
       ) : null}
-      <style>{`@keyframes page-loading-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
