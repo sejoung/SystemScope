@@ -7,6 +7,7 @@ import { cancelAllJobs, getActiveJobCount } from '../jobs/jobManager'
 import { stopSnapshotScheduler, waitForPendingSnapshot } from '../services/growthAnalyzer'
 import { flushLoggingWrites, logError, logInfo, shutdownLogging } from '../services/logging'
 import { stopEventStore } from '../services/eventStore'
+import { stopAlertHistory } from '../services/alertHistory'
 import { tk } from '../i18n'
 
 let shutdownPromise: Promise<void> | null = null
@@ -81,6 +82,7 @@ async function doGracefulShutdown(reason: string): Promise<void> {
   const snapshotFlushed = await waitForPendingSnapshot()
   broadcastShutdownState('cleaning_up', tk('shutdown.cleaning_up'))
   stopEventStore()
+  stopAlertHistory()
   destroyTray()
 
   logInfo('shutdown', 'Graceful shutdown completed', {

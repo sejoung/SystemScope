@@ -1,14 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTimelineStore } from '../stores/useTimelineStore'
 import { useEventStore } from '../stores/useEventStore'
 import { TimelineChart } from '../features/timeline/TimelineChart'
 import { EventHistoryCard } from '../features/timeline/EventHistoryCard'
 import { PointDetailPanel } from '../features/timeline/PointDetailPanel'
+import { AlertIntelligencePanel } from '../features/timeline/AlertIntelligencePanel'
 import { PageTab } from '../components/PageTab'
 import { PageLoading } from '../components/PageLoading'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useI18n } from '../i18n/useI18n'
-import type { TimelineRange } from '@shared/types'
+import { isAlertIntelligence } from '@shared/types'
+import type { TimelineRange, AlertIntelligence } from '@shared/types'
 import type { SystemEventCategory } from '@shared/types'
 
 const RANGE_OPTIONS: { value: TimelineRange; labelKey: 'timeline.range.24h' | 'timeline.range.7d' | 'timeline.range.30d' }[] = [
@@ -41,7 +43,32 @@ export function TimelinePage() {
   const fetchEvents = useEventStore((s) => s.fetchEvents)
   const fetchFilteredEvents = useEventStore((s) => s.fetchFilteredEvents)
 
+  const [intelligence, setIntelligence] = useState<AlertIntelligence | null>(null)
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false)
+
   const { tk } = useI18n()
+
+  // Fetch alert intelligence on mount
+  useEffect(() => {
+    let cancelled = false
+    setIntelligenceLoading(true)
+    window.systemScope
+      .getAlertIntelligence()
+      .then((result) => {
+        if (!cancelled && result.ok && isAlertIntelligence(result.data)) {
+          setIntelligence(result.data)
+        }
+      })
+      .catch(() => {
+        // silently ignore — panel will show empty state
+      })
+      .finally(() => {
+        if (!cancelled) setIntelligenceLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Fetch timeline data when range changes
   useEffect(() => {
@@ -122,6 +149,13 @@ export function TimelinePage() {
       <div style={{ marginBottom: '16px' }}>
         <ErrorBoundary title={tk('timeline.point_detail.title')}>
           <PointDetailPanel />
+        </ErrorBoundary>
+      </div>
+
+      {/* Alert Intelligence */}
+      <div style={{ marginBottom: '16px' }}>
+        <ErrorBoundary title={tk('alert.intelligence.title')}>
+          <AlertIntelligencePanel intelligence={intelligence} loading={intelligenceLoading} />
         </ErrorBoundary>
       </div>
 

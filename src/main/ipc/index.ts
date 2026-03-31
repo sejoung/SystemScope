@@ -9,6 +9,8 @@ import { registerAppsIpc } from './apps.ipc'
 import { registerUpdateIpc } from './update.ipc'
 import { registerEventIpc } from './event.ipc'
 import { registerTimelineIpc } from './timeline.ipc'
+import { registerDiagnosisIpc } from './diagnosis.ipc'
+import { registerAlertIntelligenceIpc } from './alertIntelligence.ipc'
 
 export function registerAllIpc(): void {
   registerAppIpc()
@@ -19,9 +21,11 @@ export function registerAllIpc(): void {
   registerProcessIpc()
   registerAppsIpc()
   registerAlertIpc()
+  registerAlertIntelligenceIpc()
   registerSettingsIpc()
   registerEventIpc()
   registerTimelineIpc()
+  registerDiagnosisIpc()
 }
 
 export { cleanupSystemIpc } from './system.ipc'

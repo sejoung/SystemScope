@@ -20,4 +20,8 @@ function getEventsFilePath(): string {
   return path.join(getDataDir(), 'events.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath }
+function getAlertHistoryFilePath(): string {
+  return path.join(getDataDir(), 'alert-history.json')
+}
+
+export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath }

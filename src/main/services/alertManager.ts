@@ -3,10 +3,12 @@ import type { Alert, AlertThresholds, AlertType, AlertSeverity, SystemStats } fr
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 import { ALERT_COOLDOWN_MS, MAX_ACTIVE_ALERTS } from '@shared/constants/thresholds'
 import { tk } from '../i18n'
+import { onAlertFired, onAlertResolved } from './alertHistory'
 
 let thresholds: AlertThresholds = { ...DEFAULT_THRESHOLDS }
 const activeAlerts: Map<string, Alert> = new Map()
 const lastFired: Map<string, number> = new Map()
+const activeAlertTypes = new Set<string>()
 
 export function setThresholds(newThresholds: Partial<AlertThresholds>): void {
   thresholds = { ...thresholds, ...newThresholds }
@@ -30,9 +32,11 @@ export function checkAlerts(stats: SystemStats): Alert[] {
   }
 
   const newAlerts: Alert[] = []
+  const checkedKeys = new Set<string>()
 
   // CPU 알림
   if (stats.cpu.usage >= thresholds.cpuCritical) {
+    checkedKeys.add('cpu')
     const alert = createAlertIfCooldown(
       'cpu',
       'cpu',
@@ -43,6 +47,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
     )
     if (alert) newAlerts.push(alert)
   } else if (stats.cpu.usage >= thresholds.cpuWarning) {
+    checkedKeys.add('cpu')
     const alert = createAlertIfCooldown(
       'cpu',
       'cpu',
@@ -52,6 +57,9 @@ export function checkAlerts(stats: SystemStats): Alert[] {
       thresholds.cpuWarning
     )
     if (alert) newAlerts.push(alert)
+  } else if (activeAlertTypes.has('cpu')) {
+    activeAlertTypes.delete('cpu')
+    onAlertResolved('cpu')
   }
 
   // 디스크 알림 — macOS에서는 purgeable 제외한 realUsage 기준으로 판단
@@ -59,6 +67,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
     const key = `disk:${drive.mount}`
     const effectiveUsage = drive.realUsage ?? drive.usage
     if (effectiveUsage >= thresholds.diskCritical) {
+      checkedKeys.add(key)
       const alert = createAlertIfCooldown(
         key,
         'disk',
@@ -69,6 +78,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
       )
       if (alert) newAlerts.push(alert)
     } else if (effectiveUsage >= thresholds.diskWarning) {
+      checkedKeys.add(key)
       const alert = createAlertIfCooldown(
         key,
         'disk',
@@ -78,11 +88,15 @@ export function checkAlerts(stats: SystemStats): Alert[] {
         thresholds.diskWarning
       )
       if (alert) newAlerts.push(alert)
+    } else if (activeAlertTypes.has(key)) {
+      activeAlertTypes.delete(key)
+      onAlertResolved(key)
     }
   }
 
   // 메모리 알림
   if (stats.memory.usage >= thresholds.memoryCritical) {
+    checkedKeys.add('memory')
     const alert = createAlertIfCooldown(
       'memory',
       'memory',
@@ -93,6 +107,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
     )
     if (alert) newAlerts.push(alert)
   } else if (stats.memory.usage >= thresholds.memoryWarning) {
+    checkedKeys.add('memory')
     const alert = createAlertIfCooldown(
       'memory',
       'memory',
@@ -102,12 +117,16 @@ export function checkAlerts(stats: SystemStats): Alert[] {
       thresholds.memoryWarning
     )
     if (alert) newAlerts.push(alert)
+  } else if (activeAlertTypes.has('memory')) {
+    activeAlertTypes.delete('memory')
+    onAlertResolved('memory')
   }
 
   // GPU 메모리 알림
   if (stats.gpu.available && stats.gpu.memoryTotal && stats.gpu.memoryUsed) {
     const gpuUsage = Math.round((stats.gpu.memoryUsed / stats.gpu.memoryTotal) * 10000) / 100
     if (gpuUsage >= thresholds.gpuMemoryCritical) {
+      checkedKeys.add('gpu')
       const alert = createAlertIfCooldown(
         'gpu',
         'gpu',
@@ -118,6 +137,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
       )
       if (alert) newAlerts.push(alert)
     } else if (gpuUsage >= thresholds.gpuMemoryWarning) {
+      checkedKeys.add('gpu')
       const alert = createAlertIfCooldown(
         'gpu',
         'gpu',
@@ -127,6 +147,9 @@ export function checkAlerts(stats: SystemStats): Alert[] {
         thresholds.gpuMemoryWarning
       )
       if (alert) newAlerts.push(alert)
+    } else if (activeAlertTypes.has('gpu')) {
+      activeAlertTypes.delete('gpu')
+      onAlertResolved('gpu')
     }
   }
 
@@ -156,5 +179,11 @@ function createAlertIfCooldown(
   const id = `alert-${randomUUID()}`
   const alert: Alert = { id, type, severity, message, value, threshold, timestamp: now, dismissed: false }
   activeAlerts.set(id, alert)
+
+  if (!activeAlertTypes.has(key)) {
+    activeAlertTypes.add(key)
+    onAlertFired(key, severity, message)
+  }
+
   return alert
 }

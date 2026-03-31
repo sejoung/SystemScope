@@ -12,6 +12,8 @@ import { startUpdateChecker, stopUpdateChecker } from '../services/updateChecker
 import { startJobPruner, stopJobPruner } from '../jobs/jobManager'
 import { initEventStore } from '../services/eventStore'
 import { initMetricsStore, stopMetricsStore } from '../services/metricsStore'
+import { initDiagnosisAdvisor, stopDiagnosisAdvisor } from '../services/diagnosisAdvisor'
+import { initAlertHistory, stopAlertHistory } from '../services/alertHistory'
 
 let appReadyForQuit = false
 
@@ -27,6 +29,8 @@ app.whenReady().then(() => {
   registerAllIpc()
   void initEventStore()
   void initMetricsStore()
+  void initDiagnosisAdvisor()
+  void initAlertHistory()
 
   if (!isE2ELightweight) {
     ensureSnapshotDir()
@@ -62,6 +66,8 @@ app.on('before-quit', (event) => {
   stopUpdateChecker()
   stopJobPruner()
   stopMetricsStore()
+  stopDiagnosisAdvisor()
+  stopAlertHistory()
   if (!appReadyForQuit) {
     event.preventDefault()
     appReadyForQuit = true

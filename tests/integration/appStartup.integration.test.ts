@@ -104,6 +104,18 @@ vi.mock('../../src/main/services/metricsStore', () => ({
   stopMetricsStore: stopMetricsStoreMock
 }))
 
+vi.mock('../../src/main/services/diagnosisAdvisor', () => ({
+  initDiagnosisAdvisor: vi.fn(() => Promise.resolve()),
+  stopDiagnosisAdvisor: vi.fn()
+}))
+
+vi.mock('../../src/main/services/alertHistory', () => ({
+  initAlertHistory: vi.fn(() => Promise.resolve()),
+  stopAlertHistory: vi.fn(),
+  onAlertFired: vi.fn(),
+  onAlertResolved: vi.fn()
+}))
+
 vi.mock('../../src/main/jobs/jobManager', () => ({
   createJob: vi.fn(),
   cancelJob: vi.fn(),

@@ -7,6 +7,7 @@ import type { ShutdownState } from './shutdown'
 import type { UpdateInfo, UpdateStatus } from './update'
 import type { MetricPoint, TimelineData } from './metric'
 import type { SystemEvent } from './event'
+import type { DiagnosisResult, DiagnosisSummary, AlertIntelligence } from './diagnosis'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -120,4 +121,21 @@ export function isSystemEvent(data: unknown): data is SystemEvent {
 /** SystemEvent[] — first-element sampling: validates only data[0] for performance */
 export function isSystemEventArray(data: unknown): data is SystemEvent[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].id === 'string' && typeof data[0].ts === 'number' && typeof data[0].category === 'string'))
+}
+
+/** DiagnosisResult */
+export function isDiagnosisResult(data: unknown): data is DiagnosisResult {
+  return isObj(data) && typeof data.id === 'string' && typeof data.category === 'string' && typeof data.severity === 'string'
+    && typeof data.title === 'string' && typeof data.description === 'string' && Array.isArray(data.evidence) && Array.isArray(data.actions)
+    && typeof data.detectedAt === 'number'
+}
+
+/** DiagnosisSummary */
+export function isDiagnosisSummary(data: unknown): data is DiagnosisSummary {
+  return isObj(data) && Array.isArray(data.results) && typeof data.analyzedAt === 'number'
+}
+
+/** AlertIntelligence */
+export function isAlertIntelligence(data: unknown): data is AlertIntelligence {
+  return isObj(data) && Array.isArray(data.activeAlerts) && Array.isArray(data.patterns) && Array.isArray(data.sustainedAlerts)
 }

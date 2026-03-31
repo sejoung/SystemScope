@@ -138,6 +138,10 @@ export function createE2EMockApi(): {
           metricsIntervalSec: 60,
           metricsRetentionDays: 30,
           eventsRetentionDays: 90
+        },
+        diagnostics: {
+          enabled: true,
+          intervalSec: 300
         }
       }),
     getUpdateStatus: () =>

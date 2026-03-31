@@ -1,8 +1,11 @@
 import type {
   Alert,
   AlertThresholds,
+  AlertHistoryEntry,
+  AlertIntelligence,
   AppResult,
   AppUninstallRequest,
+  DiagnosisSummary,
   DiskScanResult,
   DuplicateGroup,
   ExtensionGroup,
@@ -109,6 +112,9 @@ export interface SystemScopeApi {
 
   getActiveAlerts: () => Promise<AppResult<Alert[]>>
   dismissAlert: (alertId: string) => Promise<AppResult<boolean>>
+  getAlertIntelligence: () => Promise<AppResult<AlertIntelligence>>
+  getAlertHistory: (limit?: number) => Promise<AppResult<AlertHistoryEntry[]>>
+  getDiagnosisSummary: () => Promise<AppResult<DiagnosisSummary>>
   onAlertFired: IpcListener
   onShutdownState: IpcListener
 

@@ -11,6 +11,7 @@ import { YourStorage } from "../features/disk/YourStorage";
 import { GrowthView } from "../features/disk/GrowthView";
 import { TopResourceConsumers } from "../features/process/TopResourceConsumers";
 import { AlertBanner } from "../features/alerts/AlertBanner";
+import { DiagnosisCard } from "../features/diagnosis/DiagnosisCard";
 import { PageLoading } from "../components/PageLoading";
 import { useI18n } from "../i18n/useI18n";
 import { useUpdateStore } from "../stores/useUpdateStore";
@@ -96,6 +97,7 @@ export function DashboardPage() {
         </div>
       ) : null}
       <AlertBanner />
+      <ErrorBoundary title="Diagnosis"><DiagnosisCard /></ErrorBoundary>
 
       {/* Top: Gauges */}
       <div className="dashboard-grid-top">

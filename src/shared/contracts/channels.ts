@@ -61,6 +61,11 @@ export const IPC_CHANNELS = {
   // 알림
   ALERT_GET_ACTIVE: 'alert:getActive',
   ALERT_DISMISS: 'alert:dismiss',
+  ALERT_GET_INTELLIGENCE: 'alert:getIntelligence',
+  ALERT_GET_HISTORY: 'alert:getHistory',
+
+  // 진단
+  DIAGNOSIS_GET_SUMMARY: 'diagnosis:getSummary',
 
   // 작업
   JOB_CANCEL: 'job:cancel',

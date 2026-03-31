@@ -117,6 +117,12 @@ export function createIpcApi(): SystemScopeApi {
     getActiveAlerts: () => invokeWithRequestId(IPC_CHANNELS.ALERT_GET_ACTIVE),
     dismissAlert: (alertId: string) =>
       invokeWithRequestId(IPC_CHANNELS.ALERT_DISMISS, alertId),
+    getAlertIntelligence: () =>
+      invokeWithRequestId(IPC_CHANNELS.ALERT_GET_INTELLIGENCE),
+    getAlertHistory: (limit?: number) =>
+      invokeWithRequestId(IPC_CHANNELS.ALERT_GET_HISTORY, limit),
+    getDiagnosisSummary: () =>
+      invokeWithRequestId(IPC_CHANNELS.DIAGNOSIS_GET_SUMMARY),
     onAlertFired: createListener(IPC_CHANNELS.EVENT_ALERT_FIRED),
     onShutdownState: createListener(IPC_CHANNELS.EVENT_SHUTDOWN_STATE),
 

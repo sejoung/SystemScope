@@ -1,4 +1,4 @@
-import type { AlertThresholds, AppSettings, HistorySettings, SnapshotIntervalMin } from '@shared/types'
+import type { AlertThresholds, AppSettings, DiagnosticsSettings, HistorySettings, SnapshotIntervalMin } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 import type { AppLocale } from '@shared/i18n'
 
@@ -10,12 +10,18 @@ export const DEFAULT_HISTORY_SETTINGS: HistorySettings = {
   eventsRetentionDays: 90
 }
 
+export const DEFAULT_DIAGNOSTICS_SETTINGS: DiagnosticsSettings = {
+  enabled: true,
+  intervalSec: 300
+}
+
 export const DEFAULT_SETTINGS: AppSettings = {
   thresholds: DEFAULT_THRESHOLDS,
   theme: 'dark',
   locale: 'en',
   snapshotIntervalMin: 60,
-  history: DEFAULT_HISTORY_SETTINGS
+  history: DEFAULT_HISTORY_SETTINGS,
+  diagnostics: DEFAULT_DIAGNOSTICS_SETTINGS
 }
 
 function isSnapshotInterval(value: unknown): value is SnapshotIntervalMin {
@@ -64,6 +70,15 @@ function isHistorySettings(value: unknown): value is HistorySettings {
   )
 }
 
+function isDiagnosticsSettings(value: unknown): value is DiagnosticsSettings {
+  if (!value || typeof value !== 'object') return false
+  const d = value as Record<string, unknown>
+  return (
+    typeof d.enabled === 'boolean' &&
+    typeof d.intervalSec === 'number' && d.intervalSec > 0
+  )
+}
+
 export function sanitizeAppSettings(value: unknown): AppSettings {
   if (!value || typeof value !== 'object') {
     return { ...DEFAULT_SETTINGS }
@@ -75,11 +90,12 @@ export function sanitizeAppSettings(value: unknown): AppSettings {
     theme: isTheme(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme,
     locale: isLocale(raw.locale) ? raw.locale : DEFAULT_SETTINGS.locale,
     snapshotIntervalMin: isSnapshotInterval(raw.snapshotIntervalMin) ? raw.snapshotIntervalMin : DEFAULT_SETTINGS.snapshotIntervalMin,
-    history: isHistorySettings(raw.history) ? raw.history : DEFAULT_HISTORY_SETTINGS
+    history: isHistorySettings(raw.history) ? raw.history : DEFAULT_HISTORY_SETTINGS,
+    diagnostics: isDiagnosticsSettings(raw.diagnostics) ? raw.diagnostics : DEFAULT_DIAGNOSTICS_SETTINGS
   }
 }
 
-const KNOWN_SETTINGS_KEYS = new Set<string>(['thresholds', 'theme', 'locale', 'snapshotIntervalMin', 'history'])
+const KNOWN_SETTINGS_KEYS = new Set<string>(['thresholds', 'theme', 'locale', 'snapshotIntervalMin', 'history', 'diagnostics'])
 
 export function validatePartialSettings(value: unknown): value is Partial<AppSettings> {
   if (!value || typeof value !== 'object') return false
@@ -104,6 +120,9 @@ export function validatePartialSettings(value: unknown): value is Partial<AppSet
     return false
   }
   if ('history' in raw && !isHistorySettings(raw.history)) {
+    return false
+  }
+  if ('diagnostics' in raw && !isDiagnosticsSettings(raw.diagnostics)) {
     return false
   }
 

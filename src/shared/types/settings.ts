@@ -7,12 +7,18 @@ export interface HistorySettings {
   eventsRetentionDays: number
 }
 
+export interface DiagnosticsSettings {
+  enabled: boolean
+  intervalSec: number
+}
+
 export interface AppSettings {
   thresholds: AlertThresholds
   theme: 'dark' | 'light'
   locale: AppLocale
   snapshotIntervalMin: SnapshotIntervalMin
   history: HistorySettings
+  diagnostics: DiagnosticsSettings
 }
 
 export type AppSettingsPatch = Partial<AppSettings>
