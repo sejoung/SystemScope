@@ -28,4 +28,8 @@ function getCleanupInboxFilePath(): string {
   return path.join(getDataDir(), 'cleanup-inbox-dismissed.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath }
+function getSessionSnapshotsFilePath(): string {
+  return path.join(getDataDir(), 'session-snapshots.json')
+}
+
+export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath }

@@ -155,3 +155,23 @@ export function isCleanupResult(data: unknown): data is CleanupResult {
 export function isCleanupInbox(data: unknown): data is CleanupInbox {
   return isObj(data) && Array.isArray(data.items) && typeof data.totalReclaimable === 'number' && typeof data.generatedAt === 'number'
 }
+
+/** DiagnosticReportData */
+export function isDiagnosticReportData(data: unknown): data is import('./report').DiagnosticReportData {
+  return isObj(data) && typeof data.generatedAt === 'number' && typeof data.appVersion === 'string' && Array.isArray(data.sections)
+}
+
+/** SessionSnapshot */
+export function isSessionSnapshot(data: unknown): data is import('./sessionSnapshot').SessionSnapshot {
+  return isObj(data) && typeof data.id === 'string' && typeof data.label === 'string' && typeof data.timestamp === 'number' && isObj(data.system)
+}
+
+/** SessionSnapshot[] */
+export function isSessionSnapshotArray(data: unknown): data is import('./sessionSnapshot').SessionSnapshot[] {
+  return Array.isArray(data) && (data.length === 0 || isSessionSnapshot(data[0]))
+}
+
+/** SnapshotDiff */
+export function isSnapshotDiff(data: unknown): data is import('./sessionSnapshot').SnapshotDiff {
+  return isObj(data) && isObj(data.snapshot1) && isObj(data.snapshot2) && isObj(data.system) && isObj(data.processChanges) && isObj(data.alertChanges)
+}

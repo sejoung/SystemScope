@@ -103,6 +103,16 @@ export const IPC_CHANNELS = {
   CLEANUP_GET_INBOX: 'cleanup:getInbox',
   CLEANUP_DISMISS_ITEM: 'cleanup:dismissItem',
 
+  // 진단 리포트
+  REPORT_BUILD: 'report:build',
+  REPORT_SAVE: 'report:save',
+
+  // 세션 스냅샷
+  SNAPSHOT_SAVE: 'snapshot:save',
+  SNAPSHOT_GET_ALL: 'snapshot:getAll',
+  SNAPSHOT_DELETE: 'snapshot:delete',
+  SNAPSHOT_DIFF: 'snapshot:diff',
+
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',

@@ -1,5 +1,5 @@
 import { IPC_CHANNELS } from "@shared/contracts/channels";
-import type { AppUninstallRequest, CleanupRuleConfig, TrashItemsRequest, TimelineRange, EventQueryOptions } from "@shared/types";
+import type { AppUninstallRequest, CleanupRuleConfig, TrashItemsRequest, TimelineRange, EventQueryOptions, ReportOptions, SaveReportOptions } from "@shared/types";
 import type { SystemScopeApi } from "@shared/contracts/systemScope";
 import { createListener, invokeWithRequestId } from "./helpers";
 
@@ -168,5 +168,19 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.CLEANUP_GET_INBOX),
     dismissCleanupItem: (path: string) =>
       invokeWithRequestId(IPC_CHANNELS.CLEANUP_DISMISS_ITEM, path),
+
+    buildDiagnosticReport: (options: ReportOptions) =>
+      invokeWithRequestId(IPC_CHANNELS.REPORT_BUILD, options),
+    saveDiagnosticReport: (options: SaveReportOptions) =>
+      invokeWithRequestId(IPC_CHANNELS.REPORT_SAVE, options),
+
+    saveSessionSnapshot: (label?: string) =>
+      invokeWithRequestId(IPC_CHANNELS.SNAPSHOT_SAVE, label),
+    getSessionSnapshots: () =>
+      invokeWithRequestId(IPC_CHANNELS.SNAPSHOT_GET_ALL),
+    deleteSessionSnapshot: (id: string) =>
+      invokeWithRequestId(IPC_CHANNELS.SNAPSHOT_DELETE, id),
+    getSessionSnapshotDiff: (id1: string, id2: string) =>
+      invokeWithRequestId(IPC_CHANNELS.SNAPSHOT_DIFF, id1, id2),
   };
 }

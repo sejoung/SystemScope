@@ -46,7 +46,12 @@ import type {
   TimelineData,
   MetricPointDetail,
   SystemEvent,
-  EventQueryOptions
+  EventQueryOptions,
+  ReportOptions,
+  DiagnosticReportData,
+  SaveReportOptions,
+  SessionSnapshot,
+  SnapshotDiff
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -149,6 +154,14 @@ export interface SystemScopeApi {
   executeCleanup: (paths: string[]) => Promise<AppResult<CleanupResult>>
   getCleanupInbox: () => Promise<AppResult<CleanupInbox>>
   dismissCleanupItem: (path: string) => Promise<AppResult<void>>
+
+  buildDiagnosticReport: (options: ReportOptions) => Promise<AppResult<DiagnosticReportData>>
+  saveDiagnosticReport: (options: SaveReportOptions) => Promise<AppResult<{ filePath: string }>>
+
+  saveSessionSnapshot: (label?: string) => Promise<AppResult<SessionSnapshot>>
+  getSessionSnapshots: () => Promise<AppResult<SessionSnapshot[]>>
+  deleteSessionSnapshot: (id: string) => Promise<AppResult<boolean>>
+  getSessionSnapshotDiff: (id1: string, id2: string) => Promise<AppResult<SnapshotDiff>>
 }
 
 export type { AlertThresholds, DiskScanResult, ShutdownState }
