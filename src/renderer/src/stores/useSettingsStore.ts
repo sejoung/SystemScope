@@ -3,7 +3,7 @@ import type { AlertThresholds } from '@shared/types'
 import { DEFAULT_THRESHOLDS } from '@shared/types'
 import type { AppLocale } from '@shared/i18n'
 
-export type AppPage = 'dashboard' | 'timeline' | 'disk' | 'docker' | 'process' | 'apps' | 'settings'
+export type AppPage = 'dashboard' | 'timeline' | 'disk' | 'docker' | 'cleanup' | 'process' | 'apps' | 'settings'
 
 interface SettingsState {
   thresholds: AlertThresholds

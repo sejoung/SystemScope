@@ -95,6 +95,14 @@ export const IPC_CHANNELS = {
   EVENT_GET_HISTORY: 'event:getHistory',
   EVENT_GET_RECENT: 'event:getRecent',
 
+  // 정리 자동화
+  CLEANUP_GET_RULES: 'cleanup:getRules',
+  CLEANUP_SET_RULE_CONFIG: 'cleanup:setRuleConfig',
+  CLEANUP_PREVIEW: 'cleanup:preview',
+  CLEANUP_EXECUTE: 'cleanup:execute',
+  CLEANUP_GET_INBOX: 'cleanup:getInbox',
+  CLEANUP_DISMISS_ITEM: 'cleanup:dismissItem',
+
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',

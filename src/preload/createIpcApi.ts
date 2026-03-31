@@ -1,5 +1,5 @@
 import { IPC_CHANNELS } from "@shared/contracts/channels";
-import type { AppUninstallRequest, TrashItemsRequest, TimelineRange, EventQueryOptions } from "@shared/types";
+import type { AppUninstallRequest, CleanupRuleConfig, TrashItemsRequest, TimelineRange, EventQueryOptions } from "@shared/types";
 import type { SystemScopeApi } from "@shared/contracts/systemScope";
 import { createListener, invokeWithRequestId } from "./helpers";
 
@@ -155,5 +155,18 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.EVENT_GET_HISTORY, options),
     getRecentEvents: (count?: number) =>
       invokeWithRequestId(IPC_CHANNELS.EVENT_GET_RECENT, count),
+
+    getCleanupRules: () =>
+      invokeWithRequestId(IPC_CHANNELS.CLEANUP_GET_RULES),
+    setCleanupRuleConfig: (config: CleanupRuleConfig) =>
+      invokeWithRequestId(IPC_CHANNELS.CLEANUP_SET_RULE_CONFIG, config),
+    previewCleanup: () =>
+      invokeWithRequestId(IPC_CHANNELS.CLEANUP_PREVIEW),
+    executeCleanup: (paths: string[]) =>
+      invokeWithRequestId(IPC_CHANNELS.CLEANUP_EXECUTE, paths),
+    getCleanupInbox: () =>
+      invokeWithRequestId(IPC_CHANNELS.CLEANUP_GET_INBOX),
+    dismissCleanupItem: (path: string) =>
+      invokeWithRequestId(IPC_CHANNELS.CLEANUP_DISMISS_ITEM, path),
   };
 }

@@ -142,6 +142,20 @@ export function createE2EMockApi(): {
         diagnostics: {
           enabled: true,
           intervalSec: 300
+        },
+        automation: {
+          schedule: { enabled: false, frequency: 'weekly' as const },
+          rules: [
+            { id: 'downloads_old_files' as const, enabled: true, minAgeDays: 30 },
+            { id: 'xcode_derived_data' as const, enabled: true, minAgeDays: 30 },
+            { id: 'xcode_archives' as const, enabled: true, minAgeDays: 30 },
+            { id: 'npm_cache' as const, enabled: true, minAgeDays: 30 },
+            { id: 'pnpm_cache' as const, enabled: true, minAgeDays: 30 },
+            { id: 'yarn_cache' as const, enabled: true, minAgeDays: 30 },
+            { id: 'docker_stopped_containers' as const, enabled: true, minAgeDays: 30 },
+            { id: 'old_logs' as const, enabled: true, minAgeDays: 30 },
+            { id: 'temp_files' as const, enabled: true, minAgeDays: 30 }
+          ]
         }
       }),
     getUpdateStatus: () =>

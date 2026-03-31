@@ -1,5 +1,6 @@
 import type { AlertThresholds } from './alert'
 import type { AppLocale } from '@shared/i18n'
+import type { AutomationSchedule, CleanupRuleConfig } from './automation'
 
 export interface HistorySettings {
   metricsIntervalSec: number
@@ -19,6 +20,10 @@ export interface AppSettings {
   snapshotIntervalMin: SnapshotIntervalMin
   history: HistorySettings
   diagnostics: DiagnosticsSettings
+  automation: {
+    schedule: AutomationSchedule
+    rules: CleanupRuleConfig[]
+  }
 }
 
 export type AppSettingsPatch = Partial<AppSettings>

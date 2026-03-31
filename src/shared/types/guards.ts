@@ -8,6 +8,7 @@ import type { UpdateInfo, UpdateStatus } from './update'
 import type { MetricPoint, TimelineData } from './metric'
 import type { SystemEvent } from './event'
 import type { DiagnosisResult, DiagnosisSummary, AlertIntelligence } from './diagnosis'
+import type { CleanupPreview, CleanupResult, CleanupInbox } from './automation'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -138,4 +139,19 @@ export function isDiagnosisSummary(data: unknown): data is DiagnosisSummary {
 /** AlertIntelligence */
 export function isAlertIntelligence(data: unknown): data is AlertIntelligence {
   return isObj(data) && Array.isArray(data.activeAlerts) && Array.isArray(data.patterns) && Array.isArray(data.sustainedAlerts)
+}
+
+/** CleanupPreview */
+export function isCleanupPreview(data: unknown): data is CleanupPreview {
+  return isObj(data) && Array.isArray(data.items) && typeof data.totalSize === 'number' && Array.isArray(data.ruleBreakdown) && typeof data.scannedAt === 'number'
+}
+
+/** CleanupResult */
+export function isCleanupResult(data: unknown): data is CleanupResult {
+  return isObj(data) && typeof data.deletedCount === 'number' && typeof data.deletedSize === 'number' && typeof data.failedCount === 'number' && Array.isArray(data.failedPaths) && typeof data.completedAt === 'number'
+}
+
+/** CleanupInbox */
+export function isCleanupInbox(data: unknown): data is CleanupInbox {
+  return isObj(data) && Array.isArray(data.items) && typeof data.totalReclaimable === 'number' && typeof data.generatedAt === 'number'
 }

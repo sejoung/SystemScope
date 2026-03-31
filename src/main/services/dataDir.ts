@@ -24,4 +24,8 @@ function getAlertHistoryFilePath(): string {
   return path.join(getDataDir(), 'alert-history.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath }
+function getCleanupInboxFilePath(): string {
+  return path.join(getDataDir(), 'cleanup-inbox-dismissed.json')
+}
+
+export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath }

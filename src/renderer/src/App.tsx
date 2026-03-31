@@ -12,6 +12,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { TimelinePage } from './pages/TimelinePage'
 import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
 import { DockerPage } from './pages/DockerPage'
+import { CleanupPage } from './pages/CleanupPage'
 import { ProcessPage } from './pages/ProcessPage'
 import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -53,7 +54,7 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey && !e.ctrlKey) return
       if (e.shiftKey || e.altKey) return
-      const pages = ['dashboard', 'timeline', 'disk', 'docker', 'process', 'apps', 'settings'] as const
+      const pages = ['dashboard', 'timeline', 'disk', 'docker', 'cleanup', 'process', 'apps', 'settings'] as const
       const idx = parseInt(e.key, 10) - 1
       if (idx >= 0 && idx < pages.length) {
         e.preventDefault()
@@ -143,6 +144,7 @@ function App() {
       timeline: translateLiteral(locale, "Timeline"),
       disk: translateLiteral(locale, "Storage"),
       docker: translateLiteral(locale, "Docker"),
+      cleanup: translateLiteral(locale, "Cleanup"),
       process: translateLiteral(locale, "Activity"),
       apps: translateLiteral(locale, "Applications"),
       settings: translateLiteral(locale, "Preferences"),
@@ -244,6 +246,7 @@ function App() {
           {currentPage === 'timeline' && <TimelinePage />}
           {currentPage === 'disk' && <DiskAnalysisPage />}
           {currentPage === 'docker' && <DockerPage />}
+          {currentPage === 'cleanup' && <CleanupPage />}
           {currentPage === 'process' && <ProcessPage />}
           {currentPage === 'apps' && <AppsPage />}
           {currentPage === 'settings' && <SettingsPage />}

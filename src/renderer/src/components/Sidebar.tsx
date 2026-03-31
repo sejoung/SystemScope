@@ -8,6 +8,7 @@ type NavPage =
   | "timeline"
   | "disk"
   | "docker"
+  | "cleanup"
   | "process"
   | "apps"
   | "settings";
@@ -47,6 +48,16 @@ function NavIcon({ id }: { id: string }) {
           <rect x="2" y="4" width="12" height="10" rx="1.5" />
           <path d="M5 4V2h6v2" />
           <line x1="2" y1="8" x2="14" y2="8" />
+        </svg>
+      );
+    case "cleanup":
+      return (
+        <svg {...props}>
+          <path d="M3 4h10l-1 10H4L3 4z" />
+          <path d="M1 4h14" />
+          <path d="M6 4V2h4v2" />
+          <line x1="6.5" y1="7" x2="7" y2="12" />
+          <line x1="9.5" y1="7" x2="9" y2="12" />
         </svg>
       );
     case "process":
@@ -100,6 +111,7 @@ export function Sidebar() {
     { id: "timeline", label: tk("nav.timeline") },
     { id: "disk", label: tk("nav.storage") },
     { id: "docker", label: tk("nav.docker") },
+    { id: "cleanup", label: tk("nav.cleanup") },
     { id: "process", label: tk("nav.activity") },
     { id: "apps", label: tk("nav.applications") },
     { id: "settings", label: tk("nav.preferences") },

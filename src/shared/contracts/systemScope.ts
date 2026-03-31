@@ -5,6 +5,11 @@ import type {
   AlertIntelligence,
   AppResult,
   AppUninstallRequest,
+  CleanupInbox,
+  CleanupPreview,
+  CleanupResult,
+  CleanupRule,
+  CleanupRuleConfig,
   DiagnosisSummary,
   DiskScanResult,
   DuplicateGroup,
@@ -137,6 +142,13 @@ export interface SystemScopeApi {
   getTimelinePointDetail: (timestamp: number) => Promise<AppResult<MetricPointDetail>>
   getEventHistory: (options?: EventQueryOptions) => Promise<AppResult<SystemEvent[]>>
   getRecentEvents: (count?: number) => Promise<AppResult<SystemEvent[]>>
+
+  getCleanupRules: () => Promise<AppResult<CleanupRule[]>>
+  setCleanupRuleConfig: (config: CleanupRuleConfig) => Promise<AppResult<void>>
+  previewCleanup: () => Promise<AppResult<CleanupPreview>>
+  executeCleanup: (paths: string[]) => Promise<AppResult<CleanupResult>>
+  getCleanupInbox: () => Promise<AppResult<CleanupInbox>>
+  dismissCleanupItem: (path: string) => Promise<AppResult<void>>
 }
 
 export type { AlertThresholds, DiskScanResult, ShutdownState }
