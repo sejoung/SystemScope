@@ -33,7 +33,12 @@ import type {
   ProcessKillResult,
   UpdateStatus,
   AppSettings,
-  AppSettingsPatch
+  AppSettingsPatch,
+  TimelineRange,
+  TimelineData,
+  MetricPointDetail,
+  SystemEvent,
+  EventQueryOptions
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -121,6 +126,11 @@ export interface SystemScopeApi {
   selectFolder: () => Promise<AppResult<string | null>>
   showInFolder: (targetPath: string) => Promise<AppResult<boolean>>
   openPath: (targetPath: string) => Promise<AppResult<boolean>>
+
+  getTimelineData: (range: TimelineRange) => Promise<AppResult<TimelineData>>
+  getTimelinePointDetail: (timestamp: number) => Promise<AppResult<MetricPointDetail>>
+  getEventHistory: (options?: EventQueryOptions) => Promise<AppResult<SystemEvent[]>>
+  getRecentEvents: (count?: number) => Promise<AppResult<SystemEvent[]>>
 }
 
 export type { AlertThresholds, DiskScanResult, ShutdownState }

@@ -19,6 +19,7 @@ import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 import { registerShellPaths } from '../services/shellPathRegistry'
+import { recordEvent } from '../services/eventStore'
 
 export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async (_event, metaArg?: IpcRequestMetaArg) => {
@@ -119,6 +120,12 @@ export function registerAppsIpc(): void {
 
     try {
       const result = await removeLeftoverAppData(itemIds)
+      if (result.deletedPaths.length > 0) {
+        void recordEvent('app_removal', 'info', `Removed ${result.deletedPaths.length} leftover data item(s)`, undefined, {
+          deletedCount: result.deletedPaths.length,
+          failedCount: result.failedPaths.length
+        })
+      }
       logInfoAction('apps-ipc', 'leftover_data.remove', withRequestMeta(requestMeta, {
         requestedCount: itemIds.length,
         deletedCount: result.deletedPaths.length,
@@ -157,6 +164,12 @@ export function registerAppsIpc(): void {
 
     try {
       const result = await removeLeftoverAppRegistry(itemIds)
+      if (result.deletedKeys.length > 0) {
+        void recordEvent('app_removal', 'info', `Removed ${result.deletedKeys.length} leftover registry item(s)`, undefined, {
+          deletedCount: result.deletedKeys.length,
+          failedCount: result.failedKeys.length
+        })
+      }
       logInfoAction('apps-ipc', 'leftover_registry.remove', withRequestMeta(requestMeta, {
         requestedCount: itemIds.length,
         deletedCount: result.deletedKeys.length,
@@ -229,6 +242,13 @@ export function registerAppsIpc(): void {
         appId,
         relatedDataIds
       })
+      if (result.completed) {
+        void recordEvent('app_removal', 'info', `Uninstalled app: ${result.name}`, undefined, {
+          appId,
+          action: result.action,
+          relatedDataCount
+        })
+      }
       logInfoAction('apps-ipc', 'uninstall.start', withRequestMeta(requestMeta, {
         appId,
         relatedDataCount,

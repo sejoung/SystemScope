@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { SYSTEM_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { getSystemStats } from '../services/systemMonitor'
 import { checkAlerts } from '../services/alertManager'
+import { recordEvent } from '../services/eventStore'
 import { success, failure } from '@shared/types'
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { tk } from '../i18n'
@@ -90,6 +91,15 @@ async function scheduleNextUpdate(): Promise<void> {
     // 알림 체크
     const newAlerts = checkAlerts(stats)
     if (newAlerts.length > 0) {
+      for (const alert of newAlerts) {
+        void recordEvent(
+          'alert',
+          alert.severity === 'critical' ? 'error' : 'warning',
+          alert.message,
+          undefined,
+          { alertId: alert.id, type: alert.type, value: alert.value, threshold: alert.threshold }
+        )
+      }
       for (const win of subscriberWins) {
         if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
           win.webContents.send(IPC_CHANNELS.EVENT_ALERT_FIRED, newAlerts)

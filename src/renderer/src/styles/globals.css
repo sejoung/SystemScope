@@ -80,16 +80,14 @@ body,
 #root {
   height: 100%;
   width: 100%;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+  sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  transition: background-color 0.2s ease,
+  color 0.2s ease;
 }
 
 input:focus-visible,
@@ -175,49 +173,50 @@ textarea:focus-visible,
 }
 
 @media (max-width: 1180px) {
-@media (max-width: 900px) {
-  :root {
-    --sidebar-width: 188px;
+  @media (max-width: 900px) {
+    :root {
+      --sidebar-width: 188px;
+    }
+
+    .dashboard-grid-responsive {
+      grid-template-columns: 1fr;
+    }
   }
 
-  .dashboard-grid-responsive {
-    grid-template-columns: 1fr;
-  }
-}
+  @media (max-width: 760px) {
+    .app-shell {
+      flex-direction: column;
+      height: auto;
+      min-height: 100vh;
+      overflow: auto;
+    }
 
-@media (max-width: 760px) {
-  .app-shell {
-    flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    overflow: auto;
+    .app-sidebar {
+      width: 100% !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+
+    .app-sidebar nav {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .app-main {
+      padding: 16px !important;
+      padding-top: 16px !important;
+    }
+
+    .dashboard-grid-top,
+    .dashboard-grid-responsive {
+      grid-template-columns: 1fr;
+    }
   }
 
-  .app-sidebar {
-    width: 100% !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 12px;
+  /* Disabled button base style */
+  button:disabled {
+    pointer-events: none;
   }
-
-  .app-sidebar nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-
-  .app-main {
-    padding: 16px !important;
-    padding-top: 16px !important;
-  }
-
-  .dashboard-grid-top,
-  .dashboard-grid-responsive {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Disabled button base style */
-button:disabled {
-  pointer-events: none;
 }

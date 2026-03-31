@@ -16,7 +16,8 @@ export function getSettings(): AppSettings {
     thresholds: store.get('thresholds'),
     theme: store.get('theme'),
     locale: store.get('locale'),
-    snapshotIntervalMin: store.get('snapshotIntervalMin')
+    snapshotIntervalMin: store.get('snapshotIntervalMin'),
+    history: store.get('history')
   })
 }
 
@@ -25,4 +26,5 @@ export function setSettings(settings: Partial<AppSettings>): void {
   if (settings.theme !== undefined) store.set('theme', settings.theme)
   if (settings.locale !== undefined) store.set('locale', settings.locale)
   if (settings.snapshotIntervalMin !== undefined) store.set('snapshotIntervalMin', settings.snapshotIntervalMin)
+  if (settings.history !== undefined) store.set('history', settings.history)
 }

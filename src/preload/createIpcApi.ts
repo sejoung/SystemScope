@@ -1,5 +1,5 @@
 import { IPC_CHANNELS } from "@shared/contracts/channels";
-import type { AppUninstallRequest, TrashItemsRequest } from "@shared/types";
+import type { AppUninstallRequest, TrashItemsRequest, TimelineRange, EventQueryOptions } from "@shared/types";
 import type { SystemScopeApi } from "@shared/contracts/systemScope";
 import { createListener, invokeWithRequestId } from "./helpers";
 
@@ -140,5 +140,14 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.SHELL_SHOW_IN_FOLDER, targetPath),
     openPath: (targetPath: string) =>
       invokeWithRequestId(IPC_CHANNELS.SHELL_OPEN_PATH, targetPath),
+
+    getTimelineData: (range: TimelineRange) =>
+      invokeWithRequestId(IPC_CHANNELS.TIMELINE_GET_DATA, range),
+    getTimelinePointDetail: (timestamp: number) =>
+      invokeWithRequestId(IPC_CHANNELS.TIMELINE_GET_POINT_DETAIL, timestamp),
+    getEventHistory: (options?: EventQueryOptions) =>
+      invokeWithRequestId(IPC_CHANNELS.EVENT_GET_HISTORY, options),
+    getRecentEvents: (count?: number) =>
+      invokeWithRequestId(IPC_CHANNELS.EVENT_GET_RECENT, count),
   };
 }

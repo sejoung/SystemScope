@@ -18,6 +18,7 @@ import { trashItemsWithConfirm } from '../services/trashService'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 import { registerShellPath, registerShellPaths } from '../services/shellPathRegistry'
+import { recordEvent } from '../services/eventStore'
 
 const SCAN_CACHE_TTL_MS = 30 * 60 * 1000 // 30분
 const TRASH_TARGET_TTL_MS = 60 * 60 * 1000 // 1시간
@@ -383,6 +384,12 @@ export function registerDiskIpc(): void {
         }
       }
 
+      if (result.trashedPaths.length > 0) {
+        void recordEvent('disk_cleanup', 'info', `Moved ${result.trashedPaths.length} item(s) to trash`, undefined, {
+          trashedCount: result.trashedPaths.length,
+          failedCount: result.failCount
+        })
+      }
       logInfoAction('disk-ipc', 'trash_items.run', withRequestMeta(requestMeta, {
         requestedCount: resolvedTargets.length,
         trashedCount: result.trashedPaths.length,

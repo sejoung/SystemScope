@@ -12,6 +12,7 @@ import { getAccessLogDir, getSystemLogDir, logErrorAction, logInfoAction, logWar
 import { tk } from '../i18n'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 import { isShellPathRegistered, registerShellPath } from '../services/shellPathRegistry'
+import { recordEvent } from '../services/eventStore'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, (_event, metaArg?: IpcRequestMetaArg) => {
@@ -39,6 +40,9 @@ export function registerSettingsIpc(): void {
       }
 
       const nextSettings = getSettings()
+      void recordEvent('settings_change', 'info', 'Settings updated', undefined, {
+        updatedKeys: Object.keys(parsed)
+      })
       logInfoAction('settings-ipc', 'settings.save', withRequestMeta(requestMeta, {
         updatedKeys: Object.keys(parsed),
         thresholdsUpdated: Boolean(parsed.thresholds),

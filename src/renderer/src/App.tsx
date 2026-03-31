@@ -9,6 +9,7 @@ import { useAlertStore } from './stores/useAlertStore'
 import { useInterval } from './hooks/useInterval'
 import { useIpcListener } from './hooks/useIpc'
 import { DashboardPage } from './pages/DashboardPage'
+import { TimelinePage } from './pages/TimelinePage'
 import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
 import { DockerPage } from './pages/DockerPage'
 import { ProcessPage } from './pages/ProcessPage'
@@ -52,7 +53,7 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey && !e.ctrlKey) return
       if (e.shiftKey || e.altKey) return
-      const pages = ['dashboard', 'disk', 'docker', 'process', 'apps', 'settings'] as const
+      const pages = ['dashboard', 'timeline', 'disk', 'docker', 'process', 'apps', 'settings'] as const
       const idx = parseInt(e.key, 10) - 1
       if (idx >= 0 && idx < pages.length) {
         e.preventDefault()
@@ -139,6 +140,7 @@ function App() {
   useEffect(() => {
     const titles: Record<string, string> = {
       dashboard: translateLiteral(locale, "Overview"),
+      timeline: translateLiteral(locale, "Timeline"),
       disk: translateLiteral(locale, "Storage"),
       docker: translateLiteral(locale, "Docker"),
       process: translateLiteral(locale, "Activity"),
@@ -239,6 +241,7 @@ function App() {
           resetKey={currentPage}
         >
           {currentPage === 'dashboard' && <DashboardPage />}
+          {currentPage === 'timeline' && <TimelinePage />}
           {currentPage === 'disk' && <DiskAnalysisPage />}
           {currentPage === 'docker' && <DockerPage />}
           {currentPage === 'process' && <ProcessPage />}

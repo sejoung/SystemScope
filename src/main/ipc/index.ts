@@ -7,6 +7,8 @@ import { registerAlertIpc } from './alert.ipc'
 import { registerSettingsIpc } from './settings.ipc'
 import { registerAppsIpc } from './apps.ipc'
 import { registerUpdateIpc } from './update.ipc'
+import { registerEventIpc } from './event.ipc'
+import { registerTimelineIpc } from './timeline.ipc'
 
 export function registerAllIpc(): void {
   registerAppIpc()
@@ -18,6 +20,8 @@ export function registerAllIpc(): void {
   registerAppsIpc()
   registerAlertIpc()
   registerSettingsIpc()
+  registerEventIpc()
+  registerTimelineIpc()
 }
 
 export { cleanupSystemIpc } from './system.ipc'

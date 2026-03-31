@@ -5,6 +5,8 @@ import type { SystemStats } from './system'
 import type { Alert } from './alert'
 import type { ShutdownState } from './shutdown'
 import type { UpdateInfo, UpdateStatus } from './update'
+import type { MetricPoint, TimelineData } from './metric'
+import type { SystemEvent } from './event'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -97,4 +99,25 @@ export function isUpdateStatus(data: unknown): data is UpdateStatus {
 /** ProcessSnapshot */
 export function isProcessSnapshot(data: unknown): data is ProcessSnapshot {
   return isObj(data) && Array.isArray(data.allProcesses) && Array.isArray(data.topCpuProcesses) && Array.isArray(data.topMemoryProcesses)
+}
+
+/** MetricPoint */
+export function isMetricPoint(data: unknown): data is MetricPoint {
+  return isObj(data) && typeof data.ts === 'number' && typeof data.cpu === 'number' && typeof data.memory === 'number'
+    && typeof data.memoryUsedBytes === 'number' && typeof data.memoryTotalBytes === 'number'
+}
+
+/** TimelineData */
+export function isTimelineData(data: unknown): data is TimelineData {
+  return isObj(data) && typeof data.range === 'string' && Array.isArray(data.points) && Array.isArray(data.alerts)
+}
+
+/** SystemEvent */
+export function isSystemEvent(data: unknown): data is SystemEvent {
+  return isObj(data) && typeof data.id === 'string' && typeof data.ts === 'number' && typeof data.category === 'string' && typeof data.severity === 'string' && typeof data.title === 'string'
+}
+
+/** SystemEvent[] — first-element sampling: validates only data[0] for performance */
+export function isSystemEventArray(data: unknown): data is SystemEvent[] {
+  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].id === 'string' && typeof data[0].ts === 'number' && typeof data[0].category === 'string'))
 }

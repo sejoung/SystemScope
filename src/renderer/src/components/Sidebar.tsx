@@ -5,6 +5,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 
 type NavPage =
   | "dashboard"
+  | "timeline"
   | "disk"
   | "docker"
   | "process"
@@ -69,6 +70,13 @@ function NavIcon({ id }: { id: string }) {
           <rect x="11" y="11" width="4" height="4" rx="0.5" />
         </svg>
       );
+    case "timeline":
+      return (
+        <svg {...props}>
+          <circle cx="8" cy="8" r="6.5" />
+          <polyline points="8,4 8,8 11,10" />
+        </svg>
+      );
     case "settings":
       return (
         <svg {...props}>
@@ -89,6 +97,7 @@ export function Sidebar() {
   const [pendingPage, setPendingPage] = useState<NavPage | null>(null);
   const navItems = [
     { id: "dashboard", label: tk("nav.overview") },
+    { id: "timeline", label: tk("nav.timeline") },
     { id: "disk", label: tk("nav.storage") },
     { id: "docker", label: tk("nav.docker") },
     { id: "process", label: tk("nav.activity") },

@@ -133,7 +133,12 @@ export function createE2EMockApi(): {
         },
         theme: 'dark' as const,
         locale: 'en' as const,
-        snapshotIntervalMin: 60
+        snapshotIntervalMin: 60,
+        history: {
+          metricsIntervalSec: 60,
+          metricsRetentionDays: 30,
+          eventsRetentionDays: 90
+        }
       }),
     getUpdateStatus: () =>
       successResult(buildUpdateStatus()),

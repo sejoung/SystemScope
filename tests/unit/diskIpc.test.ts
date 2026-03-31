@@ -73,6 +73,12 @@ vi.mock('../../src/main/services/shellPathRegistry', () => ({
   registerShellPaths: vi.fn()
 }))
 
+vi.mock('../../src/main/services/eventStore', () => ({
+  recordEvent: vi.fn(),
+  initEventStore: vi.fn(),
+  stopEventStore: vi.fn()
+}))
+
 describe('registerDiskIpc', () => {
   beforeEach(() => {
     vi.resetModules()

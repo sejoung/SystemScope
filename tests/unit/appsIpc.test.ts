@@ -57,6 +57,12 @@ vi.mock('../../src/main/services/logging', () => ({
   logWarn: logWarnMock
 }))
 
+vi.mock('../../src/main/services/eventStore', () => ({
+  recordEvent: vi.fn(),
+  initEventStore: vi.fn(),
+  stopEventStore: vi.fn()
+}))
+
 describe('registerAppsIpc', () => {
   beforeEach(() => {
     vi.resetModules()

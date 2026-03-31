@@ -17,6 +17,11 @@ const logErrorMock = vi.hoisted(() => vi.fn())
 const executeGracefulShutdownMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 const initializeShutdownHandlersMock = vi.hoisted(() => vi.fn())
 const markQuitAfterShutdownMock = vi.hoisted(() => vi.fn())
+const initEventStoreMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
+const initMetricsStoreMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
+const stopMetricsStoreMock = vi.hoisted(() => vi.fn())
+const startJobPrunerMock = vi.hoisted(() => vi.fn())
+const stopJobPrunerMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   app: {
@@ -88,6 +93,27 @@ vi.mock('../../src/main/app/shutdown', () => ({
   markQuitAfterShutdown: markQuitAfterShutdownMock
 }))
 
+vi.mock('../../src/main/services/eventStore', () => ({
+  initEventStore: initEventStoreMock,
+  stopEventStore: vi.fn(),
+  recordEvent: vi.fn()
+}))
+
+vi.mock('../../src/main/services/metricsStore', () => ({
+  initMetricsStore: initMetricsStoreMock,
+  stopMetricsStore: stopMetricsStoreMock
+}))
+
+vi.mock('../../src/main/jobs/jobManager', () => ({
+  createJob: vi.fn(),
+  cancelJob: vi.fn(),
+  sendJobProgress: vi.fn(),
+  sendJobCompleted: vi.fn(),
+  sendJobFailed: vi.fn(),
+  startJobPruner: startJobPrunerMock,
+  stopJobPruner: stopJobPrunerMock
+}))
+
 describe('app startup integration', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -109,6 +135,13 @@ describe('app startup integration', () => {
     executeGracefulShutdownMock.mockReturnValue(Promise.resolve())
     initializeShutdownHandlersMock.mockReset()
     markQuitAfterShutdownMock.mockReset()
+    initEventStoreMock.mockReset()
+    initEventStoreMock.mockReturnValue(Promise.resolve())
+    initMetricsStoreMock.mockReset()
+    initMetricsStoreMock.mockReturnValue(Promise.resolve())
+    stopMetricsStoreMock.mockReset()
+    startJobPrunerMock.mockReset()
+    stopJobPrunerMock.mockReset()
     getSettingsMock.mockReturnValue({
       thresholds: {
         cpuWarning: 80,
@@ -121,7 +154,12 @@ describe('app startup integration', () => {
         gpuMemoryCritical: 90
       },
       theme: 'dark',
-      snapshotIntervalMin: 30
+      snapshotIntervalMin: 30,
+      history: {
+        metricsIntervalSec: 60,
+        metricsRetentionDays: 30,
+        eventsRetentionDays: 90
+      }
     })
   })
 

@@ -82,6 +82,14 @@ export const IPC_CHANNELS = {
   SHELL_SHOW_IN_FOLDER: 'shell:showInFolder',
   SHELL_OPEN_PATH: 'shell:openPath',
 
+  // 타임라인
+  TIMELINE_GET_DATA: 'timeline:getData',
+  TIMELINE_GET_POINT_DETAIL: 'timeline:getPointDetail',
+
+  // 이벤트 히스토리
+  EVENT_GET_HISTORY: 'event:getHistory',
+  EVENT_GET_RECENT: 'event:getRecent',
+
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',

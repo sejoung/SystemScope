@@ -17,6 +17,7 @@ import { logErrorAction, logInfoAction } from '../services/logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { recordEvent } from '../services/eventStore'
 
 interface ConfirmDialogOptions {
   actionButton: string
@@ -163,6 +164,12 @@ export function registerDockerIpc(): void {
       }
 
       const result = await removeDockerImages(targets.map((image) => image.id))
+      if (result.deletedIds.length > 0) {
+        void recordEvent('docker_cleanup', 'info', `Removed ${result.deletedIds.length} Docker image(s)`, undefined, {
+          deletedCount: result.deletedIds.length,
+          failCount: result.failCount
+        })
+      }
       logInfoAction('docker-ipc', 'images.remove', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         deletedCount: result.deletedIds.length,
@@ -217,6 +224,12 @@ export function registerDockerIpc(): void {
       }
 
       const result = await removeDockerContainers(targets.map((container) => container.id))
+      if (result.deletedIds.length > 0) {
+        void recordEvent('docker_cleanup', 'info', `Removed ${result.deletedIds.length} Docker container(s)`, undefined, {
+          deletedCount: result.deletedIds.length,
+          failCount: result.failCount
+        })
+      }
       logInfoAction('docker-ipc', 'containers.remove', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         deletedCount: result.deletedIds.length,
@@ -323,6 +336,12 @@ export function registerDockerIpc(): void {
       }
 
       const result = await removeDockerVolumes(targets.map((volume) => volume.name))
+      if (result.deletedIds.length > 0) {
+        void recordEvent('docker_cleanup', 'info', `Removed ${result.deletedIds.length} Docker volume(s)`, undefined, {
+          deletedCount: result.deletedIds.length,
+          failCount: result.failCount
+        })
+      }
       logInfoAction('docker-ipc', 'volumes.remove', withRequestMeta(requestMeta, {
         requestedCount: targets.length,
         deletedCount: result.deletedIds.length,
@@ -360,6 +379,12 @@ export function registerDockerIpc(): void {
       }
 
       const result = await pruneDockerBuildCache()
+      if (result.reclaimedBytes > 0) {
+        void recordEvent('docker_cleanup', 'info', `Pruned Docker build cache (${result.reclaimedLabel})`, undefined, {
+          reclaimedBytes: result.reclaimedBytes,
+          reclaimedLabel: result.reclaimedLabel
+        })
+      }
       logInfoAction('docker-ipc', 'build_cache.prune', withRequestMeta(requestMeta, {
         reclaimedBytes: result.reclaimedBytes,
         reclaimedLabel: result.reclaimedLabel

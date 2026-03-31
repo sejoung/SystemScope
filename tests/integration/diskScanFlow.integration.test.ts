@@ -58,6 +58,28 @@ vi.mock('../../src/main/services/oldFileFinder', () => ({
   findOldFiles: vi.fn()
 }))
 
+vi.mock('../../src/main/services/eventStore', () => ({
+  recordEvent: vi.fn(),
+  initEventStore: vi.fn(),
+  stopEventStore: vi.fn()
+}))
+
+vi.mock('../../src/main/services/logging', () => ({
+  logErrorAction: vi.fn(),
+  logInfoAction: vi.fn(),
+  logProductMetric: vi.fn()
+}))
+
+vi.mock('../../src/main/services/trashService', () => ({
+  trashItemsWithConfirm: vi.fn()
+}))
+
+vi.mock('../../src/main/services/shellPathRegistry', () => ({
+  registerShellPath: vi.fn(),
+  registerShellPaths: vi.fn()
+}))
+
+
 describe('disk scan flow integration', () => {
   beforeEach(() => {
     vi.resetModules()

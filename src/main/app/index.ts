@@ -10,6 +10,8 @@ import { initializeLogging, logError } from '../services/logging'
 import { executeGracefulShutdown, initializeShutdownHandlers, markQuitAfterShutdown } from './shutdown'
 import { startUpdateChecker, stopUpdateChecker } from '../services/updateChecker'
 import { startJobPruner, stopJobPruner } from '../jobs/jobManager'
+import { initEventStore } from '../services/eventStore'
+import { initMetricsStore, stopMetricsStore } from '../services/metricsStore'
 
 let appReadyForQuit = false
 
@@ -23,6 +25,8 @@ app.whenReady().then(() => {
   initializeShutdownHandlers()
   initializeRuntimeSettings()
   registerAllIpc()
+  void initEventStore()
+  void initMetricsStore()
 
   if (!isE2ELightweight) {
     ensureSnapshotDir()
@@ -57,6 +61,7 @@ app.whenReady().then(() => {
 app.on('before-quit', (event) => {
   stopUpdateChecker()
   stopJobPruner()
+  stopMetricsStore()
   if (!appReadyForQuit) {
     event.preventDefault()
     appReadyForQuit = true

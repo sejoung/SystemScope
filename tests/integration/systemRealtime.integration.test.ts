@@ -35,6 +35,18 @@ vi.mock('../../src/main/services/alertManager', () => ({
   checkAlerts: checkAlertsMock
 }))
 
+vi.mock('../../src/main/services/eventStore', () => ({
+  recordEvent: vi.fn(),
+  initEventStore: vi.fn(),
+  stopEventStore: vi.fn()
+}))
+
+vi.mock('../../src/main/services/metricsStore', () => ({
+  collectMetricPoint: vi.fn(() => Promise.resolve()),
+  initMetricsStore: vi.fn(),
+  stopMetricsStore: vi.fn()
+}))
+
 describe('system realtime integration', () => {
   beforeEach(() => {
     vi.resetModules()
