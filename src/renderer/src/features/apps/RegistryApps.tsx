@@ -131,7 +131,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
           <button type="button" onClick={() => void handleRefresh()} disabled={refreshing} style={secondaryBtnStyle(refreshing)}>
             {refreshing ? tk("common.refreshing") : tk("apps.action.refresh")}
           </button>
-          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.registry_placeholder")} />
+          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.registry_placeholder")} clearLabel={t("Clear search")} />
           <button
             type="button"
             onClick={() => void handleRemoveSelected()}

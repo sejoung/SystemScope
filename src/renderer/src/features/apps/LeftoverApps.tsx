@@ -192,7 +192,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
           <button type="button" onClick={() => void handleRefresh()} disabled={refreshing} style={secondaryBtnStyle(refreshing)}>
             {refreshing ? tk("common.refreshing") : tk("apps.action.refresh")}
           </button>
-          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.leftover_placeholder")} />
+          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.leftover_placeholder")} clearLabel={t("Clear search")} />
           <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
             <option value="all">{tk("apps.platform.all")}</option>
             <option value="mac">macOS</option>
@@ -241,7 +241,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
       </div>
 
       {loadError && leftoverItems.length === 0 ? (
-        <StatusMessage tone="error" message={loadError} action={<button type="button" onClick={() => void handleRefresh()} style={btnStyle}>{tk("apps.action.refresh")}</button>} />
+        <StatusMessage tone="error" message={t(loadError)} action={<button type="button" onClick={() => void handleRefresh()} style={btnStyle}>{tk("apps.action.refresh")}</button>} />
       ) : filteredLeftovers.length === 0 ? (
         <StatusMessage message={tk("apps.empty.leftover")} />
       ) : (

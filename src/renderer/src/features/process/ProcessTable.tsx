@@ -231,7 +231,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                aria-label="Clear search"
+                aria-label={t("Clear search")}
                 style={{
                   position: "absolute",
                   right: "8px",

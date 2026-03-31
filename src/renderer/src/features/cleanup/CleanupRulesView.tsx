@@ -109,6 +109,7 @@ function RuleCard({
   onMinAgeChange: (days: number) => void
 }) {
   const { t } = useI18n()
+  const categoryLabel = CATEGORY_LABELS[rule.category] ?? rule.category
 
   return (
     <div style={ruleCardStyle}>
@@ -134,14 +135,14 @@ function RuleCard({
         <div style={{ flex: 1, display: 'grid', gap: '2px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {rule.name}
+              {t(rule.name)}
             </span>
             <span style={categoryBadgeStyle}>
-              {rule.category}
+              {t(categoryLabel)}
             </span>
           </div>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {rule.description}
+            {t(rule.description)}
           </span>
         </div>
       </div>

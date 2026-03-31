@@ -1,19 +1,40 @@
 import { useI18n } from '../../i18n/useI18n'
 import type { AlertIntelligence, AlertHistoryEntry, AlertPattern } from '@shared/types'
 
-function formatDuration(ms: number): string {
+function formatDuration(
+  ms: number,
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
   const totalSeconds = Math.floor(ms / 1000)
   const totalMinutes = Math.floor(totalSeconds / 60)
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
 
-  if (totalMinutes < 1) return '< 1m'
-  if (hours === 0) return `${totalMinutes}m`
-  return `${hours}h ${minutes}m`
+  if (totalMinutes < 1) return t('< 1m')
+  if (hours === 0) return t('{count}m', { count: totalMinutes })
+  return t('{hours}h {minutes}m', { hours, minutes })
 }
 
 function getSeverityDotColor(severity: 'warning' | 'critical'): string {
   return severity === 'critical' ? 'var(--accent-red)' : 'var(--accent-yellow)'
+}
+
+function formatAlertType(
+  type: AlertPattern['type'] | AlertHistoryEntry['type'],
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
+  switch (type) {
+    case 'cpu':
+      return t('CPU')
+    case 'disk':
+      return t('Disk')
+    case 'memory':
+      return t('Memory')
+    case 'gpu':
+      return t('GPU')
+    default:
+      return type
+  }
 }
 
 interface AlertIntelligencePanelProps {
@@ -22,7 +43,7 @@ interface AlertIntelligencePanelProps {
 }
 
 export function AlertIntelligencePanel({ intelligence, loading }: AlertIntelligencePanelProps) {
-  const { tk } = useI18n()
+  const { tk, t } = useI18n()
 
   const sustainedAlerts = intelligence?.sustainedAlerts ?? []
   const patterns = intelligence?.patterns ?? []
@@ -62,7 +83,7 @@ export function AlertIntelligencePanel({ intelligence, loading }: AlertIntellige
               </span>
             </div>
             {sustainedAlerts.length === 0 ? (
-              <div style={emptyItemStyle}>No sustained alerts</div>
+              <div style={emptyItemStyle}>{t('No sustained alerts')}</div>
             ) : (
               <div style={{ display: 'grid', gap: '6px' }}>
                 {sustainedAlerts.map((alert: AlertHistoryEntry) => (
@@ -77,10 +98,10 @@ export function AlertIntelligencePanel({ intelligence, loading }: AlertIntellige
                       }}
                     />
                     <span style={{ fontSize: '13px', color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
-                      {alert.message || alert.type}
+                      {alert.message || formatAlertType(alert.type, t)}
                     </span>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                      {alert.durationMs !== null && alert.durationMs !== undefined ? formatDuration(alert.durationMs) : ''}
+                      {alert.durationMs !== null && alert.durationMs !== undefined ? formatDuration(alert.durationMs, t) : ''}
                     </span>
                   </div>
                 ))}
@@ -99,13 +120,13 @@ export function AlertIntelligencePanel({ intelligence, loading }: AlertIntellige
               </span>
             </div>
             {patterns.length === 0 ? (
-              <div style={emptyItemStyle}>No recurring patterns</div>
+              <div style={emptyItemStyle}>{t('No recurring patterns')}</div>
             ) : (
               <div style={{ display: 'grid', gap: '6px' }}>
                 {patterns.map((pattern: AlertPattern) => (
                   <div key={pattern.type} style={itemStyle}>
                     <span style={{ fontSize: '13px', color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
-                      {pattern.type}
+                      {formatAlertType(pattern.type, t)}
                     </span>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {pattern.count} {tk('alert.intelligence.occurrences')} {pattern.period}

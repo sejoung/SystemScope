@@ -11,15 +11,26 @@ const SAFETY_COLORS: Record<string, string> = {
   risky: 'var(--accent-red)',
 }
 
-function relativeAge(modifiedAt: number): string {
+const CATEGORY_LABELS: Record<string, string> = {
+  downloads: 'Downloads',
+  dev_tools: 'Dev Tools',
+  package_managers: 'Package Managers',
+  docker: 'Docker',
+  system: 'System',
+}
+
+function relativeAge(
+  modifiedAt: number,
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
   const diffMs = Date.now() - modifiedAt
   const days = Math.floor(diffMs / 86_400_000)
-  if (days < 1) return '< 1 day'
-  if (days === 1) return '1 day ago'
-  if (days < 30) return `${days} days ago`
+  if (days < 1) return t('< 1 day')
+  if (days === 1) return t('1 day ago')
+  if (days < 30) return t('{count} days ago', { count: days })
   const months = Math.floor(days / 30)
-  if (months === 1) return '1 month ago'
-  return `${months} months ago`
+  if (months === 1) return t('1 month ago')
+  return t('{count} months ago', { count: months })
 }
 
 function truncatePath(path: string, maxLen = 60): string {
@@ -144,10 +155,10 @@ export function CleanupInboxView() {
                   </span>
                   {/* Rule name + category */}
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {item.ruleName}
+                    {t(item.ruleName)}
                   </span>
                   <span style={{ ...badgeStyle, background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                    {item.category}
+                    {t(CATEGORY_LABELS[item.category] ?? item.category)}
                   </span>
                 </div>
 
@@ -160,10 +171,12 @@ export function CleanupInboxView() {
                     {formatBytes(item.size)}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {relativeAge(item.modifiedAt)}
+                    {relativeAge(item.modifiedAt, t)}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)', flex: 1 }}>
-                    {item.reason}
+                    {t('{rule} matched this item for cleanup review.', {
+                      rule: t(item.ruleName),
+                    })}
                   </span>
                   <button
                     type="button"

@@ -18,6 +18,31 @@ const severityOrder: Record<DiagnosisSeverity, number> = {
   info: 2
 }
 
+function formatDiagnosisSeverity(
+  severity: DiagnosisSeverity,
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
+  return t(severity)
+}
+
+function formatDiagnosisCategory(
+  category: string,
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
+  const labels: Record<string, string> = {
+    memory_pressure: 'Memory Pressure',
+    cpu_runaway: 'CPU Runaway',
+    disk_bottleneck: 'Disk Bottleneck',
+    disk_space_low: 'Low Disk Space',
+    docker_reclaimable: 'Docker Reclaimable',
+    cache_bloat: 'Cache Bloat',
+    swap_usage: 'Swap Usage',
+    network_saturation: 'Network Saturation',
+  }
+
+  return t(labels[category] ?? category)
+}
+
 export function DiagnosisCard() {
   const summary = useDiagnosisStore((s) => s.summary)
   const loading = useDiagnosisStore((s) => s.loading)
@@ -65,17 +90,17 @@ export function DiagnosisCard() {
           <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
             {criticalCount > 0 && (
               <span style={{ color: severityColors.critical }}>
-                {criticalCount} {t('critical')}
+                {criticalCount} {formatDiagnosisSeverity('critical', t)}
               </span>
             )}
             {warningCount > 0 && (
               <span style={{ color: severityColors.warning }}>
-                {warningCount} {t('warning')}
+                {warningCount} {formatDiagnosisSeverity('warning', t)}
               </span>
             )}
             {infoCount > 0 && (
               <span style={{ color: severityColors.info }}>
-                {infoCount} {t('info')}
+                {infoCount} {formatDiagnosisSeverity('info', t)}
               </span>
             )}
           </div>
@@ -154,7 +179,7 @@ function DiagnosisItem({
             {result.title}
           </span>
           <span style={{ ...categoryBadgeStyle }}>
-            {formatCategory(result.category)}
+            {formatDiagnosisCategory(result.category, t)}
           </span>
         </div>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>
@@ -208,13 +233,6 @@ function DiagnosisItem({
       )}
     </div>
   )
-}
-
-function formatCategory(category: string): string {
-  return category
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
 }
 
 // ── Styles ──

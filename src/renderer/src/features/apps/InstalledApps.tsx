@@ -249,6 +249,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
             onChange={search.setDraft}
             onClear={search.clear}
             placeholder={tk("apps.search.installed_placeholder")}
+            clearLabel={t("Clear search")}
           />
           <select
             value={platformFilter}

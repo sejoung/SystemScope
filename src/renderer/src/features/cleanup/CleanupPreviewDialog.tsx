@@ -76,7 +76,7 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
               </div>
               {preview.ruleBreakdown.map((rb) => (
                 <div key={rb.ruleId} style={tableRowStyle}>
-                  <span style={{ flex: 2, fontSize: '13px', color: 'var(--text-primary)' }}>{rb.ruleName}</span>
+                  <span style={{ flex: 2, fontSize: '13px', color: 'var(--text-primary)' }}>{t(rb.ruleName)}</span>
                   <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', color: 'var(--text-secondary)' }}>{rb.itemCount}</span>
                   <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', color: 'var(--text-secondary)' }}>{formatBytes(rb.totalSize)}</span>
                 </div>

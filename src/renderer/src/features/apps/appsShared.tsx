@@ -41,11 +41,12 @@ export function secondaryBtnStyle(disabled: boolean): React.CSSProperties {
 
 // --- Components ---
 
-export function SearchInput({ value, onChange, onClear, placeholder }: {
+export function SearchInput({ value, onChange, onClear, placeholder, clearLabel = "Clear search" }: {
   value: string;
   onChange: (value: string) => void;
   onClear: () => void;
   placeholder: string;
+  clearLabel?: string;
 }) {
   return (
     <div style={searchWrapStyle}>
@@ -57,7 +58,7 @@ export function SearchInput({ value, onChange, onClear, placeholder }: {
         style={{ ...inputStyle, minWidth: "240px", paddingRight: "30px" }}
       />
       {value ? (
-        <button type="button" onClick={onClear} aria-label="Clear search" style={clearSearchButtonStyle}>
+        <button type="button" onClick={onClear} aria-label={clearLabel} style={clearSearchButtonStyle}>
           ×
         </button>
       ) : null}

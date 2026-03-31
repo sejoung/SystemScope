@@ -18,6 +18,31 @@ interface DiagnosisDetailProps {
   result: DiagnosisResult
 }
 
+function formatDiagnosisSeverity(
+  severity: DiagnosisSeverity,
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
+  return t(severity)
+}
+
+function formatDiagnosisCategory(
+  category: string,
+  t: (text: string, params?: Record<string, string | number>) => string,
+): string {
+  const labels: Record<string, string> = {
+    memory_pressure: 'Memory Pressure',
+    cpu_runaway: 'CPU Runaway',
+    disk_bottleneck: 'Disk Bottleneck',
+    disk_space_low: 'Low Disk Space',
+    docker_reclaimable: 'Docker Reclaimable',
+    cache_bloat: 'Cache Bloat',
+    swap_usage: 'Swap Usage',
+    network_saturation: 'Network Saturation',
+  }
+
+  return t(labels[category] ?? category)
+}
+
 export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const { t } = useI18n()
@@ -39,10 +64,10 @@ export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
             textTransform: 'uppercase'
           }}
         >
-          {result.severity}
+          {formatDiagnosisSeverity(result.severity, t)}
         </span>
         <span style={categoryLabelStyle}>
-          {formatCategory(result.category)}
+          {formatDiagnosisCategory(result.category, t)}
         </span>
       </div>
 
@@ -107,13 +132,6 @@ export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
       </div>
     </div>
   )
-}
-
-function formatCategory(category: string): string {
-  return category
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
 }
 
 // ── Styles ──

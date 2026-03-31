@@ -168,7 +168,7 @@ export function ListeningPorts() {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                aria-label="Clear search"
+                aria-label={t("Clear search")}
                 style={{
                   position: "absolute",
                   right: "8px",
@@ -192,7 +192,7 @@ export function ListeningPorts() {
             style={btnStyle}
           >
             {loading
-              ? "Scanning..."
+              ? t("Scanning...")
               : scanned
                 ? tk("apps.action.refresh")
                 : tk("process.port_finder.scan")}
@@ -220,7 +220,7 @@ export function ListeningPorts() {
               <AsyncTaskStatus
                 stage="failed"
                 taskLabel={tk("process.port_finder.title")}
-                message={error}
+                message={t(error)}
                 action={
                   <button
                     type="button"

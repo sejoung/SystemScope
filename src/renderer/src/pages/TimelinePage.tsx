@@ -46,7 +46,7 @@ export function TimelinePage() {
   const [intelligence, setIntelligence] = useState<AlertIntelligence | null>(null)
   const [intelligenceLoading, setIntelligenceLoading] = useState(false)
 
-  const { tk } = useI18n()
+  const { tk, t } = useI18n()
 
   // Fetch alert intelligence on mount
   useEffect(() => {
@@ -135,7 +135,7 @@ export function TimelinePage() {
             <PageLoading message={tk('timeline.loading')} />
           ) : error ? (
             <div style={errorBoxStyle}>
-              <span style={{ fontSize: '13px', color: 'var(--accent-red)' }}>{error}</span>
+              <span style={{ fontSize: '13px', color: 'var(--accent-red)' }}>{t(error)}</span>
             </div>
           ) : data ? (
             <TimelineChart data={data} />
