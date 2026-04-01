@@ -1134,6 +1134,13 @@ export const KO_MESSAGES = {
   "devtools.detail.done": "완료 — {succeeded}개 정리, {failed}개 실패",
   "snapshot.diff.metric": "항목",
 
+  // Treemap
+  Root: "루트",
+  folders: "폴더",
+  files: "파일",
+  "Click to drill down": "클릭하여 하위 폴더 탐색",
+  "of current view": "현재 보기 기준",
+
   // Startup
   Startup: "시작 프로그램",
   "Manage startup programs that run when you log in.": "로그인 시 실행되는 시작 프로그램을 관리합니다.",

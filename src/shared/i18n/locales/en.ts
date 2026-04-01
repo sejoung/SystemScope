@@ -1135,6 +1135,13 @@ export const EN_MESSAGES = {
   "devtools.detail.done": "Done — {succeeded} cleaned, {failed} failed",
   "snapshot.diff.metric": "Metric",
 
+  // Treemap
+  Root: "Root",
+  folders: "folders",
+  files: "files",
+  "Click to drill down": "Click to drill down",
+  "of current view": "of current view",
+
   // Startup
   Startup: "Startup",
   "Manage startup programs that run when you log in.": "Manage startup programs that run when you log in.",
