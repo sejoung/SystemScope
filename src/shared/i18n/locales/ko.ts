@@ -1131,4 +1131,6 @@ export const KO_MESSAGES = {
   "devtools.tool.toolchain": "툴체인 캐시",
   "devtools.scan_failed": "개발 도구 스캔에 실패했습니다.",
   "devtools.clean_failed": "선택한 항목 정리에 실패했습니다.",
+  "devtools.detail.done": "완료 — {succeeded}개 정리, {failed}개 실패",
+  "snapshot.diff.metric": "항목",
 } as const;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useSystemStore } from "../stores/useSystemStore";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -37,7 +37,7 @@ export function DashboardPage() {
     const id = s.activeProfileId;
     return id ? s.profiles.find((p) => p.id === id) ?? null : null;
   });
-  const hiddenWidgets = new Set<DashboardWidgetKey>(activeProfile?.hiddenWidgets ?? []);
+  const hiddenWidgets = useMemo(() => new Set<DashboardWidgetKey>(activeProfile?.hiddenWidgets ?? []), [activeProfile?.hiddenWidgets]);
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 

@@ -26,7 +26,7 @@ export function SnapshotList() {
   }
 
   if (loading && snapshots.length === 0) {
-    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loading...</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('Loading...')}</p>
   }
 
   if (snapshots.length === 0) {

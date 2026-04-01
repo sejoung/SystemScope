@@ -59,7 +59,7 @@ export async function saveSessionSnapshot(label?: string): Promise<SessionSnapsh
 
   const snapshot: SessionSnapshot = {
     id: randomUUID(),
-    label: label || `Snapshot ${new Date().toLocaleString()}`,
+    label: (label ? label.slice(0, 100).trim() : '') || `Snapshot ${new Date().toLocaleString()}`,
     timestamp: Date.now(),
     system: {
       cpuUsage: stats.cpu.usage,

@@ -11,7 +11,7 @@ const SAFETY_COLORS: Record<SafetyLevel, string> = {
 }
 
 export function DevToolsDetailDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { tk } = useI18n()
+  const { t, tk } = useI18n()
   const results = useDevToolsStore((s) => s.results)
   const cleaning = useDevToolsStore((s) => s.cleaning)
   const cleanItems = useDevToolsStore((s) => s.cleanItems)
@@ -36,7 +36,7 @@ export function DevToolsDetailDialog({ open, onClose }: { open: boolean; onClose
     if (paths.length === 0) return
     const result = await cleanItems(paths)
     if (result) {
-      setDoneMessage(`Done — ${result.succeeded.length} cleaned, ${result.failed.length} failed`)
+      setDoneMessage(tk('devtools.detail.done', { succeeded: String(result.succeeded.length), failed: String(result.failed.length) }))
       setSelected(new Set())
       void scan()
     }
@@ -76,7 +76,7 @@ export function DevToolsDetailDialog({ open, onClose }: { open: boolean; onClose
         </div>
 
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button onClick={onClose} style={ctrlBtn}>Close</button>
+          <button onClick={onClose} style={ctrlBtn}>{t('Cancel')}</button>
           <button onClick={() => void handleClean()} disabled={selected.size === 0 || cleaning} style={{
             padding: '6px 14px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--radius)', border: 'none',
             background: selected.size > 0 && !cleaning ? 'var(--accent-blue)' : 'var(--bg-tertiary)',

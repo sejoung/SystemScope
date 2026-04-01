@@ -50,7 +50,7 @@ export function DevToolsSection() {
           {results.map((result) => <ToolCard key={result.tool} result={result} />)}
           {totalItems > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatBytes(totalReclaimable)} reclaimable</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatBytes(totalReclaimable)} {tk('devtools.status.ready').toLowerCase()}</span>
               <button onClick={() => setDetailOpen(true)} style={{
                 padding: '4px 10px', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)',
                 border: 'none', background: 'var(--accent-blue)', color: 'var(--text-on-accent)', cursor: 'pointer'

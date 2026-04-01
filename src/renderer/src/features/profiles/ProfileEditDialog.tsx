@@ -30,8 +30,20 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
     setHiddenWidgets((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key])
   }
 
+  const thresholdError = (() => {
+    const t = thresholds
+    if (t.cpuWarning >= t.cpuCritical) return 'CPU Warning must be less than Critical'
+    if (t.memoryWarning >= t.memoryCritical) return 'Memory Warning must be less than Critical'
+    if (t.diskWarning >= t.diskCritical) return 'Disk Warning must be less than Critical'
+    if (t.gpuMemoryWarning >= t.gpuMemoryCritical) return 'GPU Memory Warning must be less than Critical'
+    for (const v of Object.values(t)) {
+      if (v < 0 || v > 100) return 'Threshold values must be 0-100'
+    }
+    return null
+  })()
+
   async function handleSave() {
-    if (!name.trim()) return
+    if (!name.trim() || thresholdError) return
     setSaving(true)
     const saved = await saveProfile({
       id: profile?.id ?? '',
@@ -87,6 +99,9 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
               </div>
             ))}
           </div>
+          {thresholdError && (
+            <div style={{ fontSize: 11, color: 'var(--accent-red, #e53e3e)', marginTop: 4 }}>{thresholdError}</div>
+          )}
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -109,8 +124,8 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
           <button onClick={onClose} style={{ padding: '7px 14px', fontSize: 12, fontWeight: 700, borderRadius: 6, border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
             {t('Cancel')}
           </button>
-          <button onClick={() => void handleSave()} disabled={!name.trim() || saving}
-            style={{ padding: '7px 14px', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 6, backgroundColor: 'var(--accent-blue)', color: 'var(--text-on-accent)', cursor: 'pointer', opacity: !name.trim() || saving ? 0.5 : 1 }}>
+          <button onClick={() => void handleSave()} disabled={!name.trim() || saving || !!thresholdError}
+            style={{ padding: '7px 14px', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 6, backgroundColor: 'var(--accent-blue)', color: 'var(--text-on-accent)', cursor: 'pointer', opacity: !name.trim() || saving || thresholdError ? 0.5 : 1 }}>
             {saving ? '...' : t('Save')}
           </button>
         </div>

@@ -35,31 +35,28 @@ export function saveProfile(profile: WorkspaceProfile): WorkspaceProfile {
   }
 
   const existingIndex = profiles.findIndex((p) => p.id === profile.id)
+  let savedProfile: WorkspaceProfile
 
   if (existingIndex >= 0) {
     profiles[existingIndex] = profile
+    savedProfile = profile
     logInfo('profile-manager', `Profile updated: ${profile.name} (${profile.id})`)
   } else {
     if (profiles.length >= MAX_PROFILES) {
       throw new Error(`Maximum of ${MAX_PROFILES} profiles allowed`)
     }
-    const newProfile: WorkspaceProfile = {
-      ...profile,
-      id: profile.id || randomUUID()
-    }
-    profiles.push(newProfile)
-    logInfo('profile-manager', `Profile created: ${newProfile.name} (${newProfile.id})`)
-    setSettings({ profiles })
-    return newProfile
+    savedProfile = { ...profile, id: profile.id || randomUUID() }
+    profiles.push(savedProfile)
+    logInfo('profile-manager', `Profile created: ${savedProfile.name} (${savedProfile.id})`)
   }
 
   setSettings({ profiles })
 
-  if (settings.activeProfileId === profile.id) {
-    applyProfileSideEffects(profile)
+  if (settings.activeProfileId === savedProfile.id) {
+    applyProfileSideEffects(savedProfile)
   }
 
-  return profile
+  return savedProfile
 }
 
 export function deleteProfile(id: string): boolean {

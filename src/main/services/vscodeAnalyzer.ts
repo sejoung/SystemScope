@@ -18,6 +18,13 @@ function getVSCodePaths(): { extensions: string; userData: string; cacheDir: str
       cacheDir: path.join(home, 'Library', 'Caches', 'com.microsoft.VSCode'),
     }
   }
+  if (p === 'linux') {
+    return {
+      extensions: path.join(home, '.vscode', 'extensions'),
+      userData: path.join(home, '.config', 'Code'),
+      cacheDir: path.join(home, '.cache', 'Code'),
+    }
+  }
   // Windows
   const appData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming')
   const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local')

@@ -1132,4 +1132,6 @@ export const EN_MESSAGES = {
   "devtools.tool.toolchain": "Toolchain Caches",
   "devtools.scan_failed": "Failed to scan developer tools.",
   "devtools.clean_failed": "Failed to clean selected items.",
+  "devtools.detail.done": "Done — {succeeded} cleaned, {failed} failed",
+  "snapshot.diff.metric": "Metric",
 } as const;

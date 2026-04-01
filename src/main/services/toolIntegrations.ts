@@ -9,6 +9,7 @@ import { logInfo, logError, logWarn } from './logging'
 
 /** Allowlist of paths from the most recent scan — only these can be cleaned */
 let lastScannedPaths = new Set<string>()
+let cleanInProgress = false
 
 export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
   const scanners: Promise<ToolIntegrationResult>[] = [scanVSCode(), scanToolchain()]
@@ -27,12 +28,20 @@ export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
     }
   }
 
-  // Build allowlist from scan results
-  lastScannedPaths = new Set<string>()
+  // Build allowlist from scan results (skip if clean is in progress)
+  if (cleanInProgress) {
+    logInfo('tool-integrations', 'Skipping allowlist rebuild — clean in progress')
+  } else {
+    lastScannedPaths = new Set<string>()
+  }
+  const newPaths = new Set<string>()
   for (const tool of tools) {
     for (const item of tool.reclaimable) {
-      if (item.path) lastScannedPaths.add(item.path)
+      if (item.path) newPaths.add(item.path)
     }
+  }
+  if (!cleanInProgress) {
+    lastScannedPaths = newPaths
   }
 
   logInfo('tool-integrations', 'All tool scans completed', {
@@ -43,23 +52,28 @@ export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
 }
 
 export async function cleanToolItems(paths: string[]): Promise<ToolCleanResult> {
+  cleanInProgress = true
   const succeeded: string[] = []
   const failed: string[] = []
 
-  for (const itemPath of paths) {
-    if (!lastScannedPaths.has(itemPath)) {
-      logWarn('tool-integrations', 'Rejected clean request for path not in scan results', { path: itemPath })
-      failed.push(itemPath)
-      continue
+  try {
+    for (const itemPath of paths) {
+      if (!lastScannedPaths.has(itemPath)) {
+        logWarn('tool-integrations', 'Rejected clean request for path not in scan results', { path: itemPath })
+        failed.push(itemPath)
+        continue
+      }
+      try {
+        await shell.trashItem(itemPath)
+        succeeded.push(itemPath)
+        lastScannedPaths.delete(itemPath)
+      } catch (err) {
+        logError('tool-integrations', 'Failed to trash item', { path: itemPath, error: err })
+        failed.push(itemPath)
+      }
     }
-    try {
-      await shell.trashItem(itemPath)
-      succeeded.push(itemPath)
-      lastScannedPaths.delete(itemPath)
-    } catch (err) {
-      logError('tool-integrations', 'Failed to trash item', { path: itemPath, error: err })
-      failed.push(itemPath)
-    }
+  } finally {
+    cleanInProgress = false
   }
 
   logInfo('tool-integrations', 'Tool item cleanup completed', {

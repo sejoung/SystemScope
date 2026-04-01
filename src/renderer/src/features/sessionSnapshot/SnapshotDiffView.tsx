@@ -28,7 +28,7 @@ export function SnapshotDiffView() {
   const diff = useSessionSnapshotStore((s) => s.diff)
   const diffLoading = useSessionSnapshotStore((s) => s.diffLoading)
 
-  if (diffLoading) return <p style={{ fontSize: 13 }}>Computing diff...</p>
+  if (diffLoading) return <p style={{ fontSize: 13 }}>{t('Loading...')}</p>
   if (!diff) return null
 
   return (
@@ -40,16 +40,16 @@ export function SnapshotDiffView() {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 12 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
-            <th style={{ textAlign: 'left', padding: '4px 8px' }}>Metric</th>
-            <th style={{ textAlign: 'left', padding: '4px 8px' }}>{t('snapshot.diff.before')} → {t('snapshot.diff.after')} ({t('snapshot.diff.delta')})</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '4px 8px' }}>{t('snapshot.diff.metric')}</th>
+            <th scope="col" style={{ textAlign: 'left', padding: '4px 8px' }}>{t('snapshot.diff.before')} → {t('snapshot.diff.after')} ({t('snapshot.diff.delta')})</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td style={{ padding: '4px 8px' }}>CPU</td><DeltaCell delta={diff.system.cpuUsage} isPercent /></tr>
-          <tr><td style={{ padding: '4px 8px' }}>Memory</td><DeltaCell delta={diff.system.memoryUsage} isPercent /></tr>
-          <tr><td style={{ padding: '4px 8px' }}>Disk</td><DeltaCell delta={diff.system.diskUsage} isPercent /></tr>
-          <tr><td style={{ padding: '4px 8px' }}>Network ↓</td><DeltaCell delta={diff.system.networkRxSec} isBytes /></tr>
-          <tr><td style={{ padding: '4px 8px' }}>Network ↑</td><DeltaCell delta={diff.system.networkTxSec} isBytes /></tr>
+          <tr><td scope="row" style={{ padding: '4px 8px' }}>{t('CPU')}</td><DeltaCell delta={diff.system.cpuUsage} isPercent /></tr>
+          <tr><td scope="row" style={{ padding: '4px 8px' }}>{t('Memory')}</td><DeltaCell delta={diff.system.memoryUsage} isPercent /></tr>
+          <tr><td scope="row" style={{ padding: '4px 8px' }}>{t('Disk')}</td><DeltaCell delta={diff.system.diskUsage} isPercent /></tr>
+          <tr><td scope="row" style={{ padding: '4px 8px' }}>{t('Network')} ↓</td><DeltaCell delta={diff.system.networkRxSec} isBytes /></tr>
+          <tr><td scope="row" style={{ padding: '4px 8px' }}>{t('Network')} ↑</td><DeltaCell delta={diff.system.networkTxSec} isBytes /></tr>
         </tbody>
       </table>
 
@@ -98,10 +98,10 @@ export function SnapshotDiffView() {
           <strong style={{ fontSize: 12 }}>{t('snapshot.diff.docker')}:</strong>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginTop: 4 }}>
             <tbody>
-              <tr><td style={{ padding: '2px 8px' }}>Images</td><DeltaCell delta={diff.dockerDelta.imagesCount} /></tr>
-              <tr><td style={{ padding: '2px 8px' }}>Containers</td><DeltaCell delta={diff.dockerDelta.containersCount} /></tr>
-              <tr><td style={{ padding: '2px 8px' }}>Volumes</td><DeltaCell delta={diff.dockerDelta.volumesCount} /></tr>
-              <tr><td style={{ padding: '2px 8px' }}>Total Size</td><DeltaCell delta={diff.dockerDelta.totalSize} isBytes /></tr>
+              <tr><td scope="row" style={{ padding: '2px 8px' }}>{t('Docker')} Images</td><DeltaCell delta={diff.dockerDelta.imagesCount} /></tr>
+              <tr><td scope="row" style={{ padding: '2px 8px' }}>{t('Docker')} Containers</td><DeltaCell delta={diff.dockerDelta.containersCount} /></tr>
+              <tr><td scope="row" style={{ padding: '2px 8px' }}>{t('Docker')} Volumes</td><DeltaCell delta={diff.dockerDelta.volumesCount} /></tr>
+              <tr><td scope="row" style={{ padding: '2px 8px' }}>{t('snapshot.diff.docker')} Size</td><DeltaCell delta={diff.dockerDelta.totalSize} isBytes /></tr>
             </tbody>
           </table>
         </div>
