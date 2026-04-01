@@ -1127,6 +1127,8 @@ export const KO_MESSAGES = {
   "devtools.safety.risky": "위험",
   "devtools.tool.homebrew": "Homebrew",
   "devtools.tool.xcode": "Xcode",
+  "devtools.tool.vscode": "VS Code",
+  "devtools.tool.toolchain": "툴체인 캐시",
   "devtools.scan_failed": "개발 도구 스캔에 실패했습니다.",
   "devtools.clean_failed": "선택한 항목 정리에 실패했습니다.",
 } as const;

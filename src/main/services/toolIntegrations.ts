@@ -1,11 +1,19 @@
 import { shell } from 'electron'
 import type { ToolIntegrationResult, ToolCleanResult } from '@shared/types'
+import { platform } from 'node:os'
 import { scanHomebrew } from './homebrewAnalyzer'
 import { scanXcode } from './xcodeAnalyzer'
+import { scanVSCode } from './vscodeAnalyzer'
+import { scanToolchain } from './toolchainAnalyzer'
 import { logInfo, logError } from './logging'
 
 export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
-  const results = await Promise.allSettled([scanHomebrew(), scanXcode()])
+  const scanners: Promise<ToolIntegrationResult>[] = [scanVSCode(), scanToolchain()]
+  // macOS-only tools
+  if (platform() === 'darwin') {
+    scanners.push(scanHomebrew(), scanXcode())
+  }
+  const results = await Promise.allSettled(scanners)
   const tools: ToolIntegrationResult[] = []
 
   for (const result of results) {

@@ -1128,6 +1128,8 @@ export const EN_MESSAGES = {
   "devtools.safety.risky": "Risky",
   "devtools.tool.homebrew": "Homebrew",
   "devtools.tool.xcode": "Xcode",
+  "devtools.tool.vscode": "VS Code",
+  "devtools.tool.toolchain": "Toolchain Caches",
   "devtools.scan_failed": "Failed to scan developer tools.",
   "devtools.clean_failed": "Failed to clean selected items.",
 } as const;

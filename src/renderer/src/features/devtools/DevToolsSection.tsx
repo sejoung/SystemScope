@@ -71,7 +71,13 @@ export function DevToolsSection() {
 function ToolCard({ result }: { result: ToolIntegrationResult }) {
   const { tk } = useI18n()
   const statusColor = STATUS_COLORS[result.status] ?? 'var(--text-tertiary)'
-  const toolLabel = result.tool === 'homebrew' ? tk('devtools.tool.homebrew') : tk('devtools.tool.xcode')
+  const toolLabelMap: Record<string, string> = {
+    homebrew: tk('devtools.tool.homebrew'),
+    xcode: tk('devtools.tool.xcode'),
+    vscode: tk('devtools.tool.vscode'),
+    toolchain: tk('devtools.tool.toolchain'),
+  }
+  const toolLabel = toolLabelMap[result.tool] ?? result.tool
   const statusLabel = result.status === 'ready' ? tk('devtools.status.ready')
     : result.status === 'not_installed' ? tk('devtools.status.not_installed') : tk('devtools.status.error')
 

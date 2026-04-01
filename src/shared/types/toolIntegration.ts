@@ -1,4 +1,4 @@
-export type ToolName = 'homebrew' | 'xcode'
+export type ToolName = 'homebrew' | 'xcode' | 'vscode' | 'toolchain'
 export type ToolStatus = 'ready' | 'not_installed' | 'error'
 export type SafetyLevel = 'safe' | 'caution' | 'risky'
 

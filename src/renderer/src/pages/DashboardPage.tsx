@@ -153,12 +153,10 @@ export function DashboardPage() {
         {!hiddenWidgets.has('topProcesses') && <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>}
       </div>
 
-      {/* Developer Tools (macOS only) */}
-      {navigator.platform.includes('Mac') && (
-        <div className="dashboard-section" style={{ marginTop: 16 }}>
-          <ErrorBoundary title="Developer Tools"><DevToolsSection /></ErrorBoundary>
-        </div>
-      )}
+      {/* Developer Tools */}
+      <div className="dashboard-section" style={{ marginTop: 16 }}>
+        <ErrorBoundary title="Developer Tools"><DevToolsSection /></ErrorBoundary>
+      </div>
     </div>
   );
 }
