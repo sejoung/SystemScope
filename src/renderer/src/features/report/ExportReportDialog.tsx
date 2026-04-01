@@ -50,7 +50,7 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
       })
 
       if (!buildRes.ok || !isDiagnosticReportData(buildRes.data)) {
-        showToast(t('Report generation failed.'), 'error')
+        showToast(t('Report generation failed.'), 'danger')
         setBuilding(false)
         return
       }
@@ -64,12 +64,12 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
         showToast(t('Report saved successfully.'), 'success')
         onClose()
       } else if (saveRes.error.message === 'Save cancelled') {
-        showToast(t('Save cancelled.'), 'info')
+        showToast(t('Save cancelled.'), 'default')
       } else {
-        showToast(t('Report generation failed.'), 'error')
+        showToast(t('Report generation failed.'), 'danger')
       }
     } catch {
-      showToast(t('Report generation failed.'), 'error')
+      showToast(t('Report generation failed.'), 'danger')
     } finally {
       setBuilding(false)
     }
