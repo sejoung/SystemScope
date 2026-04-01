@@ -1134,4 +1134,13 @@ export const EN_MESSAGES = {
   "devtools.clean_failed": "Failed to clean selected items.",
   "devtools.detail.done": "Done — {succeeded} cleaned, {failed} failed",
   "snapshot.diff.metric": "Metric",
+
+  // Startup
+  Startup: "Startup",
+  "Manage startup programs that run when you log in.": "Manage startup programs that run when you log in.",
+  "No startup items found.": "No startup items found.",
+  "Startup item enabled.": "Startup item enabled.",
+  "Startup item disabled.": "Startup item disabled.",
+  "Failed to toggle startup item.": "Failed to toggle startup item.",
+  User: "User",
 } as const;

@@ -183,6 +183,11 @@ export function createIpcApi(): SystemScopeApi {
     getSessionSnapshotDiff: (id1: string, id2: string) =>
       invokeWithRequestId(IPC_CHANNELS.SNAPSHOT_DIFF, id1, id2),
 
+    getStartupItems: () =>
+      invokeWithRequestId(IPC_CHANNELS.STARTUP_GET_ALL),
+    toggleStartupItem: (id: string, enabled: boolean) =>
+      invokeWithRequestId(IPC_CHANNELS.STARTUP_TOGGLE, id, enabled),
+
     scanDevTools: () =>
       invokeWithRequestId(IPC_CHANNELS.TOOLS_SCAN_ALL),
     cleanDevToolItems: (paths: string[]) =>

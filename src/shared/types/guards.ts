@@ -12,6 +12,7 @@ import type { CleanupPreview, CleanupResult, CleanupInbox } from './automation'
 import type { WorkspaceProfile } from './profile'
 import { DASHBOARD_WIDGET_KEYS } from './profile'
 import type { ToolIntegrationResult, ToolCleanResult } from './toolIntegration'
+import type { StartupItem, StartupToggleResult } from './startup'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -213,4 +214,19 @@ export function isToolIntegrationResultArray(data: unknown): data is ToolIntegra
 /** ToolCleanResult */
 export function isToolCleanResult(data: unknown): data is ToolCleanResult {
   return isObj(data) && Array.isArray(data.succeeded) && Array.isArray(data.failed)
+}
+
+/** StartupItem */
+export function isStartupItem(data: unknown): data is StartupItem {
+  return isObj(data) && typeof data.id === 'string' && typeof data.name === 'string' && typeof data.path === 'string' && typeof data.enabled === 'boolean'
+}
+
+/** StartupItem[] — first-element sampling */
+export function isStartupItemArray(data: unknown): data is StartupItem[] {
+  return Array.isArray(data) && (data.length === 0 || isStartupItem(data[0]))
+}
+
+/** StartupToggleResult */
+export function isStartupToggleResult(data: unknown): data is StartupToggleResult {
+  return isObj(data) && typeof data.id === 'string' && typeof data.success === 'boolean'
 }

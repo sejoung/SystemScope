@@ -117,6 +117,10 @@ export const IPC_CHANNELS = {
   TOOLS_SCAN_ALL: 'tools:scanAll',
   TOOLS_CLEAN: 'tools:clean',
 
+  // 시작 프로그램
+  STARTUP_GET_ALL: 'startup:getAll',
+  STARTUP_TOGGLE: 'startup:toggle',
+
   // 워크스페이스 프로필
   PROFILE_GET_ALL:    'profile:getAll',
   PROFILE_SAVE:       'profile:save',

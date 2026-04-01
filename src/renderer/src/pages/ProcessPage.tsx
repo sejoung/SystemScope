@@ -7,8 +7,9 @@ import { PageLoading } from "../components/PageLoading";
 import { PageTab } from "../components/PageTab";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
+import { StartupItemList } from "../features/startup/StartupItemList";
 
-type ActivityTab = "processes" | "ports" | "watch";
+type ActivityTab = "processes" | "ports" | "watch" | "startup";
 
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
@@ -84,6 +85,13 @@ export function ProcessPage() {
           >
             {tk("process.tab.processes")}
           </PageTab>
+          <PageTab
+            id="activity-startup"
+            active={tab === "startup"}
+            onClick={() => setTab("startup")}
+          >
+            {t("Startup")}
+          </PageTab>
         </div>
         <div
           style={{
@@ -92,7 +100,9 @@ export function ProcessPage() {
             lineHeight: 1.6,
           }}
         >
-          {tab === "processes"
+          {tab === "startup"
+            ? t("Manage startup programs that run when you log in.")
+            : tab === "processes"
             ? tk("process.page.tab.processes_help")
             : tab === "ports"
               ? t(
@@ -105,6 +115,7 @@ export function ProcessPage() {
       {tab === "processes" && <ErrorBoundary title={tk("process.tab.processes")}><ProcessTable processes={allProcesses} /></ErrorBoundary>}
       {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts /></ErrorBoundary>}
       {tab === "watch" && <ErrorBoundary title={tk("process.tab.watch")}><PortWatch /></ErrorBoundary>}
+      {tab === "startup" && <ErrorBoundary title="Startup"><StartupItemList /></ErrorBoundary>}
     </div>
   );
 }

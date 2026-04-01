@@ -54,7 +54,9 @@ import type {
   SnapshotDiff,
   WorkspaceProfile,
   ToolIntegrationResult,
-  ToolCleanResult
+  ToolCleanResult,
+  StartupItem,
+  StartupToggleResult
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -165,6 +167,9 @@ export interface SystemScopeApi {
   getSessionSnapshots: () => Promise<AppResult<SessionSnapshot[]>>
   deleteSessionSnapshot: (id: string) => Promise<AppResult<boolean>>
   getSessionSnapshotDiff: (id1: string, id2: string) => Promise<AppResult<SnapshotDiff>>
+
+  getStartupItems: () => Promise<AppResult<StartupItem[]>>
+  toggleStartupItem: (id: string, enabled: boolean) => Promise<AppResult<StartupToggleResult>>
 
   scanDevTools: () => Promise<AppResult<ToolIntegrationResult[]>>
   cleanDevToolItems: (paths: string[]) => Promise<AppResult<ToolCleanResult>>

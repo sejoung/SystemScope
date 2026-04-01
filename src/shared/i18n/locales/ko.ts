@@ -1133,4 +1133,13 @@ export const KO_MESSAGES = {
   "devtools.clean_failed": "선택한 항목 정리에 실패했습니다.",
   "devtools.detail.done": "완료 — {succeeded}개 정리, {failed}개 실패",
   "snapshot.diff.metric": "항목",
+
+  // Startup
+  Startup: "시작 프로그램",
+  "Manage startup programs that run when you log in.": "로그인 시 실행되는 시작 프로그램을 관리합니다.",
+  "No startup items found.": "시작 프로그램이 없습니다.",
+  "Startup item enabled.": "시작 프로그램이 활성화되었습니다.",
+  "Startup item disabled.": "시작 프로그램이 비활성화되었습니다.",
+  "Failed to toggle startup item.": "시작 프로그램 전환에 실패했습니다.",
+  User: "사용자",
 } as const;

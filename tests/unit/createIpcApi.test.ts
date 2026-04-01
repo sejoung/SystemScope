@@ -109,7 +109,9 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'deleteProfile',
   'setActiveProfile',
   'scanDevTools',
-  'cleanDevToolItems'
+  'cleanDevToolItems',
+  'getStartupItems',
+  'toggleStartupItem'
 ]
 
 const LISTENER_KEYS: (keyof SystemScopeApi)[] = [
