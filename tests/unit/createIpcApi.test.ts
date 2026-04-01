@@ -97,7 +97,13 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'getAccessLogPath',
   'selectFolder',
   'showInFolder',
-  'openPath'
+  'openPath',
+  'buildDiagnosticReport',
+  'saveDiagnosticReport',
+  'saveSessionSnapshot',
+  'getSessionSnapshots',
+  'deleteSessionSnapshot',
+  'getSessionSnapshotDiff'
 ]
 
 const LISTENER_KEYS: (keyof SystemScopeApi)[] = [

@@ -553,8 +553,8 @@ export const EN_MESSAGES = {
   "No related data paths were detected.":
     "No related data paths were detected.",
   "No leftover app data to display.": "No leftover app data to display.",
-  "These are leftover data candidates not linked to an installed app. Review each card’s rationale and risk before selecting them.":
-    "These are leftover data candidates not linked to an installed app. Review each card’s rationale and risk before selecting them.",
+  "These are leftover data candidates not linked to an installed app. Review each card's rationale and risk before selecting them.":
+    "These are leftover data candidates not linked to an installed app. Review each card's rationale and risk before selecting them.",
   "Move Selected to Trash": "Move Selected to Trash",
   "{count} apps": "{count} apps",
   "{count} items": "{count} items",
@@ -815,8 +815,8 @@ export const EN_MESSAGES = {
     "Size order updates as remaining folder sizes finish loading.",
   "You can manage installed apps directly, or expand each app to move related data to the trash together.":
     "You can manage installed apps directly, or expand each app to move related data to the trash together.",
-  "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.":
-    "These are leftover data candidates not currently linked to an installed app. Review each card’s rationale and risk before selecting it.",
+  "These are leftover data candidates not currently linked to an installed app. Review each card's rationale and risk before selecting it.":
+    "These are leftover data candidates not currently linked to an installed app. Review each card's rationale and risk before selecting it.",
   "Calculating folder sizes: {ready}/{total} ready, {remaining} remaining":
     "Calculating folder sizes: {ready}/{total} ready, {remaining} remaining",
   "Folder sizes loaded for all {count} items":
@@ -1046,4 +1046,45 @@ export const EN_MESSAGES = {
   "Unable to load the About information.": "Unable to load the About information.",
   "Failed to fetch timeline data": "Failed to fetch timeline data",
   "Invalid timeline data": "Invalid timeline data",
+
+  // Report
+  "Export Report": "Export Report",
+  "Export diagnostic report": "Export diagnostic report",
+  "Select the sections to include in the report.": "Select the sections to include in the report.",
+  "System Summary": "System Summary",
+  "Recent History": "Recent History",
+  "Active Alerts": "Active Alerts",
+  "Top Processes": "Top Processes",
+  "Disk Cleanup Candidates": "Disk Cleanup Candidates",
+  "Docker Resources": "Docker Resources",
+  Diagnosis: "Diagnosis",
+  "Mask sensitive paths": "Mask sensitive paths",
+  "Replaces home directory and username in the report.": "Replaces home directory and username in the report.",
+  "Export as Markdown": "Export as Markdown",
+  "Export as JSON": "Export as JSON",
+  "Report saved successfully.": "Report saved successfully.",
+  "Report generation failed.": "Report generation failed.",
+  "Save cancelled.": "Save cancelled.",
+  "Building report...": "Building report...",
+
+  // Session Snapshot
+  "Save Snapshot": "Save Snapshot",
+  "Snapshot label": "Snapshot label",
+  "Save current system state": "Save current system state",
+  "No snapshots saved yet.": "No snapshots saved yet.",
+  "Delete snapshot": "Delete snapshot",
+  "Compare snapshots": "Compare snapshots",
+  "Select two snapshots to compare.": "Select two snapshots to compare.",
+  "Snapshot saved.": "Snapshot saved.",
+  "Snapshot deleted.": "Snapshot deleted.",
+  "Saving snapshot...": "Saving snapshot...",
+  "snapshot.diff.before": "Before",
+  "snapshot.diff.after": "After",
+  "snapshot.diff.delta": "Change",
+  "snapshot.diff.processes.added": "New Processes",
+  "snapshot.diff.processes.removed": "Gone Processes",
+  "snapshot.diff.processes.changed": "Changed Processes",
+  "snapshot.diff.alerts.added": "New Alerts",
+  "snapshot.diff.alerts.removed": "Resolved Alerts",
+  "snapshot.diff.docker": "Docker Changes",
 } as const;

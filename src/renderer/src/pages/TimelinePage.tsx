@@ -5,6 +5,8 @@ import { TimelineChart } from '../features/timeline/TimelineChart'
 import { EventHistoryCard } from '../features/timeline/EventHistoryCard'
 import { PointDetailPanel } from '../features/timeline/PointDetailPanel'
 import { AlertIntelligencePanel } from '../features/timeline/AlertIntelligencePanel'
+import { SnapshotList } from '../features/sessionSnapshot/SnapshotList'
+import { SnapshotDiffView } from '../features/sessionSnapshot/SnapshotDiffView'
 import { PageTab } from '../components/PageTab'
 import { PageLoading } from '../components/PageLoading'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -218,6 +220,32 @@ export function TimelinePage() {
               ))}
             </div>
           )}
+        </div>
+      </ErrorBoundary>
+
+      {/* Snapshots Section */}
+      <ErrorBoundary title={t('Snapshots')}>
+        <div
+          style={{
+            padding: '16px',
+            marginTop: '16px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+          }}
+        >
+          <h3
+            style={{
+              fontSize: '14px',
+              fontWeight: 700,
+              margin: '0 0 12px 0',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {t('Snapshots')}
+          </h3>
+          <SnapshotList />
+          <SnapshotDiffView />
         </div>
       </ErrorBoundary>
     </div>

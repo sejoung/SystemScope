@@ -13,6 +13,8 @@ import { registerDiagnosisIpc } from './diagnosis.ipc'
 import { registerAlertIntelligenceIpc } from './alertIntelligence.ipc'
 import { registerCleanupInboxIpc } from './cleanupInbox.ipc'
 import { registerCleanupIpc } from './cleanup.ipc'
+import { registerReportIpc } from './report.ipc'
+import { registerSessionSnapshotIpc } from './sessionSnapshot.ipc'
 
 export function registerAllIpc(): void {
   registerAppIpc()
@@ -30,6 +32,8 @@ export function registerAllIpc(): void {
   registerDiagnosisIpc()
   registerCleanupInboxIpc()
   registerCleanupIpc()
+  registerReportIpc()
+  registerSessionSnapshotIpc()
 }
 
 export { cleanupSystemIpc } from './system.ipc'

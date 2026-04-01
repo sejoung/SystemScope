@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useSystemStore } from "../stores/useSystemStore";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -16,6 +17,8 @@ import { PageLoading } from "../components/PageLoading";
 import { useI18n } from "../i18n/useI18n";
 import { useUpdateStore } from "../stores/useUpdateStore";
 import { useToast } from "../components/Toast";
+import { SnapshotButton } from "../features/sessionSnapshot/SnapshotButton";
+import { ExportReportDialog } from "../features/report/ExportReportDialog";
 
 export function DashboardPage() {
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
@@ -25,6 +28,7 @@ export function DashboardPage() {
   const dismissCurrent = useUpdateStore((s) => s.dismissCurrent);
   const { t } = useI18n();
   const showToast = useToast((s) => s.show);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 
@@ -47,7 +51,23 @@ export function DashboardPage() {
             "Monitor live system usage, review alerts, and jump into storage or process details from one place.",
           )}
         </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <SnapshotButton />
+          <button
+            onClick={() => setReportDialogOpen(true)}
+            style={{
+              padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)",
+              backgroundColor: "var(--bg-secondary)", color: "var(--text-primary)",
+              cursor: "pointer", fontSize: 12,
+            }}
+          >
+            {t("Export Report")}
+          </button>
+        </div>
       </div>
+
+      <ExportReportDialog open={reportDialogOpen} onClose={() => setReportDialogOpen(false)} />
+
       {visibleUpdate ? (
         <div
           style={{
