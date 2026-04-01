@@ -953,7 +953,7 @@ export const MESSAGE_KEYS = {
 
   // Developer Tools
   "devtools.section.title": "Developer Tools",
-  "devtools.section.description": "Scan Homebrew and Xcode for reclaimable disk space.",
+  "devtools.section.description": "Scan developer tools and toolchain caches for reclaimable disk space.",
   "devtools.scan": "Scan",
   "devtools.scanning": "Scanning...",
   "devtools.rescan": "Rescan",

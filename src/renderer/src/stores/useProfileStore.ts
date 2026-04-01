@@ -21,12 +21,15 @@ export const useProfileStore = create<ProfileState>((set) => ({
   fetchProfiles: async () => {
     set({ loading: true })
     try {
-      const res = await window.systemScope.getProfiles()
-      if (res.ok && isWorkspaceProfileArray(res.data)) {
-        set({ profiles: res.data, loading: false })
-      } else {
-        set({ loading: false })
-      }
+      const [profilesRes, settingsRes] = await Promise.all([
+        window.systemScope.getProfiles(),
+        window.systemScope.getSettings()
+      ])
+      const profiles = profilesRes.ok && isWorkspaceProfileArray(profilesRes.data) ? profilesRes.data : []
+      const activeProfileId = settingsRes.ok && settingsRes.data && typeof settingsRes.data.activeProfileId === 'string'
+        ? settingsRes.data.activeProfileId
+        : null
+      set({ profiles, activeProfileId, loading: false })
     } catch {
       set({ loading: false })
     }

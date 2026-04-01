@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import { homedir, platform } from 'node:os'
 import type { ToolIntegrationResult, ReclaimableItem, ToolSummaryItem } from '@shared/types'
 import { getDirSizeEstimate } from '../utils/getDirSize'
+import { dirExists } from '../utils/fsHelpers'
 import { logInfo, logDebug, logError } from './logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 
@@ -25,13 +26,6 @@ function getVSCodePaths(): { extensions: string; userData: string; cacheDir: str
     userData: path.join(appData, 'Code'),
     cacheDir: path.join(localAppData, 'Code', 'Cache'),
   }
-}
-
-async function dirExists(dirPath: string): Promise<boolean> {
-  try {
-    const stat = await fs.stat(dirPath)
-    return stat.isDirectory()
-  } catch { return false }
 }
 
 export async function scanVSCode(): Promise<ToolIntegrationResult> {

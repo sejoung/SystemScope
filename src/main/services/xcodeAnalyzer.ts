@@ -4,6 +4,7 @@ import { homedir } from 'node:os'
 import type { ToolIntegrationResult, ReclaimableItem, ToolSummaryItem } from '@shared/types'
 import { runExternalCommand, isExternalCommandError } from './externalCommand'
 import { getDirSizeEstimate } from '../utils/getDirSize'
+import { dirExists } from '../utils/fsHelpers'
 import { logInfo, logDebug, logError } from './logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 
@@ -131,8 +132,10 @@ async function scanSimulators(): Promise<{ totalCount: number; unavailableCount:
           if (device.dataPath) {
             try { size = await getDirSizeEstimate(device.dataPath, 3) } catch { /* skip */ }
           }
-          const runtimeLabel = runtime.replace('com.apple.CoreSimulator.SimRuntime.', '').replace(/-/g, ' ')
-          reclaimable.push({ id: `xcode-sim-${device.udid}`, tool: 'xcode', path: device.dataPath ?? '', label: `Simulator: ${device.name} (${runtimeLabel})`, size, category: 'simulator', safetyLevel: 'safe' })
+          if (device.dataPath) {
+            const runtimeLabel = runtime.replace('com.apple.CoreSimulator.SimRuntime.', '').replace(/-/g, ' ')
+            reclaimable.push({ id: `xcode-sim-${device.udid}`, tool: 'xcode', path: device.dataPath, label: `Simulator: ${device.name} (${runtimeLabel})`, size, category: 'simulator', safetyLevel: 'safe' })
+          }
         }
       }
     }
@@ -146,9 +149,3 @@ async function scanSimulators(): Promise<{ totalCount: number; unavailableCount:
   return { totalCount, unavailableCount, reclaimable }
 }
 
-async function dirExists(dirPath: string): Promise<boolean> {
-  try {
-    const stat = await fs.stat(dirPath)
-    return stat.isDirectory()
-  } catch { return false }
-}

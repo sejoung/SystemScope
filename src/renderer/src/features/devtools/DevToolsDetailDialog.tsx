@@ -45,7 +45,9 @@ export function DevToolsDetailDialog({ open, onClose }: { open: boolean; onClose
   const selectedSize = allReclaimable.filter((item) => selected.has(item.id)).reduce((sum, item) => sum + item.size, 0)
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+    <div role="dialog" aria-modal="true" aria-label={tk('devtools.detail.title')}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={{
         width: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column',
         borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: 'var(--bg-card)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)'

@@ -1108,7 +1108,7 @@ export const KO_MESSAGES = {
 
   // Developer Tools
   "devtools.section.title": "개발 도구",
-  "devtools.section.description": "Homebrew와 Xcode에서 회수 가능한 디스크 공간을 스캔합니다.",
+  "devtools.section.description": "개발 도구와 툴체인 캐시에서 회수 가능한 디스크 공간을 스캔합니다.",
   "devtools.scan": "스캔",
   "devtools.scanning": "스캔 중...",
   "devtools.rescan": "다시 스캔",

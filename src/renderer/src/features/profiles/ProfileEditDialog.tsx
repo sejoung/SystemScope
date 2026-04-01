@@ -46,7 +46,9 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
+    <div role="dialog" aria-modal="true" aria-label={profile ? t('Edit Profile') : t('Create Profile')}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+      style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border)', padding: 24, width: 520, maxHeight: '80vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>

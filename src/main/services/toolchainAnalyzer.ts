@@ -1,8 +1,8 @@
-import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import { homedir, platform } from 'node:os'
 import type { ToolIntegrationResult, ReclaimableItem, ToolSummaryItem } from '@shared/types'
 import { getDirSizeEstimate } from '../utils/getDirSize'
+import { dirExists } from '../utils/fsHelpers'
 import { logInfo } from './logging'
 import { formatBytes } from '@shared/utils/formatBytes'
 
@@ -40,13 +40,6 @@ function getTargets(home: string): ToolchainTarget[] {
     // Go
     { id: 'go_mod_cache', label: 'Go Module Cache', category: 'go', macPaths: [path.join(home, 'go', 'pkg', 'mod')], winPaths: [path.join(home, 'go', 'pkg', 'mod')], safetyLevel: 'safe', minSizeBytes: 50 * 1024 * 1024 },
   ]
-}
-
-async function dirExists(dirPath: string): Promise<boolean> {
-  try {
-    const stat = await fs.stat(dirPath)
-    return stat.isDirectory()
-  } catch { return false }
 }
 
 export async function scanToolchain(): Promise<ToolIntegrationResult> {

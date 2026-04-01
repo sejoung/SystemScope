@@ -76,7 +76,9 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
   }
 
   return (
-    <div style={{
+    <div role="dialog" aria-modal="true" aria-label={t('Export diagnostic report')}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+      style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
