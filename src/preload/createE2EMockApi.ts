@@ -156,7 +156,9 @@ export function createE2EMockApi(): {
             { id: 'old_logs' as const, enabled: true, minAgeDays: 30 },
             { id: 'temp_files' as const, enabled: true, minAgeDays: 30 }
           ]
-        }
+        },
+        profiles: [],
+        activeProfileId: null
       }),
     getUpdateStatus: () =>
       successResult(buildUpdateStatus()),

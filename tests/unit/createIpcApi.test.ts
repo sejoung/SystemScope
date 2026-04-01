@@ -103,7 +103,13 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'saveSessionSnapshot',
   'getSessionSnapshots',
   'deleteSessionSnapshot',
-  'getSessionSnapshotDiff'
+  'getSessionSnapshotDiff',
+  'getProfiles',
+  'saveProfile',
+  'deleteProfile',
+  'setActiveProfile',
+  'scanDevTools',
+  'cleanDevToolItems'
 ]
 
 const LISTENER_KEYS: (keyof SystemScopeApi)[] = [

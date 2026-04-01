@@ -19,6 +19,10 @@ import { useUpdateStore } from "../stores/useUpdateStore";
 import { useToast } from "../components/Toast";
 import { SnapshotButton } from "../features/sessionSnapshot/SnapshotButton";
 import { ExportReportDialog } from "../features/report/ExportReportDialog";
+import { ProfileSelector } from "../features/profiles/ProfileSelector";
+import { DevToolsSection } from "../features/devtools/DevToolsSection";
+import { useProfileStore } from "../stores/useProfileStore";
+import type { DashboardWidgetKey } from "@shared/types";
 
 export function DashboardPage() {
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
@@ -29,6 +33,11 @@ export function DashboardPage() {
   const { t } = useI18n();
   const showToast = useToast((s) => s.show);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const activeProfile = useProfileStore((s) => {
+    const id = s.activeProfileId;
+    return id ? s.profiles.find((p) => p.id === id) ?? null : null;
+  });
+  const hiddenWidgets = new Set<DashboardWidgetKey>(activeProfile?.hiddenWidgets ?? []);
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 
@@ -52,6 +61,7 @@ export function DashboardPage() {
           )}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <ProfileSelector />
           <SnapshotButton />
           <button
             onClick={() => setReportDialogOpen(true)}
@@ -121,27 +131,34 @@ export function DashboardPage() {
 
       {/* Top: Gauges */}
       <div className="dashboard-grid-top">
-        <ErrorBoundary title="CPU"><CpuWidget /></ErrorBoundary>
-        <ErrorBoundary title="Memory"><MemoryWidget /></ErrorBoundary>
-        <ErrorBoundary title="GPU"><GpuWidget /></ErrorBoundary>
-        <ErrorBoundary title="Disk"><DiskWidget /></ErrorBoundary>
-        <ErrorBoundary title="Network"><NetworkWidget /></ErrorBoundary>
+        {!hiddenWidgets.has('cpu') && <ErrorBoundary title="CPU"><CpuWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('memory') && <ErrorBoundary title="Memory"><MemoryWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('gpu') && <ErrorBoundary title="GPU"><GpuWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('disk') && <ErrorBoundary title="Disk"><DiskWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('network') && <ErrorBoundary title="Network"><NetworkWidget /></ErrorBoundary>}
       </div>
 
       {/* Middle: Realtime chart */}
       <div className="dashboard-section">
-        <ErrorBoundary title="Realtime Chart"><RealtimeChart /></ErrorBoundary>
+        {!hiddenWidgets.has('realtimeChart') && <ErrorBoundary title="Realtime Chart"><RealtimeChart /></ErrorBoundary>}
       </div>
 
       {/* Bottom row 1: Storage + Growth */}
       <div className="dashboard-grid-responsive">
-        <ErrorBoundary title="Storage"><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>
-        <ErrorBoundary title="Growth"><GrowthView /></ErrorBoundary>
+        {!hiddenWidgets.has('storage') && <ErrorBoundary title="Storage"><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>}
+        {!hiddenWidgets.has('growth') && <ErrorBoundary title="Growth"><GrowthView /></ErrorBoundary>}
       </div>
 
       <div>
-        <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>
+        {!hiddenWidgets.has('topProcesses') && <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>}
       </div>
+
+      {/* Developer Tools (macOS only) */}
+      {navigator.platform.includes('Mac') && (
+        <div className="dashboard-section" style={{ marginTop: 16 }}>
+          <ErrorBoundary title="Developer Tools"><DevToolsSection /></ErrorBoundary>
+        </div>
+      )}
     </div>
   );
 }

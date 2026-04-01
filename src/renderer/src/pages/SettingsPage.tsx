@@ -11,6 +11,7 @@ import { translateLiteral, type AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { ProfileSection } from "../features/profiles/ProfileSection";
 import { useUpdateStore } from "../stores/useUpdateStore";
 import {
   applySettingsToStore,
@@ -546,6 +547,11 @@ export function SettingsPage() {
           >
             {tk("settings.snapshots.guidance")}
           </div>
+        </Section>
+
+        {/* Workspace Profiles */}
+        <Section title={t("Workspace Profiles")}>
+          <ProfileSection />
         </Section>
 
         {/* Data Storage */}

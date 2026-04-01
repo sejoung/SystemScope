@@ -113,6 +113,16 @@ export const IPC_CHANNELS = {
   SNAPSHOT_DELETE: 'snapshot:delete',
   SNAPSHOT_DIFF: 'snapshot:diff',
 
+  // 개발 도구 통합
+  TOOLS_SCAN_ALL: 'tools:scanAll',
+  TOOLS_CLEAN: 'tools:clean',
+
+  // 워크스페이스 프로필
+  PROFILE_GET_ALL:    'profile:getAll',
+  PROFILE_SAVE:       'profile:save',
+  PROFILE_DELETE:     'profile:delete',
+  PROFILE_SET_ACTIVE: 'profile:setActive',
+
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',

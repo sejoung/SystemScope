@@ -51,7 +51,10 @@ import type {
   DiagnosticReportData,
   SaveReportOptions,
   SessionSnapshot,
-  SnapshotDiff
+  SnapshotDiff,
+  WorkspaceProfile,
+  ToolIntegrationResult,
+  ToolCleanResult
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -162,6 +165,14 @@ export interface SystemScopeApi {
   getSessionSnapshots: () => Promise<AppResult<SessionSnapshot[]>>
   deleteSessionSnapshot: (id: string) => Promise<AppResult<boolean>>
   getSessionSnapshotDiff: (id1: string, id2: string) => Promise<AppResult<SnapshotDiff>>
+
+  scanDevTools: () => Promise<AppResult<ToolIntegrationResult[]>>
+  cleanDevToolItems: (paths: string[]) => Promise<AppResult<ToolCleanResult>>
+
+  getProfiles: () => Promise<AppResult<WorkspaceProfile[]>>
+  saveProfile: (profile: WorkspaceProfile) => Promise<AppResult<WorkspaceProfile>>
+  deleteProfile: (id: string) => Promise<AppResult<boolean>>
+  setActiveProfile: (id: string | null) => Promise<AppResult<WorkspaceProfile | null>>
 }
 
 export type { AlertThresholds, DiskScanResult, ShutdownState }

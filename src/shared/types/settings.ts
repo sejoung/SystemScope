@@ -1,6 +1,7 @@
 import type { AlertThresholds } from './alert'
 import type { AppLocale } from '@shared/i18n'
 import type { AutomationSchedule, CleanupRuleConfig } from './automation'
+import type { WorkspaceProfile } from './profile'
 
 export interface HistorySettings {
   metricsIntervalSec: number
@@ -24,6 +25,8 @@ export interface AppSettings {
     schedule: AutomationSchedule
     rules: CleanupRuleConfig[]
   }
+  profiles: WorkspaceProfile[]
+  activeProfileId: string | null
 }
 
 export type AppSettingsPatch = Partial<AppSettings>

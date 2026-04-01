@@ -950,6 +950,33 @@ export const MESSAGE_KEYS = {
   "cleanup.schedule.last_run": "Last run",
   "cleanup.schedule.never": "Never",
   "nav.cleanup": "Cleanup",
+
+  // Developer Tools
+  "devtools.section.title": "Developer Tools",
+  "devtools.section.description": "Scan Homebrew and Xcode for reclaimable disk space.",
+  "devtools.scan": "Scan",
+  "devtools.scanning": "Scanning...",
+  "devtools.rescan": "Rescan",
+  "devtools.status.ready": "Ready",
+  "devtools.status.not_installed": "Not Installed",
+  "devtools.status.error": "Error",
+  "devtools.reclaimable_count": "{count} reclaimable items",
+  "devtools.reclaimable_size": "{size} reclaimable",
+  "devtools.no_reclaimable": "Nothing to clean up.",
+  "devtools.detail.title": "Developer Tools Cleanup",
+  "devtools.detail.select_all": "Select All",
+  "devtools.detail.deselect_all": "Deselect All",
+  "devtools.detail.clean_selected": "Clean Selected",
+  "devtools.detail.cleaning": "Cleaning...",
+  "devtools.detail.done": "Done — {succeeded} cleaned, {failed} failed",
+  "devtools.detail.empty": "No reclaimable items found.",
+  "devtools.safety.safe": "Safe",
+  "devtools.safety.caution": "Caution",
+  "devtools.safety.risky": "Risky",
+  "devtools.tool.homebrew": "Homebrew",
+  "devtools.tool.xcode": "Xcode",
+  "devtools.scan_failed": "Failed to scan developer tools.",
+  "devtools.clean_failed": "Failed to clean selected items.",
 } as const;
 
 export type TranslationKey = keyof typeof MESSAGE_KEYS;

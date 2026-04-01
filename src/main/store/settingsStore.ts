@@ -19,7 +19,9 @@ export function getSettings(): AppSettings {
     snapshotIntervalMin: store.get('snapshotIntervalMin'),
     history: store.get('history'),
     diagnostics: store.get('diagnostics'),
-    automation: store.get('automation')
+    automation: store.get('automation'),
+    profiles: store.get('profiles'),
+    activeProfileId: store.get('activeProfileId')
   })
 }
 
@@ -31,4 +33,6 @@ export function setSettings(settings: Partial<AppSettings>): void {
   if (settings.history !== undefined) store.set('history', settings.history)
   if (settings.diagnostics !== undefined) store.set('diagnostics', settings.diagnostics)
   if (settings.automation !== undefined) store.set('automation', settings.automation)
+  if (settings.profiles !== undefined) store.set('profiles', settings.profiles)
+  if (settings.activeProfileId !== undefined) store.set('activeProfileId', settings.activeProfileId)
 }

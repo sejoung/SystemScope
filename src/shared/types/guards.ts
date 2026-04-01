@@ -9,6 +9,9 @@ import type { MetricPoint, TimelineData } from './metric'
 import type { SystemEvent } from './event'
 import type { DiagnosisResult, DiagnosisSummary, AlertIntelligence } from './diagnosis'
 import type { CleanupPreview, CleanupResult, CleanupInbox } from './automation'
+import type { WorkspaceProfile } from './profile'
+import { DASHBOARD_WIDGET_KEYS } from './profile'
+import type { ToolIntegrationResult, ToolCleanResult } from './toolIntegration'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -174,4 +177,40 @@ export function isSessionSnapshotArray(data: unknown): data is import('./session
 /** SnapshotDiff */
 export function isSnapshotDiff(data: unknown): data is import('./sessionSnapshot').SnapshotDiff {
   return isObj(data) && isObj(data.snapshot1) && isObj(data.snapshot2) && isObj(data.system) && isObj(data.processChanges) && isObj(data.alertChanges)
+}
+
+/** WorkspaceProfile */
+export function isWorkspaceProfile(data: unknown): data is WorkspaceProfile {
+  if (!isObj(data)) return false
+  if (typeof data.id !== 'string' || !data.id) return false
+  if (typeof data.name !== 'string' || !data.name) return false
+  if (typeof data.icon !== 'string') return false
+  if (!isObj(data.thresholds)) return false
+  if (!Array.isArray(data.cleanupRules)) return false
+  if (!Array.isArray(data.hiddenWidgets)) return false
+  const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
+  for (const key of data.hiddenWidgets as unknown[]) {
+    if (typeof key !== 'string' || !validWidgetKeys.has(key)) return false
+  }
+  return true
+}
+
+/** WorkspaceProfile[] — first-element sampling */
+export function isWorkspaceProfileArray(data: unknown): data is WorkspaceProfile[] {
+  return Array.isArray(data) && (data.length === 0 || isWorkspaceProfile(data[0]))
+}
+
+/** ToolIntegrationResult */
+export function isToolIntegrationResult(data: unknown): data is ToolIntegrationResult {
+  return isObj(data) && typeof data.tool === 'string' && typeof data.status === 'string' && Array.isArray(data.summary) && Array.isArray(data.reclaimable) && typeof data.lastScannedAt === 'number'
+}
+
+/** ToolIntegrationResult[] — first-element sampling */
+export function isToolIntegrationResultArray(data: unknown): data is ToolIntegrationResult[] {
+  return Array.isArray(data) && (data.length === 0 || isToolIntegrationResult(data[0]))
+}
+
+/** ToolCleanResult */
+export function isToolCleanResult(data: unknown): data is ToolCleanResult {
+  return isObj(data) && Array.isArray(data.succeeded) && Array.isArray(data.failed)
 }

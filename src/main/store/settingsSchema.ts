@@ -1,5 +1,5 @@
-import type { AlertThresholds, AppSettings, DiagnosticsSettings, HistorySettings, SnapshotIntervalMin, AutomationSchedule, CleanupRuleConfig, CleanupRuleId } from '@shared/types'
-import { DEFAULT_THRESHOLDS } from '@shared/types'
+import type { AlertThresholds, AppSettings, DiagnosticsSettings, HistorySettings, SnapshotIntervalMin, AutomationSchedule, CleanupRuleConfig, CleanupRuleId, WorkspaceProfile } from '@shared/types'
+import { DEFAULT_THRESHOLDS, DASHBOARD_WIDGET_KEYS, MAX_PROFILES, PROFILE_NAME_MAX_LENGTH } from '@shared/types'
 import type { AppLocale } from '@shared/i18n'
 
 export const SNAPSHOT_INTERVAL_OPTIONS = [15, 30, 60, 120, 360] as const
@@ -43,6 +43,9 @@ export const DEFAULT_AUTOMATION_SETTINGS: AppSettings['automation'] = {
   rules: DEFAULT_CLEANUP_RULES
 }
 
+export const DEFAULT_PROFILES: WorkspaceProfile[] = []
+export const DEFAULT_ACTIVE_PROFILE_ID: string | null = null
+
 export const DEFAULT_SETTINGS: AppSettings = {
   thresholds: DEFAULT_THRESHOLDS,
   theme: 'dark',
@@ -50,7 +53,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   snapshotIntervalMin: 60,
   history: DEFAULT_HISTORY_SETTINGS,
   diagnostics: DEFAULT_DIAGNOSTICS_SETTINGS,
-  automation: DEFAULT_AUTOMATION_SETTINGS
+  automation: DEFAULT_AUTOMATION_SETTINGS,
+  profiles: DEFAULT_PROFILES,
+  activeProfileId: DEFAULT_ACTIVE_PROFILE_ID
 }
 
 function isSnapshotInterval(value: unknown): value is SnapshotIntervalMin {
@@ -119,6 +124,28 @@ function isAutomationSettings(value: unknown): value is AppSettings['automation'
   return true
 }
 
+function isWorkspaceProfileValid(value: unknown): value is WorkspaceProfile {
+  if (!value || typeof value !== 'object') return false
+  const p = value as Record<string, unknown>
+  if (typeof p.id !== 'string' || !p.id) return false
+  if (typeof p.name !== 'string' || !p.name || p.name.length > PROFILE_NAME_MAX_LENGTH) return false
+  if (typeof p.icon !== 'string') return false
+  if (!isAlertThresholds(p.thresholds)) return false
+  if (!Array.isArray(p.cleanupRules)) return false
+  if (!Array.isArray(p.hiddenWidgets)) return false
+  const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
+  for (const key of p.hiddenWidgets) {
+    if (typeof key !== 'string' || !validWidgetKeys.has(key)) return false
+  }
+  return true
+}
+
+function isProfilesArray(value: unknown): value is WorkspaceProfile[] {
+  if (!Array.isArray(value)) return false
+  if (value.length > MAX_PROFILES) return false
+  return value.every(isWorkspaceProfileValid)
+}
+
 export function sanitizeAppSettings(value: unknown): AppSettings {
   if (!value || typeof value !== 'object') {
     return { ...DEFAULT_SETTINGS }
@@ -132,11 +159,13 @@ export function sanitizeAppSettings(value: unknown): AppSettings {
     snapshotIntervalMin: isSnapshotInterval(raw.snapshotIntervalMin) ? raw.snapshotIntervalMin : DEFAULT_SETTINGS.snapshotIntervalMin,
     history: isHistorySettings(raw.history) ? raw.history : DEFAULT_HISTORY_SETTINGS,
     diagnostics: isDiagnosticsSettings(raw.diagnostics) ? raw.diagnostics : DEFAULT_DIAGNOSTICS_SETTINGS,
-    automation: isAutomationSettings(raw.automation) ? raw.automation : DEFAULT_AUTOMATION_SETTINGS
+    automation: isAutomationSettings(raw.automation) ? raw.automation : DEFAULT_AUTOMATION_SETTINGS,
+    profiles: isProfilesArray(raw.profiles) ? raw.profiles : DEFAULT_PROFILES,
+    activeProfileId: typeof raw.activeProfileId === 'string' || raw.activeProfileId === null ? raw.activeProfileId as string | null : DEFAULT_ACTIVE_PROFILE_ID
   }
 }
 
-const KNOWN_SETTINGS_KEYS = new Set<string>(['thresholds', 'theme', 'locale', 'snapshotIntervalMin', 'history', 'diagnostics', 'automation'])
+const KNOWN_SETTINGS_KEYS = new Set<string>(['thresholds', 'theme', 'locale', 'snapshotIntervalMin', 'history', 'diagnostics', 'automation', 'profiles', 'activeProfileId'])
 
 export function validatePartialSettings(value: unknown): value is Partial<AppSettings> {
   if (!value || typeof value !== 'object') return false
@@ -167,6 +196,12 @@ export function validatePartialSettings(value: unknown): value is Partial<AppSet
     return false
   }
   if ('automation' in raw && !isAutomationSettings(raw.automation)) {
+    return false
+  }
+  if ('profiles' in raw && !isProfilesArray(raw.profiles)) {
+    return false
+  }
+  if ('activeProfileId' in raw && raw.activeProfileId !== null && typeof raw.activeProfileId !== 'string') {
     return false
   }
 

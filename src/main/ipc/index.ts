@@ -15,6 +15,8 @@ import { registerCleanupInboxIpc } from './cleanupInbox.ipc'
 import { registerCleanupIpc } from './cleanup.ipc'
 import { registerReportIpc } from './report.ipc'
 import { registerSessionSnapshotIpc } from './sessionSnapshot.ipc'
+import { registerProfileIpc } from './profile.ipc'
+import { registerDevToolsIpc } from './devTools.ipc'
 
 export function registerAllIpc(): void {
   registerAppIpc()
@@ -34,6 +36,8 @@ export function registerAllIpc(): void {
   registerCleanupIpc()
   registerReportIpc()
   registerSessionSnapshotIpc()
+  registerProfileIpc()
+  registerDevToolsIpc()
 }
 
 export { cleanupSystemIpc } from './system.ipc'
