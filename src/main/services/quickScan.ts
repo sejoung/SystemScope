@@ -72,8 +72,8 @@ function getWindowsTargets(home: string): ScanTarget[] {
     // --- 시스템 ---
     { name: 'Temp', description: '임시 파일', cleanable: true, category: 'system', paths: [temp, path.join(localAppData, 'Temp')] },
     { name: 'Downloads', description: '다운로드 폴더', cleanable: true, category: 'system', paths: [path.join(home, 'Downloads')] },
-    { name: 'Recycle Bin', description: '휴지통', cleanable: true, category: 'system', paths: ['C:\\$Recycle.Bin'] },
-    { name: 'Windows Update', description: 'Windows 업데이트 캐시', cleanable: true, category: 'system', paths: ['C:\\Windows\\SoftwareDistribution\\Download'] },
+    { name: 'Recycle Bin', description: '휴지통', cleanable: true, category: 'system', paths: [`${process.env.SystemDrive || 'C:'}\\$Recycle.Bin`] },
+    { name: 'Windows Update', description: 'Windows 업데이트 캐시', cleanable: true, category: 'system', paths: [`${process.env.SystemDrive || 'C:'}\\Windows\\SoftwareDistribution\\Download`] },
     { name: 'Crash Dumps', description: '크래시 덤프', cleanable: true, category: 'system', paths: [path.join(localAppData, 'CrashDumps')] },
 
     // --- 브라우저 ---
