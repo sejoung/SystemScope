@@ -4,6 +4,8 @@ import { useI18n } from '../../i18n/useI18n'
 import { useDevToolsOverviewStore } from '../../stores/useDevToolsOverviewStore'
 import { useProfileStore } from '../../stores/useProfileStore'
 import { useProjectMonitorStore } from '../../stores/useProjectMonitorStore'
+import { usePortFinderStore } from '../../stores/usePortFinderStore'
+import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useToast } from '../../components/Toast'
 import { MAX_WORKSPACE_PATHS } from '@shared/types'
 
@@ -20,6 +22,7 @@ export function DevToolsOverviewSection({
 }: DevToolsOverviewSectionProps) {
   const { t } = useI18n()
   const showToast = useToast((s) => s.show)
+  const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const overview = useDevToolsOverviewStore((s) => s.overview)
   const loading = useDevToolsOverviewStore((s) => s.loading)
   const error = useDevToolsOverviewStore((s) => s.error)
@@ -29,6 +32,9 @@ export function DevToolsOverviewSection({
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles)
   const saveProfile = useProfileStore((s) => s.saveProfile)
   const fetchProjectMonitorSummary = useProjectMonitorStore((s) => s.fetchSummary)
+  const setPortSearch = usePortFinderStore((s) => s.setSearch)
+  const setPortSearchScope = usePortFinderStore((s) => s.setSearchScope)
+  const setPortStateFilter = usePortFinderStore((s) => s.setStateFilter)
   const [selectedWorkspacePath, setSelectedWorkspacePath] = useState<string>('all')
 
   const activeProfile = useMemo(
@@ -121,6 +127,20 @@ export function DevToolsOverviewSection({
     ])
     setSelectedWorkspacePath('all')
     showToast(t('Workspace removed.'), 'success')
+  }
+
+  function handleInspectPort(port: number) {
+    setPortSearch(String(port))
+    setPortSearchScope('local')
+    setPortStateFilter('LISTEN')
+    setCurrentPage('process')
+  }
+
+  async function handleOpenWorkspace(workspacePath: string) {
+    const res = await window.systemScope.showInFolder(workspacePath)
+    if (!res.ok) {
+      showToast(res.error?.message ?? t('Unable to open folder.'), 'danger')
+    }
   }
 
   return (
@@ -259,10 +279,37 @@ export function DevToolsOverviewSection({
                       {server.protocol.toUpperCase()} {server.address}:{server.port} · PID {server.pid}
                     </div>
                     {server.command ? <div style={pathStyle}>{server.command}</div> : null}
+                    {server.workspaceMatchReason ? (
+                      <div style={hintStyle}>{server.workspaceMatchReason}</div>
+                    ) : null}
                   </div>
-                  <div style={workspaceMetaWrapStyle}>
-                    <MetaPill label={t('Exposure')} value={server.exposure} />
-                    <MetaPill label={t('Workspace')} value={server.workspaceName ?? '-'} />
+                  <div style={workspaceMetaColumnStyle}>
+                    <div style={workspaceMetaWrapStyle}>
+                      <MetaPill label={t('Exposure')} value={server.exposure} />
+                      <MetaPill label={t('Workspace')} value={server.workspaceName ?? '-'} />
+                    </div>
+                    <div style={serverActionRowStyle}>
+                      <button
+                        type="button"
+                        onClick={() => handleInspectPort(server.port)}
+                        style={secondaryActionButtonStyle}
+                      >
+                        {t('Inspect Port')}
+                      </button>
+                      {server.workspacePath ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (server.workspacePath) {
+                              void handleOpenWorkspace(server.workspacePath)
+                            }
+                          }}
+                          style={secondaryActionButtonStyle}
+                        >
+                          {t('Open Workspace')}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -498,4 +545,21 @@ const workspaceMetaWrapStyle: React.CSSProperties = {
   flexWrap: 'wrap',
   justifyContent: 'flex-end',
   maxWidth: '100%',
+}
+
+const serverActionRowStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 8,
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+}
+
+const secondaryActionButtonStyle: React.CSSProperties = {
+  padding: '5px 10px',
+  borderRadius: 8,
+  border: '1px solid var(--border)',
+  background: 'var(--bg-card)',
+  color: 'var(--text-primary)',
+  fontSize: 11,
+  cursor: 'pointer',
 }

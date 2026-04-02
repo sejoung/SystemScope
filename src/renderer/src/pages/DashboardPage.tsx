@@ -129,10 +129,8 @@ export function DashboardPage() {
       ) : null}
       <AlertBanner />
       <SystemEventBanner />
-      <ErrorBoundary title="Diagnosis"><DiagnosisCard /></ErrorBoundary>
-      <ErrorBoundary title="Project Monitor"><ProjectMonitorCard compact /></ErrorBoundary>
 
-      {/* Top: Gauges */}
+      {/* Top: Live system gauges */}
       <div className="dashboard-grid-top">
         {!hiddenWidgets.has('cpu') && <ErrorBoundary title="CPU"><CpuWidget /></ErrorBoundary>}
         {!hiddenWidgets.has('memory') && <ErrorBoundary title="Memory"><MemoryWidget /></ErrorBoundary>}
@@ -141,17 +139,22 @@ export function DashboardPage() {
         {!hiddenWidgets.has('network') && <ErrorBoundary title="Network"><NetworkWidget /></ErrorBoundary>}
       </div>
 
-      {/* Middle: Realtime chart */}
+      {/* Realtime trend */}
       <div className="dashboard-section">
         {!hiddenWidgets.has('realtimeChart') && <ErrorBoundary title="Realtime Chart"><RealtimeChart /></ErrorBoundary>}
       </div>
 
-      {/* Bottom row 1: Storage + Growth */}
+      {/* Diagnosis and workspace summary */}
+      <ErrorBoundary title="Diagnosis"><DiagnosisCard /></ErrorBoundary>
+      <ErrorBoundary title="Project Monitor"><ProjectMonitorCard compact /></ErrorBoundary>
+
+      {/* Storage and growth analysis */}
       <div className="dashboard-grid-responsive">
         {!hiddenWidgets.has('storage') && <ErrorBoundary title="Storage"><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>}
         {!hiddenWidgets.has('growth') && <ErrorBoundary title="Growth"><GrowthView /></ErrorBoundary>}
       </div>
 
+      {/* Process pressure */}
       <div>
         {!hiddenWidgets.has('topProcesses') && <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>}
       </div>

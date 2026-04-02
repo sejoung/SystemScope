@@ -131,7 +131,7 @@ const cardStyle: React.CSSProperties = {
 
 const compactCardStyle: React.CSSProperties = {
   ...cardStyle,
-  marginBottom: 0
+  marginBottom: 12
 }
 
 const headerStyle: React.CSSProperties = {

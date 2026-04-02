@@ -39,6 +39,7 @@ export interface DevServerEntry {
   exposure: 'loopback' | 'network' | 'unknown'
   workspacePath: string | null
   workspaceName: string | null
+  workspaceMatchReason: string | null
 }
 
 export interface DevToolsOverview {

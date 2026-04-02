@@ -82,7 +82,7 @@ export function DevToolsPage() {
       </div>
 
       {tab === "overview" && (
-        <div style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "grid", gap: 16, paddingBottom: 12 }}>
           <ErrorBoundary title={t("Developer Environment")}>
             <DevToolsOverviewSection sections={["health", "servers"]} compact />
           </ErrorBoundary>

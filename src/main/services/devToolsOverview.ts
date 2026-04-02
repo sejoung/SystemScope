@@ -273,7 +273,7 @@ export function detectDevServers(
     const kind = detectDevServerKind(port, processInfo)
     if (!kind) continue
 
-    const workspacePath = matchWorkspacePath(command, workspacePaths)
+    const workspaceMatch = matchWorkspacePath(command, workspacePaths)
     devServers.push({
       pid: port.pid,
       process: port.process,
@@ -283,8 +283,9 @@ export function detectDevServers(
       protocol: port.protocol,
       address: port.localAddress,
       exposure: classifyExposure(port.localAddress),
-      workspacePath,
-      workspaceName: workspacePath ? path.basename(workspacePath) : null,
+      workspacePath: workspaceMatch.path,
+      workspaceName: workspaceMatch.path ? path.basename(workspaceMatch.path) : null,
+      workspaceMatchReason: workspaceMatch.reason,
     })
   }
 
@@ -335,14 +336,58 @@ function classifyExposure(address: string): DevServerEntry['exposure'] {
   return 'network'
 }
 
-function matchWorkspacePath(command: string | null, workspacePaths: string[]): string | null {
-  if (!command) return null
+function matchWorkspacePath(command: string | null, workspacePaths: string[]): {
+  path: string | null
+  reason: string | null
+} {
+  if (!command) {
+    return { path: null, reason: null }
+  }
+
   const normalizedCommand = command.toLowerCase()
-  const matches = workspacePaths
+  const exactMatches = workspacePaths
     .filter((workspacePath) => normalizedCommand.includes(workspacePath.toLowerCase()))
     .sort((left, right) => right.length - left.length)
 
-  return matches[0] ?? null
+  if (exactMatches[0]) {
+    return {
+      path: exactMatches[0],
+      reason: 'Matched from the running command path.',
+    }
+  }
+
+  const tokens = command
+    .split(/\s+/)
+    .map((token) => token.replace(/^['"]|['"]$/g, '').trim())
+    .filter(Boolean)
+
+  for (const token of tokens) {
+    const normalizedToken = token.toLowerCase()
+    const tokenMatch = workspacePaths
+      .filter((workspacePath) => normalizedToken.startsWith(workspacePath.toLowerCase()))
+      .sort((left, right) => right.length - left.length)[0]
+
+    if (tokenMatch) {
+      return {
+        path: tokenMatch,
+        reason: 'Matched from a child path referenced by the command.',
+      }
+    }
+  }
+
+  const basenameMatches = workspacePaths.filter((workspacePath) => {
+    const baseName = path.basename(workspacePath).toLowerCase()
+    return baseName.length > 2 && normalizedCommand.includes(baseName)
+  })
+
+  if (basenameMatches.length === 1) {
+    return {
+      path: basenameMatches[0],
+      reason: 'Matched from the workspace name mentioned in the command.',
+    }
+  }
+
+  return { path: null, reason: null }
 }
 
 function normalizePortState(state: string): string {
