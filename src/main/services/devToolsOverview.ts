@@ -11,12 +11,12 @@ import type {
 } from '@shared/types'
 import { runExternalCommand, isExternalCommandError } from './externalCommand'
 import { getAllProcesses, getNetworkPorts } from './processMonitor'
+import { getActiveProfile } from './profileManager'
 
 const LARGE_UNTRACKED_FILE_BYTES = 5 * 1024 * 1024
 const MAX_LARGE_UNTRACKED_FILES = 3
 
 export async function getDevToolsOverview(): Promise<DevToolsOverview> {
-  const { getActiveProfile } = await import('./profileManager')
   const workspacePaths = Array.from(
     new Set((getActiveProfile()?.workspacePaths ?? []).map((entry) => path.resolve(entry))),
   )

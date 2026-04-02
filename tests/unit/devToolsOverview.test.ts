@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { PortInfo, ProcessInfo } from '../../src/shared/types'
+
+vi.mock('../../src/main/services/profileManager', () => ({
+  getActiveProfile: () => null
+}))
+
 import { detectDevServerKind, detectDevServers, summarizeGitStatusLines } from '../../src/main/services/devToolsOverview'
 
 describe('devToolsOverview helpers', () => {
