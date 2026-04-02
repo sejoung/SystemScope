@@ -48,3 +48,40 @@ export interface DevToolsOverview {
   devServers: DevServerEntry[]
   scannedAt: number
 }
+
+export interface AIUsageWindow {
+  label: string
+  kind: 'limit' | 'usage'
+  usedPercent: number | null
+  value: number | null
+  valueLabel: string | null
+  resetsAt: number | null
+}
+
+export interface AIUsageModelUsage {
+  model: string
+  tokens: number
+}
+
+export interface AIUsageDetectedProvider {
+  id: string
+  tool: 'codex' | 'claude'
+  label: string
+  installed: boolean
+  sourcePath: string | null
+  detectedAt: number
+  lastUpdatedAt: number | null
+  planType: string | null
+  totalTokens: number | null
+  inputTokens: number | null
+  outputTokens: number | null
+  contextWindow: number | null
+  monthlyTokens: number | null
+  windows: AIUsageWindow[]
+  modelUsage: AIUsageModelUsage[]
+}
+
+export interface AIUsageOverview {
+  providers: AIUsageDetectedProvider[]
+  scannedAt: number
+}

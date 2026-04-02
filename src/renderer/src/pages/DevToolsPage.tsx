@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PageTab } from "../components/PageTab";
+import { AIUsageSection } from "../features/devtools/AIUsageSection";
 import { DevToolsOverviewSection } from "../features/devtools/DevToolsOverviewSection";
 import { DevToolsSection } from "../features/devtools/DevToolsSection";
 import { PortConflictCenterCard } from "../features/devtools/PortConflictCenterCard";
 import { ProjectMonitorCard } from "../features/monitoring/ProjectMonitorCard";
 import { useI18n } from "../i18n/useI18n";
 
-type DevToolsTab = "overview" | "workspaces" | "ports" | "cleanup";
+type DevToolsTab = "overview" | "workspaces" | "ports" | "cleanup" | "ai-usage";
 
 export function DevToolsPage() {
   const { t } = useI18n();
@@ -34,7 +35,7 @@ export function DevToolsPage() {
             }}
           >
             {t(
-              "Review development toolchain cleanup opportunities, workspace growth, and port conflicts from one place.",
+              "Review development toolchain cleanup opportunities, workspace growth, port conflicts, and AI usage from one place.",
             )}
           </div>
         </div>
@@ -78,6 +79,13 @@ export function DevToolsPage() {
           >
             {t("Cleanup")}
           </PageTab>
+          <PageTab
+            id="devtools-ai-usage"
+            active={tab === "ai-usage"}
+            onClick={() => setTab("ai-usage")}
+          >
+            {t("AI Usage")}
+          </PageTab>
         </div>
       </div>
 
@@ -118,6 +126,14 @@ export function DevToolsPage() {
         <div style={{ display: "grid", gap: 16 }}>
           <ErrorBoundary title={t("Developer Tools")}>
             <DevToolsSection />
+          </ErrorBoundary>
+        </div>
+      )}
+
+      {tab === "ai-usage" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <ErrorBoundary title={t("AI Usage")}>
+            <AIUsageSection />
           </ErrorBoundary>
         </div>
       )}
