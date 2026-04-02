@@ -4,7 +4,11 @@ import { useProjectMonitorStore } from '../../stores/useProjectMonitorStore'
 import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/Toast'
 
-export function ProjectMonitorCard() {
+interface ProjectMonitorCardProps {
+  compact?: boolean
+}
+
+export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps) {
   const summary = useProjectMonitorStore((s) => s.summary)
   const loading = useProjectMonitorStore((s) => s.loading)
   const fetchSummary = useProjectMonitorStore((s) => s.fetchSummary)
@@ -21,7 +25,7 @@ export function ProjectMonitorCard() {
   }
 
   return (
-    <div style={cardStyle}>
+    <div style={compact ? compactCardStyle : cardStyle}>
       <div style={headerStyle}>
         <div>
           <div style={titleStyle}>{t('Project Monitor')}</div>
@@ -40,10 +44,18 @@ export function ProjectMonitorCard() {
       </div>
 
       <div style={{ display: 'grid', gap: 8 }}>
-        {summary?.workspaces.map((workspace) => (
+        {summary?.workspaces.slice(0, compact ? 3 : undefined).map((workspace) => (
           <div key={workspace.path} style={workspaceCardStyle}>
             <div style={workspaceRowStyle}>
-              <button type="button" onClick={() => setExpandedPath((prev) => prev === workspace.path ? null : workspace.path)} style={workspaceToggleStyle}>
+              <button
+                type="button"
+                onClick={() =>
+                  compact
+                    ? undefined
+                    : setExpandedPath((prev) => prev === workspace.path ? null : workspace.path)
+                }
+                style={workspaceToggleStyle}
+              >
                 <div style={{ minWidth: 0, textAlign: 'left' }}>
                   <div style={workspaceNameStyle}>{workspace.name}</div>
                   <div style={workspacePathStyle}>{workspace.path}</div>
@@ -72,7 +84,7 @@ export function ProjectMonitorCard() {
                 {t('Open')}
               </button>
             </div>
-            {expandedPath === workspace.path && (
+            {!compact && expandedPath === workspace.path && (
               <div style={detailSectionStyle}>
                 <div style={detailLabelStyle}>{t('Category Breakdown')}</div>
                 <div style={{ display: 'grid', gap: 6 }}>
@@ -98,6 +110,13 @@ export function ProjectMonitorCard() {
           </div>
         ))}
       </div>
+      {compact && summary && summary.workspaces.length > 3 ? (
+        <div style={compactHintStyle}>
+          {t('{count} more workspaces are available in Disk > Projects.', {
+            count: summary.workspaces.length - 3,
+          })}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -108,6 +127,11 @@ const cardStyle: React.CSSProperties = {
   borderRadius: 'var(--radius-lg)',
   padding: 16,
   marginBottom: 16
+}
+
+const compactCardStyle: React.CSSProperties = {
+  ...cardStyle,
+  marginBottom: 0
 }
 
 const headerStyle: React.CSSProperties = {
@@ -230,4 +254,9 @@ const historyPillStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
   fontSize: 11,
   color: 'var(--text-secondary)'
+}
+
+const compactHintStyle: React.CSSProperties = {
+  fontSize: 11,
+  color: 'var(--text-muted)'
 }

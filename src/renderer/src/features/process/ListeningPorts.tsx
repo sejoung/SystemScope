@@ -8,7 +8,13 @@ import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
 
-export function ListeningPorts() {
+interface ListeningPortsProps {
+  showConflictCenter?: boolean;
+}
+
+export function ListeningPorts({
+  showConflictCenter = true,
+}: ListeningPortsProps = {}) {
   const showToast = useToast((s) => s.show);
   const { tk, t } = useI18n();
   const {
@@ -277,16 +283,18 @@ export function ListeningPorts() {
               note={t("Unique PIDs currently holding listening ports")}
             />
           </div>
-          <PortConflictCenter
-            conflicts={portConflicts}
-            onKill={handleKill}
-            onInspectPort={(port) => {
-              setSearch(String(port));
-              setSearchScope("local");
-              setStateFilter("LISTEN");
-            }}
-            t={t}
-          />
+          {showConflictCenter ? (
+            <PortConflictCenterPanel
+              conflicts={portConflicts}
+              onKill={handleKill}
+              onInspectPort={(port) => {
+                setSearch(String(port));
+                setSearchScope("local");
+                setStateFilter("LISTEN");
+              }}
+              t={t}
+            />
+          ) : null}
           <div style={infoBarStyle}>
             <span style={infoLabelStyle}>
               {t("Listening ports are prioritized first, then sorted by local port")}
@@ -691,7 +699,7 @@ function SummaryCard({
   );
 }
 
-function PortConflictCenter({
+export function PortConflictCenterPanel({
   conflicts,
   onKill,
   onInspectPort,
@@ -835,7 +843,7 @@ function getSortableLocalPort(port: PortInfo): number {
   return Number.MAX_SAFE_INTEGER;
 }
 
-type PortConflict = {
+export type PortConflict = {
   port: number;
   pid: number;
   process: string;

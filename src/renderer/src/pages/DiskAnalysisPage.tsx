@@ -1,5 +1,4 @@
 import { PageTab } from "../components/PageTab";
-import { DiskAnalysisCleanupTab } from "../features/disk/DiskAnalysisCleanupTab";
 import { DiskAnalysisOverviewTab } from "../features/disk/DiskAnalysisOverviewTab";
 import { DiskAnalysisScanTab } from "../features/disk/DiskAnalysisScanTab";
 import { useDiskAnalysisController } from "../features/disk/useDiskAnalysisController";
@@ -16,17 +15,13 @@ export function DiskAnalysisPage() {
     isScanning,
     scanProgress,
     selectedFolder,
-    quickScanState,
     scanOutcome,
     treemapRef,
     safeTreemapWidth,
     sectionResetKey,
     tryScan,
-    handleQuickScan,
     handleSelectFolder,
     handleCancelScan,
-    removeLargeFilesByPaths,
-    refreshScanInBackground,
   } = useDiskAnalysisController();
 
   return (
@@ -104,13 +99,6 @@ export function DiskAnalysisPage() {
               </span>
             )}
           </PageTab>
-          <PageTab
-            id="storage-cleanup"
-            active={tab === "cleanup"}
-            onClick={() => setTab("cleanup")}
-          >
-            {tk("disk.tab.cleanup")}
-          </PageTab>
         </div>
       </div>
 
@@ -131,24 +119,6 @@ export function DiskAnalysisPage() {
           scanOutcome={scanOutcome}
           onSelectFolder={handleSelectFolder}
           onCancelScan={handleCancelScan}
-        />
-      )}
-
-      {tab === "cleanup" && (
-        <DiskAnalysisCleanupTab
-          tryScan={tryScan}
-          sectionResetKey={sectionResetKey}
-          scanResult={scanResult}
-          largeFiles={largeFiles}
-          selectedFolder={selectedFolder}
-          onFilesRemoved={removeLargeFilesByPaths}
-          onRefreshRequested={() =>
-            selectedFolder
-              ? void refreshScanInBackground(selectedFolder)
-              : undefined
-          }
-          quickScanState={quickScanState}
-          onQuickScan={handleQuickScan}
         />
       )}
     </div>

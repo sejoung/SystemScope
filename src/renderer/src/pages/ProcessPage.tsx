@@ -113,10 +113,9 @@ export function ProcessPage() {
       </div>
 
       {tab === "processes" && <ErrorBoundary title={tk("process.tab.processes")}><ProcessTable processes={allProcesses} /></ErrorBoundary>}
-      {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts /></ErrorBoundary>}
+      {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts showConflictCenter={false} /></ErrorBoundary>}
       {tab === "watch" && <ErrorBoundary title={tk("process.tab.watch")}><PortWatch /></ErrorBoundary>}
       {tab === "startup" && <ErrorBoundary title="Startup"><StartupItemList /></ErrorBoundary>}
     </div>
   );
 }
-

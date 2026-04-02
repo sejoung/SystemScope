@@ -4,13 +4,14 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { CleanupInboxView } from '../features/cleanup/CleanupInboxView'
 import { CleanupRulesView } from '../features/cleanup/CleanupRulesView'
 import { AutomationHistoryCard } from '../features/cleanup/AutomationHistoryCard'
+import { CleanupWorkspaceView } from '../features/cleanup/CleanupWorkspaceView'
 import { useI18n } from '../i18n/useI18n'
 
-type CleanupTab = 'inbox' | 'rules'
+type CleanupTab = 'inbox' | 'workspace' | 'rules' | 'automation'
 
 export function CleanupPage() {
   const [tab, setTab] = useState<CleanupTab>('inbox')
-  const { tk } = useI18n()
+  const { t, tk } = useI18n()
 
   return (
     <div data-testid="page-cleanup">
@@ -60,10 +61,22 @@ export function CleanupPage() {
           >
             {tk('cleanup.rules.title')}
           </PageTab>
+          <PageTab
+            id="cleanup-workspace"
+            active={tab === 'workspace'}
+            onClick={() => setTab('workspace')}
+          >
+            {t('Workspace')}
+          </PageTab>
+          <PageTab
+            id="cleanup-automation"
+            active={tab === 'automation'}
+            onClick={() => setTab('automation')}
+          >
+            {t('Automation')}
+          </PageTab>
         </div>
       </div>
-
-      <AutomationHistoryCard />
 
       {tab === 'inbox' && (
         <ErrorBoundary title={tk('cleanup.inbox.title')}>
@@ -73,6 +86,16 @@ export function CleanupPage() {
       {tab === 'rules' && (
         <ErrorBoundary title={tk('cleanup.rules.title')}>
           <CleanupRulesView />
+        </ErrorBoundary>
+      )}
+      {tab === 'workspace' && (
+        <ErrorBoundary title={t('Workspace Cleanup')}>
+          <CleanupWorkspaceView />
+        </ErrorBoundary>
+      )}
+      {tab === 'automation' && (
+        <ErrorBoundary title={t('Automation History')}>
+          <AutomationHistoryCard />
         </ErrorBoundary>
       )}
     </div>

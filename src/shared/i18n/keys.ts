@@ -3,6 +3,7 @@ export const MESSAGE_KEYS = {
   "nav.storage": "Storage",
   "nav.docker": "Docker",
   "nav.activity": "Activity",
+  "nav.devtools": "DevTools",
   "nav.applications": "Applications",
   "nav.preferences": "Preferences",
   "nav.timeline": "Timeline",

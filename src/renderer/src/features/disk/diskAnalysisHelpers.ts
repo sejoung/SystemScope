@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { TranslationKey } from "@shared/i18n";
 
-export type StorageTab = "overview" | "scan" | "cleanup";
+export type StorageTab = "overview" | "scan";
 export type ScanOutcome =
   | "idle"
   | "running"

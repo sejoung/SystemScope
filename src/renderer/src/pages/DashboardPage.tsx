@@ -21,7 +21,6 @@ import { useToast } from "../components/Toast";
 import { SnapshotButton } from "../features/sessionSnapshot/SnapshotButton";
 import { ExportReportDialog } from "../features/report/ExportReportDialog";
 import { ProfileSelector } from "../features/profiles/ProfileSelector";
-import { DevToolsSection } from "../features/devtools/DevToolsSection";
 import { useProfileStore } from "../stores/useProfileStore";
 import type { DashboardWidgetKey } from "@shared/types";
 import { ProjectMonitorCard } from "../features/monitoring/ProjectMonitorCard";
@@ -131,7 +130,7 @@ export function DashboardPage() {
       <AlertBanner />
       <SystemEventBanner />
       <ErrorBoundary title="Diagnosis"><DiagnosisCard /></ErrorBoundary>
-      <ErrorBoundary title="Project Monitor"><ProjectMonitorCard /></ErrorBoundary>
+      <ErrorBoundary title="Project Monitor"><ProjectMonitorCard compact /></ErrorBoundary>
 
       {/* Top: Gauges */}
       <div className="dashboard-grid-top">
@@ -155,11 +154,6 @@ export function DashboardPage() {
 
       <div>
         {!hiddenWidgets.has('topProcesses') && <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>}
-      </div>
-
-      {/* Developer Tools */}
-      <div className="dashboard-section" style={{ marginTop: 16 }}>
-        <ErrorBoundary title="Developer Tools"><DevToolsSection /></ErrorBoundary>
       </div>
     </div>
   );

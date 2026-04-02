@@ -14,6 +14,7 @@ import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
 import { DockerPage } from './pages/DockerPage'
 import { CleanupPage } from './pages/CleanupPage'
 import { ProcessPage } from './pages/ProcessPage'
+import { DevToolsPage } from './pages/DevToolsPage'
 import { AppsPage } from './pages/AppsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import type { ShutdownState } from '@shared/types'
@@ -49,12 +50,12 @@ function App() {
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const isE2ELightweight = window.__E2E_LIGHTWEIGHT === true
 
-  // Keyboard shortcuts: Cmd/Ctrl + 1-6 for page navigation
+  // Keyboard shortcuts: Cmd/Ctrl + 1-9 for page navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey && !e.ctrlKey) return
       if (e.shiftKey || e.altKey) return
-      const pages = ['dashboard', 'timeline', 'disk', 'docker', 'cleanup', 'process', 'apps', 'settings'] as const
+      const pages = ['dashboard', 'timeline', 'disk', 'docker', 'cleanup', 'process', 'devtools', 'apps', 'settings'] as const
       const idx = parseInt(e.key, 10) - 1
       if (idx >= 0 && idx < pages.length) {
         e.preventDefault()
@@ -146,6 +147,7 @@ function App() {
       docker: translateLiteral(locale, "Docker"),
       cleanup: translateLiteral(locale, "Cleanup"),
       process: translateLiteral(locale, "Activity"),
+      devtools: translateLiteral(locale, "DevTools"),
       apps: translateLiteral(locale, "Applications"),
       settings: translateLiteral(locale, "Preferences"),
     }
@@ -248,6 +250,7 @@ function App() {
           {currentPage === 'docker' && <DockerPage />}
           {currentPage === 'cleanup' && <CleanupPage />}
           {currentPage === 'process' && <ProcessPage />}
+          {currentPage === 'devtools' && <DevToolsPage />}
           {currentPage === 'apps' && <AppsPage />}
           {currentPage === 'settings' && <SettingsPage />}
         </ErrorBoundary>

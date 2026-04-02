@@ -10,6 +10,7 @@ type NavPage =
   | "docker"
   | "cleanup"
   | "process"
+  | "devtools"
   | "apps"
   | "settings";
 
@@ -81,6 +82,14 @@ function NavIcon({ id }: { id: string }) {
           <rect x="11" y="11" width="4" height="4" rx="0.5" />
         </svg>
       );
+    case "devtools":
+      return (
+        <svg {...props}>
+          <rect x="2" y="3" width="12" height="10" rx="2" />
+          <path d="M6 13v2M10 13v2M5 15h6" />
+          <path d="M5 6l-2 2 2 2M11 6l2 2-2 2" />
+        </svg>
+      );
     case "timeline":
       return (
         <svg {...props}>
@@ -113,6 +122,7 @@ export function Sidebar() {
     { id: "docker", label: tk("nav.docker") },
     { id: "cleanup", label: tk("nav.cleanup") },
     { id: "process", label: tk("nav.activity") },
+    { id: "devtools", label: tk("nav.devtools") },
     { id: "apps", label: tk("nav.applications") },
     { id: "settings", label: tk("nav.preferences") },
   ] as const;
