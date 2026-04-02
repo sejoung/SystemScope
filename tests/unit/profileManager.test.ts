@@ -131,6 +131,18 @@ describe('profileManager', () => {
       }))).toThrow('Invalid widget key')
     })
 
+    it('should throw on invalid thresholds', () => {
+      expect(() => saveProfile(createTestProfile({
+        thresholds: { cpuWarning: 70 } as WorkspaceProfile['thresholds']
+      }))).toThrow('Invalid profile data')
+    })
+
+    it('should throw on invalid cleanup rules', () => {
+      expect(() => saveProfile(createTestProfile({
+        cleanupRules: [{ id: 'invalid' as never, enabled: true, minAgeDays: 14 }]
+      }))).toThrow('Invalid profile data')
+    })
+
     it('should apply side effects when updating the active profile', () => {
       const existing = createTestProfile()
       mockGetSettings.mockReturnValue(createMockSettings({

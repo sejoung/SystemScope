@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Systeminformation } from 'systeminformation'
 
-const processes = vi.hoisted(() => vi.fn<any>())
-const networkConnections = vi.hoisted(() => vi.fn<any>())
+const processes = vi.hoisted(() => vi.fn<() => Promise<Systeminformation.ProcessesData>>())
+const networkConnections = vi.hoisted(() => vi.fn<() => Promise<Systeminformation.NetworkConnectionsData[]>>())
 
 vi.mock('systeminformation', () => ({
   default: {

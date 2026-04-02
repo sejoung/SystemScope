@@ -113,6 +113,23 @@ function isDiagnosticsSettings(value: unknown): value is DiagnosticsSettings {
   )
 }
 
+export function isCleanupRuleConfigValue(value: unknown): value is CleanupRuleConfig {
+  if (!value || typeof value !== 'object') return false
+  const config = value as Record<string, unknown>
+  return (
+    isCleanupRuleId(config.id) &&
+    typeof config.enabled === 'boolean' &&
+    typeof config.minAgeDays === 'number' &&
+    Number.isInteger(config.minAgeDays) &&
+    config.minAgeDays >= 1 &&
+    config.minAgeDays <= 3650
+  )
+}
+
+function isCleanupRuleId(value: unknown): value is CleanupRuleId {
+  return typeof value === 'string' && ALL_CLEANUP_RULE_IDS.includes(value as CleanupRuleId)
+}
+
 function isAutomationSettings(value: unknown): value is AppSettings['automation'] {
   if (!value || typeof value !== 'object') return false
   const a = value as Record<string, unknown>
@@ -120,18 +137,24 @@ function isAutomationSettings(value: unknown): value is AppSettings['automation'
   const s = a.schedule as Record<string, unknown>
   if (typeof s.enabled !== 'boolean') return false
   if (s.frequency !== 'daily' && s.frequency !== 'weekly' && s.frequency !== 'manual') return false
-  if (!Array.isArray(a.rules)) return false
+  if ('lastRunAt' in s && s.lastRunAt !== undefined && (typeof s.lastRunAt !== 'number' || !Number.isFinite(s.lastRunAt) || s.lastRunAt < 0)) {
+    return false
+  }
+  if (!Array.isArray(a.rules) || !a.rules.every(isCleanupRuleConfigValue)) return false
   return true
 }
 
-function isWorkspaceProfileValid(value: unknown): value is WorkspaceProfile {
+export function isWorkspaceProfileValue(
+  value: unknown,
+  options?: { allowEmptyId?: boolean }
+): value is WorkspaceProfile {
   if (!value || typeof value !== 'object') return false
   const p = value as Record<string, unknown>
-  if (typeof p.id !== 'string' || !p.id) return false
+  if (typeof p.id !== 'string' || (!options?.allowEmptyId && !p.id)) return false
   if (typeof p.name !== 'string' || !p.name || p.name.length > PROFILE_NAME_MAX_LENGTH) return false
   if (typeof p.icon !== 'string') return false
   if (!isAlertThresholds(p.thresholds)) return false
-  if (!Array.isArray(p.cleanupRules)) return false
+  if (!Array.isArray(p.cleanupRules) || !p.cleanupRules.every(isCleanupRuleConfigValue)) return false
   if (!Array.isArray(p.hiddenWidgets)) return false
   const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
   for (const key of p.hiddenWidgets) {
@@ -143,7 +166,7 @@ function isWorkspaceProfileValid(value: unknown): value is WorkspaceProfile {
 function isProfilesArray(value: unknown): value is WorkspaceProfile[] {
   if (!Array.isArray(value)) return false
   if (value.length > MAX_PROFILES) return false
-  return value.every(isWorkspaceProfileValid)
+  return value.every((profile) => isWorkspaceProfileValue(profile))
 }
 
 export function sanitizeAppSettings(value: unknown): AppSettings {

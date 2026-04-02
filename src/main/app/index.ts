@@ -14,6 +14,7 @@ import { initEventStore } from '../services/eventStore'
 import { initMetricsStore, stopMetricsStore } from '../services/metricsStore'
 import { initDiagnosisAdvisor, stopDiagnosisAdvisor } from '../services/diagnosisAdvisor'
 import { initAlertHistory, stopAlertHistory } from '../services/alertHistory'
+import { initCleanupInbox } from '../services/cleanupInbox'
 
 let appReadyForQuit = false
 
@@ -31,6 +32,7 @@ app.whenReady().then(() => {
   void initMetricsStore()
   void initDiagnosisAdvisor()
   void initAlertHistory()
+  void initCleanupInbox()
 
   if (!isE2ELightweight) {
     ensureSnapshotDir()

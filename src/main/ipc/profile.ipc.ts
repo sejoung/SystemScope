@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import type { WorkspaceProfile } from '@shared/types'
 import { getProfiles, saveProfile, deleteProfile, setActiveProfile } from '../services/profileManager'
+import { isWorkspaceProfileValue } from '../store/settingsSchema'
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
@@ -22,8 +23,8 @@ export function registerProfileIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROFILE_SAVE, (_event, profile: WorkspaceProfile, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     try {
-      if (!profile || typeof profile !== 'object') {
-        return failure('INVALID_INPUT', 'Profile data is required')
+      if (!isWorkspaceProfileValue(profile, { allowEmptyId: true })) {
+        return failure('INVALID_INPUT', 'Invalid profile data')
       }
       const saved = saveProfile(profile)
       logInfoAction('profile-ipc', 'profile.save', withRequestMeta(requestMeta, { id: saved.id, name: saved.name }))

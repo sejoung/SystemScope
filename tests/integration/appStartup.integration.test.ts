@@ -22,6 +22,7 @@ const initMetricsStoreMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 const stopMetricsStoreMock = vi.hoisted(() => vi.fn())
 const startJobPrunerMock = vi.hoisted(() => vi.fn())
 const stopJobPrunerMock = vi.hoisted(() => vi.fn())
+const initCleanupInboxMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 
 vi.mock('electron', () => ({
   app: {
@@ -126,6 +127,10 @@ vi.mock('../../src/main/jobs/jobManager', () => ({
   stopJobPruner: stopJobPrunerMock
 }))
 
+vi.mock('../../src/main/services/cleanupInbox', () => ({
+  initCleanupInbox: initCleanupInboxMock
+}))
+
 describe('app startup integration', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -154,6 +159,8 @@ describe('app startup integration', () => {
     stopMetricsStoreMock.mockReset()
     startJobPrunerMock.mockReset()
     stopJobPrunerMock.mockReset()
+    initCleanupInboxMock.mockReset()
+    initCleanupInboxMock.mockReturnValue(Promise.resolve())
     getSettingsMock.mockReturnValue({
       thresholds: {
         cpuWarning: 80,
@@ -187,6 +194,7 @@ describe('app startup integration', () => {
     expect(initializeRuntimeSettingsMock).toHaveBeenCalledTimes(1)
     expect(ensureSnapshotDirMock).toHaveBeenCalledTimes(1)
     expect(registerAllIpcMock).toHaveBeenCalledTimes(1)
+    expect(initCleanupInboxMock).toHaveBeenCalledTimes(1)
     expect(startSnapshotSchedulerMock).toHaveBeenCalledWith(30 * 60 * 1000, {
       initialDelayMs: 15_000
     })

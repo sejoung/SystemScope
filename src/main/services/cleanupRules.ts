@@ -11,9 +11,10 @@ import type {
   CleanupResult
 } from '@shared/types'
 import { getSettings, setSettings } from '../store/settingsStore'
-import { listDockerContainers } from './dockerImages'
+import { listDockerContainers, removeDockerContainers } from './dockerImages'
 import { recordEvent } from './eventStore'
 import { logInfo, logWarn } from './logging'
+import { getDirSize } from '../utils/getDirSize'
 
 const home = homedir()
 const isMac = platform() === 'darwin'
@@ -85,6 +86,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
 ]
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
+const DOCKER_CONTAINER_PREFIX = 'docker:container:'
 
 /**
  * Merge BUILT_IN_RULES with user config from settings.automation.rules.
@@ -204,11 +206,38 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
   let deletedSize = 0
   let failedCount = 0
   const failedPaths: string[] = []
+  const dockerContainerIds: string[] = []
+  const fileSystemPaths: string[] = []
 
-  for (const filePath of paths) {
+  for (const target of paths) {
+    const dockerContainerId = parseDockerContainerCleanupTarget(target)
+    if (dockerContainerId) {
+      dockerContainerIds.push(dockerContainerId)
+      continue
+    }
+    fileSystemPaths.push(target)
+  }
+
+  if (dockerContainerIds.length > 0) {
+    const sizeByContainerId = await getDockerContainerSizeMap(dockerContainerIds)
+    const dockerResult = await removeDockerContainers(dockerContainerIds)
+
+    deletedCount += dockerResult.deletedIds.length
+    deletedSize += dockerResult.deletedIds.reduce((sum, id) => sum + (sizeByContainerId.get(id) ?? 0), 0)
+
+    const deletedIdSet = new Set(dockerResult.deletedIds)
+    for (const id of dockerContainerIds) {
+      if (!deletedIdSet.has(id)) {
+        failedCount++
+        failedPaths.push(toDockerContainerCleanupTarget(id))
+      }
+    }
+  }
+
+  for (const filePath of fileSystemPaths) {
     try {
       const stat = await fs.stat(filePath)
-      const size = stat.size
+      const size = stat.isDirectory() ? await getDirSize(filePath) : stat.size
 
       await shell.trashItem(filePath)
       deletedCount++
@@ -276,9 +305,10 @@ async function scanFilesystemRule(rule: CleanupRule): Promise<CleanupPreviewItem
           const modifiedAt = stat.mtimeMs
 
           if (modifiedAt < cutoffMs) {
+            const size = stat.isDirectory() ? await getDirSize(fullPath) : stat.size
             items.push({
               path: fullPath,
-              size: stat.isDirectory() ? 0 : stat.size,
+              size,
               modifiedAt,
               rule: rule.id
             })
@@ -310,7 +340,7 @@ async function scanDockerStoppedContainers(rule: CleanupRule): Promise<CleanupPr
 
     const stoppedContainers = result.containers.filter((c) => !c.running)
     return stoppedContainers.map((container) => ({
-      path: `docker:container:${container.id}`,
+      path: toDockerContainerCleanupTarget(container.id),
       size: container.sizeBytes,
       modifiedAt: 0, // Docker containers don't have a direct mtime
       rule: rule.id
@@ -319,4 +349,26 @@ async function scanDockerStoppedContainers(rule: CleanupRule): Promise<CleanupPr
     logWarn('cleanup-rules', 'Failed to scan Docker stopped containers', { error: err })
     return []
   }
+}
+
+async function getDockerContainerSizeMap(containerIds: string[]): Promise<Map<string, number>> {
+  const result = await listDockerContainers()
+  if (result.status !== 'ready') {
+    return new Map()
+  }
+
+  const targetIds = new Set(containerIds)
+  return new Map(
+    result.containers
+      .filter((container) => targetIds.has(container.id))
+      .map((container) => [container.id, container.sizeBytes] as const)
+  )
+}
+
+function parseDockerContainerCleanupTarget(value: string): string | null {
+  return value.startsWith(DOCKER_CONTAINER_PREFIX) ? value.slice(DOCKER_CONTAINER_PREFIX.length) : null
+}
+
+function toDockerContainerCleanupTarget(containerId: string): string {
+  return `${DOCKER_CONTAINER_PREFIX}${containerId}`
 }

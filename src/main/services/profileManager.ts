@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { WorkspaceProfile, AlertThresholds, CleanupRuleConfig } from '@shared/types'
 import { MAX_PROFILES, PROFILE_NAME_MAX_LENGTH, DASHBOARD_WIDGET_KEYS } from '@shared/types'
 import { getSettings, setSettings } from '../store/settingsStore'
+import { isWorkspaceProfileValue } from '../store/settingsSchema'
 import { setThresholds } from './alertManager'
 import { logInfo } from './logging'
 
@@ -32,6 +33,10 @@ export function saveProfile(profile: WorkspaceProfile): WorkspaceProfile {
     if (!validKeys.has(key)) {
       throw new Error(`Invalid widget key: ${key}`)
     }
+  }
+
+  if (!isWorkspaceProfileValue(profile, { allowEmptyId: true })) {
+    throw new Error('Invalid profile data')
   }
 
   const existingIndex = profiles.findIndex((p) => p.id === profile.id)

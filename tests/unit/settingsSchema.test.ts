@@ -3,7 +3,9 @@ import { DEFAULT_THRESHOLDS } from '../../src/shared/types'
 import {
   DEFAULT_SETTINGS,
   sanitizeAppSettings,
-  validatePartialSettings
+  validatePartialSettings,
+  isCleanupRuleConfigValue,
+  isWorkspaceProfileValue
 } from '../../src/main/store/settingsSchema'
 
 describe('settingsSchema', () => {
@@ -25,5 +27,46 @@ describe('settingsSchema', () => {
     expect(validatePartialSettings({ locale: 'jp' })).toBe(false)
     expect(validatePartialSettings({ thresholds: { ...DEFAULT_THRESHOLDS, memoryWarning: -1 } })).toBe(false)
     expect(validatePartialSettings({ thresholds: { diskWarning: 80 } })).toBe(false)
+    expect(validatePartialSettings({
+      automation: {
+        schedule: { enabled: true, frequency: 'weekly' },
+        rules: [{ id: 'npm_cache', enabled: true, minAgeDays: 30 }]
+      }
+    })).toBe(true)
+    expect(validatePartialSettings({
+      automation: {
+        schedule: { enabled: true, frequency: 'weekly' },
+        rules: [{ id: 'invalid_rule', enabled: true, minAgeDays: 30 }]
+      }
+    })).toBe(false)
+    expect(validatePartialSettings({
+      automation: {
+        schedule: { enabled: true, frequency: 'weekly', lastRunAt: 'yesterday' },
+        rules: [{ id: 'npm_cache', enabled: true, minAgeDays: 30 }]
+      }
+    })).toBe(false)
+  })
+
+  it('should validate cleanup rule configs strictly', () => {
+    expect(isCleanupRuleConfigValue({ id: 'npm_cache', enabled: true, minAgeDays: 30 })).toBe(true)
+    expect(isCleanupRuleConfigValue({ id: 'npm_cache', enabled: true, minAgeDays: 0 })).toBe(false)
+    expect(isCleanupRuleConfigValue({ id: 'bad', enabled: true, minAgeDays: 30 })).toBe(false)
+  })
+
+  it('should validate workspace profile payloads including thresholds and cleanup rules', () => {
+    const validProfile = {
+      id: 'profile-1',
+      name: 'Development',
+      icon: 'dev',
+      thresholds: DEFAULT_THRESHOLDS,
+      cleanupRules: [{ id: 'npm_cache', enabled: true, minAgeDays: 14 }],
+      hiddenWidgets: ['gpu']
+    }
+
+    expect(isWorkspaceProfileValue(validProfile)).toBe(true)
+    expect(isWorkspaceProfileValue({ ...validProfile, thresholds: { cpuWarning: 80 } })).toBe(false)
+    expect(isWorkspaceProfileValue({ ...validProfile, cleanupRules: [{ id: 'bad', enabled: true, minAgeDays: 14 }] })).toBe(false)
+    expect(isWorkspaceProfileValue({ ...validProfile, id: '' })).toBe(false)
+    expect(isWorkspaceProfileValue({ ...validProfile, id: '' }, { allowEmptyId: true })).toBe(true)
   })
 })
