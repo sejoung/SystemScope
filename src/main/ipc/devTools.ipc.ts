@@ -2,27 +2,12 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { scanAllTools, cleanToolItems } from '../services/toolIntegrations'
 import { getDevToolsOverview } from '../services/devToolsOverview'
-import { getAIUsageOverview } from '../services/aiUsageOverview'
 import { success, failure } from '@shared/types'
 import { logInfoAction, logErrorAction } from '../services/logging'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 import { recordEvent } from '../services/eventStore'
 
 export function registerDevToolsIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.TOOLS_GET_AI_USAGE, async (_event, metaArg?: IpcRequestMetaArg) => {
-    const requestMeta = getRequestMeta(metaArg)
-    try {
-      const overview = await getAIUsageOverview()
-      logInfoAction('devtools-ipc', 'tools.aiUsage', withRequestMeta(requestMeta, {
-        providerCount: overview.providers.length
-      }))
-      return success(overview)
-    } catch (err) {
-      logErrorAction('devtools-ipc', 'tools.aiUsage', withRequestMeta(requestMeta, { error: err }))
-      return failure('UNKNOWN_ERROR', 'Failed to load AI usage overview.')
-    }
-  })
-
   ipcMain.handle(IPC_CHANNELS.TOOLS_GET_OVERVIEW, async (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     try {

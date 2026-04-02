@@ -112,7 +112,6 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'scanDevTools',
   'cleanDevToolItems',
   'getDevToolsOverview',
-  'getAIUsageOverview',
   'getStartupItems',
   'toggleStartupItem'
 ]
@@ -196,14 +195,6 @@ describe('createIpcApi', () => {
       await api.getSettings()
       expect(invokeMock).toHaveBeenCalledWith(
         IPC_CHANNELS.SETTINGS_GET,
-        requestMeta
-      )
-    })
-
-    it('getAIUsageOverview → TOOLS_GET_AI_USAGE', async () => {
-      await api.getAIUsageOverview()
-      expect(invokeMock).toHaveBeenCalledWith(
-        IPC_CHANNELS.TOOLS_GET_AI_USAGE,
         requestMeta
       )
     })

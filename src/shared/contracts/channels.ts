@@ -115,7 +115,6 @@ export const IPC_CHANNELS = {
 
   // 개발 도구 통합
   TOOLS_GET_OVERVIEW: 'tools:getOverview',
-  TOOLS_GET_AI_USAGE: 'tools:getAiUsage',
   TOOLS_SCAN_ALL: 'tools:scanAll',
   TOOLS_CLEAN: 'tools:clean',
 

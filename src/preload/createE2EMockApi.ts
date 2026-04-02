@@ -251,11 +251,6 @@ export function createE2EMockApi(): {
         devServers: [],
         scannedAt: Date.now()
       }),
-    getAIUsageOverview: () =>
-      successResult({
-        providers: [],
-        scannedAt: Date.now()
-      }),
     getProjectMonitorSummary: () =>
       successResult({
         workspaces: [],
