@@ -244,6 +244,13 @@ export function createE2EMockApi(): {
       }),
     quickScan: () => successResult([])
     ,
+    getDevToolsOverview: () =>
+      successResult({
+        healthChecks: [],
+        workspaces: [],
+        devServers: [],
+        scannedAt: Date.now()
+      }),
     getProjectMonitorSummary: () =>
       successResult({
         workspaces: [],

@@ -14,6 +14,7 @@ import { DASHBOARD_WIDGET_KEYS } from './profile'
 import type { ToolIntegrationResult, ToolCleanResult } from './toolIntegration'
 import type { StartupItem, StartupToggleResult } from './startup'
 import type { ProjectMonitorSummary } from './projectMonitor'
+import type { DevToolsOverview } from './devtools'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -217,6 +218,14 @@ export function isToolIntegrationResultArray(data: unknown): data is ToolIntegra
 /** ToolCleanResult */
 export function isToolCleanResult(data: unknown): data is ToolCleanResult {
   return isObj(data) && Array.isArray(data.succeeded) && Array.isArray(data.failed)
+}
+
+export function isDevToolsOverview(data: unknown): data is DevToolsOverview {
+  return isObj(data)
+    && Array.isArray(data.healthChecks)
+    && Array.isArray(data.workspaces)
+    && Array.isArray(data.devServers)
+    && typeof data.scannedAt === 'number'
 }
 
 /** StartupItem */

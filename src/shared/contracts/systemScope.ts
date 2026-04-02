@@ -57,7 +57,8 @@ import type {
   ToolCleanResult,
   StartupItem,
   StartupToggleResult,
-  ProjectMonitorSummary
+  ProjectMonitorSummary,
+  DevToolsOverview
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -174,6 +175,7 @@ export interface SystemScopeApi {
 
   scanDevTools: () => Promise<AppResult<ToolIntegrationResult[]>>
   cleanDevToolItems: (paths: string[]) => Promise<AppResult<ToolCleanResult>>
+  getDevToolsOverview: () => Promise<AppResult<DevToolsOverview>>
 
   getProfiles: () => Promise<AppResult<WorkspaceProfile[]>>
   saveProfile: (profile: WorkspaceProfile) => Promise<AppResult<WorkspaceProfile>>

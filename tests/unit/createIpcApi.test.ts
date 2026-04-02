@@ -111,6 +111,7 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'getProjectMonitorSummary',
   'scanDevTools',
   'cleanDevToolItems',
+  'getDevToolsOverview',
   'getStartupItems',
   'toggleStartupItem'
 ]

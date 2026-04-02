@@ -1,0 +1,374 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import * as os from 'node:os'
+import type {
+  DevEnvironmentCheck,
+  DevServerEntry,
+  DevToolsOverview,
+  DevWorkspaceInsight,
+  PortInfo,
+  ProcessInfo,
+} from '@shared/types'
+import { runExternalCommand, isExternalCommandError } from './externalCommand'
+import { getAllProcesses, getNetworkPorts } from './processMonitor'
+
+const LARGE_UNTRACKED_FILE_BYTES = 5 * 1024 * 1024
+const MAX_LARGE_UNTRACKED_FILES = 3
+
+export async function getDevToolsOverview(): Promise<DevToolsOverview> {
+  const { getActiveProfile } = await import('./profileManager')
+  const workspacePaths = Array.from(
+    new Set((getActiveProfile()?.workspacePaths ?? []).map((entry) => path.resolve(entry))),
+  )
+
+  const [healthChecks, workspaces, ports, processes] = await Promise.all([
+    collectEnvironmentChecks(),
+    Promise.all(workspacePaths.map((workspacePath) => collectWorkspaceInsight(workspacePath))),
+    getNetworkPorts().catch(() => []),
+    getAllProcesses().catch(() => []),
+  ])
+
+  return {
+    healthChecks,
+    workspaces,
+    devServers: detectDevServers(ports, processes, workspacePaths),
+    scannedAt: Date.now(),
+  }
+}
+
+async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
+  const checks = await Promise.all([
+    runVersionCheck('git', 'Git', ['--version'], 'Install Git to enable workspace insights and branch status.'),
+    runVersionCheck('node', 'Node.js', ['--version'], 'Install Node.js to run local JavaScript toolchains.'),
+    runVersionCheck('npm', 'npm', ['--version'], 'npm is usually bundled with Node.js.'),
+    runVersionCheck('pnpm', 'pnpm', ['--version'], 'Install pnpm if your workspaces use pnpm-lock.yaml.'),
+    runVersionCheck('yarn', 'Yarn', ['--version'], 'Install Yarn if your workspaces use yarn.lock.'),
+    runVersionCheck('docker', 'Docker', ['--version'], 'Start Docker Desktop to run local containers.'),
+    process.platform === 'darwin'
+      ? runVersionCheck('xcodebuild', 'Xcode CLI', ['-version'], 'Install Xcode Command Line Tools for Apple platform builds.')
+      : Promise.resolve<DevEnvironmentCheck | null>(null),
+    process.platform === 'darwin'
+      ? detectAndroidSdk()
+      : Promise.resolve<DevEnvironmentCheck | null>(null),
+  ])
+
+  return checks.filter((entry): entry is DevEnvironmentCheck => entry !== null)
+}
+
+async function runVersionCheck(
+  command: string,
+  label: string,
+  args: string[],
+  hint: string,
+): Promise<DevEnvironmentCheck> {
+  try {
+    const { stdout, stderr } = await runExternalCommand(command, args, { timeout: 3000 })
+    const combined = `${stdout}\n${stderr}`.trim()
+    const version = extractVersion(combined)
+    return {
+      id: command,
+      label,
+      status: 'healthy',
+      detail: version ? `${label} is available.` : 'Available',
+      version,
+      hint: null,
+    }
+  } catch (error) {
+    if (isExternalCommandError(error) && error.kind === 'command_not_found') {
+      return {
+        id: command,
+        label,
+        status: 'missing',
+        detail: `${label} is not installed.`,
+        version: null,
+        hint,
+      }
+    }
+
+    return {
+      id: command,
+      label,
+      status: 'warning',
+      detail: `${label} could not be verified.`,
+      version: null,
+      hint,
+    }
+  }
+}
+
+async function detectAndroidSdk(): Promise<DevEnvironmentCheck> {
+  const candidates = [
+    process.env.ANDROID_SDK_ROOT,
+    process.env.ANDROID_HOME,
+    path.join(os.homedir(), 'Library/Android/sdk'),
+  ].filter((entry): entry is string => Boolean(entry))
+
+  for (const sdkPath of candidates) {
+    try {
+      await fs.access(sdkPath)
+      return {
+        id: 'android-sdk',
+        label: 'Android SDK',
+        status: 'healthy',
+        detail: 'Android SDK path detected.',
+        version: null,
+        hint: sdkPath,
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return {
+    id: 'android-sdk',
+    label: 'Android SDK',
+    status: 'warning',
+    detail: 'Android SDK path was not found.',
+    version: null,
+    hint: 'Set ANDROID_SDK_ROOT or install Android Studio.',
+  }
+}
+
+async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorkspaceInsight> {
+  const exists = await pathExists(workspacePath)
+  const packageManager = await detectPackageManager(workspacePath)
+
+  const base: DevWorkspaceInsight = {
+    path: workspacePath,
+    name: path.basename(workspacePath) || workspacePath,
+    exists,
+    isGitRepo: false,
+    branch: null,
+    packageManager,
+    dirtyFileCount: 0,
+    untrackedFileCount: 0,
+    stashCount: 0,
+    lastCommitAt: null,
+    largeUntrackedFiles: [],
+  }
+
+  if (!exists) {
+    return base
+  }
+
+  try {
+    const { stdout } = await runExternalCommand('git', ['rev-parse', '--show-toplevel'], {
+      cwd: workspacePath,
+      timeout: 3000,
+    })
+    const repoRoot = stdout.trim()
+    if (!repoRoot) return base
+
+    const [branchResult, statusResult, stashResult, lastCommitResult] = await Promise.all([
+      runGitCommand(workspacePath, ['branch', '--show-current']),
+      runGitCommand(workspacePath, ['status', '--porcelain=v1', '--untracked-files=all']),
+      runGitCommand(workspacePath, ['stash', 'list']),
+      runGitCommand(workspacePath, ['log', '-1', '--format=%ct']),
+    ])
+
+    const statusLines = splitLines(statusResult)
+    const { dirtyFileCount, untrackedFiles } = summarizeGitStatusLines(statusLines)
+    const branch = branchResult.trim() || null
+    const lastCommitAt = parseGitTimestamp(lastCommitResult)
+
+    return {
+      ...base,
+      isGitRepo: true,
+      branch,
+      dirtyFileCount,
+      untrackedFileCount: untrackedFiles.length,
+      stashCount: splitLines(stashResult).length,
+      lastCommitAt,
+      largeUntrackedFiles: await findLargeUntrackedFiles(repoRoot, untrackedFiles),
+    }
+  } catch {
+    return base
+  }
+}
+
+async function runGitCommand(cwd: string, args: string[]): Promise<string> {
+  const { stdout } = await runExternalCommand('git', args, { cwd, timeout: 4000 })
+  return stdout.trim()
+}
+
+async function detectPackageManager(workspacePath: string): Promise<string | null> {
+  const candidates = [
+    ['pnpm-lock.yaml', 'pnpm'],
+    ['yarn.lock', 'yarn'],
+    ['package-lock.json', 'npm'],
+    ['bun.lockb', 'bun'],
+    ['bun.lock', 'bun'],
+  ] as const
+
+  for (const [fileName, label] of candidates) {
+    if (await pathExists(path.join(workspacePath, fileName))) {
+      return label
+    }
+  }
+
+  return null
+}
+
+async function findLargeUntrackedFiles(repoRoot: string, relativePaths: string[]) {
+  const candidates = relativePaths.slice(0, 50)
+  const sized = await Promise.all(
+    candidates.map(async (relativePath) => {
+      const fullPath = path.resolve(repoRoot, relativePath)
+      try {
+        const stat = await fs.stat(fullPath)
+        if (!stat.isFile() || stat.size < LARGE_UNTRACKED_FILE_BYTES) {
+          return null
+        }
+        return { path: fullPath, size: stat.size }
+      } catch {
+        return null
+      }
+    }),
+  )
+
+  return sized
+    .filter((entry): entry is { path: string; size: number } => entry !== null)
+    .sort((left, right) => right.size - left.size)
+    .slice(0, MAX_LARGE_UNTRACKED_FILES)
+}
+
+export function summarizeGitStatusLines(lines: string[]) {
+  const untrackedFiles: string[] = []
+  let dirtyFileCount = 0
+
+  for (const line of lines) {
+    if (!line) continue
+    if (line.startsWith('?? ')) {
+      untrackedFiles.push(line.slice(3).trim())
+      continue
+    }
+    dirtyFileCount += 1
+  }
+
+  return {
+    dirtyFileCount,
+    untrackedFiles,
+  }
+}
+
+function parseGitTimestamp(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed * 1000 : null
+}
+
+export function detectDevServers(
+  ports: PortInfo[],
+  processes: ProcessInfo[],
+  workspacePaths: string[],
+): DevServerEntry[] {
+  const processMap = new Map(processes.map((entry) => [entry.pid, entry]))
+  const listening = ports.filter((entry) => normalizePortState(entry.state) === 'LISTEN')
+  const devServers: DevServerEntry[] = []
+
+  for (const port of listening) {
+    const processInfo = processMap.get(port.pid)
+    const command = processInfo?.command ?? null
+    const kind = detectDevServerKind(port, processInfo)
+    if (!kind) continue
+
+    const workspacePath = matchWorkspacePath(command, workspacePaths)
+    devServers.push({
+      pid: port.pid,
+      process: port.process,
+      command,
+      kind,
+      port: port.localPortNum || Number(port.localPort) || 0,
+      protocol: port.protocol,
+      address: port.localAddress,
+      exposure: classifyExposure(port.localAddress),
+      workspacePath,
+      workspaceName: workspacePath ? path.basename(workspacePath) : null,
+    })
+  }
+
+  return devServers.sort((left, right) => {
+    if (left.workspaceName && right.workspaceName && left.workspaceName !== right.workspaceName) {
+      return left.workspaceName.localeCompare(right.workspaceName)
+    }
+    return left.port - right.port
+  })
+}
+
+export function detectDevServerKind(port: PortInfo, processInfo?: ProcessInfo | null): string | null {
+  const processName = `${port.process} ${processInfo?.name ?? ''}`.toLowerCase()
+  const command = (processInfo?.command ?? '').toLowerCase()
+  const portNumber = port.localPortNum || Number(port.localPort) || 0
+
+  if (command.includes('vite') || portNumber === 5173 || portNumber === 4173) return 'Vite'
+  if (command.includes('next') || command.includes('next dev')) return 'Next.js'
+  if (command.includes('metro') || command.includes('react-native') || portNumber === 8081) return 'Metro / React Native'
+  if (processName.includes('postgres') || portNumber === 5432) return 'PostgreSQL'
+  if (processName.includes('redis') || portNumber === 6379) return 'Redis'
+  if (processName.includes('docker') || command.includes('docker-proxy')) return 'Docker Service'
+  if (command.includes('webpack')) return 'Webpack Dev Server'
+  if (command.includes('astro')) return 'Astro'
+  if (command.includes('nuxt')) return 'Nuxt'
+  if (
+    portNumber === 3000 ||
+    portNumber === 3001 ||
+    portNumber === 8000 ||
+    portNumber === 8080 ||
+    processName.includes('node') ||
+    processName.includes('bun') ||
+    processName.includes('python') ||
+    processName.includes('java')
+  ) {
+    return 'App Server'
+  }
+
+  return null
+}
+
+function classifyExposure(address: string): DevServerEntry['exposure'] {
+  const normalized = address.trim().toLowerCase()
+  if (!normalized) return 'unknown'
+  if (normalized === '127.0.0.1' || normalized === '::1' || normalized === 'localhost') {
+    return 'loopback'
+  }
+  return 'network'
+}
+
+function matchWorkspacePath(command: string | null, workspacePaths: string[]): string | null {
+  if (!command) return null
+  const normalizedCommand = command.toLowerCase()
+  const matches = workspacePaths
+    .filter((workspacePath) => normalizedCommand.includes(workspacePath.toLowerCase()))
+    .sort((left, right) => right.length - left.length)
+
+  return matches[0] ?? null
+}
+
+function normalizePortState(state: string): string {
+  const normalized = state.trim().toUpperCase()
+  return normalized === 'LISTENING' ? 'LISTEN' : normalized
+}
+
+function extractVersion(output: string): string | null {
+  const trimmed = output.trim()
+  if (!trimmed) return null
+  const firstLine = trimmed.split(/\r?\n/)[0]?.trim() ?? ''
+  return firstLine || null
+}
+
+function splitLines(value: string): string[] {
+  return value
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+}
+
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.access(targetPath)
+    return true
+  } catch {
+    return false
+  }
+}

@@ -29,8 +29,8 @@ export function DevToolsSection() {
 
   return (
     <div style={{ padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{tk('devtools.section.title')}</h3>
           <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{tk('devtools.section.description')}</div>
         </div>
@@ -49,7 +49,7 @@ export function DevToolsSection() {
         <div style={{ display: 'grid', gap: 8 }}>
           {results.map((result) => <ToolCard key={result.tool} result={result} />)}
           {totalItems > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatBytes(totalReclaimable)} {tk('devtools.status.ready').toLowerCase()}</span>
               <button onClick={() => setDetailOpen(true)} style={{
                 padding: '4px 10px', fontSize: 12, fontWeight: 600, borderRadius: 'var(--radius)',
@@ -83,7 +83,7 @@ function ToolCard({ result }: { result: ToolIntegrationResult }) {
 
   return (
     <div style={{ padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{toolLabel}</span>
         <span style={{ fontSize: 11, fontWeight: 600, color: statusColor }}>{statusLabel}</span>
       </div>

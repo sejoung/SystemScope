@@ -1,12 +1,29 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { scanAllTools, cleanToolItems } from '../services/toolIntegrations'
+import { getDevToolsOverview } from '../services/devToolsOverview'
 import { success, failure } from '@shared/types'
 import { logInfoAction, logErrorAction } from '../services/logging'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 import { recordEvent } from '../services/eventStore'
 
 export function registerDevToolsIpc(): void {
+  ipcMain.handle(IPC_CHANNELS.TOOLS_GET_OVERVIEW, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    try {
+      const overview = await getDevToolsOverview()
+      logInfoAction('devtools-ipc', 'tools.overview', withRequestMeta(requestMeta, {
+        healthCheckCount: overview.healthChecks.length,
+        workspaceCount: overview.workspaces.length,
+        devServerCount: overview.devServers.length
+      }))
+      return success(overview)
+    } catch (err) {
+      logErrorAction('devtools-ipc', 'tools.overview', withRequestMeta(requestMeta, { error: err }))
+      return failure('UNKNOWN_ERROR', 'Failed to load developer tooling overview.')
+    }
+  })
+
   ipcMain.handle(IPC_CHANNELS.TOOLS_SCAN_ALL, async (_event, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     try {

@@ -112,7 +112,7 @@ export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps)
       </div>
       {compact && summary && summary.workspaces.length > 3 ? (
         <div style={compactHintStyle}>
-          {t('{count} more workspaces are available in Disk > Projects.', {
+          {t('{count} more workspaces are available in DevTools > Workspaces.', {
             count: summary.workspaces.length - 3,
           })}
         </div>

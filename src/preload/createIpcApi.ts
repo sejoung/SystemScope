@@ -192,6 +192,8 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.TOOLS_SCAN_ALL),
     cleanDevToolItems: (paths: string[]) =>
       invokeWithRequestId(IPC_CHANNELS.TOOLS_CLEAN, paths),
+    getDevToolsOverview: () =>
+      invokeWithRequestId(IPC_CHANNELS.TOOLS_GET_OVERVIEW),
 
     getProfiles: () => invokeWithRequestId(IPC_CHANNELS.PROFILE_GET_ALL),
     saveProfile: (profile: WorkspaceProfile) =>

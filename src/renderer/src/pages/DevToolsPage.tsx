@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { PageTab } from "../components/PageTab";
+import { DevToolsOverviewSection } from "../features/devtools/DevToolsOverviewSection";
 import { DevToolsSection } from "../features/devtools/DevToolsSection";
 import { PortConflictCenterCard } from "../features/devtools/PortConflictCenterCard";
 import { ProjectMonitorCard } from "../features/monitoring/ProjectMonitorCard";
 import { useI18n } from "../i18n/useI18n";
 
+type DevToolsTab = "overview" | "workspaces" | "ports" | "cleanup";
+
 export function DevToolsPage() {
   const { t } = useI18n();
+  const [tab, setTab] = useState<DevToolsTab>("overview");
 
   return (
     <div data-testid="page-devtools">
@@ -32,19 +38,89 @@ export function DevToolsPage() {
             )}
           </div>
         </div>
+        <div
+          role="tablist"
+          aria-label={t("DevTools")}
+          style={{
+            display: "flex",
+            gap: "4px",
+            background: "var(--bg-secondary)",
+            borderRadius: "8px",
+            padding: "3px",
+            flexWrap: "wrap",
+          }}
+        >
+          <PageTab
+            id="devtools-overview"
+            active={tab === "overview"}
+            onClick={() => setTab("overview")}
+          >
+            {t("Overview")}
+          </PageTab>
+          <PageTab
+            id="devtools-workspaces"
+            active={tab === "workspaces"}
+            onClick={() => setTab("workspaces")}
+          >
+            {t("Workspaces")}
+          </PageTab>
+          <PageTab
+            id="devtools-ports"
+            active={tab === "ports"}
+            onClick={() => setTab("ports")}
+          >
+            {t("Ports")}
+          </PageTab>
+          <PageTab
+            id="devtools-cleanup"
+            active={tab === "cleanup"}
+            onClick={() => setTab("cleanup")}
+          >
+            {t("Cleanup")}
+          </PageTab>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gap: 16 }}>
-        <ErrorBoundary title={t("Port Conflict Center")}>
-          <PortConflictCenterCard />
-        </ErrorBoundary>
-        <ErrorBoundary title={t("Project Monitor")}>
-          <ProjectMonitorCard />
-        </ErrorBoundary>
-        <ErrorBoundary title={t("Developer Tools")}>
-          <DevToolsSection />
-        </ErrorBoundary>
-      </div>
+      {tab === "overview" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <ErrorBoundary title={t("Developer Environment")}>
+            <DevToolsOverviewSection sections={["health", "servers"]} compact />
+          </ErrorBoundary>
+          <ErrorBoundary title={t("Project Monitor")}>
+            <ProjectMonitorCard compact />
+          </ErrorBoundary>
+        </div>
+      )}
+
+      {tab === "workspaces" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <ErrorBoundary title={t("Workspace Git Insights")}>
+            <DevToolsOverviewSection sections={["workspaces"]} />
+          </ErrorBoundary>
+          <ErrorBoundary title={t("Project Monitor")}>
+            <ProjectMonitorCard />
+          </ErrorBoundary>
+        </div>
+      )}
+
+      {tab === "ports" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <ErrorBoundary title={t("Port Conflict Center")}>
+            <PortConflictCenterCard />
+          </ErrorBoundary>
+          <ErrorBoundary title={t("Dev Servers")}>
+            <DevToolsOverviewSection sections={["servers"]} />
+          </ErrorBoundary>
+        </div>
+      )}
+
+      {tab === "cleanup" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <ErrorBoundary title={t("Developer Tools")}>
+            <DevToolsSection />
+          </ErrorBoundary>
+        </div>
+      )}
     </div>
   );
 }
