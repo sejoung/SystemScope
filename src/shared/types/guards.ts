@@ -191,6 +191,7 @@ export function isWorkspaceProfile(data: unknown): data is WorkspaceProfile {
   if (!Array.isArray(data.cleanupRules)) return false
   if (!Array.isArray(data.hiddenWidgets)) return false
   if (!Array.isArray(data.workspacePaths) || !data.workspacePaths.every((entry) => typeof entry === 'string')) return false
+  if (!(data.automationSchedule === null || (isObj(data.automationSchedule) && typeof data.automationSchedule.enabled === 'boolean' && typeof data.automationSchedule.frequency === 'string'))) return false
   const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
   for (const key of data.hiddenWidgets as unknown[]) {
     if (typeof key !== 'string' || !validWidgetKeys.has(key)) return false

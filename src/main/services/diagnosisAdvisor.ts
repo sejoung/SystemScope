@@ -58,7 +58,8 @@ const rules: DiagnosisRule[] = [
           { label: 'Swap Used', value: formatBytes(swapUsed) }
         ],
         actions: [
-          { label: 'View processes by memory', targetPage: 'process' }
+          { label: 'View processes by memory', targetPage: 'process' },
+          { label: 'Save snapshot', actionId: 'save_snapshot' }
         ],
         detectedAt: Date.now()
       }
@@ -91,7 +92,8 @@ const rules: DiagnosisRule[] = [
           { label: 'Process CPU', value: `${runaway.cpu}%`, threshold: '50%' }
         ],
         actions: [
-          { label: 'View process details', targetPage: 'process' }
+          { label: 'View process details', targetPage: 'process' },
+          { label: 'Save snapshot', actionId: 'save_snapshot' }
         ],
         detectedAt: Date.now()
       }
@@ -220,7 +222,8 @@ const rules: DiagnosisRule[] = [
           ...(unusedVolumes > 0 ? [{ label: 'Unused Volumes', value: `${unusedVolumes}` }] : [])
         ],
         actions: [
-          { label: 'Clean Docker resources', targetPage: 'docker' }
+          { label: 'Open Docker resources', targetPage: 'docker' },
+          { label: 'Run cleanup preview', targetPage: 'cleanup', actionId: 'run_cleanup_preview' }
         ],
         detectedAt: Date.now()
       }
@@ -257,7 +260,8 @@ const rules: DiagnosisRule[] = [
           { label: 'Top Categories', value: topCategories.join(', ') }
         ],
         actions: [
-          { label: 'Review cleanup targets', targetPage: 'disk' }
+          { label: 'Review cleanup targets', targetPage: 'disk' },
+          { label: 'Run cleanup preview', targetPage: 'cleanup', actionId: 'run_cleanup_preview' }
         ],
         detectedAt: Date.now()
       }
@@ -286,7 +290,8 @@ const rules: DiagnosisRule[] = [
           { label: 'Swap Total', value: formatBytes(swapTotal) }
         ],
         actions: [
-          { label: 'View memory consumers', targetPage: 'process' }
+          { label: 'View memory consumers', targetPage: 'process' },
+          { label: 'Save snapshot', actionId: 'save_snapshot' }
         ],
         detectedAt: Date.now()
       }
@@ -340,8 +345,8 @@ const rules: DiagnosisRule[] = [
           { label: 'Tracked Workspaces', value: `${summary.workspaces.length}` }
         ],
         actions: [
-          { label: 'Review cleanup targets', targetPage: 'cleanup', actionId: 'open_cleanup' },
-          { label: 'Open dashboard monitor', targetPage: 'dashboard', actionId: 'open_project_monitor' }
+          { label: 'Review cleanup targets', targetPage: 'cleanup', actionId: 'run_cleanup_preview' },
+          { label: 'Refresh project monitor', targetPage: 'dashboard', actionId: 'refresh_project_monitor' }
         ],
         detectedAt: Date.now()
       }
@@ -368,6 +373,7 @@ const rules: DiagnosisRule[] = [
         ],
         actions: [
           { label: 'Inspect storage growth', targetPage: 'disk', actionId: 'open_growth' },
+          { label: 'Refresh project monitor', targetPage: 'dashboard', actionId: 'refresh_project_monitor' },
           { label: 'Open workspace folder', actionId: `open_path:${largest.path}` }
         ],
         detectedAt: Date.now()

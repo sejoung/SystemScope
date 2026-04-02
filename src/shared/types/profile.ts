@@ -1,5 +1,5 @@
 import type { AlertThresholds } from './alert'
-import type { CleanupRuleConfig } from './automation'
+import type { CleanupRuleConfig, AutomationSchedule } from './automation'
 
 export const DASHBOARD_WIDGET_KEYS = [
   'cpu',
@@ -27,4 +27,5 @@ export interface WorkspaceProfile {
   cleanupRules: CleanupRuleConfig[]
   hiddenWidgets: DashboardWidgetKey[]
   workspacePaths: string[]
+  automationSchedule: AutomationSchedule | null
 }

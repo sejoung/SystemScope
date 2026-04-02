@@ -25,6 +25,9 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
   const [thresholds, setThresholds] = useState<AlertThresholds>(profile?.thresholds ?? { ...DEFAULT_THRESHOLDS })
   const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKey[]>(profile?.hiddenWidgets ?? [])
   const [workspacePaths, setWorkspacePaths] = useState<string[]>(profile?.workspacePaths ?? [])
+  const [automationSchedule, setAutomationSchedule] = useState<WorkspaceProfile['automationSchedule']>(
+    profile?.automationSchedule ?? null
+  )
   const [saving, setSaving] = useState(false)
 
   function toggleWidget(key: DashboardWidgetKey) {
@@ -54,6 +57,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
       cleanupRules: profile?.cleanupRules ?? [],
       hiddenWidgets,
       workspacePaths,
+      automationSchedule,
     })
     setSaving(false)
     if (saved) onSaved()
@@ -157,6 +161,46 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
             >
               {t('Add workspace folder')}
             </button>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>{t('Profile Automation')}</label>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={automationSchedule !== null}
+                onChange={(event) => {
+                  setAutomationSchedule(event.target.checked ? { enabled: true, frequency: 'weekly' } : null)
+                }}
+              />
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('Override global automation schedule')}</span>
+            </label>
+            {automationSchedule && (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={automationSchedule.enabled}
+                    onChange={(event) => setAutomationSchedule((prev) => prev ? { ...prev, enabled: event.target.checked } : prev)}
+                  />
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('Enable automated scanning')}</span>
+                </label>
+                <select
+                  value={automationSchedule.frequency}
+                  onChange={(event) => setAutomationSchedule((prev) => prev ? {
+                    ...prev,
+                    frequency: event.target.value as NonNullable<WorkspaceProfile['automationSchedule']>['frequency']
+                  } : prev)}
+                  style={inputStyle}
+                >
+                  <option value="daily">{t('Daily')}</option>
+                  <option value="weekly">{t('Weekly')}</option>
+                  <option value="manual">{t('Manual only')}</option>
+                </select>
+              </div>
+            )}
           </div>
         </div>
 

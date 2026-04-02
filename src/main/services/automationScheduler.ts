@@ -1,7 +1,7 @@
 import type { CleanupRuleId } from '@shared/types'
 import { getSettings, setSettings } from '../store/settingsStore'
 import { executeCleanup, previewCleanup } from './cleanupRules'
-import { getActiveProfile } from './profileManager'
+import { getActiveProfile, getEffectiveAutomationSchedule } from './profileManager'
 import { recordEvent } from './eventStore'
 import { logInfo, logWarn } from './logging'
 import { refreshProjectMonitor } from './projectMonitor'
@@ -49,7 +49,7 @@ async function maybeRunAutomatedTasks(reason: 'startup' | 'interval'): Promise<v
   })
 
   const settings = getSettings()
-  const schedule = settings.automation.schedule
+  const schedule = getEffectiveAutomationSchedule()
   if (!schedule.enabled || schedule.frequency === 'manual') {
     return
   }
@@ -68,6 +68,7 @@ async function maybeRunAutomatedTasks(reason: 'startup' | 'interval'): Promise<v
   if (eligiblePaths.length > 0) {
     const result = await executeCleanup(eligiblePaths)
     void recordEvent('system', 'info', `Automated cleanup executed (${reason})`, undefined, {
+      kind: 'automation_cleanup',
       requestedCount: eligiblePaths.length,
       deletedCount: result.deletedCount,
       failedCount: result.failedCount,
@@ -83,15 +84,33 @@ async function maybeRunAutomatedTasks(reason: 'startup' | 'interval'): Promise<v
     logInfo('automation-scheduler', 'Automated cleanup skipped because no safe targets were found', { reason })
   }
 
-  setSettings({
-    automation: {
-      ...settings.automation,
-      schedule: {
-        ...schedule,
-        lastRunAt: Date.now()
+  const activeProfile = getActiveProfile()
+  if (activeProfile?.automationSchedule) {
+    const nextProfiles = settings.profiles.map((profile) =>
+      profile.id === activeProfile.id
+        ? {
+            ...profile,
+            automationSchedule: {
+              ...schedule,
+              lastRunAt: Date.now()
+            }
+          }
+        : profile
+    )
+    setSettings({
+      profiles: nextProfiles
+    })
+  } else {
+    setSettings({
+      automation: {
+        ...settings.automation,
+        schedule: {
+          ...schedule,
+          lastRunAt: Date.now()
+        }
       }
-    }
-  })
+    })
+  }
 }
 
 function isScheduleDue(frequency: 'daily' | 'weekly' | 'manual', lastRunAt?: number): boolean {

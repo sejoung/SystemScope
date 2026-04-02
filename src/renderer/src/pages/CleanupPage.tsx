@@ -3,6 +3,7 @@ import { PageTab } from '../components/PageTab'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { CleanupInboxView } from '../features/cleanup/CleanupInboxView'
 import { CleanupRulesView } from '../features/cleanup/CleanupRulesView'
+import { AutomationHistoryCard } from '../features/cleanup/AutomationHistoryCard'
 import { useI18n } from '../i18n/useI18n'
 
 type CleanupTab = 'inbox' | 'rules'
@@ -61,6 +62,8 @@ export function CleanupPage() {
           </PageTab>
         </div>
       </div>
+
+      <AutomationHistoryCard />
 
       {tab === 'inbox' && (
         <ErrorBoundary title={tk('cleanup.inbox.title')}>

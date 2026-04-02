@@ -157,6 +157,7 @@ export function isWorkspaceProfileValue(
   if (!Array.isArray(p.cleanupRules) || !p.cleanupRules.every(isCleanupRuleConfigValue)) return false
   if (!Array.isArray(p.hiddenWidgets)) return false
   if (!Array.isArray(p.workspacePaths) || p.workspacePaths.length > MAX_WORKSPACE_PATHS) return false
+  if (!(p.automationSchedule === null || isAutomationSettings({ schedule: p.automationSchedule, rules: DEFAULT_CLEANUP_RULES }))) return false
   const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
   for (const key of p.hiddenWidgets) {
     if (typeof key !== 'string' || !validWidgetKeys.has(key)) return false

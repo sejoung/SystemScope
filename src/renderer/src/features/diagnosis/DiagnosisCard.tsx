@@ -235,6 +235,27 @@ function DiagnosisItem({
                         }
                       })
                     }
+                    if (action.actionId === 'save_snapshot') {
+                      void window.systemScope.saveSessionSnapshot('Diagnosis Snapshot').then((res) => {
+                        if (!res.ok) {
+                          onActionError(res.error?.message ?? t('Unable to save snapshot.'))
+                        }
+                      })
+                    }
+                    if (action.actionId === 'run_cleanup_preview') {
+                      void window.systemScope.previewCleanup().then((res) => {
+                        if (!res.ok) {
+                          onActionError(res.error?.message ?? t('Unable to run cleanup preview.'))
+                        }
+                      })
+                    }
+                    if (action.actionId === 'refresh_project_monitor') {
+                      void window.systemScope.getProjectMonitorSummary().then((res) => {
+                        if (!res.ok) {
+                          onActionError(res.error?.message ?? t('Unable to refresh project monitor.'))
+                        }
+                      })
+                    }
                     if (action.targetPage) {
                       onNavigate(action.targetPage)
                     }

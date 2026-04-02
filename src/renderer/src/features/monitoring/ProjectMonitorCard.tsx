@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { useProjectMonitorStore } from '../../stores/useProjectMonitorStore'
 import { useI18n } from '../../i18n/useI18n'
@@ -10,6 +10,7 @@ export function ProjectMonitorCard() {
   const fetchSummary = useProjectMonitorStore((s) => s.fetchSummary)
   const showToast = useToast((s) => s.show)
   const { t } = useI18n()
+  const [expandedPath, setExpandedPath] = useState<string | null>(null)
 
   useEffect(() => {
     void fetchSummary()
@@ -40,33 +41,60 @@ export function ProjectMonitorCard() {
 
       <div style={{ display: 'grid', gap: 8 }}>
         {summary?.workspaces.map((workspace) => (
-          <div key={workspace.path} style={workspaceRowStyle}>
-            <div style={{ minWidth: 0 }}>
-              <div style={workspaceNameStyle}>{workspace.name}</div>
-              <div style={workspacePathStyle}>{workspace.path}</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={workspaceSizeStyle}>{formatBytes(workspace.currentSize)}</div>
-              <div style={{
-                ...workspaceGrowthStyle,
-                color: workspace.recentGrowthBytes > 0 ? 'var(--accent-orange)' : 'var(--text-muted)'
-              }}>
-                +{formatBytes(workspace.recentGrowthBytes)}
+          <div key={workspace.path} style={workspaceCardStyle}>
+            <div style={workspaceRowStyle}>
+              <button type="button" onClick={() => setExpandedPath((prev) => prev === workspace.path ? null : workspace.path)} style={workspaceToggleStyle}>
+                <div style={{ minWidth: 0, textAlign: 'left' }}>
+                  <div style={workspaceNameStyle}>{workspace.name}</div>
+                  <div style={workspacePathStyle}>{workspace.path}</div>
+                </div>
+              </button>
+              <div style={{ textAlign: 'right' }}>
+                <div style={workspaceSizeStyle}>{formatBytes(workspace.currentSize)}</div>
+                <div style={{
+                  ...workspaceGrowthStyle,
+                  color: workspace.recentGrowthBytes > 0 ? 'var(--accent-orange)' : 'var(--text-muted)'
+                }}>
+                  +{formatBytes(workspace.recentGrowthBytes)}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void window.systemScope.showInFolder(workspace.path).then((res) => {
+                    if (!res.ok) {
+                      showToast(res.error?.message ?? t('Unable to open folder.'))
+                    }
+                  })
+                }}
+                style={openButtonStyle}
+              >
+                {t('Open')}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                void window.systemScope.showInFolder(workspace.path).then((res) => {
-                  if (!res.ok) {
-                    showToast(res.error?.message ?? t('Unable to open folder.'))
-                  }
-                })
-              }}
-              style={openButtonStyle}
-            >
-              {t('Open')}
-            </button>
+            {expandedPath === workspace.path && (
+              <div style={detailSectionStyle}>
+                <div style={detailLabelStyle}>{t('Category Breakdown')}</div>
+                <div style={{ display: 'grid', gap: 6 }}>
+                  {workspace.topCategories.map((category) => (
+                    <div key={category.category} style={detailRowStyle}>
+                      <span>{category.label}</span>
+                      <span>{formatBytes(category.size)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={detailLabelStyle}>{t('Recent Trend')}</div>
+                  <div style={historyRowStyle}>
+                    {workspace.history.map((point) => (
+                      <div key={point.scannedAt} style={historyPillStyle}>
+                        {formatBytes(point.size)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -123,6 +151,19 @@ const workspaceRowStyle: React.CSSProperties = {
   background: 'var(--bg-secondary)'
 }
 
+const workspaceCardStyle: React.CSSProperties = {
+  borderRadius: 10,
+  background: 'var(--bg-secondary)',
+  overflow: 'hidden'
+}
+
+const workspaceToggleStyle: React.CSSProperties = {
+  border: 'none',
+  background: 'transparent',
+  padding: 0,
+  cursor: 'pointer'
+}
+
 const workspaceNameStyle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
@@ -155,4 +196,38 @@ const openButtonStyle: React.CSSProperties = {
   color: 'var(--text-primary)',
   cursor: 'pointer',
   fontSize: 12
+}
+
+const detailSectionStyle: React.CSSProperties = {
+  padding: '0 12px 12px',
+  display: 'grid',
+  gap: 6
+}
+
+const detailLabelStyle: React.CSSProperties = {
+  fontSize: 11,
+  textTransform: 'uppercase',
+  color: 'var(--text-muted)'
+}
+
+const detailRowStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  fontSize: 12,
+  color: 'var(--text-secondary)'
+}
+
+const historyRowStyle: React.CSSProperties = {
+  display: 'flex',
+  gap: 6,
+  flexWrap: 'wrap'
+}
+
+const historyPillStyle: React.CSSProperties = {
+  padding: '4px 8px',
+  borderRadius: 999,
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  fontSize: 11,
+  color: 'var(--text-secondary)'
 }

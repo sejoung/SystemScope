@@ -1,17 +1,19 @@
 import * as path from 'node:path'
 import * as fs from 'node:fs/promises'
-import type { ProjectMonitorSummary, ProjectMonitorWorkspace } from '@shared/types'
+import type { ProjectMonitorSummary, ProjectMonitorWorkspace, ProjectMonitorCategoryStat } from '@shared/types'
 import { PersistentStore } from './persistentStore'
 import { getProjectMonitorFilePath } from './dataDir'
 import { getActiveProfile } from './profileManager'
 import { getDirSizeEstimate } from '../utils/getDirSize'
 import { logInfo, logWarn } from './logging'
 import { registerShellPaths } from './shellPathRegistry'
+import { recordEvent } from './eventStore'
 
 interface ProjectMonitorEntry {
   path: string
   size: number
   scannedAt: number
+  categories: ProjectMonitorCategoryStat[]
 }
 
 const PROJECT_MONITOR_SCHEMA_VERSION = 1
@@ -19,6 +21,7 @@ const PROJECT_MONITOR_MAX_ENTRIES = 2000
 const PROJECT_MONITOR_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 const PROJECT_MONITOR_REFRESH_MS = 30 * 60 * 1000
 const PROJECT_MONITOR_STALE_MS = 60 * 60 * 1000
+const PROJECT_MONITOR_GROWTH_ALERT_BYTES = 1024 * 1024 * 1024
 
 let projectMonitorStore: PersistentStore<ProjectMonitorEntry> | null = null
 let projectMonitorTimer: ReturnType<typeof setInterval> | null = null
@@ -82,6 +85,7 @@ export async function refreshProjectMonitor(pathsOverride?: string[]): Promise<v
   const entries = await Promise.all(uniquePaths.map(scanWorkspace))
   await getStore().appendBatch(entries)
   registerShellPaths(uniquePaths, 'descendant')
+  await emitWorkspaceGrowthEvents(entries)
   logInfo('project-monitor', 'Project workspaces scanned', { count: entries.length })
 }
 
@@ -125,7 +129,12 @@ async function summarizeWorkspace(workspacePath: string, entries: ProjectMonitor
     currentSize: latest?.size ?? 0,
     previousSize: previous?.size ?? null,
     recentGrowthBytes: latest && previous ? Math.max(0, latest.size - previous.size) : 0,
-    lastScannedAt: latest?.scannedAt ?? null
+    lastScannedAt: latest?.scannedAt ?? null,
+    topCategories: latest?.categories ?? [],
+    history: workspaceEntries
+      .slice(0, 5)
+      .map((entry) => ({ scannedAt: entry.scannedAt, size: entry.size }))
+      .reverse()
   }
 }
 
@@ -143,8 +152,40 @@ async function scanWorkspace(workspacePath: string): Promise<ProjectMonitorEntry
   return {
     path: resolvedPath,
     size,
-    scannedAt: Date.now()
+    scannedAt: Date.now(),
+    categories: await scanWorkspaceCategories(resolvedPath)
   }
+}
+
+async function scanWorkspaceCategories(workspacePath: string): Promise<ProjectMonitorCategoryStat[]> {
+  const buckets: Array<{ category: ProjectMonitorCategoryStat['category']; label: string; candidates: string[] }> = [
+    { category: 'dependencies', label: 'Dependencies', candidates: ['node_modules', 'vendor', '.venv'] },
+    { category: 'build_outputs', label: 'Build Outputs', candidates: ['dist', 'build', '.next', '.nuxt', 'out'] },
+    { category: 'caches', label: 'Caches', candidates: ['.cache', '.turbo', '.gradle', '.parcel-cache'] },
+    { category: 'artifacts', label: 'Artifacts', candidates: ['coverage', 'DerivedData', '.idea', '.vscode'] }
+  ]
+
+  const stats = await Promise.all(buckets.map(async (bucket) => {
+    let size = 0
+    for (const candidate of bucket.candidates) {
+      size += await getDirSizeEstimate(path.join(workspacePath, candidate), 2)
+    }
+    const stat: ProjectMonitorCategoryStat = {
+      category: bucket.category,
+      label: bucket.label,
+      size
+    }
+    return stat
+  }))
+
+  const knownSize = stats.reduce((sum, stat) => sum + stat.size, 0)
+  const totalSize = await getDirSizeEstimate(workspacePath, 2)
+  const otherSize = Math.max(0, totalSize - knownSize)
+  const otherStat: ProjectMonitorCategoryStat = { category: 'other', label: 'Other', size: otherSize }
+  return [...stats, otherStat]
+    .filter((stat) => stat.size > 0)
+    .sort((left, right) => right.size - left.size)
+    .slice(0, 4)
 }
 
 async function pathExists(targetPath: string): Promise<boolean> {
@@ -153,5 +194,31 @@ async function pathExists(targetPath: string): Promise<boolean> {
     return true
   } catch {
     return false
+  }
+}
+
+async function emitWorkspaceGrowthEvents(entries: ProjectMonitorEntry[]): Promise<void> {
+  const historicalEntries = await getStore().load()
+  for (const entry of entries) {
+    const previous = historicalEntries
+      .filter((item) => path.resolve(item.path) === path.resolve(entry.path) && item.scannedAt < entry.scannedAt)
+      .sort((left, right) => right.scannedAt - left.scannedAt)[0]
+
+    if (!previous) continue
+    const growthBytes = Math.max(0, entry.size - previous.size)
+    if (growthBytes < PROJECT_MONITOR_GROWTH_ALERT_BYTES) continue
+
+    await recordEvent(
+      'system',
+      growthBytes >= 3 * PROJECT_MONITOR_GROWTH_ALERT_BYTES ? 'warning' : 'info',
+      `Workspace growth detected: ${path.basename(entry.path)}`,
+      undefined,
+      {
+        kind: 'workspace_growth',
+        path: entry.path,
+        growthBytes,
+        currentSize: entry.size
+      }
+    )
   }
 }

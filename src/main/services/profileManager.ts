@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { WorkspaceProfile, AlertThresholds, CleanupRuleConfig } from '@shared/types'
+import type { WorkspaceProfile, AlertThresholds, CleanupRuleConfig, AutomationSchedule } from '@shared/types'
 import { MAX_PROFILES, PROFILE_NAME_MAX_LENGTH, DASHBOARD_WIDGET_KEYS } from '@shared/types'
 import { getSettings, setSettings } from '../store/settingsStore'
 import { isWorkspaceProfileValue } from '../store/settingsSchema'
@@ -113,6 +113,12 @@ export function getEffectiveThresholds(): AlertThresholds {
 export function getEffectiveCleanupRules(): CleanupRuleConfig[] {
   const profile = getActiveProfile()
   return profile ? profile.cleanupRules : getSettings().automation.rules
+}
+
+export function getEffectiveAutomationSchedule(): AutomationSchedule {
+  const settings = getSettings()
+  const profile = getActiveProfile()
+  return profile?.automationSchedule ?? settings.automation.schedule
 }
 
 function applyProfileSideEffects(profile: WorkspaceProfile): void {
