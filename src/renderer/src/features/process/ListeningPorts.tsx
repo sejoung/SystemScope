@@ -56,6 +56,10 @@ export function ListeningPorts() {
     () => filterPortsByState(orderedSearchFiltered, "LISTEN"),
     [orderedSearchFiltered],
   );
+  const portConflicts = useMemo(
+    () => getPortConflicts(ports),
+    [ports],
+  );
   const localhostListenCount = listeningPorts.filter((port) =>
     isLoopbackAddress(port.localAddress),
   ).length;
@@ -273,6 +277,16 @@ export function ListeningPorts() {
               note={t("Unique PIDs currently holding listening ports")}
             />
           </div>
+          <PortConflictCenter
+            conflicts={portConflicts}
+            onKill={handleKill}
+            onInspectPort={(port) => {
+              setSearch(String(port));
+              setSearchScope("local");
+              setStateFilter("LISTEN");
+            }}
+            t={t}
+          />
           <div style={infoBarStyle}>
             <span style={infoLabelStyle}>
               {t("Listening ports are prioritized first, then sorted by local port")}
@@ -677,6 +691,78 @@ function SummaryCard({
   );
 }
 
+function PortConflictCenter({
+  conflicts,
+  onKill,
+  onInspectPort,
+  t,
+}: {
+  conflicts: PortConflict[];
+  onKill: (port: PortInfo) => Promise<void>;
+  onInspectPort: (port: number) => void;
+  t: (text: string, params?: Record<string, string | number>) => string;
+}) {
+  return (
+    <div style={conflictCardStyle}>
+      <div style={conflictHeaderStyle}>
+        <div>
+          <div style={conflictTitleStyle}>{t("Port Conflict Center")}</div>
+          <div style={conflictSubtitleStyle}>
+            {conflicts.length > 0
+              ? t("Common development ports currently in use")
+              : t("No common development port conflicts detected right now.")}
+          </div>
+        </div>
+        <span style={conflictBadgeStyle}>
+          {t("{count} conflicts", { count: conflicts.length })}
+        </span>
+      </div>
+
+      {conflicts.length === 0 ? (
+        <div style={conflictEmptyStyle}>
+          {t("Ports like 3000, 5173, 5432, and 8080 will appear here when occupied.")}
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: "8px" }}>
+          {conflicts.map((conflict) => (
+            <div key={`${conflict.port}-${conflict.pid}`} style={conflictRowStyle}>
+              <div style={{ minWidth: 0 }}>
+                <div style={conflictMainRowStyle}>
+                  <span style={conflictPortStyle}>{conflict.port}</span>
+                  <span style={conflictProcessStyle}>{conflict.process}</span>
+                  <span style={conflictPidStyle}>PID {conflict.pid}</span>
+                </div>
+                <div style={conflictHintStyle}>
+                  {t("{reason} Recommend trying {port} next.", {
+                    reason: conflict.reason,
+                    port: conflict.recommendedPort,
+                  })}
+                </div>
+              </div>
+              <div style={conflictActionsStyle}>
+                <button
+                  type="button"
+                  onClick={() => onInspectPort(conflict.port)}
+                  style={inspectBtnStyle}
+                >
+                  {t("Inspect")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onKill(conflict.portInfo)}
+                  style={resolveBtnStyle}
+                >
+                  {t("Kill PID")}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function isLoopbackAddress(address: string): boolean {
   const normalized = address.trim().toLowerCase();
   return (
@@ -747,6 +833,58 @@ function getSortableLocalPort(port: PortInfo): number {
   }
 
   return Number.MAX_SAFE_INTEGER;
+}
+
+type PortConflict = {
+  port: number;
+  pid: number;
+  process: string;
+  reason: string;
+  recommendedPort: number;
+  portInfo: PortInfo;
+};
+
+const COMMON_DEV_PORTS = [
+  { port: 3000, reason: "React / Next.js default app port." },
+  { port: 3001, reason: "Secondary web app or API dev port." },
+  { port: 4173, reason: "Vite preview commonly uses this port." },
+  { port: 5173, reason: "Vite dev server commonly uses this port." },
+  { port: 5432, reason: "PostgreSQL default port." },
+  { port: 6379, reason: "Redis default port." },
+  { port: 8000, reason: "Python or backend development default port." },
+  { port: 8080, reason: "Java, proxy, or local API default port." },
+] as const;
+
+export function getPortConflicts(ports: PortInfo[]): PortConflict[] {
+  const listening = dedupeListeningPorts(
+    ports.filter((port) => normalizePortState(port.state) === "LISTEN"),
+  );
+  const occupiedPorts = new Set(listening.map((port) => port.localPortNum));
+  const conflicts: PortConflict[] = [];
+
+  for (const candidate of COMMON_DEV_PORTS) {
+    const owner = listening.find((port) => port.localPortNum === candidate.port);
+    if (!owner) continue;
+
+    conflicts.push({
+      port: candidate.port,
+      pid: owner.pid,
+      process: owner.process,
+      reason: candidate.reason,
+      recommendedPort: suggestAlternativePort(candidate.port, occupiedPorts),
+      portInfo: owner,
+    });
+  }
+
+  return conflicts;
+}
+
+function suggestAlternativePort(port: number, occupiedPorts: Set<number>): number {
+  let nextPort = port + 1;
+  while (occupiedPorts.has(nextPort) && nextPort < port + 20) {
+    nextPort += 1;
+  }
+  return nextPort;
 }
 
 function StateBadge({ state }: { state: string }) {
@@ -950,4 +1088,122 @@ const stateBadgeStyle: React.CSSProperties = {
   fontWeight: 700,
   letterSpacing: "0.04em",
   whiteSpace: "nowrap",
+};
+
+const conflictCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  marginBottom: "12px",
+  padding: "14px 16px",
+  borderRadius: "12px",
+  border: "1px solid color-mix(in srgb, var(--accent-red) 22%, var(--border))",
+  background:
+    "linear-gradient(180deg, color-mix(in srgb, var(--accent-red) 7%, var(--bg-card)) 0%, var(--bg-card) 100%)",
+};
+
+const conflictHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "flex-start",
+};
+
+const conflictTitleStyle: React.CSSProperties = {
+  fontSize: "14px",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+};
+
+const conflictSubtitleStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-secondary)",
+  lineHeight: 1.5,
+};
+
+const conflictBadgeStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  padding: "3px 8px",
+  borderRadius: "999px",
+  background: "color-mix(in srgb, var(--accent-red) 14%, transparent)",
+  color: "var(--accent-red)",
+  whiteSpace: "nowrap",
+};
+
+const conflictEmptyStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
+  lineHeight: 1.6,
+};
+
+const conflictRowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "center",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const conflictMainRowStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  alignItems: "center",
+  flexWrap: "wrap",
+};
+
+const conflictPortStyle: React.CSSProperties = {
+  fontFamily: "monospace",
+  fontWeight: 700,
+  color: "var(--accent-red)",
+};
+
+const conflictProcessStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 600,
+  color: "var(--text-primary)",
+};
+
+const conflictPidStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
+  fontFamily: "monospace",
+};
+
+const conflictHintStyle: React.CSSProperties = {
+  marginTop: "4px",
+  fontSize: "12px",
+  color: "var(--text-secondary)",
+  lineHeight: 1.5,
+};
+
+const conflictActionsStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  alignItems: "center",
+  flexShrink: 0,
+};
+
+const inspectBtnStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  borderRadius: "8px",
+  border: "1px solid var(--border)",
+  background: "var(--bg-card)",
+  color: "var(--text-primary)",
+  cursor: "pointer",
+  fontSize: "12px",
+  fontWeight: 600,
+};
+
+const resolveBtnStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  borderRadius: "8px",
+  border: "none",
+  background: "var(--accent-red)",
+  color: "var(--text-on-accent)",
+  cursor: "pointer",
+  fontSize: "12px",
+  fontWeight: 700,
 };
