@@ -126,6 +126,7 @@ export const IPC_CHANNELS = {
   PROFILE_SAVE:       'profile:save',
   PROFILE_DELETE:     'profile:delete',
   PROFILE_SET_ACTIVE: 'profile:setActive',
+  PROJECT_MONITOR_GET_SUMMARY: 'projectmonitor:getSummary',
 
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',

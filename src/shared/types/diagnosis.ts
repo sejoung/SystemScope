@@ -9,6 +9,8 @@ export type DiagnosisCategory =
   | 'cache_bloat'
   | 'swap_usage'
   | 'network_saturation'
+  | 'storage_growth'
+  | 'workspace_growth'
 
 export interface DiagnosisResult {
   id: string

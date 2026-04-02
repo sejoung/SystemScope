@@ -200,5 +200,7 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.PROFILE_DELETE, id),
     setActiveProfile: (id: string | null) =>
       invokeWithRequestId(IPC_CHANNELS.PROFILE_SET_ACTIVE, id),
+    getProjectMonitorSummary: () =>
+      invokeWithRequestId(IPC_CHANNELS.PROJECT_MONITOR_GET_SUMMARY),
   };
 }

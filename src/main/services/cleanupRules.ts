@@ -15,6 +15,7 @@ import { listDockerContainers, removeDockerContainers } from './dockerImages'
 import { recordEvent } from './eventStore'
 import { logInfo, logWarn } from './logging'
 import { getDirSize } from '../utils/getDirSize'
+import { getEffectiveCleanupRules } from './profileManager'
 
 const home = homedir()
 const isMac = platform() === 'darwin'
@@ -93,8 +94,7 @@ const DOCKER_CONTAINER_PREFIX = 'docker:container:'
  * Returns full CleanupRule objects with enabled/minAgeDays from config.
  */
 export function getCleanupRules(): CleanupRule[] {
-  const settings = getSettings()
-  const userConfigs = settings.automation.rules
+  const userConfigs = getEffectiveCleanupRules()
 
   const configMap = new Map<CleanupRuleId, CleanupRuleConfig>()
   for (const config of userConfigs) {

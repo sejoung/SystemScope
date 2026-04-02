@@ -1,5 +1,5 @@
 import type { AlertThresholds, AppSettings, DiagnosticsSettings, HistorySettings, SnapshotIntervalMin, AutomationSchedule, CleanupRuleConfig, CleanupRuleId, WorkspaceProfile } from '@shared/types'
-import { DEFAULT_THRESHOLDS, DASHBOARD_WIDGET_KEYS, MAX_PROFILES, PROFILE_NAME_MAX_LENGTH } from '@shared/types'
+import { DEFAULT_THRESHOLDS, DASHBOARD_WIDGET_KEYS, MAX_PROFILES, PROFILE_NAME_MAX_LENGTH, MAX_WORKSPACE_PATHS } from '@shared/types'
 import type { AppLocale } from '@shared/i18n'
 
 export const SNAPSHOT_INTERVAL_OPTIONS = [15, 30, 60, 120, 360] as const
@@ -156,9 +156,13 @@ export function isWorkspaceProfileValue(
   if (!isAlertThresholds(p.thresholds)) return false
   if (!Array.isArray(p.cleanupRules) || !p.cleanupRules.every(isCleanupRuleConfigValue)) return false
   if (!Array.isArray(p.hiddenWidgets)) return false
+  if (!Array.isArray(p.workspacePaths) || p.workspacePaths.length > MAX_WORKSPACE_PATHS) return false
   const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
   for (const key of p.hiddenWidgets) {
     if (typeof key !== 'string' || !validWidgetKeys.has(key)) return false
+  }
+  for (const workspacePath of p.workspacePaths) {
+    if (typeof workspacePath !== 'string' || !workspacePath.trim()) return false
   }
   return true
 }

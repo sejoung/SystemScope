@@ -108,6 +108,7 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'saveProfile',
   'deleteProfile',
   'setActiveProfile',
+  'getProjectMonitorSummary',
   'scanDevTools',
   'cleanDevToolItems',
   'getStartupItems',

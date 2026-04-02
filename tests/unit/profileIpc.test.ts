@@ -53,7 +53,8 @@ describe('registerProfileIpc', () => {
       icon: 'x',
       thresholds: { cpuWarning: 80 },
       cleanupRules: [],
-      hiddenWidgets: []
+      hiddenWidgets: [],
+      workspacePaths: []
     }) as { ok: boolean; error?: { code: string } }
 
     expect(result.ok).toBe(false)
@@ -68,7 +69,8 @@ describe('registerProfileIpc', () => {
       icon: 'dev',
       thresholds: DEFAULT_THRESHOLDS,
       cleanupRules: [{ id: 'npm_cache', enabled: true, minAgeDays: 14 }],
-      hiddenWidgets: ['gpu']
+      hiddenWidgets: ['gpu'],
+      workspacePaths: ['/Users/test/workspace']
     })
 
     const { registerProfileIpc } = await import('../../src/main/ipc/profile.ipc')
@@ -81,7 +83,8 @@ describe('registerProfileIpc', () => {
       icon: 'dev',
       thresholds: DEFAULT_THRESHOLDS,
       cleanupRules: [{ id: 'npm_cache', enabled: true, minAgeDays: 14 }],
-      hiddenWidgets: ['gpu']
+      hiddenWidgets: ['gpu'],
+      workspacePaths: ['/Users/test/workspace']
     }) as { ok: boolean; data?: { id: string } }
 
     expect(result.ok).toBe(true)

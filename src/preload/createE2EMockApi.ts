@@ -243,6 +243,14 @@ export function createE2EMockApi(): {
         totalAddedFiles: 0
       }),
     quickScan: () => successResult([])
+    ,
+    getProjectMonitorSummary: () =>
+      successResult({
+        workspaces: [],
+        totalSize: 0,
+        totalRecentGrowthBytes: 0,
+        scannedAt: Date.now()
+      })
   } satisfies Partial<SystemScopeApi>)
 
   return {

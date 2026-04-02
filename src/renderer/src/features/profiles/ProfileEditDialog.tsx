@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useProfileStore } from '../../stores/useProfileStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { WorkspaceProfile, AlertThresholds, DashboardWidgetKey } from '@shared/types'
-import { DEFAULT_THRESHOLDS, DASHBOARD_WIDGET_KEYS, PROFILE_NAME_MAX_LENGTH } from '@shared/types'
+import { DEFAULT_THRESHOLDS, DASHBOARD_WIDGET_KEYS, PROFILE_NAME_MAX_LENGTH, MAX_WORKSPACE_PATHS } from '@shared/types'
 
 const ICON_OPTIONS = ['\u{1F4BB}', '\u{1F3E0}', '\u{1F3A8}', '\u{1F680}', '\u{1F9EA}', '\u{1F4CA}', '\u{1F527}', '\u{1F4D6}', '\u{26A1}', '\u{1F3AF}']
 
@@ -24,6 +24,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
   const [icon, setIcon] = useState(profile?.icon ?? ICON_OPTIONS[0])
   const [thresholds, setThresholds] = useState<AlertThresholds>(profile?.thresholds ?? { ...DEFAULT_THRESHOLDS })
   const [hiddenWidgets, setHiddenWidgets] = useState<DashboardWidgetKey[]>(profile?.hiddenWidgets ?? [])
+  const [workspacePaths, setWorkspacePaths] = useState<string[]>(profile?.workspacePaths ?? [])
   const [saving, setSaving] = useState(false)
 
   function toggleWidget(key: DashboardWidgetKey) {
@@ -52,6 +53,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
       thresholds,
       cleanupRules: profile?.cleanupRules ?? [],
       hiddenWidgets,
+      workspacePaths,
     })
     setSaving(false)
     if (saved) onSaved()
@@ -120,6 +122,44 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
           </div>
         </div>
 
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>{t('Tracked Workspaces')}</label>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {workspacePaths.map((workspacePath) => (
+              <div key={workspacePath} style={workspaceRowStyle}>
+                <span style={{ fontSize: 12, color: 'var(--text-primary)', wordBreak: 'break-all' }}>{workspacePath}</span>
+                <button
+                  type="button"
+                  onClick={() => setWorkspacePaths((prev) => prev.filter((entry) => entry !== workspacePath))}
+                  style={removeButtonStyle}
+                >
+                  {t('Remove')}
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              disabled={workspacePaths.length >= MAX_WORKSPACE_PATHS}
+              onClick={() => {
+                void window.systemScope.selectFolder().then((res) => {
+                  if (res.ok && typeof res.data === 'string' && !workspacePaths.includes(res.data)) {
+                    const nextPath = res.data
+                    setWorkspacePaths((prev) => [...prev, nextPath])
+                  }
+                })
+              }}
+              style={{
+                ...inputStyle,
+                cursor: workspacePaths.length >= MAX_WORKSPACE_PATHS ? 'not-allowed' : 'pointer',
+                textAlign: 'left',
+                opacity: workspacePaths.length >= MAX_WORKSPACE_PATHS ? 0.5 : 1
+              }}
+            >
+              {t('Add workspace folder')}
+            </button>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
           <button onClick={onClose} style={{ padding: '7px 14px', fontSize: 12, fontWeight: 700, borderRadius: 6, border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
             {t('Cancel')}
@@ -136,3 +176,5 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
 
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }
 const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }
+const workspaceRowStyle: React.CSSProperties = { display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', borderRadius: 6, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }
+const removeButtonStyle: React.CSSProperties = { padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', backgroundColor: 'transparent', color: 'var(--accent-red, #e53e3e)', cursor: 'pointer', fontSize: 11 }

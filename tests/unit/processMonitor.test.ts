@@ -22,7 +22,7 @@ describe('processMonitor.getNetworkPorts', () => {
       {
         protocol: 'tcp',
         localAddress: '127.0.0.1',
-        localPort: 8080,
+        localPort: '8080',
         peerAddress: '',
         peerPort: '*',
         state: 'LISTEN',
@@ -32,9 +32,9 @@ describe('processMonitor.getNetworkPorts', () => {
       {
         protocol: 'tcp',
         localAddress: '0.0.0.0',
-        localPort: 3000,
+        localPort: '3000',
         peerAddress: '10.0.0.5',
-        peerPort: 443,
+        peerPort: '443',
         state: 'ESTABLISHED',
         pid: 100,
         process: '/usr/bin/node'
@@ -42,7 +42,7 @@ describe('processMonitor.getNetworkPorts', () => {
       {
         protocol: 'tcp',
         localAddress: '0.0.0.0',
-        localPort: 9000,
+        localPort: '9000',
         peerAddress: '',
         peerPort: '',
         state: 'LISTEN',
@@ -59,7 +59,7 @@ describe('processMonitor.getNetworkPorts', () => {
         pid: 321,
         process: ''
       }
-    ])
+    ] as unknown as Systeminformation.NetworkConnectionsData[])
 
     const { getNetworkPorts } = await import('../../src/main/services/processMonitor')
     const ports = await getNetworkPorts()
@@ -85,14 +85,14 @@ describe('processMonitor.getNetworkPorts', () => {
       {
         protocol: 'tcp',
         localAddress: '127.0.0.1',
-        localPort: 5173,
+        localPort: '5173',
         peerAddress: '',
         peerPort: '*',
         state: 'LISTEN',
         pid: 1200,
         process: 'C:\\Program Files\\nodejs\\node.exe'
       }
-    ])
+    ] as unknown as Systeminformation.NetworkConnectionsData[])
 
     const { getNetworkPorts } = await import('../../src/main/services/processMonitor')
     const ports = await getNetworkPorts()
@@ -114,8 +114,8 @@ describe('processMonitor process caching', () => {
       { pid: 3, name: 'gamma', cpu: 30, mem: 40, memRss: 300, command: 'gamma' }
     ]
 
-    let resolveProcesses: ((value: { list: typeof sampleList }) => void) | null = null
-    processes.mockImplementation(() => new Promise<{ list: typeof sampleList }>((resolve) => {
+    let resolveProcesses: ((value: Systeminformation.ProcessesData) => void) | null = null
+    processes.mockImplementation(() => new Promise<Systeminformation.ProcessesData>((resolve) => {
       resolveProcesses = resolve
     }))
 
@@ -128,7 +128,14 @@ describe('processMonitor process caching', () => {
     ])
 
     expect(processes).toHaveBeenCalledTimes(1)
-    resolveProcesses!({ list: sampleList })
+    resolveProcesses!({
+      all: sampleList.length,
+      running: sampleList.length,
+      blocked: 0,
+      sleeping: 0,
+      unknown: 0,
+      list: sampleList
+    } as Systeminformation.ProcessesData)
 
     const [all, topCpu, topMemory] = await pending
     expect(topCpu.map((entry) => entry.pid)).toEqual([2, 3])

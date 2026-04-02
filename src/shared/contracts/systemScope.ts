@@ -56,7 +56,8 @@ import type {
   ToolIntegrationResult,
   ToolCleanResult,
   StartupItem,
-  StartupToggleResult
+  StartupToggleResult,
+  ProjectMonitorSummary
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -178,6 +179,7 @@ export interface SystemScopeApi {
   saveProfile: (profile: WorkspaceProfile) => Promise<AppResult<WorkspaceProfile>>
   deleteProfile: (id: string) => Promise<AppResult<boolean>>
   setActiveProfile: (id: string | null) => Promise<AppResult<WorkspaceProfile | null>>
+  getProjectMonitorSummary: () => Promise<AppResult<ProjectMonitorSummary>>
 }
 
 export type { AlertThresholds, DiskScanResult, ShutdownState }

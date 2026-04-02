@@ -54,6 +54,7 @@ function createTestProfile(overrides?: Partial<WorkspaceProfile>): WorkspaceProf
     },
     cleanupRules: [{ id: 'npm_cache', enabled: true, minAgeDays: 14 }],
     hiddenWidgets: ['gpu'],
+    workspacePaths: ['/Users/test/workspace'],
     ...overrides
   }
 }

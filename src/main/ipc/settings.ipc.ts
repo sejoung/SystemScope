@@ -13,6 +13,7 @@ import { tk } from '../i18n'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 import { isShellPathRegistered, registerShellPath } from '../services/shellPathRegistry'
 import { recordEvent } from '../services/eventStore'
+import { restartAutomationScheduler } from '../services/automationScheduler'
 
 export function registerSettingsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, (_event, metaArg?: IpcRequestMetaArg) => {
@@ -37,6 +38,9 @@ export function registerSettingsIpc(): void {
       // 스냅샷 주기 변경 시 스케줄러 재시작
       if (parsed.snapshotIntervalMin) {
         restartSnapshotScheduler(parsed.snapshotIntervalMin * 60 * 1000)
+      }
+      if (parsed.automation) {
+        restartAutomationScheduler()
       }
 
       const nextSettings = getSettings()

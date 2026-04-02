@@ -15,6 +15,8 @@ import { initMetricsStore, stopMetricsStore } from '../services/metricsStore'
 import { initDiagnosisAdvisor, stopDiagnosisAdvisor } from '../services/diagnosisAdvisor'
 import { initAlertHistory, stopAlertHistory } from '../services/alertHistory'
 import { initCleanupInbox } from '../services/cleanupInbox'
+import { initAutomationScheduler, stopAutomationScheduler } from '../services/automationScheduler'
+import { initProjectMonitor, stopProjectMonitor } from '../services/projectMonitor'
 
 let appReadyForQuit = false
 
@@ -33,6 +35,8 @@ app.whenReady().then(() => {
   void initDiagnosisAdvisor()
   void initAlertHistory()
   void initCleanupInbox()
+  initAutomationScheduler()
+  initProjectMonitor()
 
   if (!isE2ELightweight) {
     ensureSnapshotDir()
@@ -70,6 +74,8 @@ app.on('before-quit', (event) => {
   stopMetricsStore()
   stopDiagnosisAdvisor()
   stopAlertHistory()
+  stopAutomationScheduler()
+  stopProjectMonitor()
   if (!appReadyForQuit) {
     event.preventDefault()
     appReadyForQuit = true

@@ -23,6 +23,10 @@ const stopMetricsStoreMock = vi.hoisted(() => vi.fn())
 const startJobPrunerMock = vi.hoisted(() => vi.fn())
 const stopJobPrunerMock = vi.hoisted(() => vi.fn())
 const initCleanupInboxMock = vi.hoisted(() => vi.fn(() => Promise.resolve()))
+const initAutomationSchedulerMock = vi.hoisted(() => vi.fn())
+const stopAutomationSchedulerMock = vi.hoisted(() => vi.fn())
+const initProjectMonitorMock = vi.hoisted(() => vi.fn())
+const stopProjectMonitorMock = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
   app: {
@@ -131,6 +135,16 @@ vi.mock('../../src/main/services/cleanupInbox', () => ({
   initCleanupInbox: initCleanupInboxMock
 }))
 
+vi.mock('../../src/main/services/automationScheduler', () => ({
+  initAutomationScheduler: initAutomationSchedulerMock,
+  stopAutomationScheduler: stopAutomationSchedulerMock
+}))
+
+vi.mock('../../src/main/services/projectMonitor', () => ({
+  initProjectMonitor: initProjectMonitorMock,
+  stopProjectMonitor: stopProjectMonitorMock
+}))
+
 describe('app startup integration', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -161,6 +175,10 @@ describe('app startup integration', () => {
     stopJobPrunerMock.mockReset()
     initCleanupInboxMock.mockReset()
     initCleanupInboxMock.mockReturnValue(Promise.resolve())
+    initAutomationSchedulerMock.mockReset()
+    stopAutomationSchedulerMock.mockReset()
+    initProjectMonitorMock.mockReset()
+    stopProjectMonitorMock.mockReset()
     getSettingsMock.mockReturnValue({
       thresholds: {
         cpuWarning: 80,
@@ -178,7 +196,15 @@ describe('app startup integration', () => {
         metricsIntervalSec: 60,
         metricsRetentionDays: 30,
         eventsRetentionDays: 90
-      }
+      },
+      locale: 'en',
+      diagnostics: { enabled: true, intervalSec: 300 },
+      automation: {
+        schedule: { enabled: false, frequency: 'weekly' },
+        rules: []
+      },
+      profiles: [],
+      activeProfileId: null
     })
   })
 
@@ -195,6 +221,8 @@ describe('app startup integration', () => {
     expect(ensureSnapshotDirMock).toHaveBeenCalledTimes(1)
     expect(registerAllIpcMock).toHaveBeenCalledTimes(1)
     expect(initCleanupInboxMock).toHaveBeenCalledTimes(1)
+    expect(initAutomationSchedulerMock).toHaveBeenCalledTimes(1)
+    expect(initProjectMonitorMock).toHaveBeenCalledTimes(1)
     expect(startSnapshotSchedulerMock).toHaveBeenCalledWith(30 * 60 * 1000, {
       initialDelayMs: 15_000
     })
@@ -223,6 +251,8 @@ describe('app startup integration', () => {
     // First call: preventDefault is called, graceful shutdown starts
     expect(mockEvent.preventDefault).toHaveBeenCalledTimes(1)
     expect(stopUpdateCheckerMock).toHaveBeenCalledTimes(1)
+    expect(stopAutomationSchedulerMock).toHaveBeenCalledTimes(1)
+    expect(stopProjectMonitorMock).toHaveBeenCalledTimes(1)
     expect(markQuitAfterShutdownMock).toHaveBeenCalledTimes(1)
     expect(executeGracefulShutdownMock).toHaveBeenCalledWith('before-quit')
   })

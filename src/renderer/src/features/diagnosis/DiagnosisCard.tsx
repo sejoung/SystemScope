@@ -3,6 +3,7 @@ import { useDiagnosisStore } from '../../stores/useDiagnosisStore'
 import { useSettingsStore, type AppPage } from '../../stores/useSettingsStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { DiagnosisResult, DiagnosisSeverity } from '@shared/types'
+import { useToast } from '../../components/Toast'
 
 const MAX_VISIBLE = 4
 
@@ -38,6 +39,8 @@ function formatDiagnosisCategory(
     cache_bloat: 'Cache Bloat',
     swap_usage: 'Swap Usage',
     network_saturation: 'Network Saturation',
+    storage_growth: 'Storage Growth',
+    workspace_growth: 'Workspace Growth',
   }
 
   return t(labels[category] ?? category)
@@ -50,6 +53,7 @@ export function DiagnosisCard() {
   const fetchDiagnosis = useDiagnosisStore((s) => s.fetchDiagnosis)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const { t } = useI18n()
+  const showToast = useToast((s) => s.show)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -120,6 +124,7 @@ export function DiagnosisCard() {
               expanded={expandedId === result.id}
               onToggle={() => setExpandedId(expandedId === result.id ? null : result.id)}
               onNavigate={(page) => setCurrentPage(page as AppPage)}
+              onActionError={(message) => showToast(message)}
               t={t}
             />
           ))}
@@ -150,12 +155,14 @@ function DiagnosisItem({
   expanded,
   onToggle,
   onNavigate,
+  onActionError,
   t
 }: {
   result: DiagnosisResult
   expanded: boolean
   onToggle: () => void
   onNavigate: (page: string) => void
+  onActionError: (message: string) => void
   t: (text: string, params?: Record<string, string | number>) => string
 }) {
   return (
@@ -220,7 +227,17 @@ function DiagnosisItem({
                 <button
                   key={i}
                   onClick={() => {
-                    if (action.targetPage) onNavigate(action.targetPage)
+                    if (action.actionId?.startsWith('open_path:')) {
+                      const targetPath = action.actionId.slice('open_path:'.length)
+                      void window.systemScope.showInFolder(targetPath).then((res) => {
+                        if (!res.ok) {
+                          onActionError(res.error?.message ?? t('Unable to open folder.'))
+                        }
+                      })
+                    }
+                    if (action.targetPage) {
+                      onNavigate(action.targetPage)
+                    }
                   }}
                   style={actionButtonStyle}
                 >

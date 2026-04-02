@@ -13,6 +13,7 @@ import type { WorkspaceProfile } from './profile'
 import { DASHBOARD_WIDGET_KEYS } from './profile'
 import type { ToolIntegrationResult, ToolCleanResult } from './toolIntegration'
 import type { StartupItem, StartupToggleResult } from './startup'
+import type { ProjectMonitorSummary } from './projectMonitor'
 
 // ── IPC 응답 런타임 타입 가드 ──
 
@@ -189,6 +190,7 @@ export function isWorkspaceProfile(data: unknown): data is WorkspaceProfile {
   if (!isObj(data.thresholds)) return false
   if (!Array.isArray(data.cleanupRules)) return false
   if (!Array.isArray(data.hiddenWidgets)) return false
+  if (!Array.isArray(data.workspacePaths) || !data.workspacePaths.every((entry) => typeof entry === 'string')) return false
   const validWidgetKeys = new Set<string>(DASHBOARD_WIDGET_KEYS)
   for (const key of data.hiddenWidgets as unknown[]) {
     if (typeof key !== 'string' || !validWidgetKeys.has(key)) return false
@@ -229,4 +231,12 @@ export function isStartupItemArray(data: unknown): data is StartupItem[] {
 /** StartupToggleResult */
 export function isStartupToggleResult(data: unknown): data is StartupToggleResult {
   return isObj(data) && typeof data.id === 'string' && typeof data.success === 'boolean'
+}
+
+export function isProjectMonitorSummary(data: unknown): data is ProjectMonitorSummary {
+  return isObj(data)
+    && Array.isArray(data.workspaces)
+    && typeof data.totalSize === 'number'
+    && typeof data.totalRecentGrowthBytes === 'number'
+    && typeof data.scannedAt === 'number'
 }

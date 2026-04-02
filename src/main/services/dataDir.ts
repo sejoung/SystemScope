@@ -32,4 +32,8 @@ function getSessionSnapshotsFilePath(): string {
   return path.join(getDataDir(), 'session-snapshots.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath }
+function getProjectMonitorFilePath(): string {
+  return path.join(getDataDir(), 'project-monitor.json')
+}
+
+export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath }

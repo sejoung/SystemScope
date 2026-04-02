@@ -17,6 +17,7 @@ export type DashboardWidgetKey = typeof DASHBOARD_WIDGET_KEYS[number]
 
 export const MAX_PROFILES = 10
 export const PROFILE_NAME_MAX_LENGTH = 50
+export const MAX_WORKSPACE_PATHS = 8
 
 export interface WorkspaceProfile {
   id: string
@@ -25,4 +26,5 @@ export interface WorkspaceProfile {
   thresholds: AlertThresholds
   cleanupRules: CleanupRuleConfig[]
   hiddenWidgets: DashboardWidgetKey[]
+  workspacePaths: string[]
 }

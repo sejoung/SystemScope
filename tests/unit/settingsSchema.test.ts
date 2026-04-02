@@ -60,7 +60,8 @@ describe('settingsSchema', () => {
       icon: 'dev',
       thresholds: DEFAULT_THRESHOLDS,
       cleanupRules: [{ id: 'npm_cache', enabled: true, minAgeDays: 14 }],
-      hiddenWidgets: ['gpu']
+      hiddenWidgets: ['gpu'],
+      workspacePaths: ['/Users/test/workspace']
     }
 
     expect(isWorkspaceProfileValue(validProfile)).toBe(true)

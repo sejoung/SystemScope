@@ -5,6 +5,7 @@ import type {
   AlertThresholds,
   AppSettings,
   SnapshotIntervalMin,
+  AutomationSchedule,
 } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
 import { translateLiteral, type AppLocale } from "@shared/i18n";
@@ -43,6 +44,10 @@ export function SettingsPage() {
     useState<SnapshotIntervalMin>(60);
   const [localTheme, setLocalTheme] = useState<"dark" | "light">(theme);
   const [localLocale, setLocalLocale] = useState<AppLocale>(locale);
+  const [automationSchedule, setAutomationSchedule] = useState<AutomationSchedule>({
+    enabled: false,
+    frequency: "weekly",
+  });
   const [saved, setSaved] = useState(false);
   const [dataPath, setDataPath] = useState<string | null>(null);
   const [systemLogPath, setSystemLogPath] = useState<string | null>(null);
@@ -56,11 +61,13 @@ export function SettingsPage() {
     snapshotInterval: number;
     theme: "dark" | "light";
     locale: AppLocale;
+    automationSchedule: AutomationSchedule;
   }>({
     thresholds,
     snapshotInterval: 60 as SnapshotIntervalMin,
     theme,
     locale,
+    automationSchedule: { enabled: false, frequency: "weekly" },
   });
   const showToast = useToast((s) => s.show);
   const updateInfo = useUpdateStore((s) => s.updateInfo);
@@ -75,12 +82,14 @@ export function SettingsPage() {
     persistedRef.current.snapshotInterval = settings.snapshotIntervalMin;
     persistedRef.current.theme = settings.theme;
     persistedRef.current.locale = settings.locale;
+    persistedRef.current.automationSchedule = settings.automation.schedule;
 
     if (!hasEditedRef.current) {
       setLocal(settings.thresholds);
       setSnapshotInterval(settings.snapshotIntervalMin);
       setLocalTheme(settings.theme);
       setLocalLocale(settings.locale);
+      setAutomationSchedule(settings.automation.schedule);
     }
   };
 
@@ -149,6 +158,9 @@ export function SettingsPage() {
   );
   const snapshotsDirty =
     snapshotInterval !== persistedRef.current.snapshotInterval;
+  const automationDirty =
+    JSON.stringify(automationSchedule) !==
+    JSON.stringify(persistedRef.current.automationSchedule);
   const validationIssues = useMemo(() => {
     const issues: string[] = [];
     const thresholdGroups = [
@@ -203,9 +215,14 @@ export function SettingsPage() {
     appearanceDirty ? tk("settings.section.appearance") : null,
     alertsDirty ? tk("settings.section.alerts") : null,
     snapshotsDirty ? tk("settings.section.snapshots") : null,
+    automationDirty ? tk("cleanup.schedule.title") : null,
   ].filter(Boolean) as string[];
   const isDirty =
-    appearanceDirty || languageDirty || alertsDirty || snapshotsDirty;
+    appearanceDirty ||
+    languageDirty ||
+    alertsDirty ||
+    snapshotsDirty ||
+    automationDirty;
 
   useEffect(() => {
     setHasUnsavedSettings(isDirty);
@@ -218,11 +235,18 @@ export function SettingsPage() {
     if (!isDirty || isSaving || hasValidationIssues) return;
     setIsSaving(true);
     try {
+      const settingsRes = await window.systemScope.getSettings();
       const res = await window.systemScope.setSettings({
         thresholds: local,
         theme: localTheme,
         locale: localLocale,
         snapshotIntervalMin: snapshotInterval,
+        automation: {
+          ...(settingsRes.ok
+            ? settingsRes.data.automation
+            : { schedule: automationSchedule, rules: [] }),
+          schedule: automationSchedule,
+        },
       });
       if (res.ok) {
         persistedRef.current = {
@@ -230,6 +254,7 @@ export function SettingsPage() {
           snapshotInterval,
           theme: localTheme,
           locale: localLocale,
+          automationSchedule,
         };
         hasEditedRef.current = false;
         setThresholds(local);
@@ -546,6 +571,58 @@ export function SettingsPage() {
             }}
           >
             {tk("settings.snapshots.guidance")}
+          </div>
+        </Section>
+
+        <Section
+          title={tk("cleanup.schedule.title")}
+          badge={automationDirty ? tk("settings.badge.edited") : undefined}
+        >
+          <SaveTimingNote text={tk("settings.note.save_required")} />
+          <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            {tk("cleanup.schedule.enabled")}
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <input
+              type="checkbox"
+              checked={automationSchedule.enabled}
+              onChange={(event) => {
+                hasEditedRef.current = true;
+                setAutomationSchedule((prev) => ({
+                  ...prev,
+                  enabled: event.target.checked,
+                }));
+              }}
+            />
+            <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>
+              {tk("cleanup.schedule.enabled")}
+            </span>
+          </label>
+          <div style={{ display: "grid", gap: "8px" }}>
+            <label style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              {tk("cleanup.schedule.frequency")}
+            </label>
+            <select
+              value={automationSchedule.frequency}
+              onChange={(event) => {
+                hasEditedRef.current = true;
+                setAutomationSchedule((prev) => ({
+                  ...prev,
+                  frequency: event.target.value as AutomationSchedule["frequency"],
+                }));
+              }}
+              style={selectStyle}
+            >
+              <option value="daily">{tk("cleanup.schedule.frequency.daily")}</option>
+              <option value="weekly">{tk("cleanup.schedule.frequency.weekly")}</option>
+              <option value="manual">{tk("cleanup.schedule.frequency.manual")}</option>
+            </select>
+          </div>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+            {tk("cleanup.schedule.last_run")}:{" "}
+            {automationSchedule.lastRunAt
+              ? new Date(automationSchedule.lastRunAt).toLocaleString()
+              : tk("cleanup.schedule.never")}
           </div>
         </Section>
 
@@ -1073,6 +1150,16 @@ function ThresholdGroup({
 const inputStyle: React.CSSProperties = {
   width: "80px",
   padding: "6px 10px",
+  fontSize: "13px",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius)",
+  background: "var(--bg-primary)",
+  color: "var(--text-primary)",
+};
+
+const selectStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 10px",
   fontSize: "13px",
   border: "1px solid var(--border)",
   borderRadius: "var(--radius)",

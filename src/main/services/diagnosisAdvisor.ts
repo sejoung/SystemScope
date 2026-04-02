@@ -11,6 +11,7 @@ import { runQuickScan } from './quickScan'
 import { listDockerContainers, listDockerImages, listDockerVolumes } from './dockerImages'
 import { logInfo, logWarn, logError } from './logging'
 import { formatBytes } from '@shared/utils/formatBytes'
+import { getProjectMonitorSummary } from './projectMonitor'
 
 interface DiagnosisRule {
   category: DiagnosisCategory
@@ -315,6 +316,59 @@ const rules: DiagnosisRule[] = [
         ],
         actions: [
           { label: 'View network activity', targetPage: 'dashboard' }
+        ],
+        detectedAt: Date.now()
+      }
+    }
+  },
+
+  {
+    category: 'storage_growth',
+    async evaluate(): Promise<DiagnosisResult | null> {
+      const summary = await getProjectMonitorSummary()
+      const GROWTH_THRESHOLD = 1024 * 1024 * 1024
+      if (summary.totalRecentGrowthBytes < GROWTH_THRESHOLD) return null
+
+      return {
+        id: randomUUID(),
+        category: 'storage_growth',
+        severity: summary.totalRecentGrowthBytes >= 5 * GROWTH_THRESHOLD ? 'warning' : 'info',
+        title: 'Recent Storage Growth Detected',
+        description: `${formatBytes(summary.totalRecentGrowthBytes)} of recent growth was detected across monitored workspaces.`,
+        evidence: [
+          { label: 'Recent Growth', value: formatBytes(summary.totalRecentGrowthBytes), threshold: '1 GB' },
+          { label: 'Tracked Workspaces', value: `${summary.workspaces.length}` }
+        ],
+        actions: [
+          { label: 'Review cleanup targets', targetPage: 'cleanup', actionId: 'open_cleanup' },
+          { label: 'Open dashboard monitor', targetPage: 'dashboard', actionId: 'open_project_monitor' }
+        ],
+        detectedAt: Date.now()
+      }
+    }
+  },
+
+  {
+    category: 'workspace_growth',
+    async evaluate(): Promise<DiagnosisResult | null> {
+      const summary = await getProjectMonitorSummary()
+      const largest = [...summary.workspaces].sort((left, right) => right.recentGrowthBytes - left.recentGrowthBytes)[0]
+      if (!largest || largest.recentGrowthBytes < 512 * 1024 * 1024) return null
+
+      return {
+        id: randomUUID(),
+        category: 'workspace_growth',
+        severity: largest.recentGrowthBytes >= 2 * 1024 * 1024 * 1024 ? 'warning' : 'info',
+        title: 'Workspace Growth Hotspot',
+        description: `Workspace "${largest.name}" grew by ${formatBytes(largest.recentGrowthBytes)} since the previous scan.`,
+        evidence: [
+          { label: 'Workspace', value: largest.name },
+          { label: 'Growth', value: formatBytes(largest.recentGrowthBytes), threshold: '512 MB' },
+          { label: 'Current Size', value: formatBytes(largest.currentSize) }
+        ],
+        actions: [
+          { label: 'Inspect storage growth', targetPage: 'disk', actionId: 'open_growth' },
+          { label: 'Open workspace folder', actionId: `open_path:${largest.path}` }
         ],
         detectedAt: Date.now()
       }

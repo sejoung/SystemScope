@@ -18,6 +18,7 @@ import { registerSessionSnapshotIpc } from './sessionSnapshot.ipc'
 import { registerProfileIpc } from './profile.ipc'
 import { registerDevToolsIpc } from './devTools.ipc'
 import { registerStartupIpc } from './startup.ipc'
+import { registerProjectMonitorIpc } from './projectMonitor.ipc'
 
 export function registerAllIpc(): void {
   registerAppIpc()
@@ -40,6 +41,7 @@ export function registerAllIpc(): void {
   registerProfileIpc()
   registerDevToolsIpc()
   registerStartupIpc()
+  registerProjectMonitorIpc()
 }
 
 export { cleanupSystemIpc } from './system.ipc'

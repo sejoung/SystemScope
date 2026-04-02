@@ -23,6 +23,7 @@ import { ProfileSelector } from "../features/profiles/ProfileSelector";
 import { DevToolsSection } from "../features/devtools/DevToolsSection";
 import { useProfileStore } from "../stores/useProfileStore";
 import type { DashboardWidgetKey } from "@shared/types";
+import { ProjectMonitorCard } from "../features/monitoring/ProjectMonitorCard";
 
 export function DashboardPage() {
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
@@ -128,6 +129,7 @@ export function DashboardPage() {
       ) : null}
       <AlertBanner />
       <ErrorBoundary title="Diagnosis"><DiagnosisCard /></ErrorBoundary>
+      <ErrorBoundary title="Project Monitor"><ProjectMonitorCard /></ErrorBoundary>
 
       {/* Top: Gauges */}
       <div className="dashboard-grid-top">
