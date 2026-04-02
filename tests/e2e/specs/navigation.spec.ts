@@ -4,7 +4,7 @@ import { test, expect } from '../fixtures/electronApp'
 test.describe('사이드바 네비게이션', () => {
   async function clickNav(
     mainWindow: Page,
-    pageId: 'dashboard' | 'disk' | 'docker' | 'process' | 'apps' | 'settings'
+    pageId: 'dashboard' | 'timeline' | 'disk' | 'docker' | 'cleanup' | 'process' | 'devtools' | 'apps' | 'settings'
   ) {
     const target = mainWindow.getByTestId(`nav-${pageId}`)
     await expect(target).toBeVisible({ timeout: 5_000 })
@@ -19,6 +19,11 @@ test.describe('사이드바 네비게이션', () => {
     ).toBeVisible({ timeout: 5_000 })
   })
 
+  test('Timeline 페이지로 이동한다', async ({ mainWindow }) => {
+    await clickNav(mainWindow, 'timeline')
+    await expect(mainWindow.getByTestId('page-timeline')).toBeVisible({ timeout: 5_000 })
+  })
+
   test('Storage 페이지로 이동한다', async ({ mainWindow }) => {
     await clickNav(mainWindow, 'disk')
     await expect(mainWindow.getByTestId('page-disk')).toBeVisible({ timeout: 5_000 })
@@ -29,11 +34,21 @@ test.describe('사이드바 네비게이션', () => {
     await expect(mainWindow.getByTestId('page-docker')).toBeVisible({ timeout: 5_000 })
   })
 
+  test('Cleanup 페이지로 이동한다', async ({ mainWindow }) => {
+    await clickNav(mainWindow, 'cleanup')
+    await expect(mainWindow.getByTestId('page-cleanup')).toBeVisible({ timeout: 5_000 })
+  })
+
   test('Activity 페이지로 이동한다', async ({ mainWindow }) => {
     await clickNav(mainWindow, 'process')
     await expect(
       mainWindow.locator('[data-testid="page-process"], [data-testid="page-loading"]')
     ).toBeVisible({ timeout: 5_000 })
+  })
+
+  test('DevTools 페이지로 이동한다', async ({ mainWindow }) => {
+    await clickNav(mainWindow, 'devtools')
+    await expect(mainWindow.getByTestId('page-devtools')).toBeVisible({ timeout: 5_000 })
   })
 
   test('Applications 페이지로 이동한다', async ({ mainWindow }) => {

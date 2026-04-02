@@ -136,7 +136,6 @@ export const MESSAGE_KEYS = {
     "Scan folders, inspect large files, and review cleanup candidates before deleting anything.",
   "disk.tab.overview": "Overview",
   "disk.tab.scan": "Scan",
-  "disk.tab.cleanup": "Cleanup",
   "disk.scan.failed": "Scan failed",
   "disk.scan.start_failed": "Unable to start folder scan.",
   "disk.scan.in_progress":
