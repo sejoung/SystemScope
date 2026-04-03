@@ -1,13 +1,37 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PortInfo, ProcessInfo } from '../../src/shared/types'
 
-vi.mock('../../src/main/services/profileManager', () => ({
-  getActiveProfile: () => null
+const runExternalCommand = vi.hoisted(() => vi.fn())
+const getNetworkPorts = vi.hoisted(() => vi.fn())
+const getAllProcesses = vi.hoisted(() => vi.fn())
+
+vi.mock('../../src/main/services/externalCommand', () => ({
+  runExternalCommand,
+  isExternalCommandError: (error: unknown) => {
+    return Boolean(error) && typeof error === 'object' && 'kind' in (error as Record<string, unknown>)
+  },
 }))
 
-import { detectDevServerKind, detectDevServers, summarizeGitStatusLines } from '../../src/main/services/devToolsOverview'
+vi.mock('../../src/main/services/processMonitor', () => ({
+  getNetworkPorts,
+  getAllProcesses,
+}))
+
+vi.mock('../../src/main/services/profileManager', () => ({
+  getActiveProfile: () => null,
+}))
+
+import { detectDevServerKind, detectDevServers, getDevToolsOverview, summarizeGitStatusLines } from '../../src/main/services/devToolsOverview'
 
 describe('devToolsOverview helpers', () => {
+  beforeEach(() => {
+    runExternalCommand.mockReset()
+    getNetworkPorts.mockReset()
+    getAllProcesses.mockReset()
+    getNetworkPorts.mockResolvedValue([])
+    getAllProcesses.mockResolvedValue([])
+  })
+
   it('summarizes git porcelain lines', () => {
     expect(
       summarizeGitStatusLines([
@@ -75,5 +99,31 @@ describe('devToolsOverview helpers', () => {
     expect(result).toHaveLength(1)
     expect(result[0]?.workspaceName).toBe('app')
     expect(result[0]?.kind).toBe('Next.js')
+  })
+
+  it('includes Java in environment health checks and reads version output from stderr', async () => {
+    runExternalCommand.mockImplementation(async (command: string) => {
+      if (command === 'java') {
+        return {
+          stdout: '',
+          stderr: 'openjdk version "21.0.2" 2024-01-16',
+        }
+      }
+
+      return {
+        stdout: `${command} 1.0.0`,
+        stderr: '',
+      }
+    })
+
+    const result = await getDevToolsOverview()
+    const javaCheck = result.healthChecks.find((entry) => entry.id === 'java')
+
+    expect(javaCheck).toEqual(expect.objectContaining({
+      id: 'java',
+      label: 'Java',
+      status: 'healthy',
+      version: 'openjdk version "21.0.2" 2024-01-16',
+    }))
   })
 })

@@ -40,6 +40,7 @@ async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
   const checks = await Promise.all([
     runVersionCheck('git', 'Git', ['--version'], 'Install Git to enable workspace insights and branch status.'),
     runVersionCheck('node', 'Node.js', ['--version'], 'Install Node.js to run local JavaScript toolchains.'),
+    runVersionCheck('java', 'Java', ['-version'], 'Install a JDK to run JVM toolchains and Gradle-based builds.'),
     runVersionCheck('npm', 'npm', ['--version'], 'npm is usually bundled with Node.js.'),
     runVersionCheck('pnpm', 'pnpm', ['--version'], 'Install pnpm if your workspaces use pnpm-lock.yaml.'),
     runVersionCheck('yarn', 'Yarn', ['--version'], 'Install Yarn if your workspaces use yarn.lock.'),
