@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { TranslateFn } from "../../src/shared/i18n";
 import {
   getConfidenceColor,
   getConfidenceLabel,
@@ -9,12 +10,7 @@ import { shouldUseRegistryAppsCompactLayout } from "../../src/renderer/src/featu
 
 describe("AppsPage helpers", () => {
   it("maps confidence levels to localized labels", () => {
-    const tk = (
-      key:
-        | "apps.confidence.high"
-        | "apps.confidence.medium"
-        | "apps.confidence.low",
-    ) => key;
+    const tk: TranslateFn = (input) => input;
 
     expect(getConfidenceLabel("high", tk)).toBe("apps.confidence.high");
     expect(getConfidenceLabel("medium", tk)).toBe("apps.confidence.medium");

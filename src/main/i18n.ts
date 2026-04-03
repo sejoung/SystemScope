@@ -1,4 +1,4 @@
-import { translate, type AppLocale, type TranslationKey } from '@shared/i18n'
+import { translate, type AppLocale, type TranslateFn } from '@shared/i18n'
 
 export function getCurrentLocale(): AppLocale {
   try {
@@ -11,8 +11,6 @@ export function getCurrentLocale(): AppLocale {
   }
 }
 
-export function tk(text: string, params?: Record<string, string | number>): string
-export function tk(key: TranslationKey, params?: Record<string, string | number>): string
-export function tk(input: string | TranslationKey, params?: Record<string, string | number>): string {
+export const tk: TranslateFn = (input, params) => {
   return translate(getCurrentLocale(), input, params)
 }

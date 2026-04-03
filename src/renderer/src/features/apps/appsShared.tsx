@@ -1,4 +1,5 @@
 import type React from "react";
+import type { TranslateFn } from "@shared/i18n";
 import type { AppLeftoverDataItem } from "@shared/types";
 
 // --- Types ---
@@ -12,7 +13,7 @@ export type LeftoverSort = "priority" | "name" | "size";
 
 export function getConfidenceLabel(
   confidence: AppLeftoverDataItem["confidence"],
-  tk: (key: "apps.confidence.high" | "apps.confidence.medium" | "apps.confidence.low") => string,
+  tk: TranslateFn,
 ): string {
   switch (confidence) {
     case "high": return tk("apps.confidence.high");
