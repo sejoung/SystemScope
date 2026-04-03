@@ -162,6 +162,49 @@ return <section ref={containerRef}>...</section>;
 - 공용으로 뺀 구조는 각 파일에서 다시 같은 이름으로 재정의하지 않는다.
 - 불필요한 animation이나 복잡한 조건부 스타일보다 정보 위계 정리에 집중한다.
 
+## 텍스트 / i18n 규칙
+
+Renderer 작업 중 텍스트를 추가하거나 수정할 때는 번역 규칙도 함께 지켜야 합니다. 현재 기준은 번역 진입점과 타입 기준을 하나로 유지하는 것입니다.
+
+기본 원칙:
+
+1. 새 번역 호출은 항상 `tk(...)`를 사용한다.
+2. 새 `t(...)`, `translateLiteral(...)`, `translateKey(...)` 사용을 추가하지 않는다.
+3. helper나 component prop으로 번역 함수를 전달할 때는 `TranslateFn`을 사용한다.
+4. 문구를 추가할 때는 아래 3개 파일을 같은 변경에서 함께 수정한다.
+   - `src/shared/i18n/keys.ts`
+   - `src/shared/i18n/locales/en.ts`
+   - `src/shared/i18n/locales/ko.ts`
+5. 문구 의미가 바뀌지 않았다면 key 이름은 바꾸지 않는다.
+
+권장 key 규칙:
+
+- `settings.updates.check`처럼 기능 단위 prefix를 사용한다.
+- 재사용되는 버튼, 에러 메시지, empty state, 안내 문구는 explicit key를 우선한다.
+- locale 파일에서는 사람이 읽을 문장 단위로 관리한다.
+
+타입 규칙:
+
+- 공용 helper/component prop의 번역 함수 타입은 `@shared/i18n`의 `TranslateFn`을 사용한다.
+- key-only 값이 정말 필요한 경우에만 `TranslationKey`를 직접 쓴다.
+- helper가 key와 일반 문자열을 모두 처리한다면 `TranslateFn`을 사용한다.
+
+새 문자열 추가 절차:
+
+1. `src/shared/i18n/keys.ts`에 key를 추가한다.
+2. `src/shared/i18n/locales/en.ts`에 영어 문구를 추가한다.
+3. `src/shared/i18n/locales/ko.ts`에 한국어 문구를 추가한다.
+4. 호출부에서는 `tk("your.new.key")`를 사용한다.
+5. 마지막에 `npm run check`를 실행한다.
+
+피해야 할 패턴:
+
+- locale 파일 하나만 수정하는 방식
+- 중복 key 추가
+- locale 파일 객체 구조를 깨뜨리는 편집
+- `TranslateFn` 대신 ad-hoc 함수 시그니처를 다시 선언하는 방식
+- key 전용/리터럴 전용 wrapper를 다시 분리하는 방식
+
 ## 테스트 규칙
 
 반응형 동작은 helper 함수 기준으로 테스트합니다.
