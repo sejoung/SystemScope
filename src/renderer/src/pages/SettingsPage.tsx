@@ -31,6 +31,36 @@ const SNAPSHOT_OPTIONS = [
   { value: 360, labelKey: "settings.snapshots.option_6h" },
 ] as const;
 
+const THRESHOLD_PRESETS = [
+  {
+    labelKey: "settings.alerts.preset.conservative" as const,
+    thresholds: {
+      cpuWarning: 60, cpuCritical: 80,
+      diskWarning: 70, diskCritical: 85,
+      memoryWarning: 60, memoryCritical: 80,
+      gpuMemoryWarning: 60, gpuMemoryCritical: 80,
+    },
+  },
+  {
+    labelKey: "settings.alerts.preset.balanced" as const,
+    thresholds: {
+      cpuWarning: 75, cpuCritical: 85,
+      diskWarning: 80, diskCritical: 90,
+      memoryWarning: 75, memoryCritical: 85,
+      gpuMemoryWarning: 75, gpuMemoryCritical: 85,
+    },
+  },
+  {
+    labelKey: "settings.alerts.preset.aggressive" as const,
+    thresholds: {
+      cpuWarning: 85, cpuCritical: 95,
+      diskWarning: 85, diskCritical: 95,
+      memoryWarning: 85, memoryCritical: 95,
+      gpuMemoryWarning: 85, gpuMemoryCritical: 95,
+    },
+  },
+];
+
 export function shouldUseSettingsPageCompactLayout(width: number): boolean {
   return isCompactWidth(width, RESPONSIVE_WIDTH.settingsPageCompact);
 }
@@ -493,6 +523,29 @@ export function SettingsPage() {
           <SaveTimingNote text={tk("settings.note.save_required")} />
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.alerts.description")}
+          </div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {THRESHOLD_PRESETS.map((preset) => (
+              <button
+                key={preset.labelKey}
+                onClick={() => {
+                  setLocal(preset.thresholds);
+                  hasEditedRef.current = true;
+                }}
+                style={{
+                  padding: "5px 12px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  borderRadius: "var(--radius)",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-card)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                }}
+              >
+                {tk(preset.labelKey)}
+              </button>
+            ))}
           </div>
           <div
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}

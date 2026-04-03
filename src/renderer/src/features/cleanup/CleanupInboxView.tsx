@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useCleanupStore } from '../../stores/useCleanupStore'
 import { useI18n } from '../../i18n/useI18n'
 import { formatBytes } from '@shared/utils/formatBytes'
@@ -54,6 +54,7 @@ export function CleanupInboxView() {
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingPaths, setPendingPaths] = useState<string[]>([])
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     void fetchInbox()
@@ -82,6 +83,18 @@ export function CleanupInboxView() {
   }
 
   const items = inbox?.items ?? []
+
+  const filteredItems = useMemo(() => {
+    if (!search.trim()) return items
+    const q = search.toLowerCase()
+    return items.filter(
+      (item) =>
+        item.path.toLowerCase().includes(q) ||
+        item.ruleName.toLowerCase().includes(q) ||
+        (CATEGORY_LABELS[item.category] ?? item.category).toLowerCase().includes(q),
+    )
+  }, [items, search])
+
   const safeCount = items.filter((i) => i.safetyLevel === 'safe').length
 
   return (
@@ -95,7 +108,7 @@ export function CleanupInboxView() {
             </span>
             {lastResult && (
               <span style={{ fontSize: '12px', color: 'var(--accent-green)' }}>
-                {tk('cleanup.execute.success')}: {formatBytes(lastResult.deletedSize)}
+                {tk('cleanup.execute.success')}: {formatBytes(lastResult.deletedSize)} — {t('Items can be restored from Trash.')}
                 {lastResult.failedCount > 0 && (
                   <span style={{ color: 'var(--accent-red)', marginLeft: '8px' }}>
                     ({lastResult.failedCount} {t('failed')})
@@ -126,6 +139,48 @@ export function CleanupInboxView() {
           </div>
         </div>
 
+        {/* Search bar */}
+        {!inboxLoading && items.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={tk('cleanup.inbox.search_placeholder')}
+                aria-label={tk('cleanup.inbox.search_placeholder')}
+                style={{ ...searchInputStyle, paddingRight: '30px' }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label={t('Clear search')}
+                  style={{
+                    position: 'absolute',
+                    right: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    padding: '0 2px',
+                  }}
+                >
+                  &times;
+                </button>
+              )}
+            </div>
+            {search.trim() && (
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {filteredItems.length > 0
+                  ? tk('cleanup.inbox.search_results', { count: filteredItems.length })
+                  : tk('cleanup.inbox.search_no_results', { query: search })}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Item list */}
         {inboxLoading && (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
@@ -141,7 +196,7 @@ export function CleanupInboxView() {
 
         {!inboxLoading && items.length > 0 && (
           <div style={{ display: 'grid', gap: '8px' }}>
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <div key={item.id} style={itemCardStyle}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   {/* Safety badge */}
@@ -258,6 +313,17 @@ const badgeStyle: React.CSSProperties = {
   padding: '2px 8px',
   borderRadius: '999px',
   whiteSpace: 'nowrap',
+}
+
+const searchInputStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  fontSize: '13px',
+  width: '240px',
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
+  background: 'var(--bg-primary)',
+  color: 'var(--text-primary)',
+  outline: 'none',
 }
 
 const dismissBtnStyle: React.CSSProperties = {

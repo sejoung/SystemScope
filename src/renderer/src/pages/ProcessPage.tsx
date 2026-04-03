@@ -14,7 +14,7 @@ type ActivityTab = "processes" | "ports" | "watch" | "startup";
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
   const allProcessesLoaded = useProcessStore((s) => s.allProcessesLoaded);
-  const [tab, setTab] = useState<ActivityTab>("ports");
+  const [tab, setTab] = useState<ActivityTab>("processes");
   const { tk, t } = useI18n();
 
   if (tab === "processes" && !allProcessesLoaded) {
@@ -66,6 +66,13 @@ export function ProcessPage() {
           }}
         >
           <PageTab
+            id="activity-processes"
+            active={tab === "processes"}
+            onClick={() => setTab("processes")}
+          >
+            {tk("process.tab.processes")}
+          </PageTab>
+          <PageTab
             id="activity-ports"
             active={tab === "ports"}
             onClick={() => setTab("ports")}
@@ -78,13 +85,6 @@ export function ProcessPage() {
             onClick={() => setTab("watch")}
           >
             {tk("process.tab.watch")}
-          </PageTab>
-          <PageTab
-            id="activity-processes"
-            active={tab === "processes"}
-            onClick={() => setTab("processes")}
-          >
-            {tk("process.tab.processes")}
           </PageTab>
           <PageTab
             id="activity-startup"

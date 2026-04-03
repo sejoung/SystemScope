@@ -61,6 +61,17 @@ export function CpuWidget() {
             <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', marginTop: '6px' }}>
               {tk('monitoring.cpu.usage')}
             </div>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              marginTop: '4px',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              color: cpu.usage > 80 ? 'var(--accent-red)' : cpu.usage > 50 ? 'var(--accent-yellow)' : 'var(--accent-green)',
+              background: cpu.usage > 80 ? 'var(--alert-red-soft)' : cpu.usage > 50 ? 'var(--alert-yellow-soft)' : 'var(--success-soft)',
+            }}>
+              {cpu.usage > 80 ? tk('monitoring.cpu.status.critical') : cpu.usage > 50 ? tk('monitoring.cpu.status.high') : tk('monitoring.cpu.status.normal')}
+            </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>
               {cpu.model}
             </div>

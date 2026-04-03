@@ -168,6 +168,24 @@ export function DiskAnalysisScanTab({
               </button>
             }
           />
+          {scanProgress && (
+            <div
+              style={{
+                marginTop: "6px",
+                padding: "6px 12px",
+                fontSize: "11px",
+                color: "var(--text-muted)",
+                lineHeight: 1.5,
+                background: "var(--bg-secondary)",
+                borderRadius: "var(--radius)",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {tk("disk.scan.current_path")}: {scanProgress}
+            </div>
+          )}
         </div>
       )}
 

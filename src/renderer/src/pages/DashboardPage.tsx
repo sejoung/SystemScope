@@ -75,6 +75,9 @@ export function DashboardPage() {
             {t("Export Report")}
           </button>
         </div>
+        <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "-4px" }}>
+          {t("Customize dashboard widgets with profiles")}
+        </div>
       </div>
 
       <ExportReportDialog open={reportDialogOpen} onClose={() => setReportDialogOpen(false)} />

@@ -93,7 +93,7 @@ export function FileInsights({ extensions, largeFiles, folderPath, defaultTab = 
         showToast(tk('disk.file_insights.trash_success', {
           count: result.successCount,
           size: formatBytes(result.totalSize)
-        }))
+        }) + ' — ' + tk('disk.file_insights.trash_restore_hint'))
         const trashedSet = new Set(result.trashedPaths)
         onFilesRemoved?.(result.trashedPaths)
         onDone?.(trashedSet)
@@ -486,7 +486,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 const thStyle: React.CSSProperties = { textAlign: 'left', padding: '12px 8px', color: 'var(--text-muted)', fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }
 const tdStyle: React.CSSProperties = { padding: '12px 8px', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.4, verticalAlign: 'top' }
 const openBtn: React.CSSProperties = { padding: '5px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--bg-card-hover)', color: 'var(--text-primary)', cursor: 'pointer', marginRight: '4px' }
-const trashBtn: React.CSSProperties = { padding: '5px 8px', fontSize: '11px', fontWeight: 600, border: 'none', borderRadius: '5px', background: 'var(--accent-red)', color: 'var(--text-on-accent)', cursor: 'pointer' }
+const trashBtn: React.CSSProperties = { padding: '5px 8px', fontSize: '11px', fontWeight: 600, border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '5px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--accent-red)', cursor: 'pointer' }
 const actionBtnStyle: React.CSSProperties = { padding: '7px 14px', fontSize: '12px', fontWeight: 600, border: 'none', borderRadius: '6px', background: 'var(--accent-yellow)', color: 'var(--text-on-accent-strong)', cursor: 'pointer' }
 const selectStyle: React.CSSProperties = { padding: '7px 10px', fontSize: '13px', border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }
 const rowStyle: React.CSSProperties = { borderBottom: '1px solid var(--border)' }

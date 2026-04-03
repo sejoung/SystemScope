@@ -1100,10 +1100,10 @@ const killBtnStyle: React.CSSProperties = {
   padding: "6px 10px",
   fontSize: "12px",
   fontWeight: 600,
-  border: "none",
+  border: "1px solid rgba(239, 68, 68, 0.25)",
   borderRadius: "6px",
-  background: "var(--accent-red)",
-  color: "var(--text-on-accent)",
+  background: "rgba(239, 68, 68, 0.12)",
+  color: "var(--accent-red)",
   cursor: "pointer",
 };
 
@@ -1365,9 +1365,9 @@ const inspectBtnStyle: React.CSSProperties = {
 const resolveBtnStyle: React.CSSProperties = {
   padding: "6px 10px",
   borderRadius: "8px",
-  border: "none",
-  background: "var(--accent-red)",
-  color: "var(--text-on-accent)",
+  border: "1px solid rgba(239, 68, 68, 0.25)",
+  background: "rgba(239, 68, 68, 0.12)",
+  color: "var(--accent-red)",
   cursor: "pointer",
   fontSize: "12px",
   fontWeight: 700,

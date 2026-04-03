@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStartupStore } from '../../stores/useStartupStore'
 import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/Toast'
@@ -18,13 +18,14 @@ const SCOPE_COLORS: Record<string, string> = {
 }
 
 export function StartupItemList() {
-  const { t } = useI18n()
+  const { t, tk } = useI18n()
   const items = useStartupStore((s) => s.items)
   const loading = useStartupStore((s) => s.loading)
   const error = useStartupStore((s) => s.error)
   const fetchItems = useStartupStore((s) => s.fetchItems)
   const toggleItem = useStartupStore((s) => s.toggleItem)
   const showToast = useToast((s) => s.show)
+  const [search, setSearch] = useState('')
 
   useEffect(() => { void fetchItems() }, [fetchItems])
 
@@ -36,6 +37,17 @@ export function StartupItemList() {
       showToast(t('Failed to toggle startup item.'), 'danger')
     }
   }
+
+  const filteredItems = useMemo(() => {
+    if (!search.trim()) return items
+    const q = search.toLowerCase()
+    return items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.path.toLowerCase().includes(q) ||
+        (item.description ?? '').toLowerCase().includes(q),
+    )
+  }, [items, search])
 
   if (loading && items.length === 0) {
     return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('Loading...')}</p>
@@ -49,19 +61,75 @@ export function StartupItemList() {
     return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('No startup items found.')}</p>
   }
 
-  const userItems = items.filter((i) => i.scope === 'user')
-  const systemItems = items.filter((i) => i.scope === 'system')
+  const userItems = filteredItems.filter((i) => i.scope === 'user')
+  const systemItems = filteredItems.filter((i) => i.scope === 'system')
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
+      {/* Search bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tk('startup.search_placeholder')}
+            aria-label={tk('startup.search_placeholder')}
+            style={{ ...searchInputStyle, paddingRight: 30 }}
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              aria-label={t('Clear search')}
+              style={{
+                position: 'absolute',
+                right: 8,
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: '0 2px',
+              }}
+            >
+              &times;
+            </button>
+          )}
+        </div>
+        {search.trim() && (
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            {filteredItems.length > 0
+              ? tk('startup.search_results', { count: filteredItems.length })
+              : tk('startup.search_no_results', { query: search })}
+          </span>
+        )}
+      </div>
+
       {userItems.length > 0 && (
         <ItemGroup title={t('User')} items={userItems} onToggle={handleToggle} />
       )}
       {systemItems.length > 0 && (
         <ItemGroup title={t('System')} items={systemItems} onToggle={handleToggle} />
       )}
+      {filteredItems.length === 0 && search.trim() && (
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>
+          {tk('startup.search_no_results', { query: search })}
+        </p>
+      )}
     </div>
   )
+}
+
+const searchInputStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  fontSize: '13px',
+  width: '240px',
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
+  background: 'var(--bg-primary)',
+  color: 'var(--text-primary)',
+  outline: 'none',
 }
 
 function ItemGroup({ title, items, onToggle }: { title: string; items: StartupItem[]; onToggle: (item: StartupItem) => void }) {

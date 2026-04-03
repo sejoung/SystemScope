@@ -36,6 +36,23 @@ export function CleanupPage() {
             {tk('cleanup.inbox.description')}
           </div>
         </div>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "11px", color: "var(--text-muted)" }}>
+          <span style={{ color: tab === 'inbox' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'inbox' ? 600 : 400 }}>
+            {t("1. Review candidates")}
+          </span>
+          <span>→</span>
+          <span style={{ color: tab === 'rules' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'rules' ? 600 : 400 }}>
+            {t("2. Configure rules")}
+          </span>
+          <span>→</span>
+          <span style={{ color: tab === 'workspace' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'workspace' ? 600 : 400 }}>
+            {t("3. Clean workspace")}
+          </span>
+          <span>→</span>
+          <span style={{ color: tab === 'automation' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'automation' ? 600 : 400 }}>
+            {t("4. Review history")}
+          </span>
+        </div>
         <div
           role="tablist"
           aria-label={tk('cleanup.title')}

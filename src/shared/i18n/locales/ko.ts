@@ -311,6 +311,7 @@ export const KO_MESSAGES = {
     "삭제 후 스캔 결과를 새로고침하는 중...",
   "Unable to refresh scan results after deletion.":
     "삭제 후 스캔 결과를 새로고침하지 못했습니다.",
+  "Refresh failed": "새로고침 실패",
   "Preparing scan...": "스캔 준비 중...",
   "Scan cancelled": "스캔이 취소되었습니다.",
   "The scan was cancelled.": "스캔이 취소되었습니다.",
@@ -344,7 +345,7 @@ export const KO_MESSAGES = {
   Moderate: "보통",
   Normal: "정상",
   Kill: "종료",
-  '검색 결과 없음: "{query}"': '"{query}" 검색 결과 없음',
+  'No results for "{query}"': '"{query}" 검색 결과 없음',
   "No active processes are available right now.":
     "현재 표시할 실행 중 프로세스가 없습니다.",
   "Port, address, process...": "포트, 주소, 프로세스...",
@@ -359,7 +360,7 @@ export const KO_MESSAGES = {
   "Listening ({count})": "수신 대기 ({count})",
   "Established ({count})": "연결됨 ({count})",
   "Other ({count})": "기타 ({count})",
-  "해당 상태의 포트가 없습니다": "해당 상태의 포트가 없습니다",
+  "No ports in this state": "해당 상태의 포트가 없습니다",
   Proto: "프로토콜",
   "Local Port": "로컬 포트",
   Process: "프로세스",
@@ -598,6 +599,10 @@ export const KO_MESSAGES = {
   "Connection detected for {pattern} ({process})":
     "{pattern} 연결 감지됨 ({process})",
   "Connection lost for {pattern}": "{pattern} 연결 해제됨",
+  '"{pattern}" is already being watched.': '"{pattern}"은 이미 등록되어 있습니다.',
+  "{pattern} connection detected ({process})":
+    "{pattern} 연결 감지됨 ({process})",
+  "{pattern} disconnected": "{pattern} 연결 해제됨",
   "{count} listening": "{count} listening",
   Local: "로컬",
   "+{count} more (showing first {limit})":
@@ -963,6 +968,9 @@ export const KO_MESSAGES = {
     "폴더 크기 분석 중... (첫 실행 시 수 초 걸릴 수 있습니다)",
   "Warning (%)": "경고 (%)",
   "Critical (%)": "위험 (%)",
+  "Conservative": "보수적",
+  "Balanced": "균형",
+  "Aggressive": "공격적",
   "(no extension)": "(확장자 없음)",
   "... and {count} more": "... 외 {count}개",
   "Unable to render this section. Other features remain available.":

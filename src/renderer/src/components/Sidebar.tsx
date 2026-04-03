@@ -116,15 +116,15 @@ export function Sidebar() {
   const { tk, t } = useI18n();
   const [pendingPage, setPendingPage] = useState<NavPage | null>(null);
   const navItems = [
-    { id: "dashboard", label: tk("nav.overview") },
-    { id: "timeline", label: tk("nav.timeline") },
-    { id: "disk", label: tk("nav.storage") },
-    { id: "docker", label: tk("nav.docker") },
-    { id: "cleanup", label: tk("nav.cleanup") },
-    { id: "process", label: tk("nav.activity") },
-    { id: "devtools", label: tk("nav.devtools") },
-    { id: "apps", label: tk("nav.applications") },
-    { id: "settings", label: tk("nav.preferences") },
+    { id: "dashboard", label: tk("nav.overview"), shortcut: "1" },
+    { id: "timeline", label: tk("nav.timeline"), shortcut: "2" },
+    { id: "disk", label: tk("nav.storage"), shortcut: "3" },
+    { id: "docker", label: tk("nav.docker"), shortcut: "4" },
+    { id: "cleanup", label: tk("nav.cleanup"), shortcut: "5" },
+    { id: "process", label: tk("nav.activity"), shortcut: "6" },
+    { id: "devtools", label: tk("nav.devtools"), shortcut: "7" },
+    { id: "apps", label: tk("nav.applications"), shortcut: "8" },
+    { id: "settings", label: tk("nav.preferences"), shortcut: "9" },
   ] as const;
 
   return (
@@ -271,6 +271,18 @@ export function Sidebar() {
                 <NavIcon id={item.id} />
               </span>
               <span style={{ letterSpacing: "-0.01em" }}>{item.label}</span>
+              <span
+                style={{
+                  marginLeft: "auto",
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                  opacity: 0.6,
+                  fontWeight: 400,
+                }}
+              >
+                {navigator.userAgent.includes("Macintosh") ? "\u2318" : "Ctrl+"}
+                {item.shortcut}
+              </span>
             </button>
           ))}
         </nav>

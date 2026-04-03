@@ -306,6 +306,7 @@ export const EN_MESSAGES = {
     "Refreshing scan results after deletion...",
   "Unable to refresh scan results after deletion.":
     "Unable to refresh scan results after deletion.",
+  "Refresh failed": "Refresh failed",
   "Preparing scan...": "Preparing scan...",
   "Scan cancelled": "Scan cancelled",
   "The scan was cancelled.": "The scan was cancelled.",
@@ -339,7 +340,7 @@ export const EN_MESSAGES = {
   Moderate: "Moderate",
   Normal: "Normal",
   Kill: "Kill",
-  '검색 결과 없음: "{query}"': '검색 결과 없음: "{query}"',
+  'No results for "{query}"': 'No results for "{query}"',
   "No active processes are available right now.":
     "No active processes are available right now.",
   "Port, address, process...": "Port, address, process...",
@@ -354,7 +355,7 @@ export const EN_MESSAGES = {
   "Listening ({count})": "Listening ({count})",
   "Established ({count})": "Established ({count})",
   "Other ({count})": "Other ({count})",
-  "해당 상태의 포트가 없습니다": "해당 상태의 포트가 없습니다",
+  "No ports in this state": "No ports in this state",
   Proto: "Proto",
   "Local Port": "Local Port",
   Process: "Process",
@@ -601,6 +602,10 @@ export const EN_MESSAGES = {
   "Connection detected for {pattern} ({process})":
     "Connection detected for {pattern} ({process})",
   "Connection lost for {pattern}": "Connection lost for {pattern}",
+  '"{pattern}" is already being watched.': '"{pattern}" is already being watched.',
+  "{pattern} connection detected ({process})":
+    "{pattern} connection detected ({process})",
+  "{pattern} disconnected": "{pattern} disconnected",
   "{count} listening": "{count} listening",
   Local: "Local",
   "+{count} more (showing first {limit})":
@@ -959,6 +964,9 @@ export const EN_MESSAGES = {
     "Analyzing folder sizes... (the first run may take a few seconds)",
   "Warning (%)": "Warning (%)",
   "Critical (%)": "Critical (%)",
+  "Conservative": "Conservative",
+  "Balanced": "Balanced",
+  "Aggressive": "Aggressive",
   "(no extension)": "(no extension)",
   "... and {count} more": "... and {count} more",
   "Unable to render this section. Other features remain available.":

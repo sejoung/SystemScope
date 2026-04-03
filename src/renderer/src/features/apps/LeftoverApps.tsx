@@ -191,7 +191,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
     setSelectedIds([]);
     showToast(
       result.failedPaths.length === 0
-        ? tk("apps.toast.leftover_all", { count: result.deletedPaths.length })
+        ? tk("apps.toast.leftover_all", { count: result.deletedPaths.length }) + " — " + tk("apps.toast.leftover_restore_hint")
         : tk("apps.toast.leftover_partial", { deletedCount: result.deletedPaths.length, failedCount: result.failedPaths.length }),
     );
     await refreshLeftovers();

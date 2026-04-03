@@ -147,7 +147,7 @@ export const tdStyle: React.CSSProperties = { padding: "12px 8px", color: "var(-
 export const monoCellStyle: React.CSSProperties = { ...tdStyle, fontFamily: "monospace", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" };
 export const subtleTextStyle: React.CSSProperties = { marginTop: "6px", color: "var(--text-muted)", lineHeight: 1.5 };
 export const openBtn: React.CSSProperties = { padding: "6px 10px", fontSize: "12px", fontWeight: 600, border: "none", borderRadius: "6px", background: "var(--bg-card-hover)", color: "var(--text-primary)", cursor: "pointer", marginRight: "6px" };
-export const actionBtnStyle: React.CSSProperties = { padding: "6px 10px", fontSize: "12px", fontWeight: 600, border: "none", borderRadius: "6px", background: "var(--accent-red)", color: "var(--text-on-accent)", cursor: "pointer" };
+export const actionBtnStyle: React.CSSProperties = { padding: "6px 10px", fontSize: "12px", fontWeight: 600, border: "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "6px", background: "rgba(239, 68, 68, 0.12)", color: "var(--accent-red)", cursor: "pointer" };
 export const protectedBadgeStyle: React.CSSProperties = { fontSize: "11px", fontWeight: 700, padding: "3px 8px", borderRadius: "999px", background: "var(--alert-yellow-soft)", color: "var(--accent-yellow)" };
 export const rowStyle: React.CSSProperties = { borderBottom: "1px solid var(--border)" };
 

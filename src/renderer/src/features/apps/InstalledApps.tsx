@@ -165,7 +165,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
       result.message
         ? t(result.message)
         : result.completed
-          ? tk("apps.toast.removed")
+          ? tk("apps.toast.removed") + " — " + tk("apps.toast.removed_restore_hint")
           : tk("apps.toast.uninstaller_started"),
     );
 
