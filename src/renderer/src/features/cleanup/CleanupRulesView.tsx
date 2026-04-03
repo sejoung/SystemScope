@@ -24,7 +24,7 @@ export function CleanupRulesView() {
   const toggleRule = useCleanupStore((s) => s.toggleRule)
   const updateRuleMinAge = useCleanupStore((s) => s.updateRuleMinAge)
   const runPreview = useCleanupStore((s) => s.runPreview)
-  const { tk, t } = useI18n()
+  const { tk } = useI18n()
 
   const [showPreview, setShowPreview] = useState(false)
 
@@ -49,7 +49,7 @@ export function CleanupRulesView() {
       <div style={{ display: 'grid', gap: '16px' }}>
         {rulesLoading && (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
-            {t('Loading...')}
+            {tk('Loading...')}
           </div>
         )}
 
@@ -62,7 +62,7 @@ export function CleanupRulesView() {
         {!rulesLoading && Object.entries(grouped).map(([category, catRules]) => (
           <div key={category} style={{ display: 'grid', gap: '8px' }}>
             <h3 style={sectionHeaderStyle}>
-              {t(CATEGORY_LABELS[category] ?? category)}
+              {tk(CATEGORY_LABELS[category] ?? category)}
             </h3>
             {catRules.map((rule) => (
               <RuleCard
@@ -108,7 +108,7 @@ function RuleCard({
   onToggle: (enabled: boolean) => void
   onMinAgeChange: (days: number) => void
 }) {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const categoryLabel = CATEGORY_LABELS[rule.category] ?? rule.category
 
   return (
@@ -135,14 +135,14 @@ function RuleCard({
         <div style={{ flex: 1, display: 'grid', gap: '2px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {t(rule.name)}
+              {tk(rule.name)}
             </span>
             <span style={categoryBadgeStyle}>
-              {t(categoryLabel)}
+              {tk(categoryLabel)}
             </span>
           </div>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            {t(rule.description)}
+            {tk(rule.description)}
           </span>
         </div>
       </div>
@@ -150,7 +150,7 @@ function RuleCard({
       {/* Min age setting */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '44px' }}>
         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-          {t('Min age')}:
+          {tk('Min age')}:
         </span>
         <input
           type="number"
@@ -164,7 +164,7 @@ function RuleCard({
           style={numberInputStyle}
         />
         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-          {t('days')}
+          {tk('days')}
         </span>
       </div>
 

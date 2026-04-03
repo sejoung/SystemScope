@@ -1,4 +1,4 @@
-import { translateLiteral, translateKey, type AppLocale, type TranslationKey } from '@shared/i18n'
+import { translate, type AppLocale, type TranslationKey } from '@shared/i18n'
 
 export function getCurrentLocale(): AppLocale {
   try {
@@ -11,10 +11,8 @@ export function getCurrentLocale(): AppLocale {
   }
 }
 
-export function t(text: string, params?: Record<string, string | number>): string {
-  return translateLiteral(getCurrentLocale(), text, params)
-}
-
-export function tk(key: TranslationKey, params?: Record<string, string | number>): string {
-  return translateKey(getCurrentLocale(), key, params)
+export function tk(text: string, params?: Record<string, string | number>): string
+export function tk(key: TranslationKey, params?: Record<string, string | number>): string
+export function tk(input: string | TranslationKey, params?: Record<string, string | number>): string {
+  return translate(getCurrentLocale(), input, params)
 }

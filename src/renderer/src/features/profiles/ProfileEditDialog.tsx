@@ -18,7 +18,7 @@ interface ProfileEditDialogProps {
 }
 
 export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDialogProps) {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const saveProfile = useProfileStore((s) => s.saveProfile)
   const [name, setName] = useState(profile?.name ?? '')
   const [icon, setIcon] = useState(profile?.icon ?? ICON_OPTIONS[0])
@@ -64,23 +64,23 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={profile ? t('Edit Profile') : t('Create Profile')}
+    <div role="dialog" aria-modal="true" aria-label={profile ? tk('Edit Profile') : tk('Create Profile')}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
       style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border)', padding: 24, width: 520, maxHeight: '80vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>
-          {profile ? t('Edit Profile') : t('Create Profile')}
+          {profile ? tk('Edit Profile') : tk('Create Profile')}
         </h3>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>{t('Profile Name')}</label>
+          <label style={labelStyle}>{tk('Profile Name')}</label>
           <input type="text" value={name} onChange={(e) => setName(e.target.value.slice(0, PROFILE_NAME_MAX_LENGTH))}
-            placeholder={t('Profile Name')} style={inputStyle} />
+            placeholder={tk('Profile Name')} style={inputStyle} />
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>{t('Profile Icon')}</label>
+          <label style={labelStyle}>{tk('Profile Icon')}</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {ICON_OPTIONS.map((emoji) => (
               <button key={emoji} onClick={() => setIcon(emoji)} style={{
@@ -94,7 +94,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>{t('Alerts')}</label>
+          <label style={labelStyle}>{tk('Alerts')}</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {(Object.keys(thresholds) as (keyof AlertThresholds)[]).map((key) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -111,7 +111,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>{t('Hidden Widgets')}</label>
+          <label style={labelStyle}>{tk('Hidden Widgets')}</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {DASHBOARD_WIDGET_KEYS.map((key) => (
               <button key={key} onClick={() => toggleWidget(key)} style={{
@@ -127,7 +127,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>{t('Tracked Workspaces')}</label>
+          <label style={labelStyle}>{tk('Tracked Workspaces')}</label>
           <div style={{ display: 'grid', gap: 8 }}>
             {workspacePaths.map((workspacePath) => (
               <div key={workspacePath} style={workspaceRowStyle}>
@@ -137,7 +137,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
                   onClick={() => setWorkspacePaths((prev) => prev.filter((entry) => entry !== workspacePath))}
                   style={removeButtonStyle}
                 >
-                  {t('Remove')}
+                  {tk('Remove')}
                 </button>
               </div>
             ))}
@@ -159,13 +159,13 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
                 opacity: workspacePaths.length >= MAX_WORKSPACE_PATHS ? 0.5 : 1
               }}
             >
-              {t('Add workspace folder')}
+              {tk('Add workspace folder')}
             </button>
           </div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>{t('Profile Automation')}</label>
+          <label style={labelStyle}>{tk('Profile Automation')}</label>
           <div style={{ display: 'grid', gap: 8 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input
@@ -175,7 +175,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
                   setAutomationSchedule(event.target.checked ? { enabled: true, frequency: 'weekly' } : null)
                 }}
               />
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('Override global automation schedule')}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{tk('Override global automation schedule')}</span>
             </label>
             {automationSchedule && (
               <div style={{ display: 'grid', gap: 8 }}>
@@ -185,7 +185,7 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
                     checked={automationSchedule.enabled}
                     onChange={(event) => setAutomationSchedule((prev) => prev ? { ...prev, enabled: event.target.checked } : prev)}
                   />
-                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('Enable automated scanning')}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{tk('Enable automated scanning')}</span>
                 </label>
                 <select
                   value={automationSchedule.frequency}
@@ -195,9 +195,9 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
                   } : prev)}
                   style={inputStyle}
                 >
-                  <option value="daily">{t('Daily')}</option>
-                  <option value="weekly">{t('Weekly')}</option>
-                  <option value="manual">{t('Manual only')}</option>
+                  <option value="daily">{tk('Daily')}</option>
+                  <option value="weekly">{tk('Weekly')}</option>
+                  <option value="manual">{tk('Manual only')}</option>
                 </select>
               </div>
             )}
@@ -206,11 +206,11 @@ export function ProfileEditDialog({ profile, onClose, onSaved }: ProfileEditDial
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
           <button onClick={onClose} style={{ padding: '7px 14px', fontSize: 12, fontWeight: 700, borderRadius: 6, border: '1px solid var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer' }}>
-            {t('Cancel')}
+            {tk('Cancel')}
           </button>
           <button onClick={() => void handleSave()} disabled={!name.trim() || saving || !!thresholdError}
             style={{ padding: '7px 14px', fontSize: 12, fontWeight: 700, border: 'none', borderRadius: 6, backgroundColor: 'var(--accent-blue)', color: 'var(--text-on-accent)', cursor: 'pointer', opacity: !name.trim() || saving || thresholdError ? 0.5 : 1 }}>
-            {saving ? '...' : t('Save')}
+            {saving ? '...' : tk('Save')}
           </button>
         </div>
       </div>

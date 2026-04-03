@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { translateLiteral } from '@shared/i18n'
+import { translate } from '@shared/i18n'
 import { useSettingsStore } from '../stores/useSettingsStore'
 
 interface ErrorBoundaryProps {
@@ -14,7 +14,7 @@ interface ErrorBoundaryState {
 }
 
 function tr(text: string): string {
-  return translateLiteral(useSettingsStore.getState().locale, text)
+  return translate(useSettingsStore.getState().locale, text)
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {

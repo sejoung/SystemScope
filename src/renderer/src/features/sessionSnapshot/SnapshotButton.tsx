@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/Toast'
 
 export function SnapshotButton() {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const showToast = useToast((s) => s.show)
   const saveSnapshot = useSessionSnapshotStore((s) => s.saveSnapshot)
   const loading = useSessionSnapshotStore((s) => s.loading)
@@ -14,7 +14,7 @@ export function SnapshotButton() {
   const handleSave = async () => {
     const result = await saveSnapshot(label.trim() || undefined)
     if (result) {
-      showToast(t('Snapshot saved.'), 'success')
+      showToast(tk('Snapshot saved.'), 'success')
       setLabel('')
       setShowInput(false)
     }
@@ -25,7 +25,7 @@ export function SnapshotButton() {
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
         <input
           type="text"
-          placeholder={t('Snapshot label')}
+          placeholder={tk('Snapshot label')}
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -45,7 +45,7 @@ export function SnapshotButton() {
             cursor: 'pointer', fontSize: 12,
           }}
         >
-          {loading ? t('Saving snapshot...') : t('Save Snapshot')}
+          {loading ? tk('Saving snapshot...') : tk('Save Snapshot')}
         </button>
         <button
           onClick={() => { setShowInput(false); setLabel('') }}
@@ -55,7 +55,7 @@ export function SnapshotButton() {
             cursor: 'pointer', fontSize: 12,
           }}
         >
-          {t('Cancel')}
+          {tk('Cancel')}
         </button>
       </div>
     )
@@ -64,14 +64,14 @@ export function SnapshotButton() {
   return (
     <button
       onClick={() => setShowInput(true)}
-      title={t('Save current system state')}
+      title={tk('Save current system state')}
       style={{
         padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)',
         backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
         cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4,
       }}
     >
-      {t('Save Snapshot')}
+      {tk('Save Snapshot')}
     </button>
   )
 }

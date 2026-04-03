@@ -105,7 +105,7 @@ function worstAspectRatio(row: { ratio: number }[], sum: number, side: number): 
 }
 
 export function TreemapChart({ data, width, height }: TreemapChartProps) {
-  const { tk, t } = useI18n()
+  const { tk } = useI18n()
   const [path, setPath] = useState<FolderNode[]>([])
   const [hovered, setHovered] = useState<Rect | null>(null)
 
@@ -160,7 +160,7 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
             color: path.length === 0 ? 'var(--text-primary)' : 'var(--accent-blue)',
           }}
         >
-          {data.name || t('Root')}
+          {data.name || tk('Root')}
         </button>
         {path.map((node, i) => (
           <span key={node.path} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -213,7 +213,7 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
                 )}
                 {r.hasChildren && r.w > 50 && r.h > 56 && (
                   <text x={r.x + 6} y={r.y + 43} fill="var(--text-on-accent)" fillOpacity="0.6" fontSize="9" pointerEvents="none">
-                    {r.node.children.filter((c) => !c.isFile).length} {t('folders')}
+                    {r.node.children.filter((c) => !c.isFile).length} {tk('folders')}
                   </text>
                 )}
               </g>
@@ -234,17 +234,17 @@ export function TreemapChart({ data, width, height }: TreemapChartProps) {
             <div style={{ color: 'var(--text-secondary)' }}>{formatBytes(hovered.node.size)}</div>
             {!hovered.node.isFile && (
               <div style={{ color: 'var(--text-tertiary)', marginTop: 2 }}>
-                {hovered.node.children.filter((c) => !c.isFile).length} {t('folders')}, {hovered.node.children.filter((c) => c.isFile).length} {t('files')}
+                {hovered.node.children.filter((c) => !c.isFile).length} {tk('folders')}, {hovered.node.children.filter((c) => c.isFile).length} {tk('files')}
               </div>
             )}
             {hovered.hasChildren && (
               <div style={{ color: 'var(--accent-blue)', marginTop: 4, fontSize: 11 }}>
-                {t('Click to drill down')}
+                {tk('Click to drill down')}
               </div>
             )}
             {currentNode !== data && (
               <div style={{ color: 'var(--text-tertiary)', marginTop: 2, fontSize: 11 }}>
-                {((hovered.node.size / currentNode.size) * 100).toFixed(1)}% {t('of current view')}
+                {((hovered.node.size / currentNode.size) * 100).toFixed(1)}% {tk('of current view')}
               </div>
             )}
           </div>

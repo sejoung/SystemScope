@@ -3,7 +3,7 @@ import { useProfileStore } from '../../stores/useProfileStore'
 import { useI18n } from '../../i18n/useI18n'
 
 export function ProfileSelector() {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const profiles = useProfileStore((s) => s.profiles)
   const activeProfileId = useProfileStore((s) => s.activeProfileId)
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile)
@@ -26,7 +26,7 @@ export function ProfileSelector() {
   if (profiles.length === 0) return null
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId)
-  const label = activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : t('Global (No Profile)')
+  const label = activeProfile ? `${activeProfile.icon} ${activeProfile.name}` : tk('Global (No Profile)')
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
@@ -49,7 +49,7 @@ export function ProfileSelector() {
         }}>
           <button onClick={() => { void setActiveProfile(null); setOpen(false) }}
             style={{ ...menuItemStyle, fontWeight: activeProfileId === null ? 700 : 400 }}>
-            {t('Global (No Profile)')}
+            {tk('Global (No Profile)')}
           </button>
           {profiles.map((profile) => (
             <button key={profile.id}

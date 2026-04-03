@@ -20,7 +20,7 @@ const SECTION_KEYS: { key: keyof ReportSections; labelKey: string }[] = [
 ]
 
 export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const showToast = useToast((s) => s.show)
 
   const [sections, setSections] = useState<ReportSections>({
@@ -50,7 +50,7 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
       })
 
       if (!buildRes.ok || !isDiagnosticReportData(buildRes.data)) {
-        showToast(t('Report generation failed.'), 'danger')
+        showToast(tk('Report generation failed.'), 'danger')
         setBuilding(false)
         return
       }
@@ -61,22 +61,22 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
       })
 
       if (saveRes.ok) {
-        showToast(t('Report saved successfully.'), 'success')
+        showToast(tk('Report saved successfully.'), 'success')
         onClose()
       } else if (saveRes.error.message === 'Save cancelled') {
-        showToast(t('Save cancelled.'), 'default')
+        showToast(tk('Save cancelled.'), 'default')
       } else {
-        showToast(t('Report generation failed.'), 'danger')
+        showToast(tk('Report generation failed.'), 'danger')
       }
     } catch {
-      showToast(t('Report generation failed.'), 'danger')
+      showToast(tk('Report generation failed.'), 'danger')
     } finally {
       setBuilding(false)
     }
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={t('Export diagnostic report')}
+    <div role="dialog" aria-modal="true" aria-label={tk('Export diagnostic report')}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
       style={{
       position: 'fixed', inset: 0, zIndex: 1000,
@@ -89,10 +89,10 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
         boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
       }} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700 }}>
-          {t('Export diagnostic report')}
+          {tk('Export diagnostic report')}
         </h3>
         <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-          {t('Select the sections to include in the report.')}
+          {tk('Select the sections to include in the report.')}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -103,7 +103,7 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
                 checked={sections[key]}
                 onChange={() => toggleSection(key)}
               />
-              {t(labelKey)}
+              {tk(labelKey)}
             </label>
           ))}
         </div>
@@ -115,10 +115,10 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
               checked={maskPaths}
               onChange={() => setMaskPaths((v) => !v)}
             />
-            {t('Mask sensitive paths')}
+            {tk('Mask sensitive paths')}
           </label>
           <p style={{ margin: '4px 0 0 24px', fontSize: 11, color: 'var(--text-tertiary)' }}>
-            {t('Replaces home directory and username in the report.')}
+            {tk('Replaces home directory and username in the report.')}
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
               backgroundColor: 'transparent', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 13,
             }}
           >
-            {t('Cancel')}
+            {tk('Cancel')}
           </button>
           <button
             onClick={() => handleExport('json')}
@@ -141,7 +141,7 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
               backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 13,
             }}
           >
-            {building ? t('Building report...') : t('Export as JSON')}
+            {building ? tk('Building report...') : tk('Export as JSON')}
           </button>
           <button
             onClick={() => handleExport('markdown')}
@@ -151,7 +151,7 @@ export function ExportReportDialog({ open, onClose }: ExportReportDialogProps) {
               backgroundColor: 'var(--accent-blue)', color: 'var(--text-on-accent)', cursor: 'pointer', fontSize: 13,
             }}
           >
-            {building ? t('Building report...') : t('Export as Markdown')}
+            {building ? tk('Building report...') : tk('Export as Markdown')}
           </button>
         </div>
       </div>

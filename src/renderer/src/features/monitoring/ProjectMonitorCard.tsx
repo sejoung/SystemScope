@@ -13,7 +13,7 @@ export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps)
   const loading = useProjectMonitorStore((s) => s.loading)
   const fetchSummary = useProjectMonitorStore((s) => s.fetchSummary)
   const showToast = useToast((s) => s.show)
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const [expandedPath, setExpandedPath] = useState<string | null>(null)
 
   useEffect(() => {
@@ -28,16 +28,16 @@ export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps)
     <div style={compact ? compactCardStyle : cardStyle}>
       <div style={headerStyle}>
         <div>
-          <div style={titleStyle}>{t('Project Monitor')}</div>
+          <div style={titleStyle}>{tk('Project Monitor')}</div>
           <div style={subtitleStyle}>
             {summary
-              ? t('{count} workspaces tracked', { count: summary.workspaces.length })
-              : t('Loading...')}
+              ? tk('{count} workspaces tracked', { count: summary.workspaces.length })
+              : tk('Loading...')}
           </div>
         </div>
         {summary && (
           <div style={{ textAlign: 'right' }}>
-            <div style={metricLabelStyle}>{t('Recent Growth')}</div>
+            <div style={metricLabelStyle}>{tk('Recent Growth')}</div>
             <div style={metricValueStyle}>{formatBytes(summary.totalRecentGrowthBytes)}</div>
           </div>
         )}
@@ -75,18 +75,18 @@ export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps)
                 onClick={() => {
                   void window.systemScope.showInFolder(workspace.path).then((res) => {
                     if (!res.ok) {
-                      showToast(res.error?.message ?? t('Unable to open folder.'))
+                      showToast(res.error?.message ?? tk('Unable to open folder.'))
                     }
                   })
                 }}
                 style={openButtonStyle}
               >
-                {t('Open')}
+                {tk('Open')}
               </button>
             </div>
             {!compact && expandedPath === workspace.path && (
               <div style={detailSectionStyle}>
-                <div style={detailLabelStyle}>{t('Category Breakdown')}</div>
+                <div style={detailLabelStyle}>{tk('Category Breakdown')}</div>
                 <div style={{ display: 'grid', gap: 6 }}>
                   {workspace.topCategories.map((category) => (
                     <div key={category.category} style={detailRowStyle}>
@@ -96,7 +96,7 @@ export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps)
                   ))}
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <div style={detailLabelStyle}>{t('Recent Trend')}</div>
+                  <div style={detailLabelStyle}>{tk('Recent Trend')}</div>
                   <div style={historyRowStyle}>
                     {workspace.history.map((point) => (
                       <div key={point.scannedAt} style={historyPillStyle}>
@@ -112,7 +112,7 @@ export function ProjectMonitorCard({ compact = false }: ProjectMonitorCardProps)
       </div>
       {compact && summary && summary.workspaces.length > 3 ? (
         <div style={compactHintStyle}>
-          {t('{count} more workspaces are available in DevTools > Workspaces.', {
+          {tk('{count} more workspaces are available in DevTools > Workspaces.', {
             count: summary.workspaces.length - 3,
           })}
         </div>

@@ -20,11 +20,6 @@ for (const [english, korean] of Object.entries(EN_LOOKUP).map(([key, value]) => 
   TO_KO.set(korean, korean)
 }
 
-export function translateLiteral(locale: AppLocale, text: string, params?: Params): string {
-  const translated = translate(locale, text, params)
-  return translated
-}
-
 export function translate(locale: AppLocale, input: string | TranslationKey, params?: Params): string {
   const source = resolveTranslationInput(input)
   const translated = (locale === 'ko' ? TO_KO : TO_EN).get(source) ?? source
@@ -34,10 +29,6 @@ export function translate(locale: AppLocale, input: string | TranslationKey, par
     (acc, [key, value]) => acc.replaceAll(`{${key}}`, String(value)),
     translated
   )
-}
-
-export function translateKey(locale: AppLocale, key: TranslationKey, params?: Params): string {
-  return translate(locale, key, params)
 }
 
 export function getLocaleTag(locale: AppLocale): string {

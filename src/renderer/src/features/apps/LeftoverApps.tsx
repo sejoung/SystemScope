@@ -72,7 +72,7 @@ export function shouldUseLeftoverAppsCompactLayout(width: number): boolean {
 
 export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
-  const { t, tk } = useI18n();
+  const { tk } = useI18n();
   const [containerRef, containerWidth] = useContainerWidth(1200);
   const leftoverItems = useLeftoverAppsStore((state) => state.items);
   const loadError = useLeftoverAppsStore((state) => state.loadError);
@@ -213,7 +213,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
           <button type="button" onClick={() => void handleRefresh()} disabled={refreshing} style={secondaryBtnStyle(refreshing)}>
             {refreshing ? tk("common.refreshing") : tk("apps.action.refresh")}
           </button>
-          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.leftover_placeholder")} clearLabel={t("Clear search")} />
+          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.leftover_placeholder")} clearLabel={tk("Clear search")} />
           <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)} style={inputStyle}>
             <option value="all">{tk("apps.platform.all")}</option>
             <option value="mac">macOS</option>
@@ -262,7 +262,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
       </div>
 
       {loadError && leftoverItems.length === 0 ? (
-        <StatusMessage tone="error" message={t(loadError)} action={<button type="button" onClick={() => void handleRefresh()} style={btnStyle}>{tk("apps.action.refresh")}</button>} />
+        <StatusMessage tone="error" message={tk(loadError)} action={<button type="button" onClick={() => void handleRefresh()} style={btnStyle}>{tk("apps.action.refresh")}</button>} />
       ) : filteredLeftovers.length === 0 ? (
         <StatusMessage message={tk("apps.empty.leftover")} />
       ) : (
@@ -322,13 +322,13 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
                     </div>
 
                     <div style={compactMetaGridStyle}>
-                      <CompactMeta label={t("Size")} value={item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : t("Calculating...")} mono={item.sizeBytes !== undefined} muted={item.sizeBytes === undefined} />
+                      <CompactMeta label={tk("Size")} value={item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : tk("Calculating...")} mono={item.sizeBytes !== undefined} muted={item.sizeBytes === undefined} />
                       <CompactMeta label={tk("apps.table.location")} value={item.path} multiline />
                     </div>
 
                     <div style={compactActionsStyle}>
                       <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
-                        {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                        {expandedId === item.id ? tk("apps.action.hide_data") : tk("Details")}
                       </button>
                       <button type="button" onClick={() => void handleOpenPath(item.path)} style={openBtn}>
                         {tk("apps.action.open")}
@@ -337,7 +337,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
 
                     {expandedId === item.id ? (
                       <div style={{ marginTop: "4px" }}>
-                        {renderLeftoverDetails(item, tk, t)}
+                        {renderLeftoverDetails(item, tk)}
                       </div>
                     ) : null}
                   </div>
@@ -372,7 +372,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
                     <th style={thStyle}>{tk("apps.table.name")}</th>
                     <th style={thStyle}>{tk("apps.confidence.all")}</th>
                     <th style={thStyle}>{tk("apps.table.platform")}</th>
-                    <th style={{ ...thStyle, textAlign: "right" }}>{t("Size")}</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>{tk("Size")}</th>
                     <th style={thStyle}>{tk("apps.table.location")}</th>
                     <th style={{ ...thStyle, textAlign: "right", width: "180px" }}>{tk("apps.table.actions")}</th>
                   </tr>
@@ -399,14 +399,14 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
                             <Badge text={item.platform === "mac" ? "macOS" : "Windows"} color={item.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"} />
                           </td>
                           <td style={{ ...monoCellStyle, textAlign: "right" }}>
-                            {item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : <span style={pendingValueStyle}>{t("Calculating...")}</span>}
+                            {item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : <span style={pendingValueStyle}>{tk("Calculating...")}</span>}
                           </td>
                           <td style={{ ...tdStyle, maxWidth: "340px" }}>
                             <CopyableValue value={item.path} fontSize="12px" color="var(--text-muted)" multiline maxWidth="340px" />
                           </td>
                           <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
                             <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
-                              {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                              {expandedId === item.id ? tk("apps.action.hide_data") : tk("Details")}
                             </button>
                             <button type="button" onClick={() => void handleOpenPath(item.path)} style={openBtn}>
                               {tk("apps.action.open")}
@@ -416,7 +416,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
                         {expandedId === item.id ? (
                           <tr style={rowStyle}>
                             <td colSpan={7} style={{ padding: "0 8px 12px 8px" }}>
-                              {renderLeftoverDetails(item, tk, t)}
+                              {renderLeftoverDetails(item, tk)}
                             </td>
                           </tr>
                         ) : null}
@@ -435,8 +435,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
 
 function renderLeftoverDetails(
   item: { path: string; reason: string; risk: string },
-  tk: (key: TranslationKey, params?: Record<string, string | number>) => string,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (input: string | TranslationKey, params?: Record<string, string | number>) => string,
 ) {
   return (
     <div style={detailPanelStyle}>
@@ -449,11 +448,11 @@ function renderLeftoverDetails(
         </div>
         <div style={detailBlockStyle}>
           <strong style={detailLabelStyle}>{tk("apps.reason.why")}</strong>
-          <div style={detailsBodyTextStyle}>{t(item.reason)}</div>
+          <div style={detailsBodyTextStyle}>{tk(item.reason)}</div>
         </div>
         <div style={detailBlockStyle}>
           <strong style={detailLabelStyle}>{tk("apps.reason.risk")}</strong>
-          <div style={detailsBodyTextStyle}>{t(item.risk)}</div>
+          <div style={detailsBodyTextStyle}>{tk(item.risk)}</div>
         </div>
       </div>
     </div>

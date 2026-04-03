@@ -25,7 +25,7 @@ export function DockerPage() {
   const [availability, setAvailability] =
     useState<DockerAvailability>("checking");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const tab = useSettingsStore((s) => s.dockerTab);
   const setDockerTab = useSettingsStore((s) => s.setDockerTab);
   const compactLayout = isCompactWidth(
@@ -97,7 +97,7 @@ export function DockerPage() {
               lineHeight: 1.6,
             }}
           >
-            {t(
+            {tk(
               "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.",
             )}
           </div>

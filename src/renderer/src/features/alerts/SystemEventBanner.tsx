@@ -4,7 +4,7 @@ import { formatBytes } from '@shared/utils/formatBytes'
 import { useI18n } from '../../i18n/useI18n'
 
 export function SystemEventBanner() {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const [events, setEvents] = useState<SystemEvent[]>([])
 
   useEffect(() => {
@@ -29,8 +29,8 @@ export function SystemEventBanner() {
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{event.title}</div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
               {event.metadata?.kind === 'workspace_growth'
-                ? t('Growth: {size}', { size: formatBytes(Number(event.metadata?.growthBytes ?? 0)) })
-                : t('Reclaimed: {size}', { size: formatBytes(Number(event.metadata?.deletedSize ?? 0)) })}
+                ? tk('Growth: {size}', { size: formatBytes(Number(event.metadata?.growthBytes ?? 0)) })
+                : tk('Reclaimed: {size}', { size: formatBytes(Number(event.metadata?.deletedSize ?? 0)) })}
             </div>
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(event.ts).toLocaleTimeString()}</div>

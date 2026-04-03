@@ -18,7 +18,7 @@ const SCOPE_COLORS: Record<string, string> = {
 }
 
 export function StartupItemList() {
-  const { t, tk } = useI18n()
+  const { tk } = useI18n()
   const items = useStartupStore((s) => s.items)
   const loading = useStartupStore((s) => s.loading)
   const error = useStartupStore((s) => s.error)
@@ -32,9 +32,9 @@ export function StartupItemList() {
   const handleToggle = async (item: StartupItem) => {
     const ok = await toggleItem(item.id, !item.enabled)
     if (ok) {
-      showToast(t(item.enabled ? 'Startup item disabled.' : 'Startup item enabled.'))
+      showToast(tk(item.enabled ? 'Startup item disabled.' : 'Startup item enabled.'))
     } else {
-      showToast(t('Failed to toggle startup item.'), 'danger')
+      showToast(tk('Failed to toggle startup item.'), 'danger')
     }
   }
 
@@ -50,7 +50,7 @@ export function StartupItemList() {
   }, [items, search])
 
   if (loading && items.length === 0) {
-    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('Loading...')}</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{tk('Loading...')}</p>
   }
 
   if (error) {
@@ -58,7 +58,7 @@ export function StartupItemList() {
   }
 
   if (items.length === 0) {
-    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('No startup items found.')}</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{tk('No startup items found.')}</p>
   }
 
   const userItems = filteredItems.filter((i) => i.scope === 'user')
@@ -81,7 +81,7 @@ export function StartupItemList() {
             <button
               type="button"
               onClick={() => setSearch('')}
-              aria-label={t('Clear search')}
+              aria-label={tk('Clear search')}
               style={{
                 position: 'absolute',
                 right: 8,
@@ -107,10 +107,10 @@ export function StartupItemList() {
       </div>
 
       {userItems.length > 0 && (
-        <ItemGroup title={t('User')} items={userItems} onToggle={handleToggle} />
+        <ItemGroup title={tk('User')} items={userItems} onToggle={handleToggle} />
       )}
       {systemItems.length > 0 && (
-        <ItemGroup title={t('System')} items={systemItems} onToggle={handleToggle} />
+        <ItemGroup title={tk('System')} items={systemItems} onToggle={handleToggle} />
       )}
       {filteredItems.length === 0 && search.trim() && (
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>

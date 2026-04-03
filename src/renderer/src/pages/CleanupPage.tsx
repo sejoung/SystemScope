@@ -11,7 +11,7 @@ type CleanupTab = 'inbox' | 'workspace' | 'rules' | 'automation'
 
 export function CleanupPage() {
   const [tab, setTab] = useState<CleanupTab>('inbox')
-  const { t, tk } = useI18n()
+  const { tk } = useI18n()
 
   return (
     <div data-testid="page-cleanup">
@@ -38,19 +38,19 @@ export function CleanupPage() {
         </div>
         <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "11px", color: "var(--text-muted)" }}>
           <span style={{ color: tab === 'inbox' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'inbox' ? 600 : 400 }}>
-            {t("1. Review candidates")}
+            {tk("1. Review candidates")}
           </span>
           <span>→</span>
           <span style={{ color: tab === 'rules' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'rules' ? 600 : 400 }}>
-            {t("2. Configure rules")}
+            {tk("2. Configure rules")}
           </span>
           <span>→</span>
           <span style={{ color: tab === 'workspace' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'workspace' ? 600 : 400 }}>
-            {t("3. Clean workspace")}
+            {tk("3. Clean workspace")}
           </span>
           <span>→</span>
           <span style={{ color: tab === 'automation' ? 'var(--accent-blue)' : 'inherit', fontWeight: tab === 'automation' ? 600 : 400 }}>
-            {t("4. Review history")}
+            {tk("4. Review history")}
           </span>
         </div>
         <div
@@ -83,14 +83,14 @@ export function CleanupPage() {
             active={tab === 'workspace'}
             onClick={() => setTab('workspace')}
           >
-            {t('Workspace')}
+            {tk('Workspace')}
           </PageTab>
           <PageTab
             id="cleanup-automation"
             active={tab === 'automation'}
             onClick={() => setTab('automation')}
           >
-            {t('Automation')}
+            {tk('Automation')}
           </PageTab>
         </div>
       </div>
@@ -106,12 +106,12 @@ export function CleanupPage() {
         </ErrorBoundary>
       )}
       {tab === 'workspace' && (
-        <ErrorBoundary title={t('Workspace Cleanup')}>
+        <ErrorBoundary title={tk('Workspace Cleanup')}>
           <CleanupWorkspaceView />
         </ErrorBoundary>
       )}
       {tab === 'automation' && (
-        <ErrorBoundary title={t('Automation History')}>
+        <ErrorBoundary title={tk('Automation History')}>
           <AutomationHistoryCard />
         </ErrorBoundary>
       )}

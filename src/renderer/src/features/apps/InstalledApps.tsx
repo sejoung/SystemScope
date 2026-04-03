@@ -73,7 +73,7 @@ export function shouldUseInstalledAppsCompactLayout(width: number): boolean {
 
 export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
-  const { t, tk } = useI18n();
+  const { tk } = useI18n();
   const isWindows = navigator.userAgent.includes("Windows");
   const [containerRef, containerWidth] = useContainerWidth(1200);
 
@@ -163,7 +163,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
 
     showToast(
       result.message
-        ? t(result.message)
+        ? tk(result.message)
         : result.completed
           ? tk("apps.toast.removed") + " — " + tk("apps.toast.removed_restore_hint")
           : tk("apps.toast.uninstaller_started"),
@@ -269,7 +269,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
             onChange={search.setDraft}
             onClear={search.clear}
             placeholder={tk("apps.search.installed_placeholder")}
-            clearLabel={t("Clear search")}
+            clearLabel={tk("Clear search")}
           />
           <select
             value={platformFilter}
@@ -288,7 +288,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
       </div>
       <div style={infoBarStyle}>
         <span style={infoLabelStyle}>
-          {t("Installed apps are sorted by name so known tools are easier to find.")}
+          {tk("Installed apps are sorted by name so known tools are easier to find.")}
         </span>
         <span style={infoReasonStyle}>
           {search.applied
@@ -327,7 +327,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
                         ) : null}
                       </div>
                       {entry.protectedReason ? (
-                        <div style={subtleTextStyle}>{t(entry.protectedReason)}</div>
+                        <div style={subtleTextStyle}>{tk(entry.protectedReason)}</div>
                       ) : null}
                     </div>
                     <Badge
@@ -424,7 +424,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
                             ) : null}
                           </div>
                           {entry.protectedReason ? (
-                            <div style={subtleTextStyle}>{t(entry.protectedReason)}</div>
+                            <div style={subtleTextStyle}>{tk(entry.protectedReason)}</div>
                           ) : null}
                         </td>
                         <td style={monoCellStyle}>{entry.version ?? "-"}</td>

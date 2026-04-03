@@ -48,7 +48,7 @@ export function TimelinePage() {
   const [intelligence, setIntelligence] = useState<AlertIntelligence | null>(null)
   const [intelligenceLoading, setIntelligenceLoading] = useState(false)
 
-  const { tk, t } = useI18n()
+  const { tk } = useI18n()
 
   // Fetch alert intelligence on mount
   useEffect(() => {
@@ -137,7 +137,7 @@ export function TimelinePage() {
             <PageLoading message={tk('timeline.loading')} />
           ) : error ? (
             <div style={errorBoxStyle}>
-              <span style={{ fontSize: '13px', color: 'var(--accent-red)' }}>{t(error)}</span>
+              <span style={{ fontSize: '13px', color: 'var(--accent-red)' }}>{tk(error)}</span>
             </div>
           ) : data ? (
             <TimelineChart data={data} />
@@ -224,7 +224,7 @@ export function TimelinePage() {
       </ErrorBoundary>
 
       {/* Snapshots Section */}
-      <ErrorBoundary title={t('Snapshots')}>
+      <ErrorBoundary title={tk('Snapshots')}>
         <div
           style={{
             padding: '16px',
@@ -242,7 +242,7 @@ export function TimelinePage() {
               color: 'var(--text-primary)',
             }}
           >
-            {t('Snapshots')}
+            {tk('Snapshots')}
           </h3>
           <SnapshotList />
           <SnapshotDiffView />

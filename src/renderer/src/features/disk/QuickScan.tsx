@@ -36,7 +36,7 @@ interface QuickScanProps {
 }
 
 export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const { results, scanning, scanned, error } = state;
 
   const { totalSize, cleanableSize, grouped } = useMemo(() => {
@@ -106,7 +106,7 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
         <AsyncTaskStatus
           stage="started"
           taskLabel={tk("disk.section.quick_cleanup")}
-          message={t(
+          message={tk(
             "Quick scan started. Reviewing common cleanup locations now.",
           )}
         />
@@ -135,7 +135,7 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
             <AsyncTaskStatus
               stage="completed"
               taskLabel={tk("disk.section.quick_cleanup")}
-              message={t(
+              message={tk(
                 "Quick scan completed. Review size, safety guidance, and open a folder before deleting anything.",
               )}
             />
@@ -148,7 +148,7 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
               lineHeight: 1.6,
             }}
           >
-            {t(
+            {tk(
               "Cache folders are usually safer to review first. App data, containers, and SDK folders often need manual verification before cleanup.",
             )}
           </div>
@@ -315,12 +315,12 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
                               fontSize: "10px",
                               padding: "1px 6px",
                               borderRadius: "4px",
-                              background: `${getSafetyTone(folder, t).color}20`,
-                              color: getSafetyTone(folder, t).color,
+                              background: `${getSafetyTone(folder, tk).color}20`,
+                              color: getSafetyTone(folder, tk).color,
                               fontWeight: 700,
                             }}
                           >
-                            {getSafetyTone(folder, t).label}
+                            {getSafetyTone(folder, tk).label}
                           </span>
                         </div>
                         <div
@@ -339,7 +339,7 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
                             marginTop: "4px",
                           }}
                         >
-                          {getSafetyTone(folder, t).note}
+                          {getSafetyTone(folder, tk).note}
                         </div>
                       </div>
 
@@ -388,7 +388,7 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
 
 function getSafetyTone(
   folder: QuickScanFolder,
-  t: (text: string) => string,
+  tk: (text: string) => string,
 ): {
   label: string;
   color: string;
@@ -396,24 +396,24 @@ function getSafetyTone(
 } {
   if (!folder.cleanable) {
     return {
-      label: t("REVIEW FIRST"),
+      label: tk("REVIEW FIRST"),
       color: "var(--accent-red)",
-      note: t("Large app data or container folders can break environments if removed blindly."),
+      note: tk("Large app data or container folders can break environments if removed blindly."),
     };
   }
 
   if (folder.category === "packages" || folder.category === "homebrew") {
     return {
-      label: t("USE TOOL CLEANUP"),
+      label: tk("USE TOOL CLEANUP"),
       color: "var(--accent-yellow)",
-      note: t("Prefer package-manager cleanup commands before deleting files directly."),
+      note: tk("Prefer package-manager cleanup commands before deleting files directly."),
     };
   }
 
   return {
-    label: t("GENERALLY SAFE"),
+    label: tk("GENERALLY SAFE"),
     color: "var(--accent-green)",
-    note: t("Usually cache or temporary data, but still review the folder contents before deleting."),
+    note: tk("Usually cache or temporary data, but still review the folder contents before deleting."),
   };
 }
 

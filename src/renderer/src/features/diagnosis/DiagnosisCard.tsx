@@ -21,14 +21,14 @@ const severityOrder: Record<DiagnosisSeverity, number> = {
 
 function formatDiagnosisSeverity(
   severity: DiagnosisSeverity,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ): string {
-  return t(severity)
+  return tk(severity)
 }
 
 function formatDiagnosisCategory(
   category: string,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ): string {
   const labels: Record<string, string> = {
     memory_pressure: 'Memory Pressure',
@@ -43,7 +43,7 @@ function formatDiagnosisCategory(
     workspace_growth: 'Workspace Growth',
   }
 
-  return t(labels[category] ?? category)
+  return tk(labels[category] ?? category)
 }
 
 export function DiagnosisCard() {
@@ -52,7 +52,7 @@ export function DiagnosisCard() {
   const error = useDiagnosisStore((s) => s.error)
   const fetchDiagnosis = useDiagnosisStore((s) => s.fetchDiagnosis)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const showToast = useToast((s) => s.show)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -82,11 +82,11 @@ export function DiagnosisCard() {
       <div style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            {t('System Diagnosis')}
+            {tk('System Diagnosis')}
           </span>
           {results.length === 0 && (
             <span style={{ ...badgeStyle, background: 'color-mix(in srgb, var(--accent-green) 18%, transparent)', color: 'var(--accent-green)' }}>
-              {t('Healthy')}
+              {tk('Healthy')}
             </span>
           )}
         </div>
@@ -94,17 +94,17 @@ export function DiagnosisCard() {
           <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
             {criticalCount > 0 && (
               <span style={{ color: severityColors.critical }}>
-                {criticalCount} {formatDiagnosisSeverity('critical', t)}
+                {criticalCount} {formatDiagnosisSeverity('critical', tk)}
               </span>
             )}
             {warningCount > 0 && (
               <span style={{ color: severityColors.warning }}>
-                {warningCount} {formatDiagnosisSeverity('warning', t)}
+                {warningCount} {formatDiagnosisSeverity('warning', tk)}
               </span>
             )}
             {infoCount > 0 && (
               <span style={{ color: severityColors.info }}>
-                {infoCount} {formatDiagnosisSeverity('info', t)}
+                {infoCount} {formatDiagnosisSeverity('info', tk)}
               </span>
             )}
           </div>
@@ -113,7 +113,7 @@ export function DiagnosisCard() {
 
       {results.length === 0 ? (
         <div style={{ fontSize: '13px', color: 'var(--text-secondary)', padding: '4px 0' }}>
-          {t('No issues detected. Your system is running smoothly.')}
+          {tk('No issues detected. Your system is running smoothly.')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -125,7 +125,7 @@ export function DiagnosisCard() {
               onToggle={() => setExpandedId(expandedId === result.id ? null : result.id)}
               onNavigate={(page) => setCurrentPage(page as AppPage)}
               onActionError={(message) => showToast(message)}
-              t={t}
+              tk={tk}
             />
           ))}
           {hasMore && !showAll && (
@@ -133,7 +133,7 @@ export function DiagnosisCard() {
               onClick={() => setShowAll(true)}
               style={showAllButtonStyle}
             >
-              {t('Show all ({count})', { count: sorted.length })}
+              {tk('Show all ({count})', { count: sorted.length })}
             </button>
           )}
           {showAll && hasMore && (
@@ -141,7 +141,7 @@ export function DiagnosisCard() {
               onClick={() => setShowAll(false)}
               style={showAllButtonStyle}
             >
-              {t('Show less')}
+              {tk('Show less')}
             </button>
           )}
         </div>
@@ -156,14 +156,14 @@ function DiagnosisItem({
   onToggle,
   onNavigate,
   onActionError,
-  t
+  tk
 }: {
   result: DiagnosisResult
   expanded: boolean
   onToggle: () => void
   onNavigate: (page: string) => void
   onActionError: (message: string) => void
-  t: (text: string, params?: Record<string, string | number>) => string
+  tk: (text: string, params?: Record<string, string | number>) => string
 }) {
   return (
     <div style={itemContainerStyle}>
@@ -186,7 +186,7 @@ function DiagnosisItem({
             {result.title}
           </span>
           <span style={{ ...categoryBadgeStyle }}>
-            {formatDiagnosisCategory(result.category, t)}
+            {formatDiagnosisCategory(result.category, tk)}
           </span>
         </div>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>
@@ -204,9 +204,9 @@ function DiagnosisItem({
             <table style={evidenceTableStyle}>
               <thead>
                 <tr>
-                  <th style={thStyle}>{t('Metric')}</th>
-                  <th style={thStyle}>{t('Value')}</th>
-                  <th style={thStyle}>{t('Threshold')}</th>
+                  <th style={thStyle}>{tk('Metric')}</th>
+                  <th style={thStyle}>{tk('Value')}</th>
+                  <th style={thStyle}>{tk('Threshold')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -231,28 +231,28 @@ function DiagnosisItem({
                       const targetPath = action.actionId.slice('open_path:'.length)
                       void window.systemScope.showInFolder(targetPath).then((res) => {
                         if (!res.ok) {
-                          onActionError(res.error?.message ?? t('Unable to open folder.'))
+                          onActionError(res.error?.message ?? tk('Unable to open folder.'))
                         }
                       })
                     }
                     if (action.actionId === 'save_snapshot') {
                       void window.systemScope.saveSessionSnapshot('Diagnosis Snapshot').then((res) => {
                         if (!res.ok) {
-                          onActionError(res.error?.message ?? t('Unable to save snapshot.'))
+                          onActionError(res.error?.message ?? tk('Unable to save snapshot.'))
                         }
                       })
                     }
                     if (action.actionId === 'run_cleanup_preview') {
                       void window.systemScope.previewCleanup().then((res) => {
                         if (!res.ok) {
-                          onActionError(res.error?.message ?? t('Unable to run cleanup preview.'))
+                          onActionError(res.error?.message ?? tk('Unable to run cleanup preview.'))
                         }
                       })
                     }
                     if (action.actionId === 'refresh_project_monitor') {
                       void window.systemScope.getProjectMonitorSummary().then((res) => {
                         if (!res.ok) {
-                          onActionError(res.error?.message ?? t('Unable to refresh project monitor.'))
+                          onActionError(res.error?.message ?? tk('Unable to refresh project monitor.'))
                         }
                       })
                     }

@@ -10,7 +10,7 @@ import { useI18n } from "../i18n/useI18n";
 type DevToolsTab = "overview" | "workspaces" | "ports" | "cleanup";
 
 export function DevToolsPage() {
-  const { t } = useI18n();
+  const { tk } = useI18n();
   const [tab, setTab] = useState<DevToolsTab>("overview");
 
   return (
@@ -24,7 +24,7 @@ export function DevToolsPage() {
       >
         <div style={{ display: "grid", gap: "6px" }}>
           <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
-            {t("DevTools")}
+            {tk("DevTools")}
           </h2>
           <div
             style={{
@@ -33,14 +33,14 @@ export function DevToolsPage() {
               lineHeight: 1.6,
             }}
           >
-            {t(
+            {tk(
               "Review development toolchain cleanup opportunities, workspace growth, Docker runtime status, and port conflicts from one place.",
             )}
           </div>
         </div>
         <div
           role="tablist"
-          aria-label={t("DevTools")}
+          aria-label={tk("DevTools")}
           style={{
             display: "flex",
             gap: "4px",
@@ -55,38 +55,38 @@ export function DevToolsPage() {
             active={tab === "overview"}
             onClick={() => setTab("overview")}
           >
-            {t("Overview")}
+            {tk("Overview")}
           </PageTab>
           <PageTab
             id="devtools-workspaces"
             active={tab === "workspaces"}
             onClick={() => setTab("workspaces")}
           >
-            {t("Workspaces")}
+            {tk("Workspaces")}
           </PageTab>
           <PageTab
             id="devtools-ports"
             active={tab === "ports"}
             onClick={() => setTab("ports")}
           >
-            {t("Ports")}
+            {tk("Ports")}
           </PageTab>
           <PageTab
             id="devtools-cleanup"
             active={tab === "cleanup"}
             onClick={() => setTab("cleanup")}
           >
-            {t("Cleanup")}
+            {tk("Cleanup")}
           </PageTab>
         </div>
       </div>
 
       {tab === "overview" && (
         <div style={{ display: "grid", gap: 16, paddingBottom: 12 }}>
-          <ErrorBoundary title={t("Developer Environment")}>
+          <ErrorBoundary title={tk("Developer Environment")}>
             <DevToolsOverviewSection sections={["health", "docker", "servers"]} compact />
           </ErrorBoundary>
-          <ErrorBoundary title={t("Project Monitor")}>
+          <ErrorBoundary title={tk("Project Monitor")}>
             <ProjectMonitorCard compact />
           </ErrorBoundary>
         </div>
@@ -94,10 +94,10 @@ export function DevToolsPage() {
 
       {tab === "workspaces" && (
         <div style={{ display: "grid", gap: 16 }}>
-          <ErrorBoundary title={t("Workspace Git Insights")}>
+          <ErrorBoundary title={tk("Workspace Git Insights")}>
             <DevToolsOverviewSection sections={["workspaces"]} />
           </ErrorBoundary>
-          <ErrorBoundary title={t("Project Monitor")}>
+          <ErrorBoundary title={tk("Project Monitor")}>
             <ProjectMonitorCard />
           </ErrorBoundary>
         </div>
@@ -105,10 +105,10 @@ export function DevToolsPage() {
 
       {tab === "ports" && (
         <div style={{ display: "grid", gap: 16 }}>
-          <ErrorBoundary title={t("Port Conflict Center")}>
+          <ErrorBoundary title={tk("Port Conflict Center")}>
             <PortConflictCenterCard />
           </ErrorBoundary>
-          <ErrorBoundary title={t("Dev Servers")}>
+          <ErrorBoundary title={tk("Dev Servers")}>
             <DevToolsOverviewSection sections={["servers"]} />
           </ErrorBoundary>
         </div>
@@ -116,7 +116,7 @@ export function DevToolsPage() {
 
       {tab === "cleanup" && (
         <div style={{ display: "grid", gap: 16 }}>
-          <ErrorBoundary title={t("Developer Tools")}>
+          <ErrorBoundary title={tk("Developer Tools")}>
             <DevToolsSection />
           </ErrorBoundary>
         </div>

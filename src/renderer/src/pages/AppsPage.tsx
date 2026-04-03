@@ -15,7 +15,7 @@ import {
 } from "../features/apps/appsShared";
 
 export function AppsPage() {
-  const { t, tk } = useI18n();
+  const { tk } = useI18n();
   const locale = useSettingsStore((state) => state.locale);
   const [activeTab, setActiveTab] = useState<AppsTab>("installed");
   const isWindows = navigator.userAgent.includes("Windows");
@@ -28,7 +28,7 @@ export function AppsPage() {
             {tk("apps.page.title")}
           </h2>
           <div style={pageDescriptionStyle}>
-            {t(
+            {tk(
               "Review installed apps, inspect leftover data, and clean obsolete uninstall metadata from one place.",
             )}
           </div>

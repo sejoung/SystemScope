@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { translateLiteral } from '@shared/i18n'
+import { translate } from '@shared/i18n'
 import type { SystemScopeAboutInfo } from '@shared/contracts/systemScope'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useI18n } from '../i18n/useI18n'
@@ -27,7 +27,7 @@ export function AboutPage() {
         applySettingsToStore(settings)
       } else {
         showToast(
-          translateLiteral(useSettingsStore.getState().locale, 'Failed to load settings.'),
+          translate(useSettingsStore.getState().locale, 'Failed to load settings.'),
           'danger'
         )
       }
@@ -36,7 +36,7 @@ export function AboutPage() {
         setAboutInfo(nextAboutInfo)
       } else {
         showToast(
-          translateLiteral(useSettingsStore.getState().locale, 'Unable to load the About information.'),
+          translate(useSettingsStore.getState().locale, 'Unable to load the About information.'),
           'danger'
         )
       }

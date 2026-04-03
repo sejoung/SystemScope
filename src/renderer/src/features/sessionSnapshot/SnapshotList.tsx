@@ -4,7 +4,7 @@ import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/Toast'
 
 export function SnapshotList() {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const showToast = useToast((s) => s.show)
   const snapshots = useSessionSnapshotStore((s) => s.snapshots)
   const loading = useSessionSnapshotStore((s) => s.loading)
@@ -18,7 +18,7 @@ export function SnapshotList() {
 
   const handleDelete = async (id: string) => {
     const ok = await deleteSnapshot(id)
-    if (ok) showToast(t('Snapshot deleted.'), 'success')
+    if (ok) showToast(tk('Snapshot deleted.'), 'success')
   }
 
   const handleCompare = () => {
@@ -26,11 +26,11 @@ export function SnapshotList() {
   }
 
   if (loading && snapshots.length === 0) {
-    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('Loading...')}</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{tk('Loading...')}</p>
   }
 
   if (snapshots.length === 0) {
-    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('No snapshots saved yet.')}</p>
+    return <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{tk('No snapshots saved yet.')}</p>
   }
 
   return (
@@ -45,14 +45,14 @@ export function SnapshotList() {
               cursor: 'pointer', fontSize: 13,
             }}
           >
-            {t('Compare snapshots')}
+            {tk('Compare snapshots')}
           </button>
         </div>
       )}
 
       {selectedIds.length < 2 && snapshots.length >= 2 && (
         <p style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 8 }}>
-          {t('Select two snapshots to compare.')}
+          {tk('Select two snapshots to compare.')}
         </p>
       )}
 
@@ -79,7 +79,7 @@ export function SnapshotList() {
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(snap.id) }}
-                title={t('Delete snapshot')}
+                title={tk('Delete snapshot')}
                 style={{
                   padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border)',
                   backgroundColor: 'transparent', color: 'var(--text-secondary)',

@@ -6,7 +6,7 @@ import { useCleanupStore } from '../../stores/useCleanupStore'
 import { useToast } from '../../components/Toast'
 
 export function AutomationHistoryCard() {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const executeCleanup = useCleanupStore((s) => s.executeCleanup)
   const executing = useCleanupStore((s) => s.executing)
   const showToast = useToast((s) => s.show)
@@ -28,7 +28,7 @@ export function AutomationHistoryCard() {
   async function handleRunNow() {
     const previewResult = await window.systemScope.previewCleanup()
     if (!previewResult.ok || !previewResult.data) {
-      showToast(t('Unable to run cleanup preview.'), 'danger')
+      showToast(tk('Unable to run cleanup preview.'), 'danger')
       return
     }
 
@@ -37,32 +37,32 @@ export function AutomationHistoryCard() {
       .map((item) => item.path)
 
     if (safePaths.length === 0) {
-      showToast(t('No safe automation targets found.'), 'default')
+      showToast(tk('No safe automation targets found.'), 'default')
       return
     }
 
     await executeCleanup(safePaths)
     await loadHistory()
-    showToast(t('Automation cleanup executed.'), 'success')
+    showToast(tk('Automation cleanup executed.'), 'success')
   }
 
   return (
     <div style={cardStyle}>
       <div style={headerStyle}>
-        <div style={titleStyle}>{t('Automation History')}</div>
+        <div style={titleStyle}>{tk('Automation History')}</div>
         <button
           type="button"
           onClick={() => void handleRunNow()}
           disabled={executing}
           style={runButtonStyle}
         >
-          {executing ? t('Running...') : t('Run Now')}
+          {executing ? tk('Running...') : tk('Run Now')}
         </button>
       </div>
       {events.length === 0 ? (
         <div style={emptyStyle}>
-          <div style={mainTextStyle}>{t('No automated cleanup runs yet.')}</div>
-          <div style={subTextStyle}>{t('Enable automation in Settings or run it once here to start building history.')}</div>
+          <div style={mainTextStyle}>{tk('No automated cleanup runs yet.')}</div>
+          <div style={subTextStyle}>{tk('Enable automation in Settings or run it once here to start building history.')}</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 8 }}>
@@ -77,7 +77,7 @@ export function AutomationHistoryCard() {
                   {formatBytes(Number(event.metadata?.deletedSize ?? 0))}
                 </div>
                 <div style={subTextStyle}>
-                  {t('{count} deleted', { count: Number(event.metadata?.deletedCount ?? 0) })}
+                  {tk('{count} deleted', { count: Number(event.metadata?.deletedCount ?? 0) })}
                 </div>
               </div>
             </div>

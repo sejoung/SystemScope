@@ -26,7 +26,7 @@ import { useUpdateStore } from './stores/useUpdateStore'
 import { useToast } from './components/Toast'
 import { applySettingsToStore, loadAppSettings } from './utils/settingsBootstrap'
 import { reportRendererError } from './utils/rendererLogging'
-import { translateKey, translateLiteral } from '@shared/i18n'
+import { translate } from '@shared/i18n'
 
 const PROCESS_POLLING_START_DELAY_MS = 2_500
 
@@ -80,7 +80,7 @@ function App() {
     }).catch((error) => {
       void reportRendererError('app-bootstrap', 'Failed to bootstrap app', { error })
       showToast(
-        translateKey(useSettingsStore.getState().locale, 'app.error_boundary.message'),
+        translate(useSettingsStore.getState().locale, 'app.error_boundary.message'),
         'danger'
       )
     }).finally(() => {
@@ -141,15 +141,15 @@ function App() {
 
   useEffect(() => {
     const titles: Record<string, string> = {
-      dashboard: translateLiteral(locale, "Overview"),
-      timeline: translateLiteral(locale, "Timeline"),
-      disk: translateLiteral(locale, "Storage"),
-      docker: translateLiteral(locale, "Docker & Containers"),
-      cleanup: translateLiteral(locale, "Cleanup"),
-      process: translateLiteral(locale, "Activity"),
-      devtools: translateLiteral(locale, "DevTools"),
-      apps: translateLiteral(locale, "Applications"),
-      settings: translateLiteral(locale, "Preferences"),
+      dashboard: translate(locale, "Overview"),
+      timeline: translate(locale, "Timeline"),
+      disk: translate(locale, "Storage"),
+      docker: translate(locale, "Docker & Containers"),
+      cleanup: translate(locale, "Cleanup"),
+      process: translate(locale, "Activity"),
+      devtools: translate(locale, "DevTools"),
+      apps: translate(locale, "Applications"),
+      settings: translate(locale, "Preferences"),
     }
     document.title = `SystemScope — ${titles[currentPage] ?? "SystemScope"}`
   }, [currentPage, locale])

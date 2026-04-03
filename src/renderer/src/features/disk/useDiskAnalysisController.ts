@@ -8,7 +8,7 @@ import { useDiskStore } from "../../stores/useDiskStore";
 import type { ScanOutcome, StorageTab } from "./diskAnalysisHelpers";
 
 export function useDiskAnalysisController() {
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const {
     scanResult,
     largeFiles,
@@ -239,7 +239,6 @@ export function useDiskAnalysisController() {
   useIpcListener(window.systemScope.onJobFailed, handleJobFailed);
 
   return {
-    t,
     tk,
     tab,
     setTab,

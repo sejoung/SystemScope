@@ -39,7 +39,7 @@ export function shouldUsePortWatchCompactLayout(width: number): boolean {
 
 export function PortWatch() {
   const showToast = useToast((s) => s.show);
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const [containerRef, containerWidth] = useContainerWidth(1100);
   const {
     watches,
@@ -72,7 +72,7 @@ export function PortWatch() {
   const handleAddWatch = () => {
     const entry = parseWatchPattern(input, watchScope);
     if (!entry) {
-      setInputError(t("Enter a valid port, IP, or IP:Port."));
+      setInputError(tk("Enter a valid port, IP, or IP:Port."));
       return;
     }
     if (watches.some((w) => w.pattern === entry.pattern)) {
@@ -91,7 +91,7 @@ export function PortWatch() {
     const res = await window.systemScope.getNetworkPorts();
     if (!res.ok) {
       setStatusError(
-        res.error?.message ?? t("Unable to refresh port watch status."),
+        res.error?.message ?? tk("Unable to refresh port watch status."),
       );
       return;
     }

@@ -23,7 +23,7 @@ export function ListeningPorts({
   showConflictCenter = true,
 }: ListeningPortsProps = {}) {
   const showToast = useToast((s) => s.show);
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const [containerRef, containerWidth] = useContainerWidth(1280);
   const {
     ports,
@@ -118,7 +118,7 @@ export function ListeningPorts({
           <span style={titleStyle}>{tk("process.port_finder.title")}</span>
           {scanned && (
             <span style={badgeStyle}>
-              {t("Listening {count}", { count: listenCount })}
+              {tk("Listening {count}", { count: listenCount })}
             </span>
           )}
         </div>
@@ -150,12 +150,12 @@ export function ListeningPorts({
                 }}
               >
                 {s === "process"
-                  ? t("Process")
+                  ? tk("Process")
                   : s === "local"
-                    ? t("Local")
+                    ? tk("Local")
                     : s === "remote"
-                      ? t("Remote")
-                      : t("All")}
+                      ? tk("Remote")
+                      : tk("All")}
               </button>
             ))}
           </div>
@@ -167,7 +167,7 @@ export function ListeningPorts({
               onClick={(e) => e.stopPropagation()}
               placeholder={
                 searchScope === "process"
-                  ? t("Search by process name or PID")
+                  ? tk("Search by process name or PID")
                   : searchScope === "local"
                   ? tk("process.port_finder.search_local")
                   : searchScope === "remote"
@@ -181,7 +181,7 @@ export function ListeningPorts({
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                aria-label={t("Clear search")}
+                aria-label={tk("Clear search")}
                 style={{
                   position: "absolute",
                   right: "8px",
@@ -205,7 +205,7 @@ export function ListeningPorts({
             style={btnStyle}
           >
             {loading
-              ? t("Scanning...")
+              ? tk("Scanning...")
               : scanned
                 ? tk("apps.action.refresh")
                 : tk("process.port_finder.scan")}
@@ -214,7 +214,7 @@ export function ListeningPorts({
       </div>
       {!scanned && requestState !== "started" ? (
         <StatusMessage
-          message={t(
+          message={tk(
             "Scan listening ports and active connections, then kill the owning process directly from the table when needed.",
           )}
         />
@@ -225,7 +225,7 @@ export function ListeningPorts({
               <AsyncTaskStatus
                 stage="started"
                 taskLabel={tk("process.port_finder.title")}
-                message={t(
+                message={tk(
                   "Listening port scan started. Collecting listeners and active socket information now.",
                 )}
               />
@@ -233,7 +233,7 @@ export function ListeningPorts({
               <AsyncTaskStatus
                 stage="failed"
                 taskLabel={tk("process.port_finder.title")}
-                message={t(error)}
+                message={tk(error)}
                 action={
                   <button
                     type="button"
@@ -248,13 +248,13 @@ export function ListeningPorts({
               <AsyncTaskStatus
                 stage="completed"
                 taskLabel={tk("process.port_finder.title")}
-                message={t(
+                message={tk(
                   "Listening port scan completed. Review exposed bindings first, then inspect or kill the owning process.",
                 )}
               />
             ) : (
               <StatusMessage
-                message={t(
+                message={tk(
                   "Use the listening filter to focus on open ports, then expand your search to process, local, or remote values.",
                 )}
               />
@@ -262,28 +262,28 @@ export function ListeningPorts({
           </div>
           <div style={summaryGridStyle}>
             <SummaryCard
-              label={t("Listening Ports")}
+              label={tk("Listening Ports")}
               value={listenCount}
               tone="var(--accent-cyan)"
-              note={t("Ports currently accepting inbound connections")}
+              note={tk("Ports currently accepting inbound connections")}
             />
             <SummaryCard
-              label={t("Exposed Bindings")}
+              label={tk("Exposed Bindings")}
               value={exposedListenCount}
               tone="var(--accent-red)"
-              note={t("Listening on non-loopback addresses")}
+              note={tk("Listening on non-loopback addresses")}
             />
             <SummaryCard
-              label={t("Localhost Only")}
+              label={tk("Localhost Only")}
               value={localhostListenCount}
               tone="var(--accent-green)"
-              note={t("Bound only to 127.0.0.1, ::1, or localhost")}
+              note={tk("Bound only to 127.0.0.1, ::1, or localhost")}
             />
             <SummaryCard
-              label={t("Owning Processes")}
+              label={tk("Owning Processes")}
               value={uniqueProcessCount}
               tone="var(--accent-yellow)"
-              note={t("Unique PIDs currently holding listening ports")}
+              note={tk("Unique PIDs currently holding listening ports")}
             />
           </div>
           {showConflictCenter ? (
@@ -295,15 +295,15 @@ export function ListeningPorts({
                 setSearchScope("local");
                 setStateFilter("LISTEN");
               }}
-              t={t}
+              tk={tk}
             />
           ) : null}
           <div style={infoBarStyle}>
             <span style={infoLabelStyle}>
-              {t("Listening ports are prioritized first, then sorted by local port")}
+              {tk("Listening ports are prioritized first, then sorted by local port")}
             </span>
             <span style={infoReasonStyle}>
-              {t(
+              {tk(
                 "Start with listeners to find open services quickly. Switch to established connections only when you need connection-level troubleshooting.",
               )}
             </span>
@@ -321,7 +321,7 @@ export function ListeningPorts({
               active={stateFilter === "all"}
               onClick={() => setStateFilter("all")}
             >
-              {t("All ({count})", {
+              {tk("All ({count})", {
                 count: orderedSearchFiltered.length,
               })}
             </FilterBtn>
@@ -329,19 +329,19 @@ export function ListeningPorts({
               active={stateFilter === "LISTEN"}
               onClick={() => setStateFilter("LISTEN")}
             >
-              {t("Listening ({count})", { count: listenCount })}
+              {tk("Listening ({count})", { count: listenCount })}
             </FilterBtn>
             <FilterBtn
               active={stateFilter === "ESTABLISHED"}
               onClick={() => setStateFilter("ESTABLISHED")}
             >
-              {t("Established ({count})", { count: establishedCount })}
+              {tk("Established ({count})", { count: establishedCount })}
             </FilterBtn>
             <FilterBtn
               active={stateFilter === "other"}
               onClick={() => setStateFilter("other")}
             >
-              {t("Other ({count})", { count: otherCount })}
+              {tk("Other ({count})", { count: otherCount })}
             </FilterBtn>
           </div>
 
@@ -379,7 +379,7 @@ export function ListeningPorts({
                     </div>
 
                     <div style={portCardMetaGridStyle}>
-                      <PortMeta label={t("Local")} value={formatEndpoint(p.localAddress, p.localPort)} mono />
+                      <PortMeta label={tk("Local")} value={formatEndpoint(p.localAddress, p.localPort)} mono />
                       <PortMeta label={tk("process.port_finder.remote")} value={formatEndpoint(p.peerAddress, p.peerPort)} mono muted />
                       <PortMeta label="PID" value={String(p.pid)} mono />
                     </div>
@@ -422,7 +422,7 @@ export function ListeningPorts({
                     </th>
                     <th style={thStyle}>{tk("process.port_finder.process")}</th>
                     <th style={thStyle}>PID</th>
-                    <th style={thStyle}>{t("Exposure")}</th>
+                    <th style={thStyle}>{tk("Exposure")}</th>
                     <th style={thStyle}>{tk("process.port_finder.remote")}</th>
                     <th style={thStyle}>{tk("process.port_finder.state")}</th>
                     <th
@@ -749,32 +749,32 @@ export function PortConflictCenterPanel({
   conflicts,
   onKill,
   onInspectPort,
-  t,
+  tk,
 }: {
   conflicts: PortConflict[];
   onKill: (port: PortInfo) => Promise<void>;
   onInspectPort: (port: number) => void;
-  t: (text: string, params?: Record<string, string | number>) => string;
+  tk: (text: string, params?: Record<string, string | number>) => string;
 }) {
   return (
     <div style={conflictCardStyle}>
       <div style={conflictHeaderStyle}>
         <div>
-          <div style={conflictTitleStyle}>{t("Port Conflict Center")}</div>
+          <div style={conflictTitleStyle}>{tk("Port Conflict Center")}</div>
           <div style={conflictSubtitleStyle}>
             {conflicts.length > 0
-              ? t("Common development ports currently in use")
-              : t("No common development port conflicts detected right now.")}
+              ? tk("Common development ports currently in use")
+              : tk("No common development port conflicts detected right now.")}
           </div>
         </div>
         <span style={conflictBadgeStyle}>
-          {t("{count} conflicts", { count: conflicts.length })}
+          {tk("{count} conflicts", { count: conflicts.length })}
         </span>
       </div>
 
       {conflicts.length === 0 ? (
         <div style={conflictEmptyStyle}>
-          {t("Ports like 3000, 5173, 5432, and 8080 will appear here when occupied.")}
+          {tk("Ports like 3000, 5173, 5432, and 8080 will appear here when occupied.")}
         </div>
       ) : (
         <div style={{ display: "grid", gap: "8px" }}>
@@ -787,7 +787,7 @@ export function PortConflictCenterPanel({
                   <span style={conflictPidStyle}>PID {conflict.pid}</span>
                 </div>
                 <div style={conflictHintStyle}>
-                  {t("{reason} Recommend trying {port} next.", {
+                  {tk("{reason} Recommend trying {port} next.", {
                     reason: conflict.reason,
                     port: conflict.recommendedPort,
                   })}
@@ -799,14 +799,14 @@ export function PortConflictCenterPanel({
                   onClick={() => onInspectPort(conflict.port)}
                   style={inspectBtnStyle}
                 >
-                  {t("Inspect")}
+                  {tk("Inspect")}
                 </button>
                 <button
                   type="button"
                   onClick={() => void onKill(conflict.portInfo)}
                   style={resolveBtnStyle}
                 >
-                  {t("Kill PID")}
+                  {tk("Kill PID")}
                 </button>
               </div>
             </div>

@@ -5,7 +5,6 @@ import { useDiskAnalysisController } from "../features/disk/useDiskAnalysisContr
 
 export function DiskAnalysisPage() {
   const {
-    t,
     tk,
     tab,
     setTab,
@@ -45,7 +44,7 @@ export function DiskAnalysisPage() {
               lineHeight: 1.6,
             }}
           >
-            {t(
+            {tk(
               "Scan folders, inspect large files, and review cleanup candidates before deleting anything.",
             )}
           </div>

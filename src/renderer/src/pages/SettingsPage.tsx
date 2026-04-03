@@ -8,7 +8,7 @@ import type {
   AutomationSchedule,
 } from "@shared/types";
 import { useI18n } from "../i18n/useI18n";
-import { translateLiteral, type AppLocale } from "@shared/i18n";
+import { translate, type AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -112,7 +112,7 @@ export function SettingsPage() {
   const lastCheckedAt = useUpdateStore((s) => s.lastCheckedAt);
   const applyUpdateStatus = useUpdateStore((s) => s.applyStatus);
   const setUpdateChecking = useUpdateStore((s) => s.setChecking);
-  const { t, tk } = useI18n();
+  const { tk } = useI18n();
   const compactLayout = shouldUseSettingsPageCompactLayout(containerWidth);
 
   const applyPersistedSettings = (settings: AppSettings) => {
@@ -157,7 +157,7 @@ export function SettingsPage() {
           applySettingsToStore(settings);
         } else {
           showToast(
-            translateLiteral(
+            translate(
               useSettingsStore.getState().locale,
               "Failed to load settings.",
             ),
@@ -347,7 +347,7 @@ export function SettingsPage() {
       const res = await window.systemScope.checkForUpdate();
       if (!res.ok) {
         showToast(
-          res.error?.message ?? t("Unable to check for updates right now."),
+          res.error?.message ?? tk("Unable to check for updates right now."),
         );
         return;
       }
@@ -356,7 +356,7 @@ export function SettingsPage() {
         applyUpdateStatus(res.data);
       }
     } catch {
-      showToast(t("Unable to check for updates right now."));
+      showToast(tk("Unable to check for updates right now."));
     } finally {
       setUpdateChecking(false);
     }
@@ -369,7 +369,7 @@ export function SettingsPage() {
     );
     if (!res.ok) {
       showToast(
-        res.error?.message ?? t("Unable to open the release download page."),
+        res.error?.message ?? tk("Unable to open the release download page."),
       );
     }
   };
@@ -689,7 +689,7 @@ export function SettingsPage() {
         </Section>
 
         {/* Workspace Profiles */}
-        <Section title={t("Workspace Profiles")}>
+        <Section title={tk("Workspace Profiles")}>
           <ProfileSection />
         </Section>
 
@@ -788,9 +788,9 @@ export function SettingsPage() {
         </Section>
 
         {/* About */}
-        <Section title={t("Updates")}>
+        <Section title={tk("Updates")}>
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-            {t(
+            {tk(
               "Check for a newer version and open the official download page in your browser.",
             )}
           </div>
@@ -805,15 +805,15 @@ export function SettingsPage() {
             }}
           >
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              {t("Current version")}:{" "}
+              {tk("Current version")}:{" "}
               {aboutInfo?.version ?? updateInfo?.currentVersion ?? "-"}
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              {t("Latest version")}:{" "}
-              {updateInfo?.latestVersion ?? t("Not checked yet")}
+              {tk("Latest version")}:{" "}
+              {updateInfo?.latestVersion ?? tk("Not checked yet")}
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              {t("Last checked")}: {formattedCheckedAt ?? t("Not checked yet")}
+              {tk("Last checked")}: {formattedCheckedAt ?? tk("Not checked yet")}
             </div>
             <div
               style={{
@@ -824,12 +824,12 @@ export function SettingsPage() {
               }}
             >
               {updateInfo?.hasUpdate
-                ? t("A new version v{version} is available.", {
+                ? tk("A new version v{version} is available.", {
                     version: updateInfo.latestVersion,
                   })
                 : formattedCheckedAt
-                  ? t("You are using the latest version.")
-                  : t("No update check has been run yet.")}
+                  ? tk("You are using the latest version.")
+                  : tk("No update check has been run yet.")}
             </div>
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -842,14 +842,14 @@ export function SettingsPage() {
                 cursor: checkingUpdate ? "default" : "pointer",
               }}
             >
-              {checkingUpdate ? t("Checking...") : t("Check for Updates")}
+              {checkingUpdate ? tk("Checking...") : tk("Check for Updates")}
             </button>
             {updateInfo?.hasUpdate ? (
               <button
                 onClick={() => void handleOpenUpdateRelease()}
                 style={btnStyle}
               >
-                {t("Download")}
+                {tk("Download")}
               </button>
             ) : null}
           </div>

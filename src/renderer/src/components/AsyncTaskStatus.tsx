@@ -23,7 +23,7 @@ export function AsyncTaskStatus({
   message,
   action,
 }: AsyncTaskStatusProps) {
-  const { t } = useI18n();
+  const { tk } = useI18n();
   const tone = stageTone[stage];
   const isError = tone === "error";
   const borderColor =
@@ -91,7 +91,7 @@ export function AsyncTaskStatus({
             textTransform: "uppercase",
           }}
         >
-          {getStageLabel(stage, t)}
+          {getStageLabel(stage, tk)}
         </span>
       </div>
       <div
@@ -110,16 +110,16 @@ export function AsyncTaskStatus({
 
 function getStageLabel(
   stage: AsyncTaskStage,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ) {
   switch (stage) {
     case "started":
-      return t("Started");
+      return tk("Started");
     case "running":
-      return t("In progress");
+      return tk("In progress");
     case "completed":
-      return t("Completed");
+      return tk("Completed");
     case "failed":
-      return t("Failed");
+      return tk("Failed");
   }
 }

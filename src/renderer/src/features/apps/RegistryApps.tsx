@@ -57,7 +57,7 @@ export function shouldUseRegistryAppsCompactLayout(width: number): boolean {
 
 export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
-  const { t, tk } = useI18n();
+  const { tk } = useI18n();
   const [containerRef, containerWidth] = useContainerWidth(1200);
 
   const [registryItems, setRegistryItems] = useState<AppLeftoverRegistryItem[]>([]);
@@ -152,7 +152,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
           <button type="button" onClick={() => void handleRefresh()} disabled={refreshing} style={secondaryBtnStyle(refreshing)}>
             {refreshing ? tk("common.refreshing") : tk("apps.action.refresh")}
           </button>
-          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.registry_placeholder")} clearLabel={t("Clear search")} />
+          <SearchInput value={search.draft} onChange={search.setDraft} onClear={search.clear} placeholder={tk("apps.search.registry_placeholder")} clearLabel={tk("Clear search")} />
           <button
             type="button"
             onClick={() => void handleRemoveSelected()}
@@ -254,7 +254,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
 
                     <div style={compactActionsStyle}>
                       <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
-                        {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                        {expandedId === item.id ? tk("apps.action.hide_data") : tk("Details")}
                       </button>
                     </div>
 
@@ -331,7 +331,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
                         </td>
                         <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
                           <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
-                            {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                            {expandedId === item.id ? tk("apps.action.hide_data") : tk("Details")}
                           </button>
                         </td>
                       </tr>

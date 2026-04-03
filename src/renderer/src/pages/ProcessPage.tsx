@@ -15,13 +15,13 @@ export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
   const allProcessesLoaded = useProcessStore((s) => s.allProcessesLoaded);
   const [tab, setTab] = useState<ActivityTab>("processes");
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
 
   if (tab === "processes" && !allProcessesLoaded) {
     return (
       <PageLoading
-        message={t("Loading process data...")}
-        detail={t(
+        message={tk("Loading process data...")}
+        detail={tk(
           "Currently inspect active network ports and the processes holding them.",
         )}
       />
@@ -48,7 +48,7 @@ export function ProcessPage() {
               lineHeight: 1.6,
             }}
           >
-            {t(
+            {tk(
               "Search active processes, inspect ports, and watch specific connections over time.",
             )}
           </div>
@@ -91,7 +91,7 @@ export function ProcessPage() {
             active={tab === "startup"}
             onClick={() => setTab("startup")}
           >
-            {t("Startup")}
+            {tk("Startup")}
           </PageTab>
         </div>
         <div
@@ -102,11 +102,11 @@ export function ProcessPage() {
           }}
         >
           {tab === "startup"
-            ? t("Manage startup programs that run when you log in.")
+            ? tk("Manage startup programs that run when you log in.")
             : tab === "processes"
             ? tk("process.page.tab.processes_help")
             : tab === "ports"
-              ? t(
+              ? tk(
                   "Review every listening port on this system, identify exposed bindings quickly, and terminate the owning process when needed.",
                 )
               : tk("process.page.tab.watch_help")}

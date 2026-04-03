@@ -113,7 +113,7 @@ export function Sidebar() {
   const currentPage = useSettingsStore((s) => s.currentPage);
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings);
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const [pendingPage, setPendingPage] = useState<NavPage | null>(null);
   const navItems = [
     { id: "dashboard", label: tk("nav.overview"), shortcut: "1" },
@@ -289,11 +289,11 @@ export function Sidebar() {
       </aside>
       <ConfirmDialog
         open={pendingPage !== null}
-        title={t("Unsaved Settings")}
+        title={tk("Unsaved Settings")}
         message={tk("confirm.unsaved_settings_leave")}
-        details={t("Unsaved work may be lost.")}
-        confirmLabel={t("Discard Changes")}
-        cancelLabel={t("Cancel")}
+        details={tk("Unsaved work may be lost.")}
+        confirmLabel={tk("Discard Changes")}
+        cancelLabel={tk("Cancel")}
         tone="danger"
         onCancel={() => setPendingPage(null)}
         onConfirm={() => {

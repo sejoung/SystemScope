@@ -31,7 +31,7 @@ export function DashboardPage() {
   const updateInfo = useUpdateStore((s) => s.updateInfo);
   const dismissedVersion = useUpdateStore((s) => s.dismissedVersion);
   const dismissCurrent = useUpdateStore((s) => s.dismissCurrent);
-  const { t } = useI18n();
+  const { tk } = useI18n();
   const showToast = useToast((s) => s.show);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const activeProfile = useProfileStore((s) => {
@@ -42,13 +42,13 @@ export function DashboardPage() {
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 
-  if (!current) return <PageLoading message={t("Collecting system information...")} />;
+  if (!current) return <PageLoading message={tk("Collecting system information...")} />;
 
   return (
     <div data-testid="page-dashboard">
       <div style={{ display: "grid", gap: "6px", marginBottom: "16px" }}>
         <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
-          {t("Overview")}
+          {tk("Overview")}
         </h2>
       <div
         style={{
@@ -57,7 +57,7 @@ export function DashboardPage() {
             lineHeight: 1.6,
           }}
         >
-          {t(
+          {tk(
             "Monitor live system usage, review alerts, and jump into storage or process details from one place.",
           )}
         </div>
@@ -72,11 +72,11 @@ export function DashboardPage() {
               cursor: "pointer", fontSize: 12,
             }}
           >
-            {t("Export Report")}
+            {tk("Export Report")}
           </button>
         </div>
         <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "-4px" }}>
-          {t("Customize dashboard widgets with profiles")}
+          {tk("Customize dashboard widgets with profiles")}
         </div>
       </div>
 
@@ -97,12 +97,12 @@ export function DashboardPage() {
         >
           <div style={{ display: "grid", gap: "4px" }}>
             <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--text-primary)" }}>
-              {t("A new version v{version} is available.", {
+              {tk("A new version v{version} is available.", {
                 version: visibleUpdate.latestVersion,
               })}
             </div>
             <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              {t("Download the latest release from GitHub to update manually.")}
+              {tk("Download the latest release from GitHub to update manually.")}
             </div>
           </div>
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -110,22 +110,22 @@ export function DashboardPage() {
               onClick={() => {
                 void window.systemScope.openUpdateRelease(visibleUpdate.releaseUrl).then((res) => {
                   if (!res.ok) {
-                    showToast(res.error?.message ?? t("Unable to open the release download page."))
+                    showToast(res.error?.message ?? tk("Unable to open the release download page."))
                   }
                 })
               }}
               style={primaryButtonStyle}
             >
-              {t("Download")}
+              {tk("Download")}
             </button>
             <button onClick={dismissCurrent} style={secondaryButtonStyle}>
-              {t("Dismiss")}
+              {tk("Dismiss")}
             </button>
             <button
               onClick={() => setCurrentPage("settings")}
               style={secondaryButtonStyle}
             >
-              {t("View Details")}
+              {tk("View Details")}
             </button>
           </div>
         </div>

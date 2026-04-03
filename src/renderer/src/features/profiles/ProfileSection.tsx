@@ -7,7 +7,7 @@ import type { WorkspaceProfile } from '@shared/types'
 import { MAX_PROFILES } from '@shared/types'
 
 export function ProfileSection() {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const profiles = useProfileStore((s) => s.profiles)
   const activeProfileId = useProfileStore((s) => s.activeProfileId)
   const fetchProfiles = useProfileStore((s) => s.fetchProfiles)
@@ -21,16 +21,16 @@ export function ProfileSection() {
 
   async function handleDelete(profile: WorkspaceProfile) {
     const ok = await deleteProfile(profile.id)
-    if (ok) showToast(t('Profile deleted.'))
+    if (ok) showToast(tk('Profile deleted.'))
   }
 
   async function handleToggleActive(profileId: string) {
     if (activeProfileId === profileId) {
       const ok = await setActiveProfile(null)
-      if (ok) showToast(t('Profile deactivated. Using global settings.'))
+      if (ok) showToast(tk('Profile deactivated. Using global settings.'))
     } else {
       const ok = await setActiveProfile(profileId)
-      if (ok) showToast(t('Profile activated.'))
+      if (ok) showToast(tk('Profile activated.'))
     }
   }
 
@@ -38,9 +38,9 @@ export function ProfileSection() {
     <div style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{t('Workspace Profiles')}</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>{tk('Workspace Profiles')}</h3>
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-            {t('Manage workspace profiles with custom thresholds, cleanup rules, and dashboard layout.')}
+            {tk('Manage workspace profiles with custom thresholds, cleanup rules, and dashboard layout.')}
           </p>
         </div>
         <button
@@ -53,13 +53,13 @@ export function ProfileSection() {
             fontSize: 12, opacity: profiles.length >= MAX_PROFILES ? 0.5 : 1,
           }}
         >
-          {t('Create Profile')}
+          {tk('Create Profile')}
         </button>
       </div>
 
       {profiles.length === 0 ? (
         <p style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-          {t('No profiles yet. Create one to customize thresholds and dashboard layout per workspace.')}
+          {tk('No profiles yet. Create one to customize thresholds and dashboard layout per workspace.')}
         </p>
       ) : (
         <div style={{ display: 'grid', gap: 8 }}>
@@ -76,7 +76,7 @@ export function ProfileSection() {
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{profile.name}</div>
                   {profile.hiddenWidgets.length > 0 && (
                     <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                      {profile.hiddenWidgets.length} {t('Hidden Widgets').toLowerCase()}
+                      {profile.hiddenWidgets.length} {tk('Hidden Widgets').toLowerCase()}
                     </div>
                   )}
                 </div>
@@ -84,14 +84,14 @@ export function ProfileSection() {
               <div style={{ display: 'flex', gap: 6 }}>
                 <button onClick={() => void handleToggleActive(profile.id)}
                   style={{ ...btnStyle, color: activeProfileId === profile.id ? 'var(--accent-blue)' : 'var(--text-secondary)' }}>
-                  {activeProfileId === profile.id ? t('Active Profile') : t('Switch Profile')}
+                  {activeProfileId === profile.id ? tk('Active Profile') : tk('Switch Profile')}
                 </button>
                 <button onClick={() => { setEditingProfile(profile); setDialogOpen(true) }} style={btnStyle}>
-                  {t('Edit Profile')}
+                  {tk('Edit Profile')}
                 </button>
                 <button onClick={() => void handleDelete(profile)}
                   style={{ ...btnStyle, color: 'var(--accent-red, #e53e3e)' }}>
-                  {t('Delete Profile')}
+                  {tk('Delete Profile')}
                 </button>
               </div>
             </div>
@@ -103,7 +103,7 @@ export function ProfileSection() {
         <ProfileEditDialog
           profile={editingProfile}
           onClose={() => { setDialogOpen(false); setEditingProfile(null) }}
-          onSaved={() => { setDialogOpen(false); setEditingProfile(null); showToast(t('Profile saved.')) }}
+          onSaved={() => { setDialogOpen(false); setEditingProfile(null); showToast(tk('Profile saved.')) }}
         />
       )}
     </div>

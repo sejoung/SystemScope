@@ -43,7 +43,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 
 function loadDockerTab(): DockerTab {
   try {
-    const stored = globalThis.localStorage?.getItem(DOCKER_TAB_STORAGE_KEY)
+    const stored = getSafeLocalStorage()?.getItem(DOCKER_TAB_STORAGE_KEY)
     return isDockerTab(stored) ? stored : 'overview'
   } catch {
     return 'overview'
@@ -52,10 +52,19 @@ function loadDockerTab(): DockerTab {
 
 function saveDockerTab(tab: DockerTab): void {
   try {
-    globalThis.localStorage?.setItem(DOCKER_TAB_STORAGE_KEY, tab)
+    getSafeLocalStorage()?.setItem(DOCKER_TAB_STORAGE_KEY, tab)
   } catch {
     // Ignore storage failures and keep the in-memory state.
   }
+}
+
+function getSafeLocalStorage(): Storage | undefined {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  if (!descriptor || !('value' in descriptor)) {
+    return undefined
+  }
+
+  return descriptor.value as Storage | undefined
 }
 
 function isDockerTab(value: unknown): value is DockerTab {

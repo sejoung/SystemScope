@@ -17,7 +17,7 @@ const QuickScan = lazy(async () =>
 );
 
 export function CleanupWorkspaceView() {
-  const { t } = useI18n();
+  const { tk } = useI18n();
   const {
     tryScan,
     scanResult,
@@ -36,9 +36,9 @@ export function CleanupWorkspaceView() {
     <div style={{ display: "grid", gap: 16 }}>
       <div style={panelStyle}>
         <div style={{ display: "grid", gap: 6 }}>
-          <div style={titleStyle}>{t("Cleanup Workspace")}</div>
+          <div style={titleStyle}>{tk("Cleanup Workspace")}</div>
           <div style={subtleStyle}>
-            {t(
+            {tk(
               "Run a quick cleanup scan for common cache folders, or inspect one folder in detail before deleting large, old, or duplicate files.",
             )}
           </div>
@@ -50,7 +50,7 @@ export function CleanupWorkspaceView() {
             disabled={isScanning}
             style={primaryButtonStyle}
           >
-            {selectedFolder ? t("Choose Another Folder") : t("Choose Folder")}
+            {selectedFolder ? tk("Choose Another Folder") : tk("Choose Folder")}
           </button>
           {selectedFolder ? (
             <span style={pathPillStyle}>{selectedFolder}</span>
@@ -59,13 +59,13 @@ export function CleanupWorkspaceView() {
         {isScanning ? (
           <AsyncTaskStatus
             stage="started"
-            taskLabel={t("Cleanup Workspace")}
-            message={scanProgress || t("Scanning the selected folder.")}
+            taskLabel={tk("Cleanup Workspace")}
+            message={scanProgress || tk("Scanning the selected folder.")}
           />
         ) : null}
       </div>
 
-      <ErrorBoundary title={t("Quick Cleanup")}>
+      <ErrorBoundary title={tk("Quick Cleanup")}>
         <Suspense fallback={null}>
           <QuickScan
             onFolderClick={tryScan}
@@ -76,14 +76,14 @@ export function CleanupWorkspaceView() {
       </ErrorBoundary>
 
       {scanResult && selectedFolder ? (
-        <ErrorBoundary title={t("File Cleanup")}>
+        <ErrorBoundary title={tk("File Cleanup")}>
           <Suspense fallback={null}>
             <FileInsights
               extensions={[]}
               largeFiles={largeFiles}
               folderPath={selectedFolder}
               defaultTab="largest"
-              title={t("File Cleanup")}
+              title={tk("File Cleanup")}
               hiddenTabs={["types"]}
               onFilesRemoved={removeLargeFilesByPaths}
               onRefreshRequested={() =>
@@ -94,9 +94,9 @@ export function CleanupWorkspaceView() {
         </ErrorBoundary>
       ) : (
         <div style={emptyStateStyle}>
-          <div style={titleStyle}>{t("Detailed File Review")}</div>
+          <div style={titleStyle}>{tk("Detailed File Review")}</div>
           <div style={subtleStyle}>
-            {t(
+            {tk(
               "Select a folder or scan one from Quick Cleanup to inspect large files, old files, and duplicates before cleanup.",
             )}
           </div>

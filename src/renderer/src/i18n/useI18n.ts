@@ -1,17 +1,12 @@
 import { useCallback, useMemo } from 'react'
-import { getLocaleTag, translate, translateKey, type TranslationKey } from '@shared/i18n'
+import { getLocaleTag, translate, type TranslationKey } from '@shared/i18n'
 import { useSettingsStore } from '../stores/useSettingsStore'
 
 export function useI18n() {
   const locale = useSettingsStore((state) => state.locale)
-  const t = useCallback(
-    (text: string, params?: Record<string, string | number>) =>
-      translate(locale, text, params),
-    [locale]
-  )
   const tk = useCallback(
-    (key: TranslationKey, params?: Record<string, string | number>) =>
-      translateKey(locale, key, params),
+    (input: string | TranslationKey, params?: Record<string, string | number>) =>
+      translate(locale, input, params),
     [locale]
   )
 
@@ -19,9 +14,8 @@ export function useI18n() {
     () => ({
       locale,
       localeTag: getLocaleTag(locale),
-      t,
       tk
     }),
-    [locale, t, tk]
+    [locale, tk]
   )
 }

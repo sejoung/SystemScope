@@ -29,7 +29,7 @@ interface ProcessTableProps {
 
 export function ProcessTable({ processes }: ProcessTableProps) {
   const showToast = useToast((s) => s.show);
-  const { tk, t } = useI18n();
+  const { tk } = useI18n();
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("cpu");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -90,7 +90,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
     return sortDir === "desc" ? "descending" : "ascending";
   };
 
-  const sortSummary = getProcessSortSummary(sortField, sortDir, t);
+  const sortSummary = getProcessSortSummary(sortField, sortDir, tk);
 
   const handleKill = async (processInfo: ProcessInfo) => {
     const res = await window.systemScope.killProcess({
@@ -237,7 +237,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                aria-label={t("Clear search")}
+                aria-label={tk("Clear search")}
                 style={{
                   position: "absolute",
                   right: "8px",
@@ -414,15 +414,15 @@ export function getCpuUsageToneLabel(
 function getProcessSortSummary(
   sortField: SortField,
   sortDir: SortDir,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ) {
   if (sortField === "cpu") {
     return {
       label:
         sortDir === "desc"
-          ? t("Sorted by CPU usage, highest first")
-          : t("Sorted by CPU usage, lowest first"),
-      reason: t(
+          ? tk("Sorted by CPU usage, highest first")
+          : tk("Sorted by CPU usage, lowest first"),
+      reason: tk(
         "Default order starts with CPU-heavy processes so sudden load is easier to spot.",
       ),
     };
@@ -432,9 +432,9 @@ function getProcessSortSummary(
     return {
       label:
         sortDir === "desc"
-          ? t("Sorted by memory usage, highest first")
-          : t("Sorted by memory usage, lowest first"),
-      reason: t(
+          ? tk("Sorted by memory usage, highest first")
+          : tk("Sorted by memory usage, lowest first"),
+      reason: tk(
         "Memory sort helps compare which processes occupy the most space right now.",
       ),
     };
@@ -444,9 +444,9 @@ function getProcessSortSummary(
     return {
       label:
         sortDir === "desc"
-          ? t("Sorted by PID, highest first")
-          : t("Sorted by PID, lowest first"),
-      reason: t(
+          ? tk("Sorted by PID, highest first")
+          : tk("Sorted by PID, lowest first"),
+      reason: tk(
         "PID order is useful when you already know the target process number.",
       ),
     };
@@ -455,9 +455,9 @@ function getProcessSortSummary(
   return {
     label:
       sortDir === "desc"
-        ? t("Sorted by name, Z to A")
-        : t("Sorted by name, A to Z"),
-    reason: t(
+        ? tk("Sorted by name, Z to A")
+        : tk("Sorted by name, A to Z"),
+    reason: tk(
       "Name order is useful when you already know the process name you want to inspect.",
     ),
   };

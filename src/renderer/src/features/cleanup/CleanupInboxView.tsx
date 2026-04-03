@@ -21,16 +21,16 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function relativeAge(
   modifiedAt: number,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ): string {
   const diffMs = Date.now() - modifiedAt
   const days = Math.floor(diffMs / 86_400_000)
-  if (days < 1) return t('< 1 day')
-  if (days === 1) return t('1 day ago')
-  if (days < 30) return t('{count} days ago', { count: days })
+  if (days < 1) return tk('< 1 day')
+  if (days === 1) return tk('1 day ago')
+  if (days < 30) return tk('{count} days ago', { count: days })
   const months = Math.floor(days / 30)
-  if (months === 1) return t('1 month ago')
-  return t('{count} months ago', { count: months })
+  if (months === 1) return tk('1 month ago')
+  return tk('{count} months ago', { count: months })
 }
 
 function truncatePath(path: string, maxLen = 60): string {
@@ -50,7 +50,7 @@ export function CleanupInboxView() {
   const executeCleanup = useCleanupStore((s) => s.executeCleanup)
   const dismissItem = useCleanupStore((s) => s.dismissItem)
   const lastResult = useCleanupStore((s) => s.lastResult)
-  const { tk, t } = useI18n()
+  const { tk } = useI18n()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [pendingPaths, setPendingPaths] = useState<string[]>([])
@@ -104,14 +104,14 @@ export function CleanupInboxView() {
         <div style={summaryBarStyle}>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              {t('{count} items', { count: items.length })} &middot; {formatBytes(inbox?.totalReclaimable ?? 0)} {t('reclaimable')}
+              {tk('{count} items', { count: items.length })} &middot; {formatBytes(inbox?.totalReclaimable ?? 0)} {tk('reclaimable')}
             </span>
             {lastResult && (
               <span style={{ fontSize: '12px', color: 'var(--accent-green)' }}>
-                {tk('cleanup.execute.success')}: {formatBytes(lastResult.deletedSize)} — {t('Items can be restored from Trash.')}
+                {tk('cleanup.execute.success')}: {formatBytes(lastResult.deletedSize)} — {tk('Items can be restored from Trash.')}
                 {lastResult.failedCount > 0 && (
                   <span style={{ color: 'var(--accent-red)', marginLeft: '8px' }}>
-                    ({lastResult.failedCount} {t('failed')})
+                    ({lastResult.failedCount} {tk('failed')})
                   </span>
                 )}
               </span>
@@ -124,7 +124,7 @@ export function CleanupInboxView() {
               disabled={previewLoading || inboxLoading}
               style={actionBtnStyle}
             >
-              {previewLoading ? tk('cleanup.preview.scanning') : t('Scan Now')}
+              {previewLoading ? tk('cleanup.preview.scanning') : tk('Scan Now')}
             </button>
             {safeCount > 0 && (
               <button
@@ -155,7 +155,7 @@ export function CleanupInboxView() {
                 <button
                   type="button"
                   onClick={() => setSearch('')}
-                  aria-label={t('Clear search')}
+                  aria-label={tk('Clear search')}
                   style={{
                     position: 'absolute',
                     right: '8px',
@@ -184,7 +184,7 @@ export function CleanupInboxView() {
         {/* Item list */}
         {inboxLoading && (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
-            {t('Loading...')}
+            {tk('Loading...')}
           </div>
         )}
 
@@ -210,10 +210,10 @@ export function CleanupInboxView() {
                   </span>
                   {/* Rule name + category */}
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {t(item.ruleName)}
+                    {tk(item.ruleName)}
                   </span>
                   <span style={{ ...badgeStyle, background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                    {t(CATEGORY_LABELS[item.category] ?? item.category)}
+                    {tk(CATEGORY_LABELS[item.category] ?? item.category)}
                   </span>
                 </div>
 
@@ -226,11 +226,11 @@ export function CleanupInboxView() {
                     {formatBytes(item.size)}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {relativeAge(item.modifiedAt, t)}
+                    {relativeAge(item.modifiedAt, tk)}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)', flex: 1 }}>
-                    {t('{rule} matched this item for cleanup review.', {
-                      rule: t(item.ruleName),
+                    {tk('{rule} matched this item for cleanup review.', {
+                      rule: tk(item.ruleName),
                     })}
                   </span>
                   <button
@@ -252,14 +252,14 @@ export function CleanupInboxView() {
       <ConfirmDialog
         open={confirmOpen}
         title={tk('cleanup.execute.confirm')}
-        message={t('This will move {count} safe items ({size}) to trash.', {
+        message={tk('This will move {count} safe items ({size}) to trash.', {
           count: pendingPaths.length,
           size: formatBytes(
             items.filter((i) => pendingPaths.includes(i.path)).reduce((s, i) => s + i.size, 0)
           ),
         })}
-        confirmLabel={t('Clean')}
-        cancelLabel={t('Cancel')}
+        confirmLabel={tk('Clean')}
+        cancelLabel={tk('Cancel')}
         tone="danger"
         onConfirm={() => void handleConfirmExecute()}
         onCancel={() => { setConfirmOpen(false); setPendingPaths([]) }}

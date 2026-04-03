@@ -11,7 +11,7 @@ const SAFETY_COLORS: Record<SafetyLevel, string> = {
 }
 
 export function DevToolsDetailDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { t, tk } = useI18n()
+  const { tk } = useI18n()
   const results = useDevToolsStore((s) => s.results)
   const cleaning = useDevToolsStore((s) => s.cleaning)
   const cleanItems = useDevToolsStore((s) => s.cleanItems)
@@ -76,7 +76,7 @@ export function DevToolsDetailDialog({ open, onClose }: { open: boolean; onClose
         </div>
 
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button onClick={onClose} style={ctrlBtn}>{t('Cancel')}</button>
+          <button onClick={onClose} style={ctrlBtn}>{tk('Cancel')}</button>
           <button onClick={() => void handleClean()} disabled={selected.size === 0 || cleaning} style={{
             padding: '6px 14px', fontSize: 12, fontWeight: 700, borderRadius: 'var(--radius)', border: 'none',
             background: selected.size > 0 && !cleaning ? 'var(--accent-blue)' : 'var(--bg-tertiary)',

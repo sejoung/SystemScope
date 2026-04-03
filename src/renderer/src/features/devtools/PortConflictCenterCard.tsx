@@ -12,7 +12,7 @@ import type { PortInfo, ProcessKillResult } from "@shared/types";
 export function PortConflictCenterCard() {
   const showToast = useToast((s) => s.show);
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
-  const { t, tk } = useI18n();
+  const { tk } = useI18n();
   const {
     ports,
     loading,
@@ -66,9 +66,9 @@ export function PortConflictCenterCard() {
   return (
     <div style={{ display: "grid", gap: 10 }}>
       <div style={{ display: "grid", gap: 4 }}>
-        <div style={sectionTitleStyle}>{t("Port Conflict Center")}</div>
+        <div style={sectionTitleStyle}>{tk("Port Conflict Center")}</div>
         <div style={sectionCopyStyle}>
-          {t(
+          {tk(
             "See common development ports in use, kill the owner quickly, or jump into the raw port inspector when you need more detail.",
           )}
         </div>
@@ -77,7 +77,7 @@ export function PortConflictCenterCard() {
         conflicts={conflicts}
         onKill={handleKill}
         onInspectPort={handleInspectPort}
-        t={t}
+        tk={tk}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
-import { t } from '../i18n'
+import { tk } from '../i18n'
 import { checkForUpdates, getUpdateStatus, openReleasePage } from '../services/updateChecker'
 import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
@@ -22,7 +22,7 @@ export function registerUpdateIpc(): void {
       return success(status)
     } catch (error) {
       logErrorAction('update-ipc', 'check.manual', withRequestMeta(requestMeta, { error }))
-      return failure('UNKNOWN_ERROR', t('Unable to check for updates right now.'))
+      return failure('UNKNOWN_ERROR', tk('Unable to check for updates right now.'))
     }
   })
 
@@ -31,21 +31,21 @@ export function registerUpdateIpc(): void {
 
     if (typeof releaseUrl !== 'string' || !releaseUrl) {
       logWarnAction('update-ipc', 'release.open', withRequestMeta(requestMeta, { reason: 'invalid_url' }))
-      return failure('INVALID_INPUT', t('Unable to open the release download page.'))
+      return failure('INVALID_INPUT', tk('Unable to open the release download page.'))
     }
 
     try {
       const opened = await openReleasePage(releaseUrl)
       if (!opened) {
         logWarnAction('update-ipc', 'release.open', withRequestMeta(requestMeta, { reason: 'blocked_url', releaseUrl }))
-        return failure('PERMISSION_DENIED', t('Unable to open the release download page.'))
+        return failure('PERMISSION_DENIED', tk('Unable to open the release download page.'))
       }
 
       logInfoAction('update-ipc', 'release.open', withRequestMeta(requestMeta, { releaseUrl }))
       return success(true)
     } catch (error) {
       logErrorAction('update-ipc', 'release.open', withRequestMeta(requestMeta, { error, releaseUrl }))
-      return failure('UNKNOWN_ERROR', t('Unable to open the release download page.'))
+      return failure('UNKNOWN_ERROR', tk('Unable to open the release download page.'))
     }
   })
 }

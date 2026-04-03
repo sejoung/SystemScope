@@ -5,7 +5,7 @@ import { useI18n } from "../../i18n/useI18n";
 export function AlertBanner() {
   const allAlerts = useAlertStore((s) => s.alerts);
   const dismissAlert = useAlertStore((s) => s.dismissAlert);
-  const { t } = useI18n();
+  const { tk } = useI18n();
   const alerts = useMemo(
     () => allAlerts.filter((a) => !a.dismissed),
     [allAlerts],
@@ -50,12 +50,12 @@ export function AlertBanner() {
                   : "var(--accent-yellow)",
             }}
           >
-            {alert.severity === "critical" ? `\u2715 ${t("CRITICAL")}` : `\u26A0 ${t("WARNING")}`}:{" "}
+            {alert.severity === "critical" ? `\u2715 ${tk("CRITICAL")}` : `\u26A0 ${tk("WARNING")}`}:{" "}
             {alert.message}
           </span>
           <button
             type="button"
-            aria-label={t("Close")}
+            aria-label={tk("Close")}
             onClick={() => {
               dismissAlert(alert.id);
               void window.systemScope.dismissAlert(alert.id);

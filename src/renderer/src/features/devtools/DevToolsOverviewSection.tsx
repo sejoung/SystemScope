@@ -20,7 +20,7 @@ export function DevToolsOverviewSection({
   sections = ['health', 'docker', 'workspaces', 'servers'],
   compact = false,
 }: DevToolsOverviewSectionProps) {
-  const { t } = useI18n()
+  const { tk } = useI18n()
   const showToast = useToast((s) => s.show)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
   const setDockerTab = useSettingsStore((s) => s.setDockerTab)
@@ -74,11 +74,11 @@ export function DevToolsOverviewSection({
 
   async function handleAddWorkspace() {
     if (!activeProfile) {
-      showToast(t('Activate a workspace profile before adding tracked folders.'), 'default')
+      showToast(tk('Activate a workspace profile before adding tracked folders.'), 'default')
       return
     }
     if (activeProfile.workspacePaths.length >= MAX_WORKSPACE_PATHS) {
-      showToast(t('You have reached the maximum number of tracked workspaces for this profile.'), 'default')
+      showToast(tk('You have reached the maximum number of tracked workspaces for this profile.'), 'default')
       return
     }
 
@@ -87,7 +87,7 @@ export function DevToolsOverviewSection({
       return
     }
     if (activeProfile.workspacePaths.includes(res.data)) {
-      showToast(t('This workspace is already being tracked.'), 'default')
+      showToast(tk('This workspace is already being tracked.'), 'default')
       return
     }
 
@@ -96,7 +96,7 @@ export function DevToolsOverviewSection({
       workspacePaths: [...activeProfile.workspacePaths, res.data],
     })
     if (!saved) {
-      showToast(t('Unable to add the workspace to the active profile.'), 'danger')
+      showToast(tk('Unable to add the workspace to the active profile.'), 'danger')
       return
     }
 
@@ -105,7 +105,7 @@ export function DevToolsOverviewSection({
       fetchProjectMonitorSummary(),
     ])
     setSelectedWorkspacePath(res.data)
-    showToast(t('Workspace added.'), 'success')
+    showToast(tk('Workspace added.'), 'success')
   }
 
   async function handleRemoveWorkspace(workspacePath: string) {
@@ -118,7 +118,7 @@ export function DevToolsOverviewSection({
       workspacePaths: activeProfile.workspacePaths.filter((entry) => entry !== workspacePath),
     })
     if (!saved) {
-      showToast(t('Unable to remove the workspace from the active profile.'), 'danger')
+      showToast(tk('Unable to remove the workspace from the active profile.'), 'danger')
       return
     }
 
@@ -127,7 +127,7 @@ export function DevToolsOverviewSection({
       fetchProjectMonitorSummary(),
     ])
     setSelectedWorkspacePath('all')
-    showToast(t('Workspace removed.'), 'success')
+    showToast(tk('Workspace removed.'), 'success')
   }
 
   function handleInspectPort(port: number) {
@@ -149,7 +149,7 @@ export function DevToolsOverviewSection({
   async function handleOpenWorkspace(workspacePath: string) {
     const res = await window.systemScope.showInFolder(workspacePath)
     if (!res.ok) {
-      showToast(res.error?.message ?? t('Unable to open folder.'), 'danger')
+      showToast(res.error?.message ?? tk('Unable to open folder.'), 'danger')
     }
   }
 
@@ -158,7 +158,7 @@ export function DevToolsOverviewSection({
       <div style={overviewToolbarStyle}>
         <OverviewRefreshButton
           loading={loading}
-          label={t(loading ? 'Refreshing...' : 'Refresh All')}
+          label={tk(loading ? 'Refreshing...' : 'Refresh All')}
           onClick={() => void handleRefreshOverview()}
         />
       </div>
@@ -166,8 +166,8 @@ export function DevToolsOverviewSection({
       {sections.includes('health') ? (
         <section style={cardStyle}>
           <SectionHeader
-            title={t('Environment Health')}
-            description={t('Check whether local developer tools are installed and ready before you start a session.')}
+            title={tk('Environment Health')}
+            description={tk('Check whether local developer tools are installed and ready before you start a session.')}
           />
           {error ? <div style={errorStyle}>{error}</div> : null}
           <div style={gridStyle}>
@@ -176,7 +176,7 @@ export function DevToolsOverviewSection({
                 <div style={tileHeaderStyle}>
                   <span style={tileTitleStyle}>{check.label}</span>
                   <span style={{ ...statusPillStyle, ...getStatusStyle(check.status) }}>
-                    {t(check.status === 'healthy' ? 'Ready' : check.status === 'warning' ? 'Needs Review' : 'Missing')}
+                    {tk(check.status === 'healthy' ? 'Ready' : check.status === 'warning' ? 'Needs Review' : 'Missing')}
                   </span>
                 </div>
                 <div style={detailStyle}>{check.version ?? check.detail}</div>
@@ -184,7 +184,7 @@ export function DevToolsOverviewSection({
               </div>
             ))}
             {!loading && (overview?.healthChecks.length ?? 0) === 0 ? (
-              <div style={emptyStyle}>{t('No environment checks are available right now.')}</div>
+              <div style={emptyStyle}>{tk('No environment checks are available right now.')}</div>
             ) : null}
           </div>
         </section>
@@ -194,19 +194,19 @@ export function DevToolsOverviewSection({
         <section style={cardStyle}>
           <div style={sectionHeaderRowStyle}>
             <SectionHeader
-              title={t('Docker Runtime')}
-              description={t('Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.')}
+              title={tk('Docker Runtime')}
+              description={tk('Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.')}
             />
-            <DockerOpenButton label={t('Open Docker')} onClick={() => handleOpenDocker()} />
+            <DockerOpenButton label={tk('Open Docker')} onClick={() => handleOpenDocker()} />
           </div>
           {overview?.docker ? (
             <div style={rowCardStyle}>
               <div style={workspaceHeaderStyle}>
                 <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
                   <div style={tileHeaderStyle}>
-                    <span style={tileTitleStyle}>{t('Docker & Containers')}</span>
+                    <span style={tileTitleStyle}>{tk('Docker & Containers')}</span>
                     <span style={{ ...statusPillStyle, ...getStatusStyle(overview.docker.status) }}>
-                      {t(
+                      {tk(
                         overview.docker.status === 'healthy'
                           ? 'Ready'
                           : overview.docker.status === 'warning'
@@ -220,18 +220,18 @@ export function DevToolsOverviewSection({
                 </div>
                 <div style={workspaceMetaColumnStyle}>
                   <div style={workspaceMetaWrapStyle}>
-                    <MetaPill label={t('Running Containers')} value={String(overview.docker.runningContainers)} />
-                    <MetaPill label={t('Stopped')} value={String(overview.docker.stoppedContainers)} />
-                    <MetaPill label={t('Unused Images')} value={String(overview.docker.unusedImages)} />
-                    <MetaPill label={t('Unused Volumes')} value={String(overview.docker.unusedVolumes)} />
-                    <MetaPill label={t('Build Cache')} value={overview.docker.reclaimableBuildCacheLabel} />
+                    <MetaPill label={tk('Running Containers')} value={String(overview.docker.runningContainers)} />
+                    <MetaPill label={tk('Stopped')} value={String(overview.docker.stoppedContainers)} />
+                    <MetaPill label={tk('Unused Images')} value={String(overview.docker.unusedImages)} />
+                    <MetaPill label={tk('Unused Volumes')} value={String(overview.docker.unusedVolumes)} />
+                    <MetaPill label={tk('Build Cache')} value={overview.docker.reclaimableBuildCacheLabel} />
                   </div>
                   <DockerQuickActions
                     labels={{
-                      containers: t('Containers'),
-                      images: t('Docker Images'),
-                      volumes: t('Volumes'),
-                      buildCache: t('Build Cache'),
+                      containers: tk('Containers'),
+                      images: tk('Docker Images'),
+                      volumes: tk('Volumes'),
+                      buildCache: tk('Build Cache'),
                     }}
                     onOpenContainers={() => handleOpenDocker('containers')}
                     onOpenImages={() => handleOpenDocker('images')}
@@ -242,7 +242,7 @@ export function DevToolsOverviewSection({
               </div>
             </div>
           ) : (
-            <div style={emptyStyle}>{t('Docker summary is not available right now.')}</div>
+            <div style={emptyStyle}>{tk('Docker summary is not available right now.')}</div>
           )}
         </section>
       ) : null}
@@ -251,8 +251,8 @@ export function DevToolsOverviewSection({
         <section style={cardStyle}>
           <div style={sectionHeaderRowStyle}>
             <SectionHeader
-              title={t('Workspace Environment')}
-              description={t('Review stack signals, environment files, build artifacts, Git state, and active dev servers across tracked workspaces.')}
+              title={tk('Workspace Environment')}
+              description={tk('Review stack signals, environment files, build artifacts, Git state, and active dev servers across tracked workspaces.')}
             />
             {!compact ? (
               <div style={workspaceToolbarStyle}>
@@ -261,7 +261,7 @@ export function DevToolsOverviewSection({
                   onChange={(event) => setSelectedWorkspacePath(event.target.value)}
                   style={selectStyle}
                 >
-                  <option value="all">{t('All Workspaces')}</option>
+                  <option value="all">{tk('All Workspaces')}</option>
                   {(overview?.workspaces ?? []).map((workspace) => (
                     <option key={workspace.path} value={workspace.path}>
                       {workspace.name}
@@ -269,14 +269,14 @@ export function DevToolsOverviewSection({
                   ))}
                 </select>
                 <button type="button" onClick={() => void handleAddWorkspace()} style={actionButtonStyle}>
-                  {t('Add Workspace')}
+                  {tk('Add Workspace')}
                 </button>
               </div>
             ) : null}
           </div>
           {!compact && !activeProfile ? (
             <div style={emptyStyle}>
-              {t('Activate a workspace profile to manage tracked workspaces from DevTools.')}
+              {tk('Activate a workspace profile to manage tracked workspaces from DevTools.')}
             </div>
           ) : null}
           <div style={{ display: 'grid', gap: 10 }}>
@@ -290,17 +290,17 @@ export function DevToolsOverviewSection({
                     </div>
                     <div style={workspaceMetaColumnStyle}>
                       <div style={workspaceMetaWrapStyle}>
-                        <MetaPill label={t('Branch')} value={workspace.branch ?? t('No repo')} />
-                        <MetaPill label={t('Dependency Tooling')} value={workspace.packageManager ?? '-'} />
-                        <MetaPill label={t('Stacks')} value={workspace.stacks.join(', ') || '-'} />
-                        <MetaPill label={t('Manifests')} value={String(workspace.manifestCount)} />
-                        <MetaPill label={t('Env File')} value={workspace.hasEnvFile ? t('Yes') : t('No')} />
-                        <MetaPill label={t('TypeScript Config')} value={workspace.hasTypeScriptConfig ? t('Yes') : t('No')} />
-                        <MetaPill label={t('Docker Config')} value={workspace.hasDockerConfig ? t('Yes') : t('No')} />
-                        <MetaPill label={t('Active Servers')} value={String(workspace.activeDevServerCount)} />
-                        <MetaPill label={t('Dirty')} value={String(workspace.dirtyFileCount)} />
-                        <MetaPill label={t('Untracked')} value={String(workspace.untrackedFileCount)} />
-                        <MetaPill label={t('Stash')} value={String(workspace.stashCount)} />
+                        <MetaPill label={tk('Branch')} value={workspace.branch ?? tk('No repo')} />
+                        <MetaPill label={tk('Dependency Tooling')} value={workspace.packageManager ?? '-'} />
+                        <MetaPill label={tk('Stacks')} value={workspace.stacks.join(', ') || '-'} />
+                        <MetaPill label={tk('Manifests')} value={String(workspace.manifestCount)} />
+                        <MetaPill label={tk('Env File')} value={workspace.hasEnvFile ? tk('Yes') : tk('No')} />
+                        <MetaPill label={tk('TypeScript Config')} value={workspace.hasTypeScriptConfig ? tk('Yes') : tk('No')} />
+                        <MetaPill label={tk('Docker Config')} value={workspace.hasDockerConfig ? tk('Yes') : tk('No')} />
+                        <MetaPill label={tk('Active Servers')} value={String(workspace.activeDevServerCount)} />
+                        <MetaPill label={tk('Dirty')} value={String(workspace.dirtyFileCount)} />
+                        <MetaPill label={tk('Untracked')} value={String(workspace.untrackedFileCount)} />
+                        <MetaPill label={tk('Stash')} value={String(workspace.stashCount)} />
                       </div>
                       {!compact && activeProfile ? (
                         <button
@@ -308,29 +308,29 @@ export function DevToolsOverviewSection({
                           onClick={() => void handleRemoveWorkspace(workspace.path)}
                           style={removeButtonStyle}
                         >
-                          {t('Remove')}
+                          {tk('Remove')}
                         </button>
                       ) : null}
                     </div>
                   </div>
                   {workspace.lastCommitAt ? (
                     <div style={hintStyle}>
-                      {t('Last commit')}: {new Date(workspace.lastCommitAt).toLocaleString()}
+                      {tk('Last commit')}: {new Date(workspace.lastCommitAt).toLocaleString()}
                     </div>
                   ) : null}
                   {workspace.artifactDirectories.length > 0 ? (
                     <div style={{ display: 'grid', gap: 6 }}>
-                      <div style={subsectionLabelStyle}>{t('Build Artifacts')}</div>
+                      <div style={subsectionLabelStyle}>{tk('Build Artifacts')}</div>
                       <div style={workspaceMetaWrapStyle}>
                         {workspace.artifactDirectories.map((artifact) => (
-                          <MetaPill key={`${workspace.path}-${artifact}`} label={t('Artifact')} value={artifact} />
+                          <MetaPill key={`${workspace.path}-${artifact}`} label={tk('Artifact')} value={artifact} />
                         ))}
                       </div>
                     </div>
                   ) : null}
                   {workspace.activeDevServerPorts.length > 0 ? (
                     <div style={{ display: 'grid', gap: 6 }}>
-                      <div style={subsectionLabelStyle}>{t('Dev Server Ports')}</div>
+                      <div style={subsectionLabelStyle}>{tk('Dev Server Ports')}</div>
                       <div style={workspaceMetaWrapStyle}>
                         {workspace.activeDevServerPorts.map((port) => (
                           <button
@@ -347,7 +347,7 @@ export function DevToolsOverviewSection({
                   ) : null}
                   {workspace.largeUntrackedFiles.length > 0 ? (
                     <div style={{ display: 'grid', gap: 6 }}>
-                      <div style={subsectionLabelStyle}>{t('Large Untracked Files')}</div>
+                      <div style={subsectionLabelStyle}>{tk('Large Untracked Files')}</div>
                       {workspace.largeUntrackedFiles.map((file) => (
                         <div key={file.path} style={listRowStyle}>
                           <span style={pathStyle}>{file.path}</span>
@@ -360,10 +360,10 @@ export function DevToolsOverviewSection({
               </div>
             ))}
             {!loading && (overview?.workspaces.length ?? 0) === 0 ? (
-            <div style={emptyStyle}>{t('Add workspace paths to the active profile to see Git insights here.')}</div>
+            <div style={emptyStyle}>{tk('Add workspace paths to the active profile to see Git insights here.')}</div>
             ) : null}
             {!loading && (overview?.workspaces.length ?? 0) > 0 && visibleWorkspaces.length === 0 ? (
-              <div style={emptyStyle}>{t('No workspace matches the current selection.')}</div>
+              <div style={emptyStyle}>{tk('No workspace matches the current selection.')}</div>
             ) : null}
           </div>
         </section>
@@ -372,8 +372,8 @@ export function DevToolsOverviewSection({
       {sections.includes('servers') ? (
         <section style={cardStyle}>
           <SectionHeader
-            title={t('Runtime Services')}
-            description={t('Detect active local development servers, app runtimes, and data services from current listening ports.')}
+            title={tk('Runtime Services')}
+            description={tk('Detect active local development servers, app runtimes, and data services from current listening ports.')}
           />
           <div style={{ display: 'grid', gap: 8 }}>
             {(compact ? (overview?.devServers ?? []).slice(0, 4) : (overview?.devServers ?? [])).map((server) => (
@@ -393,8 +393,8 @@ export function DevToolsOverviewSection({
                   </div>
                   <div style={workspaceMetaColumnStyle}>
                     <div style={workspaceMetaWrapStyle}>
-                      <MetaPill label={t('Exposure')} value={server.exposure} />
-                      <MetaPill label={t('Workspace')} value={server.workspaceName ?? '-'} />
+                      <MetaPill label={tk('Exposure')} value={server.exposure} />
+                      <MetaPill label={tk('Workspace')} value={server.workspaceName ?? '-'} />
                     </div>
                     <div style={serverActionRowStyle}>
                       <button
@@ -402,7 +402,7 @@ export function DevToolsOverviewSection({
                         onClick={() => handleInspectPort(server.port)}
                         style={secondaryActionButtonStyle}
                       >
-                        {t('Inspect Port')}
+                        {tk('Inspect Port')}
                       </button>
                       {server.workspacePath ? (
                         <button
@@ -414,7 +414,7 @@ export function DevToolsOverviewSection({
                           }}
                           style={secondaryActionButtonStyle}
                         >
-                          {t('Open Workspace')}
+                          {tk('Open Workspace')}
                         </button>
                       ) : null}
                     </div>
@@ -423,7 +423,7 @@ export function DevToolsOverviewSection({
               </div>
             ))}
           {!loading && (overview?.devServers.length ?? 0) === 0 ? (
-            <div style={emptyStyle}>{t('No active development servers were detected from current listening ports.')}</div>
+            <div style={emptyStyle}>{tk('No active development servers were detected from current listening ports.')}</div>
           ) : null}
         </div>
         </section>

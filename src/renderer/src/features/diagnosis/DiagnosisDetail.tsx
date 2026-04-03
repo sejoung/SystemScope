@@ -20,14 +20,14 @@ interface DiagnosisDetailProps {
 
 function formatDiagnosisSeverity(
   severity: DiagnosisSeverity,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ): string {
-  return t(severity)
+  return tk(severity)
 }
 
 function formatDiagnosisCategory(
   category: string,
-  t: (text: string, params?: Record<string, string | number>) => string,
+  tk: (text: string, params?: Record<string, string | number>) => string,
 ): string {
   const labels: Record<string, string> = {
     memory_pressure: 'Memory Pressure',
@@ -40,12 +40,12 @@ function formatDiagnosisCategory(
     network_saturation: 'Network Saturation',
   }
 
-  return t(labels[category] ?? category)
+  return tk(labels[category] ?? category)
 }
 
 export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
-  const { t } = useI18n()
+  const { tk } = useI18n()
 
   const detectedDate = new Date(result.detectedAt)
 
@@ -64,10 +64,10 @@ export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
             textTransform: 'uppercase'
           }}
         >
-          {formatDiagnosisSeverity(result.severity, t)}
+          {formatDiagnosisSeverity(result.severity, tk)}
         </span>
         <span style={categoryLabelStyle}>
-          {formatDiagnosisCategory(result.category, t)}
+          {formatDiagnosisCategory(result.category, tk)}
         </span>
       </div>
 
@@ -84,13 +84,13 @@ export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
       {/* Evidence table */}
       {result.evidence.length > 0 && (
         <div style={{ marginBottom: '16px' }}>
-          <div style={sectionLabelStyle}>{t('Evidence')}</div>
+          <div style={sectionLabelStyle}>{tk('Evidence')}</div>
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>{t('Metric')}</th>
-                <th style={thStyle}>{t('Value')}</th>
-                <th style={thStyle}>{t('Threshold')}</th>
+                <th style={thStyle}>{tk('Metric')}</th>
+                <th style={thStyle}>{tk('Value')}</th>
+                <th style={thStyle}>{tk('Threshold')}</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +109,7 @@ export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
       {/* Actions */}
       {result.actions.length > 0 && (
         <div style={{ marginBottom: '16px' }}>
-          <div style={sectionLabelStyle}>{t('Recommended Actions')}</div>
+          <div style={sectionLabelStyle}>{tk('Recommended Actions')}</div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {result.actions.map((action, i) => (
               <button
@@ -128,7 +128,7 @@ export function DiagnosisDetail({ result }: DiagnosisDetailProps) {
 
       {/* Timestamp */}
       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-        {t('Detected at')} {detectedDate.toLocaleString()}
+        {tk('Detected at')} {detectedDate.toLocaleString()}
       </div>
     </div>
   )

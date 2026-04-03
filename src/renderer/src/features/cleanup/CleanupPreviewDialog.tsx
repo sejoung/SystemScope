@@ -14,7 +14,7 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
   const executeCleanup = useCleanupStore((s) => s.executeCleanup)
   const fetchInbox = useCleanupStore((s) => s.fetchInbox)
   const executing = useCleanupStore((s) => s.executing)
-  const { tk, t } = useI18n()
+  const { tk } = useI18n()
 
   const [selected, setSelected] = useState<Set<string>>(() => new Set(preview.items.map((i) => i.path)))
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -61,7 +61,7 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
             <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
               {tk('cleanup.preview.title')}
             </h3>
-            <button type="button" onClick={onClose} style={closeBtnStyle} aria-label={t('Cancel')}>
+            <button type="button" onClick={onClose} style={closeBtnStyle} aria-label={tk('Cancel')}>
               &times;
             </button>
           </div>
@@ -70,13 +70,13 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
           {preview.ruleBreakdown.length > 0 && (
             <div style={{ display: 'grid', gap: '4px' }}>
               <div style={tableHeaderStyle}>
-                <span style={{ flex: 2 }}>{t('Rule')}</span>
-                <span style={{ flex: 1, textAlign: 'right' }}>{t('Items')}</span>
-                <span style={{ flex: 1, textAlign: 'right' }}>{t('Size')}</span>
+                <span style={{ flex: 2 }}>{tk('Rule')}</span>
+                <span style={{ flex: 1, textAlign: 'right' }}>{tk('Items')}</span>
+                <span style={{ flex: 1, textAlign: 'right' }}>{tk('Size')}</span>
               </div>
               {preview.ruleBreakdown.map((rb) => (
                 <div key={rb.ruleId} style={tableRowStyle}>
-                  <span style={{ flex: 2, fontSize: '13px', color: 'var(--text-primary)' }}>{t(rb.ruleName)}</span>
+                  <span style={{ flex: 2, fontSize: '13px', color: 'var(--text-primary)' }}>{tk(rb.ruleName)}</span>
                   <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', color: 'var(--text-secondary)' }}>{rb.itemCount}</span>
                   <span style={{ flex: 1, textAlign: 'right', fontSize: '13px', color: 'var(--text-secondary)' }}>{formatBytes(rb.totalSize)}</span>
                 </div>
@@ -105,7 +105,7 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
                   onChange={toggleAll}
                 />
                 <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  {t('Select all')} ({preview.items.length})
+                  {tk('Select all')} ({preview.items.length})
                 </span>
               </label>
             )}
@@ -134,11 +134,11 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
           {/* Actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              {t('{count} selected', { count: selected.size })} &middot; {formatBytes(selectedSize)}
+              {tk('{count} selected', { count: selected.size })} &middot; {formatBytes(selectedSize)}
             </span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button type="button" onClick={onClose} style={cancelBtnStyle}>
-                {t('Cancel')}
+                {tk('Cancel')}
               </button>
               <button
                 type="button"
@@ -149,7 +149,7 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
                   opacity: selected.size === 0 || executing ? 0.5 : 1,
                 }}
               >
-                {executing ? t('Cleaning...') : t('Clean Selected')}
+                {executing ? tk('Cleaning...') : tk('Clean Selected')}
               </button>
             </div>
           </div>
@@ -159,12 +159,12 @@ export function CleanupPreviewDialog({ preview, onClose }: CleanupPreviewDialogP
       <ConfirmDialog
         open={confirmOpen}
         title={tk('cleanup.execute.confirm')}
-        message={t('This will permanently remove {count} items ({size}).', {
+        message={tk('This will permanently remove {count} items ({size}).', {
           count: selected.size,
           size: formatBytes(selectedSize),
         })}
-        confirmLabel={t('Clean')}
-        cancelLabel={t('Cancel')}
+        confirmLabel={tk('Clean')}
+        cancelLabel={tk('Cancel')}
         tone="danger"
         onConfirm={() => void handleConfirmClean()}
         onCancel={() => setConfirmOpen(false)}
