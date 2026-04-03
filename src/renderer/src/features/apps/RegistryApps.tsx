@@ -1,9 +1,13 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import type React from "react";
 import type { AppLeftoverRegistryItem } from "@shared/types";
+import type { TranslationKey } from "@shared/i18n";
 import { isAppLeftoverRegistryArray } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
+import { useContainerWidth } from "../../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import {
@@ -36,9 +40,14 @@ import {
   titleStyle,
 } from "./appsShared";
 
+export function shouldUseRegistryAppsCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.registryAppsCompact);
+}
+
 export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
   const { t, tk } = useI18n();
+  const [containerRef, containerWidth] = useContainerWidth(1200);
 
   const [registryItems, setRegistryItems] = useState<AppLeftoverRegistryItem[]>([]);
   const [loadError, setLoadError] = useState<string | undefined>();
@@ -85,6 +94,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
     [filteredRegistry, selectedIds],
   );
   const allFilteredChecked = filteredRegistry.length > 0 && selectedFilteredCount === filteredRegistry.length;
+  const compactLayout = shouldUseRegistryAppsCompactLayout(containerWidth);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -121,7 +131,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
   };
 
   return (
-    <section style={sectionStyle}>
+    <section style={sectionStyle} ref={containerRef}>
       <div style={headerStyle}>
         <div style={titleRowStyle}>
           <span style={titleStyle}>{tk("apps.tab.registry")}</span>
@@ -165,7 +175,88 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
         <StatusMessage title={tk("apps.empty.registry")} message={tk("apps.empty.registry_detail")} />
       ) : (
         <>
-          <StatusMessage tone="error" message={tk("apps.danger.registry")} />
+          <div style={{ marginBottom: "14px" }}>
+            <StatusMessage tone="error" message={tk("apps.danger.registry")} />
+          </div>
+          {compactLayout ? (
+            <div style={compactListStyle}>
+              <div style={compactBulkBarStyle}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <input
+                    type="checkbox"
+                    checked={allFilteredChecked}
+                    disabled={filteredRegistry.length === 0}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        setSelectedIds((current) => {
+                          const next = new Set(current);
+                          filteredRegistry.forEach((item) => next.add(item.id));
+                          return [...next];
+                        });
+                      } else {
+                        setSelectedIds((current) =>
+                          current.filter((id) => !filteredRegistry.some((item) => item.id === id)),
+                        );
+                      }
+                    }}
+                  />
+                  <span style={compactBulkTextStyle}>
+                    {tk("common.selected", { count: selectedFilteredCount })}
+                  </span>
+                </label>
+              </div>
+
+              {filteredRegistry.map((item) => {
+                const checked = selectedIds.includes(item.id);
+                return (
+                  <div key={item.id} style={compactCardStyle}>
+                    <div style={compactCardHeaderStyle}>
+                      <label htmlFor={`registry-card-${item.id}`} style={compactCardTitleWrapStyle}>
+                        <input
+                          id={`registry-card-${item.id}`}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => handleToggleId(item.id)}
+                        />
+                        <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
+                          <div style={compactTitleStyle}>{item.appName}</div>
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+                            <Badge text="Windows" color="var(--accent-yellow)" />
+                            <Badge
+                              text={item.installLocationExists ? tk("apps.registry.install_missing") : tk("apps.registry.install_unavailable")}
+                              color="var(--accent-red)"
+                            />
+                            <Badge
+                              text={item.uninstallerExists ? tk("apps.registry.uninstaller_missing") : tk("apps.registry.uninstall_unavailable")}
+                              color="var(--accent-red)"
+                            />
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div style={compactMetaGridStyle}>
+                      <CompactMeta label={tk("apps.table.version")} value={item.version ?? "-"} mono />
+                      <CompactMeta label={tk("apps.table.publisher")} value={item.publisher ?? "-"} />
+                      <CompactMeta label={tk("apps.registry.install_location")} value={item.installLocation ?? "-"} multiline muted={!item.installLocation} />
+                    </div>
+
+                    <div style={compactActionsStyle}>
+                      <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
+                        {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                      </button>
+                    </div>
+
+                    {expandedId === item.id ? (
+                      <div style={{ marginTop: "4px" }}>
+                        {renderRegistryDetails(item, tk)}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div style={tableWrapStyle}>
             <table style={{ ...tableStyle, minWidth: "980px" }}>
               <thead>
@@ -236,28 +327,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
                       {expandedId === item.id ? (
                         <tr style={rowStyle}>
                           <td colSpan={6} style={{ padding: "0 8px 12px 8px" }}>
-                            <div style={detailPanelStyle}>
-                              <div style={detailGridStyle}>
-                                <div style={detailBlockStyle}>
-                                  <strong style={detailLabelStyle}>{tk("apps.registry.path")}</strong>
-                                  <div style={detailValueStyle}>
-                                    <CopyableValue value={item.registryPath} fontSize="12px" color="var(--text-secondary)" multiline />
-                                  </div>
-                                </div>
-                                <div style={detailBlockStyle}>
-                                  <strong style={detailLabelStyle}>{tk("apps.registry.install_location")}</strong>
-                                  <div style={detailValueStyle}>
-                                    <CopyableValue value={item.installLocation ?? ""} emptyValue="-" fontSize="12px" color="var(--text-secondary)" multiline />
-                                  </div>
-                                </div>
-                                <div style={detailBlockStyle}>
-                                  <strong style={detailLabelStyle}>{tk("apps.registry.uninstall_command")}</strong>
-                                  <div style={detailValueStyle}>
-                                    <CopyableValue value={item.uninstallCommand ?? ""} emptyValue="-" fontSize="12px" color="var(--text-secondary)" multiline />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                            {renderRegistryDetails(item, tk)}
                           </td>
                         </tr>
                       ) : null}
@@ -267,8 +337,160 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
               </tbody>
             </table>
           </div>
+          )}
         </>
       )}
     </section>
   );
 }
+
+function renderRegistryDetails(
+  item: AppLeftoverRegistryItem,
+  tk: (key: TranslationKey, params?: Record<string, string | number>) => string,
+) {
+  return (
+    <div style={detailPanelStyle}>
+      <div style={detailGridStyle}>
+        <div style={detailBlockStyle}>
+          <strong style={detailLabelStyle}>{tk("apps.registry.path")}</strong>
+          <div style={detailValueStyle}>
+            <CopyableValue value={item.registryPath} fontSize="12px" color="var(--text-secondary)" multiline />
+          </div>
+        </div>
+        <div style={detailBlockStyle}>
+          <strong style={detailLabelStyle}>{tk("apps.registry.install_location")}</strong>
+          <div style={detailValueStyle}>
+            <CopyableValue value={item.installLocation ?? ""} emptyValue="-" fontSize="12px" color="var(--text-secondary)" multiline />
+          </div>
+        </div>
+        <div style={detailBlockStyle}>
+          <strong style={detailLabelStyle}>{tk("apps.registry.uninstall_command")}</strong>
+          <div style={detailValueStyle}>
+            <CopyableValue value={item.uninstallCommand ?? ""} emptyValue="-" fontSize="12px" color="var(--text-secondary)" multiline />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompactMeta({
+  label,
+  value,
+  mono = false,
+  multiline = false,
+  muted = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  multiline?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div style={compactMetaItemStyle}>
+      <div style={compactMetaLabelStyle}>{label}</div>
+      <div
+        style={{
+          ...(mono ? compactMetaValueMonoStyle : compactMetaValueStyle),
+          color: muted ? "var(--text-muted)" : undefined,
+          wordBreak: multiline ? "break-word" : undefined,
+          whiteSpace: multiline ? "normal" : undefined,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+const compactListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const compactBulkBarStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: "10px",
+  border: "1px solid var(--border)",
+  background: "var(--bg-primary)",
+};
+
+const compactBulkTextStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 600,
+  color: "var(--text-primary)",
+};
+
+const compactCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  padding: "14px",
+  borderRadius: "12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const compactCardHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+};
+
+const compactCardTitleWrapStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "10px",
+  minWidth: 0,
+  cursor: "pointer",
+};
+
+const compactTitleStyle: React.CSSProperties = {
+  fontSize: "15px",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+};
+
+const compactMetaGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+};
+
+const compactMetaItemStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+};
+
+const compactMetaLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-muted)",
+};
+
+const compactMetaValueStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-primary)",
+  lineHeight: 1.5,
+};
+
+const compactMetaValueMonoStyle: React.CSSProperties = {
+  ...compactMetaValueStyle,
+  fontFamily: "monospace",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const compactActionsStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  flexWrap: "wrap",
+  alignItems: "center",
+};

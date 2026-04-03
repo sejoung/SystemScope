@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getCpuUsageTone,
   getCpuUsageToneLabel,
+  shouldUseProcessTableCompactLayout,
 } from "../../src/renderer/src/features/process/ProcessTable";
 
 describe("ProcessTable helpers", () => {
@@ -19,5 +20,11 @@ describe("ProcessTable helpers", () => {
     expect(getCpuUsageToneLabel("normal", tk)).toBe("process.table.cpu_normal");
     expect(getCpuUsageToneLabel("medium", tk)).toBe("process.table.cpu_medium");
     expect(getCpuUsageToneLabel("high", tk)).toBe("process.table.cpu_high");
+  });
+
+  it("switches process table to compact layout below the width threshold", () => {
+    expect(shouldUseProcessTableCompactLayout(720)).toBe(true);
+    expect(shouldUseProcessTableCompactLayout(979)).toBe(true);
+    expect(shouldUseProcessTableCompactLayout(980)).toBe(false);
   });
 });

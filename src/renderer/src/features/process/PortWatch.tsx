@@ -4,6 +4,8 @@ import { useToast } from "../../components/Toast";
 import { usePortWatchStore } from "../../stores/usePortWatchStore";
 import type { PortInfo } from "@shared/types";
 import { isPortInfoArray } from "@shared/types";
+import { useContainerWidth } from "../../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import {
   formatPortAddress,
   matchWatchPorts,
@@ -31,9 +33,14 @@ const POLL_OPTIONS = [
   { value: 30000, label: "30s" },
 ];
 
+export function shouldUsePortWatchCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.portWatchCompact);
+}
+
 export function PortWatch() {
   const showToast = useToast((s) => s.show);
   const { tk, t } = useI18n();
+  const [containerRef, containerWidth] = useContainerWidth(1100);
   const {
     watches,
     statuses,
@@ -60,6 +67,7 @@ export function PortWatch() {
   );
   const [inputError, setInputError] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const compactLayout = shouldUsePortWatchCompactLayout(containerWidth);
 
   const handleAddWatch = () => {
     const entry = parseWatchPattern(input, watchScope);
@@ -167,7 +175,7 @@ export function PortWatch() {
   );
 
   return (
-    <section style={sectionStyle}>
+    <section style={sectionStyle} ref={containerRef}>
       <div style={headerStyle}>
         <div style={titleRowStyle}>
           <span style={titleStyle}>{tk("process.port_watch.title")}</span>
@@ -196,6 +204,7 @@ export function PortWatch() {
             background: "var(--bg-primary)",
             borderRadius: "6px",
             padding: "2px",
+            flexWrap: "wrap",
           }}
         >
           {(["local", "remote", "all"] as const).map((s) => (
@@ -244,7 +253,7 @@ export function PortWatch() {
           aria-label={tk("process.port_watch.title")}
           aria-invalid={inputError ? "true" : "false"}
           aria-describedby={inputError ? "port-watch-input-error" : undefined}
-          style={inputStyle}
+          style={{ ...inputStyle, minWidth: compactLayout ? "100%" : inputStyle.minWidth }}
         />
         <button type="button" onClick={handleAddWatch} style={btnStyle}>
           {tk("process.port_watch.add")}
@@ -337,6 +346,7 @@ export function PortWatch() {
             statuses={statuses}
             expandedWatch={expandedWatch}
             watchFilters={watchFilters}
+            compactLayout={compactLayout}
             onToggleExpanded={toggleExpanded}
             onSetWatchFilter={setWatchFilter}
             onRemoveWatch={removeWatch}

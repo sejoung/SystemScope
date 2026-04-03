@@ -37,6 +37,7 @@ export function PortWatchList({
   statuses,
   expandedWatch,
   watchFilters,
+  compactLayout = false,
   onToggleExpanded,
   onSetWatchFilter,
   onRemoveWatch,
@@ -45,6 +46,7 @@ export function PortWatchList({
   statuses: Record<string, WatchStatus>;
   expandedWatch: Record<string, boolean>;
   watchFilters: Record<string, string>;
+  compactLayout?: boolean;
   onToggleExpanded: (id: string) => void;
   onSetWatchFilter: (id: string, filter: string) => void;
   onRemoveWatch: (id: string) => void;
@@ -243,6 +245,7 @@ export function PortWatchList({
                   hidden={hidden}
                   activeFilter={activeFilter}
                   filteredCount={filtered.length}
+                  compactLayout={compactLayout}
                 />
               )}
             </div>
@@ -260,11 +263,13 @@ function WatchDetailTable({
   hidden,
   activeFilter,
   filteredCount,
+  compactLayout,
 }: {
   display: PortInfo[];
   hidden: number;
   activeFilter: string;
   filteredCount: number;
+  compactLayout: boolean;
 }) {
   const { tk } = useI18n();
   return (
@@ -295,7 +300,29 @@ function WatchDetailTable({
                 })}
         </div>
       )}
-      <div style={{ maxHeight: "250px", overflow: "auto" }}>
+      <div style={{ maxHeight: compactLayout ? undefined : "250px", overflow: compactLayout ? "visible" : "auto" }}>
+        {compactLayout ? (
+          <div style={compactWatchCardListStyle}>
+            {display.map((m) => (
+              <div
+                key={`${m.protocol}-${m.localAddress}-${m.localPort}-${m.peerAddress}-${m.peerPort}`}
+                style={compactWatchCardStyle}
+              >
+                <div style={compactWatchCardHeaderStyle}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={compactWatchProtocolStyle}>{m.protocol.toUpperCase()}</span>
+                    <StateBadge state={m.state} />
+                  </div>
+                  <div style={compactWatchProcessStyle}>{m.process}</div>
+                </div>
+                <div style={compactWatchMetaGridStyle}>
+                  <WatchMeta label={tk("process.port_watch.local")} value={formatPortAddress(m.localAddress, m.localPort)} />
+                  <WatchMeta label={tk("process.port_watch.remote")} value={formatPortAddress(m.peerAddress, m.peerPort)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <table
           style={{
             width: "100%",
@@ -365,6 +392,7 @@ function WatchDetailTable({
             ))}
           </tbody>
         </table>
+        )}
       </div>
       {hidden > 0 && (
         <div
@@ -381,6 +409,15 @@ function WatchDetailTable({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function WatchMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={compactWatchMetaItemStyle}>
+      <div style={compactWatchMetaLabelStyle}>{label}</div>
+      <div style={compactWatchMetaValueStyle}>{value}</div>
     </div>
   );
 }
@@ -451,3 +488,70 @@ function StateBadge({ state }: { state: string }) {
     </span>
   );
 }
+
+const compactWatchCardListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "8px",
+};
+
+const compactWatchCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "10px",
+  padding: "12px",
+  borderRadius: "10px",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+};
+
+const compactWatchCardHeaderStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "8px",
+};
+
+const compactWatchProtocolStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  padding: "3px 8px",
+  borderRadius: "999px",
+  background: "var(--bg-primary)",
+  color: "var(--text-muted)",
+  border: "1px solid var(--border)",
+};
+
+const compactWatchProcessStyle: React.CSSProperties = {
+  fontSize: "14px",
+  fontWeight: 600,
+  color: "var(--text-primary)",
+  wordBreak: "break-word",
+};
+
+const compactWatchMetaGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+};
+
+const compactWatchMetaItemStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const compactWatchMetaLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-muted)",
+};
+
+const compactWatchMetaValueStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-primary)",
+  lineHeight: 1.5,
+  fontFamily: "monospace",
+  wordBreak: "break-word",
+};

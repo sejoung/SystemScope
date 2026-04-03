@@ -9,15 +9,14 @@ import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 
 interface ListeningPortsProps {
   showConflictCenter?: boolean;
 }
 
-const LISTENING_PORTS_COMPACT_WIDTH = 1120;
-
 export function shouldUseListeningPortsCompactLayout(width: number): boolean {
-  return width < LISTENING_PORTS_COMPACT_WIDTH;
+  return isCompactWidth(width, RESPONSIVE_WIDTH.listeningPortsCompact);
 }
 
 export function ListeningPorts({

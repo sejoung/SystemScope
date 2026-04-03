@@ -7,6 +7,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 
 type SortField = "cpu" | "memory" | "name" | "pid";
 type SortDir = "asc" | "desc";
@@ -17,6 +18,10 @@ const ROW_HEIGHT = 56;
 const LIST_HEIGHT = 520;
 const COL_WIDTHS = { pid: "60px", name: "1fr", cpu: "100px", memory: "100px", action: "92px" };
 const GRID_TEMPLATE = `${COL_WIDTHS.pid} ${COL_WIDTHS.name} ${COL_WIDTHS.cpu} ${COL_WIDTHS.memory} ${COL_WIDTHS.action}`;
+
+export function shouldUseProcessTableCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.processTableCompact);
+}
 
 interface ProcessTableProps {
   processes: ProcessInfo[];
@@ -29,6 +34,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   const [sortField, setSortField] = useState<SortField>("cpu");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [containerRef, containerWidth] = useContainerWidth(720);
+  const compactLayout = shouldUseProcessTableCompactLayout(containerWidth);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -260,35 +266,37 @@ export function ProcessTable({ processes }: ProcessTableProps) {
 
       <div ref={containerRef} style={{ overflowX: "auto" }}>
         {/* Header */}
-        <div
-          role="row"
-          style={{
-            display: "grid",
-            gridTemplateColumns: GRID_TEMPLATE,
-            borderBottom: "1px solid var(--border)",
-            background: "var(--bg-card)",
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-            minWidth: "720px",
-          }}
-        >
-          <SortHeader field="pid" current={sortField} onClick={handleSort} ariaSort={getAriaSort("pid")} align="left">
-            PID{sortIcon("pid")}
-          </SortHeader>
-          <SortHeader field="name" current={sortField} onClick={handleSort} ariaSort={getAriaSort("name")} align="left">
-            {tk("process.table.name")}{sortIcon("name")}
-          </SortHeader>
-          <SortHeader field="cpu" current={sortField} onClick={handleSort} ariaSort={getAriaSort("cpu")} align="right">
-            CPU %{sortIcon("cpu")}
-          </SortHeader>
-          <SortHeader field="memory" current={sortField} onClick={handleSort} ariaSort={getAriaSort("memory")} align="right">
-            {tk("process.table.memory")}{sortIcon("memory")}
-          </SortHeader>
-          <div style={{ ...thStyle, textAlign: "center" }}>
-            {tk("process.table.action")}
+        {!compactLayout ? (
+          <div
+            role="row"
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID_TEMPLATE,
+              borderBottom: "1px solid var(--border)",
+              background: "var(--bg-card)",
+              position: "sticky",
+              top: 0,
+              zIndex: 1,
+              minWidth: "720px",
+            }}
+          >
+            <SortHeader field="pid" current={sortField} onClick={handleSort} ariaSort={getAriaSort("pid")} align="left">
+              PID{sortIcon("pid")}
+            </SortHeader>
+            <SortHeader field="name" current={sortField} onClick={handleSort} ariaSort={getAriaSort("name")} align="left">
+              {tk("process.table.name")}{sortIcon("name")}
+            </SortHeader>
+            <SortHeader field="cpu" current={sortField} onClick={handleSort} ariaSort={getAriaSort("cpu")} align="right">
+              CPU %{sortIcon("cpu")}
+            </SortHeader>
+            <SortHeader field="memory" current={sortField} onClick={handleSort} ariaSort={getAriaSort("memory")} align="right">
+              {tk("process.table.memory")}{sortIcon("memory")}
+            </SortHeader>
+            <div style={{ ...thStyle, textAlign: "center" }}>
+              {tk("process.table.action")}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Virtualized rows */}
         {filtered.length === 0 ? (
@@ -305,6 +313,46 @@ export function ProcessTable({ processes }: ProcessTableProps) {
               : tk("process.table.empty")}
           </div>
         ) : (
+          compactLayout ? (
+            <div style={processCardListStyle}>
+              {filtered.map((p) => (
+                <div key={p.pid} style={processCardStyle}>
+                  <div style={processCardHeaderStyle}>
+                    <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
+                      <div style={processNameStyle}>{p.name}</div>
+                      <div style={processPidStyle}>PID {p.pid}</div>
+                    </div>
+                    <div style={processMetricStackStyle}>
+                      <span style={cpuValueStyle}>{p.cpu.toFixed(1)}%</span>
+                      <span style={getCpuBadgeStyle(getCpuUsageTone(p.cpu))}>
+                        {getCpuUsageToneLabel(getCpuUsageTone(p.cpu), tk)}
+                      </span>
+                    </div>
+                  </div>
+                  {p.command && p.command !== p.name ? (
+                    <CopyableValue
+                      value={p.command}
+                      fontSize="12px"
+                      color="var(--text-muted)"
+                      multiline
+                    />
+                  ) : null}
+                  <div style={processMetaGridStyle}>
+                    <ProcessMeta label={tk("process.table.memory")} value={formatBytes(p.memoryBytes)} mono />
+                    <ProcessMeta label="PID" value={String(p.pid)} mono />
+                  </div>
+                  <div style={processCardActionsStyle}>
+                    <button
+                      onClick={() => void handleKill(p)}
+                      style={killBtnStyle}
+                    >
+                      {tk("process.table.kill")}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <List
             rowComponent={Row}
             rowCount={filtered.length}
@@ -313,9 +361,27 @@ export function ProcessTable({ processes }: ProcessTableProps) {
             overscanCount={10}
             style={{ height: listHeight, width: Math.max(containerWidth, 720) }}
           />
+          )
         )}
       </div>
     </section>
+  );
+}
+
+function ProcessMeta({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div style={processMetaItemStyle}>
+      <div style={processMetaLabelStyle}>{label}</div>
+      <div style={mono ? processMetaValueMonoStyle : processMetaValueStyle}>{value}</div>
+    </div>
   );
 }
 
@@ -506,6 +572,86 @@ const killBtnStyle: React.CSSProperties = {
   background: "var(--accent-red)",
   color: "var(--text-on-accent)",
   cursor: "pointer",
+};
+
+const processCardListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const processCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  padding: "14px",
+  borderRadius: "12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const processCardHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+};
+
+const processNameStyle: React.CSSProperties = {
+  fontSize: "15px",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+};
+
+const processPidStyle: React.CSSProperties = {
+  fontSize: "12px",
+  color: "var(--text-muted)",
+  fontFamily: "monospace",
+};
+
+const processMetricStackStyle: React.CSSProperties = {
+  display: "grid",
+  justifyItems: "end",
+  gap: "6px",
+};
+
+const processMetaGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+};
+
+const processMetaItemStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+};
+
+const processMetaLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-muted)",
+};
+
+const processMetaValueStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-primary)",
+  lineHeight: 1.5,
+};
+
+const processMetaValueMonoStyle: React.CSSProperties = {
+  ...processMetaValueStyle,
+  fontFamily: "monospace",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const processCardActionsStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "flex-end",
 };
 
 const sectionStyle: React.CSSProperties = {

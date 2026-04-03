@@ -19,6 +19,7 @@ import { useSearchFilter } from "../../hooks/useSearchFilter";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import {
   type PlatformFilter,
   Badge,
@@ -56,10 +57,8 @@ import {
   titleStyle,
 } from "./appsShared";
 
-const INSTALLED_APPS_COMPACT_WIDTH = 980;
-
 export function shouldUseInstalledAppsCompactLayout(width: number): boolean {
-  return width < INSTALLED_APPS_COMPACT_WIDTH;
+  return isCompactWidth(width, RESPONSIVE_WIDTH.installedAppsCompact);
 }
 
 export function InstalledApps({ refreshToken }: { refreshToken?: number }) {

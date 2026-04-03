@@ -5,6 +5,7 @@ import {
 } from "../../src/renderer/src/features/apps/appsShared";
 import { shouldUseInstalledAppsCompactLayout } from "../../src/renderer/src/features/apps/InstalledApps";
 import { shouldUseLeftoverAppsCompactLayout } from "../../src/renderer/src/features/apps/LeftoverApps";
+import { shouldUseRegistryAppsCompactLayout } from "../../src/renderer/src/features/apps/RegistryApps";
 
 describe("AppsPage helpers", () => {
   it("maps confidence levels to localized labels", () => {
@@ -37,5 +38,11 @@ describe("AppsPage helpers", () => {
     expect(shouldUseLeftoverAppsCompactLayout(900)).toBe(true);
     expect(shouldUseLeftoverAppsCompactLayout(1079)).toBe(true);
     expect(shouldUseLeftoverAppsCompactLayout(1080)).toBe(false);
+  });
+
+  it("switches registry apps to compact layout below the width threshold", () => {
+    expect(shouldUseRegistryAppsCompactLayout(900)).toBe(true);
+    expect(shouldUseRegistryAppsCompactLayout(1039)).toBe(true);
+    expect(shouldUseRegistryAppsCompactLayout(1040)).toBe(false);
   });
 });

@@ -10,6 +10,7 @@ import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import { useVisibleIds } from "../../hooks/useVisibleIds";
 import { useLeftoverAppsStore } from "../../stores/useLeftoverAppsStore";
 import { StatusMessage } from "../../components/StatusMessage";
@@ -54,10 +55,8 @@ import {
   titleStyle,
 } from "./appsShared";
 
-const LEFTOVER_APPS_COMPACT_WIDTH = 1080;
-
 export function shouldUseLeftoverAppsCompactLayout(width: number): boolean {
-  return width < LEFTOVER_APPS_COMPACT_WIDTH;
+  return isCompactWidth(width, RESPONSIVE_WIDTH.leftoverAppsCompact);
 }
 
 export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
