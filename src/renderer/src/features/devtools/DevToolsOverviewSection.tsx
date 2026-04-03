@@ -23,6 +23,7 @@ export function DevToolsOverviewSection({
   const { t } = useI18n()
   const showToast = useToast((s) => s.show)
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage)
+  const setDockerTab = useSettingsStore((s) => s.setDockerTab)
   const overview = useDevToolsOverviewStore((s) => s.overview)
   const loading = useDevToolsOverviewStore((s) => s.loading)
   const error = useDevToolsOverviewStore((s) => s.error)
@@ -136,7 +137,8 @@ export function DevToolsOverviewSection({
     setCurrentPage('process')
   }
 
-  function handleOpenDocker() {
+  function handleOpenDocker(tab: 'overview' | 'containers' | 'images' | 'volumes' | 'build-cache' = 'overview') {
+    setDockerTab(tab)
     setCurrentPage('docker')
   }
 
@@ -183,7 +185,7 @@ export function DevToolsOverviewSection({
               title={t('Docker Runtime')}
               description={t('Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.')}
             />
-            <button type="button" onClick={handleOpenDocker} style={secondaryActionButtonStyle}>
+            <button type="button" onClick={() => handleOpenDocker()} style={secondaryActionButtonStyle}>
               {t('Open Docker')}
             </button>
           </div>
@@ -213,6 +215,20 @@ export function DevToolsOverviewSection({
                     <MetaPill label={t('Unused Images')} value={String(overview.docker.unusedImages)} />
                     <MetaPill label={t('Unused Volumes')} value={String(overview.docker.unusedVolumes)} />
                     <MetaPill label={t('Build Cache')} value={overview.docker.reclaimableBuildCacheLabel} />
+                  </div>
+                  <div style={serverActionRowStyle}>
+                    <button type="button" onClick={() => handleOpenDocker('containers')} style={secondaryActionButtonStyle}>
+                      {t('Containers')}
+                    </button>
+                    <button type="button" onClick={() => handleOpenDocker('images')} style={secondaryActionButtonStyle}>
+                      {t('Docker Images')}
+                    </button>
+                    <button type="button" onClick={() => handleOpenDocker('volumes')} style={secondaryActionButtonStyle}>
+                      {t('Volumes')}
+                    </button>
+                    <button type="button" onClick={() => handleOpenDocker('build-cache')} style={secondaryActionButtonStyle}>
+                      {t('Build Cache')}
+                    </button>
                   </div>
                 </div>
               </div>

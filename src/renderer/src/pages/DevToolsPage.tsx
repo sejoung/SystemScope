@@ -34,7 +34,7 @@ export function DevToolsPage() {
             }}
           >
             {t(
-              "Review development toolchain cleanup opportunities, workspace growth, port conflicts, and AI usage from one place.",
+              "Review development toolchain cleanup opportunities, workspace growth, Docker runtime status, and port conflicts from one place.",
             )}
           </div>
         </div>

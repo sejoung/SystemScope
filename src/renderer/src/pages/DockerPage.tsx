@@ -10,13 +10,7 @@ import { isDockerContainersScanResult } from "@shared/types";
 import { StatusMessage } from "../components/StatusMessage";
 import { PageLoading } from "../components/PageLoading";
 import { PageTab } from "../components/PageTab";
-
-type DockerTab =
-  | "overview"
-  | "containers"
-  | "images"
-  | "volumes"
-  | "build-cache";
+import { useSettingsStore } from "../stores/useSettingsStore";
 type DockerAvailability =
   | "checking"
   | "ready"
@@ -24,12 +18,13 @@ type DockerAvailability =
   | "daemon_unavailable";
 
 export function DockerPage() {
-  const [tab, setTab] = useState<DockerTab>("overview");
   const [refreshToken, setRefreshToken] = useState(0);
   const [availability, setAvailability] =
     useState<DockerAvailability>("checking");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const { tk, t } = useI18n();
+  const tab = useSettingsStore((s) => s.dockerTab);
+  const setDockerTab = useSettingsStore((s) => s.setDockerTab);
 
   const handleChanged = useCallback(() => setRefreshToken((prev) => prev + 1), []);
 
@@ -115,35 +110,35 @@ export function DockerPage() {
             <PageTab
               id="docker-overview"
               active={tab === "overview"}
-              onClick={() => setTab("overview")}
+              onClick={() => setDockerTab("overview")}
             >
               {tk("docker.tab.overview")}
             </PageTab>
             <PageTab
               id="docker-containers"
               active={tab === "containers"}
-              onClick={() => setTab("containers")}
+              onClick={() => setDockerTab("containers")}
             >
               {tk("docker.tab.containers")}
             </PageTab>
             <PageTab
               id="docker-images"
               active={tab === "images"}
-              onClick={() => setTab("images")}
+              onClick={() => setDockerTab("images")}
             >
               {tk("docker.tab.images")}
             </PageTab>
             <PageTab
               id="docker-volumes"
               active={tab === "volumes"}
-              onClick={() => setTab("volumes")}
+              onClick={() => setDockerTab("volumes")}
             >
               {tk("docker.tab.volumes")}
             </PageTab>
             <PageTab
               id="docker-build-cache"
               active={tab === "build-cache"}
-              onClick={() => setTab("build-cache")}
+              onClick={() => setDockerTab("build-cache")}
             >
               {tk("docker.tab.build_cache")}
             </PageTab>
@@ -176,10 +171,10 @@ export function DockerPage() {
             <ErrorBoundary title={tk("docker.section.overview")}>
               <DockerOverview
                 refreshToken={refreshToken}
-                onOpenContainers={() => setTab("containers")}
-                onOpenImages={() => setTab("images")}
-                onOpenVolumes={() => setTab("volumes")}
-                onOpenBuildCache={() => setTab("build-cache")}
+                onOpenContainers={() => setDockerTab("containers")}
+                onOpenImages={() => setDockerTab("images")}
+                onOpenVolumes={() => setDockerTab("volumes")}
+                onOpenBuildCache={() => setDockerTab("build-cache")}
               />
             </ErrorBoundary>
           )}
@@ -189,7 +184,7 @@ export function DockerPage() {
               <DockerContainers
                 refreshToken={refreshToken}
                 onChanged={handleChanged}
-                onOpenImages={() => setTab("images")}
+                onOpenImages={() => setDockerTab("images")}
               />
             </ErrorBoundary>
           )}
@@ -199,7 +194,7 @@ export function DockerPage() {
               <DockerImages
                 refreshToken={refreshToken}
                 onChanged={handleChanged}
-                onOpenContainers={() => setTab("containers")}
+                onOpenContainers={() => setDockerTab("containers")}
               />
             </ErrorBoundary>
           )}
@@ -237,4 +232,3 @@ const retryBtnStyle: React.CSSProperties = {
   color: "var(--text-on-accent)",
   cursor: "pointer",
 };
-

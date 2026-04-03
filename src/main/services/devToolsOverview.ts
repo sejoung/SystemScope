@@ -17,6 +17,15 @@ import { getDockerBuildCache, listDockerContainers, listDockerImages, listDocker
 
 const LARGE_UNTRACKED_FILE_BYTES = 5 * 1024 * 1024
 const MAX_LARGE_UNTRACKED_FILES = 3
+const DOCKER_INSIGHT_TTL_MS = 15_000
+
+let cachedDockerInsight: { value: DevDockerInsight; cachedAt: number } | null = null
+let dockerInsightInflight: Promise<DevDockerInsight> | null = null
+
+export function resetDevToolsOverviewCacheForTest(): void {
+  cachedDockerInsight = null
+  dockerInsightInflight = null
+}
 
 export async function getDevToolsOverview(): Promise<DevToolsOverview> {
   const workspacePaths = Array.from(
@@ -48,7 +57,7 @@ async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
     runVersionCheck('npm', 'npm', ['--version'], 'npm is usually bundled with Node.js.'),
     runVersionCheck('pnpm', 'pnpm', ['--version'], 'Install pnpm if your workspaces use pnpm-lock.yaml.'),
     runVersionCheck('yarn', 'Yarn', ['--version'], 'Install Yarn if your workspaces use yarn.lock.'),
-    runVersionCheck('docker', 'Docker', ['--version'], 'Start Docker Desktop to run local containers.'),
+    runVersionCheck('docker', 'Docker CLI', ['--version'], 'Install Docker Desktop or Docker Engine to use Docker commands locally.'),
     process.platform === 'darwin'
       ? runVersionCheck('xcodebuild', 'Xcode CLI', ['-version'], 'Install Xcode Command Line Tools for Apple platform builds.')
       : Promise.resolve<DevEnvironmentCheck | null>(null),
@@ -135,6 +144,25 @@ async function detectAndroidSdk(): Promise<DevEnvironmentCheck> {
 }
 
 async function collectDockerInsight(): Promise<DevDockerInsight> {
+  const now = Date.now()
+  if (cachedDockerInsight && now - cachedDockerInsight.cachedAt < DOCKER_INSIGHT_TTL_MS) {
+    return cachedDockerInsight.value
+  }
+  if (dockerInsightInflight) {
+    return dockerInsightInflight
+  }
+
+  dockerInsightInflight = loadDockerInsight()
+  try {
+    const value = await dockerInsightInflight
+    cachedDockerInsight = { value, cachedAt: Date.now() }
+    return value
+  } finally {
+    dockerInsightInflight = null
+  }
+}
+
+async function loadDockerInsight(): Promise<DevDockerInsight> {
   const [containers, images, volumes, buildCache] = await Promise.all([
     listDockerContainers().catch(() => ({
       status: 'daemon_unavailable' as const,

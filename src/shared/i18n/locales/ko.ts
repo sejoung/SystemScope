@@ -11,6 +11,8 @@ export const KO_MESSAGES = {
   DevTools: "개발 도구",
   "Review development toolchain cleanup opportunities, workspace growth, and port conflicts from one place.":
     "개발 툴체인 정리 후보, 작업공간 증가량, 포트 충돌을 한 곳에서 확인합니다.",
+  "Review development toolchain cleanup opportunities, workspace growth, Docker runtime status, and port conflicts from one place.":
+    "개발 툴체인 정리 후보, 작업공간 증가량, Docker 런타임 상태, 포트 충돌을 한 곳에서 확인합니다.",
   "See common development ports in use, kill the owner quickly, or jump into the raw port inspector when you need more detail.":
     "자주 쓰는 개발 포트 점유 상태를 보고, 점유 프로세스를 바로 종료하거나 더 자세한 포트 검사 화면으로 이동할 수 있습니다.",
   "Search active processes, inspect ports, and watch specific connections over time.":

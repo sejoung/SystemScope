@@ -32,10 +32,17 @@ vi.mock('../../src/main/services/profileManager', () => ({
   getActiveProfile: () => null,
 }))
 
-import { detectDevServerKind, detectDevServers, getDevToolsOverview, summarizeGitStatusLines } from '../../src/main/services/devToolsOverview'
+import {
+  detectDevServerKind,
+  detectDevServers,
+  getDevToolsOverview,
+  resetDevToolsOverviewCacheForTest,
+  summarizeGitStatusLines,
+} from '../../src/main/services/devToolsOverview'
 
 describe('devToolsOverview helpers', () => {
   beforeEach(() => {
+    resetDevToolsOverviewCacheForTest()
     runExternalCommand.mockReset()
     getNetworkPorts.mockReset()
     getAllProcesses.mockReset()
@@ -159,6 +166,95 @@ describe('devToolsOverview helpers', () => {
       status: 'healthy',
       runningContainers: 0,
       reclaimableBuildCacheLabel: '0 B',
+    }))
+  })
+
+  it('marks docker summary missing when Docker is not installed', async () => {
+    runExternalCommand.mockResolvedValue({ stdout: 'tool 1.0.0', stderr: '' })
+    listDockerContainers.mockResolvedValue({ status: 'not_installed', containers: [], message: 'Docker not installed' })
+    listDockerImages.mockResolvedValue({ status: 'not_installed', images: [], message: 'Docker not installed' })
+    listDockerVolumes.mockResolvedValue({ status: 'not_installed', volumes: [], message: 'Docker not installed' })
+    getDockerBuildCache.mockResolvedValue({ status: 'not_installed', summary: null, message: 'Docker not installed' })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.healthChecks.find((entry) => entry.id === 'docker')).toEqual(expect.objectContaining({
+      label: 'Docker CLI',
+      status: 'healthy',
+    }))
+    expect(result.docker).toEqual(expect.objectContaining({
+      status: 'missing',
+      detail: 'Docker is not installed.',
+      hint: 'Docker not installed',
+    }))
+  })
+
+  it('marks docker summary warning when Docker daemon is unavailable', async () => {
+    runExternalCommand.mockResolvedValue({ stdout: 'tool 1.0.0', stderr: '' })
+    listDockerContainers.mockResolvedValue({
+      status: 'daemon_unavailable',
+      containers: [],
+      message: 'Docker is installed but not currently running.',
+    })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.docker).toEqual(expect.objectContaining({
+      status: 'warning',
+      detail: 'Docker needs attention.',
+      hint: 'Docker is installed but not currently running.',
+    }))
+  })
+
+  it('counts reclaimable docker resources when scans are ready', async () => {
+    runExternalCommand.mockResolvedValue({ stdout: 'tool 1.0.0', stderr: '' })
+    listDockerContainers.mockResolvedValue({
+      status: 'ready',
+      containers: [
+        { id: '1', shortId: '1', name: 'api', image: 'api:latest', command: '', status: 'Up', ports: '', sizeBytes: 0, running: true },
+        { id: '2', shortId: '2', name: 'db', image: 'postgres:16', command: '', status: 'Exited', ports: '', sizeBytes: 0, running: false },
+      ],
+      message: null,
+    })
+    listDockerImages.mockResolvedValue({
+      status: 'ready',
+      images: [
+        { id: 'img1', shortId: 'img1', repository: 'api', tag: 'latest', sizeBytes: 100, sizeLabel: '100 B', createdSince: '1d', inUse: true, dangling: false, containers: [] },
+        { id: 'img2', shortId: 'img2', repository: '<none>', tag: '<none>', sizeBytes: 200, sizeLabel: '200 B', createdSince: '1d', inUse: false, dangling: true, containers: [] },
+      ],
+      message: null,
+    })
+    listDockerVolumes.mockResolvedValue({
+      status: 'ready',
+      volumes: [
+        { name: 'used', driver: 'local', mountpoint: '/tmp/used', inUse: true, containers: ['api'] },
+        { name: 'unused', driver: 'local', mountpoint: '/tmp/unused', inUse: false, containers: [] },
+      ],
+      message: null,
+    })
+    getDockerBuildCache.mockResolvedValue({
+      status: 'ready',
+      summary: {
+        totalCount: 2,
+        activeCount: 1,
+        sizeBytes: 500,
+        sizeLabel: '500 B',
+        reclaimableBytes: 300,
+        reclaimableLabel: '300 B',
+      },
+      message: null,
+    })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.docker).toEqual(expect.objectContaining({
+      status: 'healthy',
+      runningContainers: 1,
+      stoppedContainers: 1,
+      unusedImages: 1,
+      unusedVolumes: 1,
+      reclaimableBuildCacheBytes: 300,
+      reclaimableBuildCacheLabel: '300 B',
     }))
   })
 })

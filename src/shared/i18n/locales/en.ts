@@ -10,6 +10,8 @@ export const EN_MESSAGES = {
   Activity: "Activity",
   "Search active processes, inspect ports, and watch specific connections over time.":
     "Search active processes, inspect ports, and watch specific connections over time.",
+  "Review development toolchain cleanup opportunities, workspace growth, Docker runtime status, and port conflicts from one place.":
+    "Review development toolchain cleanup opportunities, workspace growth, Docker runtime status, and port conflicts from one place.",
   "Processes shows overall CPU and memory usage so you can identify heavy tasks first.":
     "Processes shows overall CPU and memory usage so you can identify heavy tasks first.",
   "Ports is for one-time inspection of current listeners and active remote connections.":
