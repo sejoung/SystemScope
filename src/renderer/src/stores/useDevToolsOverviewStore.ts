@@ -6,7 +6,7 @@ interface DevToolsOverviewState {
   overview: DevToolsOverview | null
   loading: boolean
   error: string | null
-  fetchOverview: () => Promise<void>
+  fetchOverview: (options?: { forceRefresh?: boolean }) => Promise<void>
 }
 
 export const useDevToolsOverviewStore = create<DevToolsOverviewState>((set, get) => ({
@@ -14,11 +14,11 @@ export const useDevToolsOverviewStore = create<DevToolsOverviewState>((set, get)
   loading: false,
   error: null,
 
-  fetchOverview: async () => {
+  fetchOverview: async (options) => {
     if (get().loading) return
     set({ loading: true, error: null })
     try {
-      const res = await window.systemScope.getDevToolsOverview()
+      const res = await window.systemScope.getDevToolsOverview(options)
       if (res.ok && isDevToolsOverview(res.data)) {
         set({ overview: res.data, loading: false })
         return

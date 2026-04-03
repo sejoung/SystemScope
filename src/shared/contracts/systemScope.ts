@@ -175,7 +175,7 @@ export interface SystemScopeApi {
 
   scanDevTools: () => Promise<AppResult<ToolIntegrationResult[]>>
   cleanDevToolItems: (paths: string[]) => Promise<AppResult<ToolCleanResult>>
-  getDevToolsOverview: () => Promise<AppResult<DevToolsOverview>>
+  getDevToolsOverview: (options?: { forceRefresh?: boolean }) => Promise<AppResult<DevToolsOverview>>
 
   getProfiles: () => Promise<AppResult<WorkspaceProfile[]>>
   saveProfile: (profile: WorkspaceProfile) => Promise<AppResult<WorkspaceProfile>>

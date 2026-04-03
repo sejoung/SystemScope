@@ -27,7 +27,10 @@ export function resetDevToolsOverviewCacheForTest(): void {
   dockerInsightInflight = null
 }
 
-export async function getDevToolsOverview(): Promise<DevToolsOverview> {
+export async function getDevToolsOverview(options?: { forceRefresh?: boolean }): Promise<DevToolsOverview> {
+  if (options?.forceRefresh) {
+    resetDevToolsOverviewCacheForTest()
+  }
   const workspacePaths = Array.from(
     new Set((getActiveProfile()?.workspacePaths ?? []).map((entry) => path.resolve(entry))),
   )

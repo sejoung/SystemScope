@@ -142,6 +142,10 @@ export function DevToolsOverviewSection({
     setCurrentPage('docker')
   }
 
+  async function handleRefreshOverview() {
+    await fetchOverview({ forceRefresh: true })
+  }
+
   async function handleOpenWorkspace(workspacePath: string) {
     const res = await window.systemScope.showInFolder(workspacePath)
     if (!res.ok) {
@@ -151,6 +155,14 @@ export function DevToolsOverviewSection({
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      <div style={overviewToolbarStyle}>
+        <OverviewRefreshButton
+          loading={loading}
+          label={t(loading ? 'Refreshing...' : 'Refresh All')}
+          onClick={() => void handleRefreshOverview()}
+        />
+      </div>
+
       {sections.includes('health') ? (
         <section style={cardStyle}>
           <SectionHeader
@@ -185,9 +197,7 @@ export function DevToolsOverviewSection({
               title={t('Docker Runtime')}
               description={t('Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.')}
             />
-            <button type="button" onClick={() => handleOpenDocker()} style={secondaryActionButtonStyle}>
-              {t('Open Docker')}
-            </button>
+            <DockerOpenButton label={t('Open Docker')} onClick={() => handleOpenDocker()} />
           </div>
           {overview?.docker ? (
             <div style={rowCardStyle}>
@@ -216,20 +226,18 @@ export function DevToolsOverviewSection({
                     <MetaPill label={t('Unused Volumes')} value={String(overview.docker.unusedVolumes)} />
                     <MetaPill label={t('Build Cache')} value={overview.docker.reclaimableBuildCacheLabel} />
                   </div>
-                  <div style={serverActionRowStyle}>
-                    <button type="button" onClick={() => handleOpenDocker('containers')} style={secondaryActionButtonStyle}>
-                      {t('Containers')}
-                    </button>
-                    <button type="button" onClick={() => handleOpenDocker('images')} style={secondaryActionButtonStyle}>
-                      {t('Docker Images')}
-                    </button>
-                    <button type="button" onClick={() => handleOpenDocker('volumes')} style={secondaryActionButtonStyle}>
-                      {t('Volumes')}
-                    </button>
-                    <button type="button" onClick={() => handleOpenDocker('build-cache')} style={secondaryActionButtonStyle}>
-                      {t('Build Cache')}
-                    </button>
-                  </div>
+                  <DockerQuickActions
+                    labels={{
+                      containers: t('Containers'),
+                      images: t('Docker Images'),
+                      volumes: t('Volumes'),
+                      buildCache: t('Build Cache'),
+                    }}
+                    onOpenContainers={() => handleOpenDocker('containers')}
+                    onOpenImages={() => handleOpenDocker('images')}
+                    onOpenVolumes={() => handleOpenDocker('volumes')}
+                    onOpenBuildCache={() => handleOpenDocker('build-cache')}
+                  />
                 </div>
               </div>
             </div>
@@ -387,6 +395,66 @@ export function DevToolsOverviewSection({
         </div>
         </section>
       ) : null}
+    </div>
+  )
+}
+
+export function OverviewRefreshButton({
+  loading,
+  label,
+  onClick,
+}: {
+  loading: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button type="button" onClick={onClick} disabled={loading} style={secondaryActionButtonStyle}>
+      {label}
+    </button>
+  )
+}
+
+export function DockerOpenButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} style={secondaryActionButtonStyle}>
+      {label}
+    </button>
+  )
+}
+
+export function DockerQuickActions({
+  labels,
+  onOpenContainers,
+  onOpenImages,
+  onOpenVolumes,
+  onOpenBuildCache,
+}: {
+  labels: {
+    containers: string
+    images: string
+    volumes: string
+    buildCache: string
+  }
+  onOpenContainers: () => void
+  onOpenImages: () => void
+  onOpenVolumes: () => void
+  onOpenBuildCache: () => void
+}) {
+  return (
+    <div style={serverActionRowStyle}>
+      <button type="button" onClick={onOpenContainers} style={secondaryActionButtonStyle}>
+        {labels.containers}
+      </button>
+      <button type="button" onClick={onOpenImages} style={secondaryActionButtonStyle}>
+        {labels.images}
+      </button>
+      <button type="button" onClick={onOpenVolumes} style={secondaryActionButtonStyle}>
+        {labels.volumes}
+      </button>
+      <button type="button" onClick={onOpenBuildCache} style={secondaryActionButtonStyle}>
+        {labels.buildCache}
+      </button>
     </div>
   )
 }
@@ -618,6 +686,11 @@ const serverActionRowStyle: React.CSSProperties = {
   display: 'flex',
   gap: 8,
   flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+}
+
+const overviewToolbarStyle: React.CSSProperties = {
+  display: 'flex',
   justifyContent: 'flex-end',
 }
 

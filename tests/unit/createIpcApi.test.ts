@@ -233,6 +233,15 @@ describe('createIpcApi', () => {
         requestMeta
       )
     })
+
+    it('getDevToolsOverview → TOOLS_GET_OVERVIEW with optional forceRefresh', async () => {
+      await api.getDevToolsOverview({ forceRefresh: true })
+      expect(invokeMock).toHaveBeenCalledWith(
+        IPC_CHANNELS.TOOLS_GET_OVERVIEW,
+        { forceRefresh: true },
+        requestMeta
+      )
+    })
   })
 
   describe('listener methods', () => {

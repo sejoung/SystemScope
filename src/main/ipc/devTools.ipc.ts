@@ -8,10 +8,12 @@ import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMet
 import { recordEvent } from '../services/eventStore'
 
 export function registerDevToolsIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.TOOLS_GET_OVERVIEW, async (_event, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(
+    IPC_CHANNELS.TOOLS_GET_OVERVIEW,
+    async (_event, options?: { forceRefresh?: boolean }, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     try {
-      const overview = await getDevToolsOverview()
+      const overview = await getDevToolsOverview(options)
       logInfoAction('devtools-ipc', 'tools.overview', withRequestMeta(requestMeta, {
         healthCheckCount: overview.healthChecks.length,
         workspaceCount: overview.workspaces.length,

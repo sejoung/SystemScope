@@ -5,6 +5,7 @@ import type { AppLocale } from '@shared/i18n'
 
 export type AppPage = 'dashboard' | 'timeline' | 'disk' | 'docker' | 'cleanup' | 'process' | 'devtools' | 'apps' | 'settings'
 export type DockerTab = 'overview' | 'containers' | 'images' | 'volumes' | 'build-cache'
+const DOCKER_TAB_STORAGE_KEY = 'systemscope.dockerTab'
 
 interface SettingsState {
   thresholds: AlertThresholds
@@ -26,13 +27,41 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   theme: 'dark',
   locale: 'en',
   currentPage: 'dashboard',
-  dockerTab: 'overview',
+  dockerTab: loadDockerTab(),
   hasUnsavedSettings: false,
 
   setThresholds: (t) => set({ thresholds: t }),
   setTheme: (theme) => set({ theme }),
   setLocale: (locale) => set({ locale }),
   setCurrentPage: (page) => set({ currentPage: page }),
-  setDockerTab: (dockerTab) => set({ dockerTab }),
+  setDockerTab: (dockerTab) => {
+    saveDockerTab(dockerTab)
+    set({ dockerTab })
+  },
   setHasUnsavedSettings: (hasUnsavedSettings) => set({ hasUnsavedSettings })
 }))
+
+function loadDockerTab(): DockerTab {
+  try {
+    const stored = globalThis.localStorage?.getItem(DOCKER_TAB_STORAGE_KEY)
+    return isDockerTab(stored) ? stored : 'overview'
+  } catch {
+    return 'overview'
+  }
+}
+
+function saveDockerTab(tab: DockerTab): void {
+  try {
+    globalThis.localStorage?.setItem(DOCKER_TAB_STORAGE_KEY, tab)
+  } catch {
+    // Ignore storage failures and keep the in-memory state.
+  }
+}
+
+function isDockerTab(value: unknown): value is DockerTab {
+  return value === 'overview'
+    || value === 'containers'
+    || value === 'images'
+    || value === 'volumes'
+    || value === 'build-cache'
+}
