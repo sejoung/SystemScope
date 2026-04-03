@@ -18,6 +18,7 @@ import { getDockerBuildCache, listDockerContainers, listDockerImages, listDocker
 const LARGE_UNTRACKED_FILE_BYTES = 5 * 1024 * 1024
 const MAX_LARGE_UNTRACKED_FILES = 3
 const DOCKER_INSIGHT_TTL_MS = 15_000
+const DEV_ARTIFACT_DIRS = ['node_modules', '.next', 'dist', 'build', 'coverage', '.turbo', '.gradle', 'target', '.venv'] as const
 
 let cachedDockerInsight: { value: DevDockerInsight; cachedAt: number } | null = null
 let dockerInsightInflight: Promise<DevDockerInsight> | null = null
@@ -35,19 +36,21 @@ export async function getDevToolsOverview(options?: { forceRefresh?: boolean }):
     new Set((getActiveProfile()?.workspacePaths ?? []).map((entry) => path.resolve(entry))),
   )
 
-  const [healthChecks, docker, workspaces, ports, processes] = await Promise.all([
+  const [healthChecks, docker, rawWorkspaces, ports, processes] = await Promise.all([
     collectEnvironmentChecks(),
     collectDockerInsight(),
     Promise.all(workspacePaths.map((workspacePath) => collectWorkspaceInsight(workspacePath))),
     getNetworkPorts().catch(() => []),
     getAllProcesses().catch(() => []),
   ])
+  const devServers = detectDevServers(ports, processes, workspacePaths)
+  const workspaces = annotateWorkspaceServerUsage(rawWorkspaces, devServers)
 
   return {
     healthChecks,
     docker,
     workspaces,
-    devServers: detectDevServers(ports, processes, workspacePaths),
+    devServers,
     scannedAt: Date.now(),
   }
 }
@@ -247,15 +250,29 @@ async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorksp
     isGitRepo: false,
     branch: null,
     packageManager,
+    stacks: [],
+    hasEnvFile: false,
+    hasDockerConfig: false,
+    hasTypeScriptConfig: false,
+    manifestCount: 0,
+    artifactDirectories: [],
     dirtyFileCount: 0,
     untrackedFileCount: 0,
     stashCount: 0,
     lastCommitAt: null,
     largeUntrackedFiles: [],
+    activeDevServerCount: 0,
+    activeDevServerPorts: [],
   }
 
   if (!exists) {
     return base
+  }
+
+  const projectSignals = await detectWorkspaceProjectSignals(workspacePath)
+  const withSignals: DevWorkspaceInsight = {
+    ...base,
+    ...projectSignals,
   }
 
   try {
@@ -264,7 +281,7 @@ async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorksp
       timeout: 3000,
     })
     const repoRoot = stdout.trim()
-    if (!repoRoot) return base
+    if (!repoRoot) return withSignals
 
     const [branchResult, statusResult, stashResult, lastCommitResult] = await Promise.all([
       runGitCommand(workspacePath, ['branch', '--show-current']),
@@ -280,6 +297,7 @@ async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorksp
 
     return {
       ...base,
+      ...projectSignals,
       isGitRepo: true,
       branch,
       dirtyFileCount,
@@ -289,7 +307,101 @@ async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorksp
       largeUntrackedFiles: await findLargeUntrackedFiles(repoRoot, untrackedFiles),
     }
   } catch {
-    return base
+    return withSignals
+  }
+}
+
+async function detectWorkspaceProjectSignals(workspacePath: string): Promise<Pick<
+  DevWorkspaceInsight,
+  'stacks' | 'hasEnvFile' | 'hasDockerConfig' | 'hasTypeScriptConfig' | 'manifestCount' | 'artifactDirectories'
+>> {
+  const fileChecks = await Promise.all([
+    pathExists(path.join(workspacePath, 'package.json')),
+    pathExists(path.join(workspacePath, 'pyproject.toml')),
+    pathExists(path.join(workspacePath, 'requirements.txt')),
+    pathExists(path.join(workspacePath, 'pom.xml')),
+    pathExists(path.join(workspacePath, 'build.gradle')),
+    pathExists(path.join(workspacePath, 'build.gradle.kts')),
+    pathExists(path.join(workspacePath, 'Cargo.toml')),
+    pathExists(path.join(workspacePath, 'go.mod')),
+    pathExists(path.join(workspacePath, 'tsconfig.json')),
+    pathExists(path.join(workspacePath, 'jsconfig.json')),
+    pathExists(path.join(workspacePath, '.env')),
+    pathExists(path.join(workspacePath, '.env.local')),
+    pathExists(path.join(workspacePath, 'Dockerfile')),
+    pathExists(path.join(workspacePath, 'docker-compose.yml')),
+    pathExists(path.join(workspacePath, 'docker-compose.yaml')),
+    pathExists(path.join(workspacePath, 'compose.yml')),
+    pathExists(path.join(workspacePath, 'vite.config.ts')),
+    pathExists(path.join(workspacePath, 'vite.config.js')),
+    pathExists(path.join(workspacePath, 'next.config.js')),
+    pathExists(path.join(workspacePath, 'next.config.mjs')),
+    pathExists(path.join(workspacePath, 'next.config.ts')),
+    pathExists(path.join(workspacePath, 'astro.config.mjs')),
+    pathExists(path.join(workspacePath, 'nuxt.config.ts')),
+  ])
+
+  const [
+    hasPackageJson,
+    hasPyproject,
+    hasRequirements,
+    hasPom,
+    hasGradle,
+    hasGradleKts,
+    hasCargo,
+    hasGoMod,
+    hasTsConfig,
+    hasJsConfig,
+    hasEnv,
+    hasEnvLocal,
+    hasDockerfile,
+    hasComposeYml,
+    hasComposeYaml,
+    hasComposeShort,
+    hasViteConfigTs,
+    hasViteConfigJs,
+    hasNextConfigJs,
+    hasNextConfigMjs,
+    hasNextConfigTs,
+    hasAstroConfig,
+    hasNuxtConfig,
+  ] = fileChecks
+
+  const artifactChecks = await Promise.all(
+    DEV_ARTIFACT_DIRS.map(async (dirName) => ((await pathExists(path.join(workspacePath, dirName))) ? dirName : null)),
+  )
+
+  const stacks = [
+    hasViteConfigTs || hasViteConfigJs ? 'Vite' : null,
+    hasNextConfigJs || hasNextConfigMjs || hasNextConfigTs ? 'Next.js' : null,
+    hasAstroConfig ? 'Astro' : null,
+    hasNuxtConfig ? 'Nuxt' : null,
+    hasPackageJson ? 'Node.js' : null,
+    hasPyproject || hasRequirements ? 'Python' : null,
+    hasPom || hasGradle || hasGradleKts ? 'JVM' : null,
+    hasCargo ? 'Rust' : null,
+    hasGoMod ? 'Go' : null,
+    hasDockerfile || hasComposeYml || hasComposeYaml || hasComposeShort ? 'Docker' : null,
+  ].filter((entry, index, all): entry is string => Boolean(entry) && all.indexOf(entry) === index)
+
+  const manifestCount = [
+    hasPackageJson,
+    hasPyproject,
+    hasRequirements,
+    hasPom,
+    hasGradle,
+    hasGradleKts,
+    hasCargo,
+    hasGoMod,
+  ].filter(Boolean).length
+
+  return {
+    stacks,
+    hasEnvFile: hasEnv || hasEnvLocal,
+    hasDockerConfig: hasDockerfile || hasComposeYml || hasComposeYaml || hasComposeShort,
+    hasTypeScriptConfig: hasTsConfig || hasJsConfig,
+    manifestCount,
+    artifactDirectories: artifactChecks.flatMap((entry) => (entry ? [entry] : [])),
   }
 }
 
@@ -401,6 +513,23 @@ export function detectDevServers(
       return left.workspaceName.localeCompare(right.workspaceName)
     }
     return left.port - right.port
+  })
+}
+
+function annotateWorkspaceServerUsage(
+  workspaces: DevWorkspaceInsight[],
+  devServers: DevServerEntry[],
+): DevWorkspaceInsight[] {
+  return workspaces.map((workspace) => {
+    const matchedServers = devServers
+      .filter((server) => server.workspacePath === workspace.path)
+      .sort((left, right) => left.port - right.port)
+
+    return {
+      ...workspace,
+      activeDevServerCount: matchedServers.length,
+      activeDevServerPorts: matchedServers.map((server) => server.port),
+    }
   })
 }
 

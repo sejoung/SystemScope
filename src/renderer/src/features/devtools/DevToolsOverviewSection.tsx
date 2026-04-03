@@ -251,8 +251,8 @@ export function DevToolsOverviewSection({
         <section style={cardStyle}>
           <div style={sectionHeaderRowStyle}>
             <SectionHeader
-              title={t('Workspace Git Insights')}
-              description={t('See branch state, dirty files, stash count, and large untracked files across tracked workspaces.')}
+              title={t('Workspace Environment')}
+              description={t('Review stack signals, environment files, build artifacts, Git state, and active dev servers across tracked workspaces.')}
             />
             {!compact ? (
               <div style={workspaceToolbarStyle}>
@@ -292,6 +292,12 @@ export function DevToolsOverviewSection({
                       <div style={workspaceMetaWrapStyle}>
                         <MetaPill label={t('Branch')} value={workspace.branch ?? t('No repo')} />
                         <MetaPill label={t('Package Manager')} value={workspace.packageManager ?? '-'} />
+                        <MetaPill label={t('Stacks')} value={workspace.stacks.join(', ') || '-'} />
+                        <MetaPill label={t('Manifests')} value={String(workspace.manifestCount)} />
+                        <MetaPill label={t('Env File')} value={workspace.hasEnvFile ? t('Yes') : t('No')} />
+                        <MetaPill label={t('TypeScript Config')} value={workspace.hasTypeScriptConfig ? t('Yes') : t('No')} />
+                        <MetaPill label={t('Docker Config')} value={workspace.hasDockerConfig ? t('Yes') : t('No')} />
+                        <MetaPill label={t('Active Servers')} value={String(workspace.activeDevServerCount)} />
                         <MetaPill label={t('Dirty')} value={String(workspace.dirtyFileCount)} />
                         <MetaPill label={t('Untracked')} value={String(workspace.untrackedFileCount)} />
                         <MetaPill label={t('Stash')} value={String(workspace.stashCount)} />
@@ -312,6 +318,33 @@ export function DevToolsOverviewSection({
                       {t('Last commit')}: {new Date(workspace.lastCommitAt).toLocaleString()}
                     </div>
                   ) : null}
+                  {workspace.artifactDirectories.length > 0 ? (
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div style={subsectionLabelStyle}>{t('Build Artifacts')}</div>
+                      <div style={workspaceMetaWrapStyle}>
+                        {workspace.artifactDirectories.map((artifact) => (
+                          <MetaPill key={`${workspace.path}-${artifact}`} label={t('Artifact')} value={artifact} />
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {workspace.activeDevServerPorts.length > 0 ? (
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div style={subsectionLabelStyle}>{t('Dev Server Ports')}</div>
+                      <div style={workspaceMetaWrapStyle}>
+                        {workspace.activeDevServerPorts.map((port) => (
+                          <button
+                            key={`${workspace.path}-${port}`}
+                            type="button"
+                            onClick={() => handleInspectPort(port)}
+                            style={secondaryActionButtonStyle}
+                          >
+                            {port}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   {workspace.largeUntrackedFiles.length > 0 ? (
                     <div style={{ display: 'grid', gap: 6 }}>
                       <div style={subsectionLabelStyle}>{t('Large Untracked Files')}</div>
@@ -327,7 +360,7 @@ export function DevToolsOverviewSection({
               </div>
             ))}
             {!loading && (overview?.workspaces.length ?? 0) === 0 ? (
-              <div style={emptyStyle}>{t('Add workspace paths to the active profile to see Git insights here.')}</div>
+            <div style={emptyStyle}>{t('Add workspace paths to the active profile to see Git insights here.')}</div>
             ) : null}
             {!loading && (overview?.workspaces.length ?? 0) > 0 && visibleWorkspaces.length === 0 ? (
               <div style={emptyStyle}>{t('No workspace matches the current selection.')}</div>

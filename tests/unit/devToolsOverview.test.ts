@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as fs from 'node:fs/promises'
+import * as os from 'node:os'
+import * as path from 'node:path'
 import type { PortInfo, ProcessInfo } from '../../src/shared/types'
 
 const runExternalCommand = vi.hoisted(() => vi.fn())
@@ -8,6 +11,7 @@ const listDockerContainers = vi.hoisted(() => vi.fn())
 const listDockerImages = vi.hoisted(() => vi.fn())
 const listDockerVolumes = vi.hoisted(() => vi.fn())
 const getDockerBuildCache = vi.hoisted(() => vi.fn())
+const getActiveProfile = vi.hoisted(() => vi.fn())
 
 vi.mock('../../src/main/services/externalCommand', () => ({
   runExternalCommand,
@@ -29,7 +33,7 @@ vi.mock('../../src/main/services/dockerImages', () => ({
 }))
 
 vi.mock('../../src/main/services/profileManager', () => ({
-  getActiveProfile: () => null,
+  getActiveProfile,
 }))
 
 import {
@@ -50,8 +54,10 @@ describe('devToolsOverview helpers', () => {
     listDockerImages.mockReset()
     listDockerVolumes.mockReset()
     getDockerBuildCache.mockReset()
+    getActiveProfile.mockReset()
     getNetworkPorts.mockResolvedValue([])
     getAllProcesses.mockResolvedValue([])
+    getActiveProfile.mockReturnValue(null)
     listDockerContainers.mockResolvedValue({ status: 'ready', containers: [], message: null })
     listDockerImages.mockResolvedValue({ status: 'ready', images: [], message: null })
     listDockerVolumes.mockResolvedValue({ status: 'ready', volumes: [], message: null })
@@ -255,6 +261,86 @@ describe('devToolsOverview helpers', () => {
       unusedVolumes: 1,
       reclaimableBuildCacheBytes: 300,
       reclaimableBuildCacheLabel: '300 B',
+    }))
+  })
+
+  it('collects workspace environment signals, artifact folders, and matched dev server ports', async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-devtools-'))
+    await fs.writeFile(path.join(workspaceRoot, 'package.json'), '{"name":"demo"}')
+    await fs.writeFile(path.join(workspaceRoot, 'tsconfig.json'), '{}')
+    await fs.writeFile(path.join(workspaceRoot, '.env.local'), 'PORT=3000')
+    await fs.writeFile(path.join(workspaceRoot, 'vite.config.ts'), 'export default {}')
+    await fs.writeFile(path.join(workspaceRoot, 'Dockerfile'), 'FROM node:20')
+    await fs.mkdir(path.join(workspaceRoot, 'node_modules'))
+    await fs.mkdir(path.join(workspaceRoot, 'dist'))
+
+    getActiveProfile.mockReturnValue({
+      id: 'profile-1',
+      workspacePaths: [workspaceRoot],
+    })
+    getNetworkPorts.mockResolvedValue([
+      {
+        protocol: 'tcp',
+        localAddress: '127.0.0.1',
+        localPort: '5173',
+        peerAddress: '',
+        peerPort: '*',
+        state: 'LISTEN',
+        pid: 3100,
+        process: 'node',
+        localPortNum: 5173,
+      },
+    ])
+    getAllProcesses.mockResolvedValue([
+      {
+        pid: 3100,
+        name: 'node',
+        cpu: 0,
+        memory: 0,
+        memoryBytes: 0,
+        command: `${workspaceRoot}/node_modules/.bin/vite`,
+      },
+    ])
+    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+      if (command === 'git' && args[0] === 'rev-parse') {
+        return { stdout: `${workspaceRoot}\n`, stderr: '' }
+      }
+      if (command === 'git' && args[0] === 'branch') {
+        return { stdout: 'main\n', stderr: '' }
+      }
+      if (command === 'git' && args[0] === 'status') {
+        return { stdout: '?? coverage/report.html\n', stderr: '' }
+      }
+      if (command === 'git' && args[0] === 'stash') {
+        return { stdout: '', stderr: '' }
+      }
+      if (command === 'git' && args[0] === 'log') {
+        return { stdout: '1712200000\n', stderr: '' }
+      }
+      if (command === 'java') {
+        return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+    const workspace = result.workspaces[0]
+
+    expect(workspace).toEqual(expect.objectContaining({
+      path: workspaceRoot,
+      hasEnvFile: true,
+      hasDockerConfig: true,
+      hasTypeScriptConfig: true,
+      manifestCount: 1,
+      artifactDirectories: expect.arrayContaining(['node_modules', 'dist']),
+      stacks: expect.arrayContaining(['Vite', 'Node.js', 'Docker']),
+      activeDevServerCount: 1,
+      activeDevServerPorts: [5173],
+    }))
+    expect(result.devServers[0]).toEqual(expect.objectContaining({
+      workspacePath: workspaceRoot,
+      workspaceName: path.basename(workspaceRoot),
+      kind: 'Vite',
     }))
   })
 })

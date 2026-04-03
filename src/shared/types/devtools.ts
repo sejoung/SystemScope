@@ -33,11 +33,19 @@ export interface DevWorkspaceInsight {
   isGitRepo: boolean
   branch: string | null
   packageManager: string | null
+  stacks: string[]
+  hasEnvFile: boolean
+  hasDockerConfig: boolean
+  hasTypeScriptConfig: boolean
+  manifestCount: number
+  artifactDirectories: string[]
   dirtyFileCount: number
   untrackedFileCount: number
   stashCount: number
   lastCommitAt: number | null
   largeUntrackedFiles: DevWorkspaceLargeFile[]
+  activeDevServerCount: number
+  activeDevServerPorts: number[]
 }
 
 export interface DevServerEntry {
