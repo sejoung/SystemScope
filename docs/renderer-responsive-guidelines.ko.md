@@ -12,6 +12,7 @@ Renderer의 최소 폭 대응은 화면별 임시 분기보다 공통 규칙을 
 
 - breakpoint 상수와 공통 판별 함수: [src/renderer/src/hooks/useResponsiveLayout.ts](/Users/beni/SystemScope/src/renderer/src/hooks/useResponsiveLayout.ts)
 - 폭 감지 훅: [src/renderer/src/hooks/useContainerWidth.ts](/Users/beni/SystemScope/src/renderer/src/hooks/useContainerWidth.ts)
+- 공통 compact UI 조각: [src/renderer/src/components/CompactPrimitives.tsx](/Users/beni/SystemScope/src/renderer/src/components/CompactPrimitives.tsx)
 
 ## 기본 원칙
 
@@ -37,8 +38,17 @@ export function shouldUseExampleCompactLayout(width: number): boolean {
 권장 방식:
 
 - `shouldUseXCompactLayout(width)` 형태의 helper를 export 한다.
+- 페이지 컴포넌트도 예외 없이 같은 방식으로 helper를 export 한다.
 - threshold 비교는 직접 `width < 960`처럼 쓰지 않는다.
 - 테스트는 helper 기준으로 고정한다.
+
+페이지 레벨 예시:
+
+```ts
+export function shouldUseSettingsPageCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.settingsPageCompact);
+}
+```
 
 ## 구현 패턴
 
@@ -78,6 +88,25 @@ return <section ref={containerRef}>...</section>;
 4. 긴 문자열 block
 5. action row
 
+### 2-1. 공통 compact primitives 우선 사용
+
+다음 구조가 2개 이상 화면에서 반복되면 로컬 style 재작성보다 `CompactPrimitives`를 먼저 사용합니다.
+
+- `compactListStyle`
+- `compactCardStyle`
+- `compactCardHeaderStyle`
+- `compactMetaGridStyle`
+- `compactActionsStyle`
+- `compactStatusSpacingStyle`
+- `CompactMetaItem`
+
+규칙:
+
+- `compact meta` 카드 구조는 `CompactMetaItem`으로 우선 통일한다.
+- `StatusMessage` 아래 간격은 `compactStatusSpacingStyle`로 맞춘다.
+- bulk selection bar, meta grid, action row가 기존 패턴과 같으면 공통 primitive를 그대로 쓴다.
+- 2개 이상 화면에서 같은 compact 구조가 반복되면 공통화 검토가 아니라 공통화 우선으로 본다.
+
 ### 3. 컨트롤 영역 정리
 
 최소 폭에서는 필터, segmented control, 검색 input이 한 줄 유지에 집착하지 않아야 합니다.
@@ -92,6 +121,11 @@ return <section ref={containerRef}>...</section>;
   - `Installed`, `Leftover Data`, `Registry Cleanup`은 table/row형에서 카드형으로 전환
 - Activity
   - `Port Finder`, `Port Watch`, `Processes`는 좁은 폭에서 메타 중심 카드형으로 전환
+- Docker
+  - `Containers`, `Images`, `Volumes`는 좁은 폭에서 관리용 table 대신 카드형으로 전환
+  - 탭 strip은 wrap 가능해야 하고, status badge와 destructive action은 상단에서 바로 식별 가능해야 한다
+- Settings
+  - 페이지 헤더, threshold 입력, path row, sticky save bar는 최소 폭에서 세로 재배치가 가능해야 한다
 
 참고 구현:
 
@@ -101,12 +135,18 @@ return <section ref={containerRef}>...</section>;
 - [src/renderer/src/features/process/ListeningPorts.tsx](/Users/beni/SystemScope/src/renderer/src/features/process/ListeningPorts.tsx)
 - [src/renderer/src/features/process/PortWatch.tsx](/Users/beni/SystemScope/src/renderer/src/features/process/PortWatch.tsx)
 - [src/renderer/src/features/process/ProcessTable.tsx](/Users/beni/SystemScope/src/renderer/src/features/process/ProcessTable.tsx)
+- [src/renderer/src/features/docker/DockerContainers.tsx](/Users/beni/SystemScope/src/renderer/src/features/docker/DockerContainers.tsx)
+- [src/renderer/src/features/disk/DockerImages.tsx](/Users/beni/SystemScope/src/renderer/src/features/disk/DockerImages.tsx)
+- [src/renderer/src/features/docker/DockerVolumes.tsx](/Users/beni/SystemScope/src/renderer/src/features/docker/DockerVolumes.tsx)
+- [src/renderer/src/pages/SettingsPage.tsx](/Users/beni/SystemScope/src/renderer/src/pages/SettingsPage.tsx)
+- [src/renderer/src/pages/DockerPage.tsx](/Users/beni/SystemScope/src/renderer/src/pages/DockerPage.tsx)
 
 ## 스타일 규칙
 
 - compact 전용 style object는 파일 하단에 모은다.
 - `compactCardStyle`, `compactMetaGridStyle`, `compactActionsStyle`처럼 의미 기반 이름을 쓴다.
 - 이미 존재하는 카드 패턴이 있으면 복사보다 명명 규칙과 구조를 맞춘다.
+- 공용으로 뺀 구조는 각 파일에서 다시 같은 이름으로 재정의하지 않는다.
 - 불필요한 animation이나 복잡한 조건부 스타일보다 정보 위계 정리에 집중한다.
 
 ## 테스트 규칙
@@ -126,12 +166,15 @@ expect(shouldUseExampleCompactLayout(960)).toBe(false);
 - [tests/unit/listeningPorts.test.ts](/Users/beni/SystemScope/tests/unit/listeningPorts.test.ts)
 - [tests/unit/processTable.test.ts](/Users/beni/SystemScope/tests/unit/processTable.test.ts)
 - [tests/unit/portWatchLayout.test.ts](/Users/beni/SystemScope/tests/unit/portWatchLayout.test.ts)
+- [tests/unit/dockerLayout.test.ts](/Users/beni/SystemScope/tests/unit/dockerLayout.test.ts)
+- [tests/unit/settingsPage.test.ts](/Users/beni/SystemScope/tests/unit/settingsPage.test.ts)
 
 ## 새 화면 추가 체크리스트
 
 - `useContainerWidth`를 붙였는가
 - `RESPONSIVE_WIDTH`에 threshold를 정의했는가
 - `shouldUseXCompactLayout` helper를 export 했는가
+- 공통 `CompactPrimitives`로 대체 가능한 부분을 먼저 확인했는가
 - 좁은 폭에서 카드형 또는 재배치 레이아웃이 있는가
 - 상단 안내 메시지와 본문 사이 여백이 있는가
 - 긴 문자열이 레이아웃을 깨지 않는가
@@ -144,3 +187,4 @@ expect(shouldUseExampleCompactLayout(960)).toBe(false);
 - 핵심 정보와 보조 정보를 같은 시각 강도로 나열하는 방식
 - 상태 메시지 카드와 첫 번째 데이터 카드가 바로 붙는 구조
 - 한 화면 안에서만 통하는 ad-hoc 스타일 이름
+- 공통 primitive로 해결 가능한 구조를 다시 로컬 복사하는 방식

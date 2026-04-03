@@ -5,6 +5,8 @@ export const RESPONSIVE_WIDTH = {
   registryAppsCompact: 1040,
   processTableCompact: 980,
   portWatchCompact: 960,
+  dockerPageCompact: 980,
+  settingsPageCompact: 920,
 } as const
 
 export function isCompactWidth(width: number, threshold: number): boolean {

@@ -4,6 +4,13 @@ import { useToast } from '../../components/Toast'
 import type { DockerRemoveResult, DockerVolumeSummary, DockerVolumesScanResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
 import { CopyableValue } from '../../components/CopyableValue'
+import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { isCompactWidth, RESPONSIVE_WIDTH } from '../../hooks/useResponsiveLayout'
+import { CompactMetaItem, compactActionsStyle, compactCardHeaderStyle, compactCardStyle, compactListStyle, compactMetaGridStyle } from '../../components/CompactPrimitives'
+
+export function shouldUseDockerVolumesCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.dockerPageCompact)
+}
 
 export function DockerVolumes({
   refreshToken = 0,
@@ -12,6 +19,7 @@ export function DockerVolumes({
   refreshToken?: number
   onChanged?: () => void
 }) {
+  const [containerRef, containerWidth] = useContainerWidth(1100)
   const showToast = useToast((s) => s.show)
   const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
@@ -26,6 +34,7 @@ export function DockerVolumes({
     [removableVolumes, selectedNames]
   )
   const allRemovableChecked = removableVolumes.length > 0 && selectedRemovableCount === removableVolumes.length
+  const compactLayout = shouldUseDockerVolumesCompactLayout(containerWidth)
 
   const scanVolumes = async () => {
     setLoading(true)
@@ -112,10 +121,61 @@ export function DockerVolumes({
           detail={tk('docker.volumes.empty_detail')}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {tk('docker.volumes.helper')}
           </div>
+          {compactLayout ? (
+            <div style={compactListStyle}>
+              {volumes.map((volume) => (
+                <div key={volume.name} style={compactCardStyle}>
+                  <div style={compactCardHeaderStyle}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{volume.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5 }}>
+                        <CopyableValue value={volume.mountpoint} fontSize="12px" color="var(--text-muted)" multiline maxWidth="100%" />
+                      </div>
+                    </div>
+                    <Badge text={volume.inUse ? tk('docker.images.in_use') : tk('docker.images.unused')} color={volume.inUse ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
+                  </div>
+                  <div style={compactMetaGridStyle}>
+                    <CompactMetaItem label={tk('docker.volumes.table.driver')} value={volume.driver} mono />
+                    <CompactMetaItem label={tk('docker.volumes.table.attached')} value={volume.containers.join(', ') || '-'} multiline muted={volume.containers.length === 0} />
+                  </div>
+                  <div style={compactActionsStyle}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedNames.has(volume.name)}
+                        disabled={volume.inUse}
+                        onChange={(event) => {
+                          setSelectedNames((prev) => {
+                            const next = new Set(prev)
+                            if (event.target.checked) next.add(volume.name)
+                            else next.delete(volume.name)
+                            return next
+                          })
+                        }}
+                      />
+                      Select
+                    </label>
+                    <button
+                      onClick={() => void handleDelete([volume.name])}
+                      disabled={volume.inUse || loading}
+                      style={{
+                        ...actionBtnStyle,
+                        background: volume.inUse ? 'var(--bg-card-hover)' : 'var(--accent-red)',
+                        color: volume.inUse ? 'var(--text-muted)' : 'var(--text-on-accent)',
+                        cursor: volume.inUse ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {tk('common.delete')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
@@ -186,6 +246,7 @@ export function DockerVolumes({
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
     </Accordion>

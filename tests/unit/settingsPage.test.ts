@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SaveTimingNote, formatUpdateCheckedAt } from "../../src/renderer/src/pages/SettingsPage";
+import {
+  SaveTimingNote,
+  formatUpdateCheckedAt,
+  shouldUseSettingsPageCompactLayout,
+} from "../../src/renderer/src/pages/SettingsPage";
 
 describe("SettingsPage save timing note", () => {
   it("should render the save-required badge copy", () => {
@@ -14,5 +18,11 @@ describe("SettingsPage save timing note", () => {
 
   it("should ignore invalid update timestamps", () => {
     expect(formatUpdateCheckedAt("not-a-date", "en")).toBeNull();
+  });
+
+  it("should switch settings page to compact layout below the width threshold", () => {
+    expect(shouldUseSettingsPageCompactLayout(720)).toBe(true);
+    expect(shouldUseSettingsPageCompactLayout(919)).toBe(true);
+    expect(shouldUseSettingsPageCompactLayout(920)).toBe(false);
   });
 });

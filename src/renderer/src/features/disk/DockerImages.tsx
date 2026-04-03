@@ -4,6 +4,13 @@ import { useToast } from '../../components/Toast'
 import { formatBytes } from '../../utils/format'
 import type { DockerImageSummary, DockerImagesScanResult, DockerRemoveResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
+import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { isCompactWidth, RESPONSIVE_WIDTH } from '../../hooks/useResponsiveLayout'
+import { CompactMetaItem, compactActionsStyle, compactCardHeaderStyle, compactCardStyle, compactListStyle, compactMetaGridStyle } from '../../components/CompactPrimitives'
+
+export function shouldUseDockerImagesCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.dockerPageCompact)
+}
 
 export function DockerImages({
   refreshToken = 0,
@@ -14,6 +21,7 @@ export function DockerImages({
   onChanged?: () => void
   onOpenContainers?: () => void
 }) {
+  const [containerRef, containerWidth] = useContainerWidth(1100)
   const showToast = useToast((s) => s.show)
   const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
@@ -28,6 +36,7 @@ export function DockerImages({
     [selectableImages, selectedIds]
   )
   const allSelectableChecked = selectableImages.length > 0 && selectedSelectableCount === selectableImages.length
+  const compactLayout = shouldUseDockerImagesCompactLayout(containerWidth)
 
   const scanImages = async () => {
     setLoading(true)
@@ -104,10 +113,65 @@ export function DockerImages({
       ) : images.length === 0 ? (
         <EmptyState title={message ?? tk('main.docker.images.empty')} detail={tk('docker.images.empty_detail')} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {tk('docker.images.helper')}
           </div>
+          {compactLayout ? (
+            <div style={compactListStyle}>
+              {images.map((image) => (
+                <div key={image.id} style={compactCardStyle}>
+                  <div style={compactCardHeaderStyle}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{image.repository}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '4px' }}>{image.shortId}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {image.inUse && <Badge text={tk('docker.images.in_use')} color="var(--accent-yellow)" />}
+                      {!image.inUse && <Badge text={tk('docker.images.unused')} color="var(--accent-green)" />}
+                      {image.dangling && <Badge text={tk('docker.images.untagged')} color="var(--accent-red)" />}
+                    </div>
+                  </div>
+                  <div style={compactMetaGridStyle}>
+                    <CompactMetaItem label={tk('docker.images.tag')} value={image.tag} mono />
+                    <CompactMetaItem label={tk('docker.images.size')} value={formatBytes(image.sizeBytes)} mono />
+                    <CompactMetaItem label={tk('docker.images.created')} value={image.createdSince} />
+                    <CompactMetaItem label={tk('docker.images.status')} value={image.containers.join(', ') || '-'} multiline muted={image.containers.length === 0} />
+                  </div>
+                  <div style={compactActionsStyle}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(image.id)}
+                        disabled={image.inUse}
+                        onChange={(event) => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev)
+                            if (event.target.checked) next.add(image.id)
+                            else next.delete(image.id)
+                            return next
+                          })
+                        }}
+                      />
+                      Select
+                    </label>
+                    <button
+                      onClick={() => void handleDelete([image.id])}
+                      disabled={image.inUse || loading}
+                      style={{
+                        ...actionBtnStyle,
+                        background: image.inUse ? 'var(--bg-card-hover)' : 'var(--accent-red)',
+                        color: image.inUse ? 'var(--text-muted)' : 'var(--text-on-accent)',
+                        cursor: image.inUse ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {tk('common.delete')}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
@@ -210,6 +274,7 @@ export function DockerImages({
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
     </Accordion>

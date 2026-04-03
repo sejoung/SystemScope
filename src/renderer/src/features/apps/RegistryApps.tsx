@@ -11,6 +11,17 @@ import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayou
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import {
+  CompactMetaItem,
+  compactActionsStyle,
+  compactBulkBarStyle,
+  compactBulkTextStyle,
+  compactCardHeaderStyle,
+  compactCardStyle,
+  compactListStyle,
+  compactMetaGridStyle,
+  compactStatusSpacingStyle,
+} from "../../components/CompactPrimitives";
+import {
   Badge,
   SearchInput,
   actionBtnStyle,
@@ -175,7 +186,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
         <StatusMessage title={tk("apps.empty.registry")} message={tk("apps.empty.registry_detail")} />
       ) : (
         <>
-          <div style={{ marginBottom: "14px" }}>
+          <div style={compactStatusSpacingStyle}>
             <StatusMessage tone="error" message={tk("apps.danger.registry")} />
           </div>
           {compactLayout ? (
@@ -387,57 +398,8 @@ function CompactMeta({
   multiline?: boolean;
   muted?: boolean;
 }) {
-  return (
-    <div style={compactMetaItemStyle}>
-      <div style={compactMetaLabelStyle}>{label}</div>
-      <div
-        style={{
-          ...(mono ? compactMetaValueMonoStyle : compactMetaValueStyle),
-          color: muted ? "var(--text-muted)" : undefined,
-          wordBreak: multiline ? "break-word" : undefined,
-          whiteSpace: multiline ? "normal" : undefined,
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
+  return <CompactMetaItem label={label} value={value} mono={mono} multiline={multiline} muted={muted} />;
 }
-
-const compactListStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const compactBulkBarStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: "10px",
-  border: "1px solid var(--border)",
-  background: "var(--bg-primary)",
-};
-
-const compactBulkTextStyle: React.CSSProperties = {
-  fontSize: "13px",
-  fontWeight: 600,
-  color: "var(--text-primary)",
-};
-
-const compactCardStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-  padding: "14px",
-  borderRadius: "12px",
-  background: "var(--bg-primary)",
-  border: "1px solid var(--border)",
-};
-
-const compactCardHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "12px",
-  alignItems: "flex-start",
-  flexWrap: "wrap",
-};
 
 const compactCardTitleWrapStyle: React.CSSProperties = {
   display: "flex",
@@ -451,46 +413,4 @@ const compactTitleStyle: React.CSSProperties = {
   fontSize: "15px",
   fontWeight: 700,
   color: "var(--text-primary)",
-};
-
-const compactMetaGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "10px",
-};
-
-const compactMetaItemStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  padding: "10px 12px",
-  borderRadius: "10px",
-  background: "var(--bg-card)",
-  border: "1px solid var(--border)",
-};
-
-const compactMetaLabelStyle: React.CSSProperties = {
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "var(--text-muted)",
-};
-
-const compactMetaValueStyle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "var(--text-primary)",
-  lineHeight: 1.5,
-};
-
-const compactMetaValueMonoStyle: React.CSSProperties = {
-  ...compactMetaValueStyle,
-  fontFamily: "monospace",
-  fontVariantNumeric: "tabular-nums",
-};
-
-const compactActionsStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "8px",
-  flexWrap: "wrap",
-  alignItems: "center",
 };

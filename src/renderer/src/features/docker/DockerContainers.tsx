@@ -5,6 +5,13 @@ import { formatBytes } from '../../utils/format'
 import type { DockerActionResult, DockerContainerSummary, DockerContainersScanResult, DockerRemoveResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
 import { CopyableValue } from '../../components/CopyableValue'
+import { useContainerWidth } from '../../hooks/useContainerWidth'
+import { isCompactWidth, RESPONSIVE_WIDTH } from '../../hooks/useResponsiveLayout'
+import { CompactMetaItem, compactActionsStyle, compactCardHeaderStyle, compactCardStyle, compactListStyle, compactMetaGridStyle } from '../../components/CompactPrimitives'
+
+export function shouldUseDockerContainersCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.dockerPageCompact)
+}
 
 export function DockerContainers({
   refreshToken = 0,
@@ -15,6 +22,7 @@ export function DockerContainers({
   onChanged?: () => void
   onOpenImages?: () => void
 }) {
+  const [containerRef, containerWidth] = useContainerWidth(1100)
   const showToast = useToast((s) => s.show)
   const { tk } = useI18n()
   const [loading, setLoading] = useState(false)
@@ -30,6 +38,7 @@ export function DockerContainers({
     [removableContainers, selectedIds]
   )
   const allRemovableChecked = removableContainers.length > 0 && selectedRemovableCount === removableContainers.length
+  const compactLayout = shouldUseDockerContainersCompactLayout(containerWidth)
 
   const scanContainers = async () => {
     setLoading(true)
@@ -143,7 +152,7 @@ export function DockerContainers({
           detail={tk('docker.containers.empty_detail')}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
             {tk('docker.containers.helper')}
             {runningContainers.length > 0 && (
@@ -163,6 +172,74 @@ export function DockerContainers({
               </button>
             )}
           </div>
+          {compactLayout ? (
+            <div style={compactListStyle}>
+              {containers.map((container) => (
+                <div key={container.id} style={compactCardStyle}>
+                  <div style={compactCardHeaderStyle}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{container.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: '4px' }}>{container.shortId}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <Badge text={container.running ? tk('docker.containers.running') : tk('docker.containers.stopped_label')} color={container.running ? 'var(--accent-yellow)' : 'var(--accent-green)'} />
+                    </div>
+                  </div>
+                  <div style={compactMetaGridStyle}>
+                    <CompactMetaItem label={tk('docker.containers.table.image')} value={container.image} />
+                    <CompactMetaItem label={tk('docker.containers.table.ports')} value={container.ports || '-'} mono />
+                    <CompactMetaItem label={tk('docker.containers.table.writable')} value={formatBytes(container.sizeBytes)} mono />
+                    <CompactMetaItem label={tk('docker.containers.table.status')} value={container.status} muted multiline />
+                  </div>
+                  {container.command ? (
+                    <CopyableValue value={container.command} fontSize="12px" color="var(--text-muted)" multiline maxWidth="100%" />
+                  ) : null}
+                  <div style={compactActionsStyle}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(container.id)}
+                        disabled={container.running}
+                        onChange={(event) => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev)
+                            if (event.target.checked) next.add(container.id)
+                            else next.delete(container.id)
+                            return next
+                          })
+                        }}
+                      />
+                      Select
+                    </label>
+                    <button
+                      onClick={() => void handleStop([container.id])}
+                      disabled={!container.running || loading}
+                      style={{
+                        ...actionBtnStyle,
+                        background: container.running ? 'var(--accent-yellow)' : 'var(--bg-card-hover)',
+                        color: container.running ? 'var(--text-on-accent)' : 'var(--text-muted)',
+                        cursor: container.running ? 'pointer' : 'not-allowed'
+                      }}
+                    >
+                      Stop
+                    </button>
+                    <button
+                      onClick={() => void handleDelete([container.id])}
+                      disabled={container.running || loading}
+                      style={{
+                        ...actionBtnStyle,
+                        background: container.running ? 'var(--bg-card-hover)' : 'var(--accent-red)',
+                        color: container.running ? 'var(--text-muted)' : 'var(--text-on-accent)',
+                        cursor: container.running ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
           <div style={{ maxHeight: '520px', overflow: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
@@ -260,6 +337,7 @@ export function DockerContainers({
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
     </Accordion>

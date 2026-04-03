@@ -13,6 +13,8 @@ import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
 import { CopyableValue } from "../components/CopyableValue";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { ProfileSection } from "../features/profiles/ProfileSection";
+import { useContainerWidth } from "../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../hooks/useResponsiveLayout";
 import { useUpdateStore } from "../stores/useUpdateStore";
 import {
   applySettingsToStore,
@@ -29,7 +31,12 @@ const SNAPSHOT_OPTIONS = [
   { value: 360, labelKey: "settings.snapshots.option_6h" },
 ] as const;
 
+export function shouldUseSettingsPageCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.settingsPageCompact);
+}
+
 export function SettingsPage() {
+  const [containerRef, containerWidth] = useContainerWidth(1200);
   const thresholds = useSettingsStore((s) => s.thresholds);
   const setThresholds = useSettingsStore((s) => s.setThresholds);
   const theme = useSettingsStore((s) => s.theme);
@@ -76,6 +83,7 @@ export function SettingsPage() {
   const applyUpdateStatus = useUpdateStore((s) => s.applyStatus);
   const setUpdateChecking = useUpdateStore((s) => s.setChecking);
   const { t, tk } = useI18n();
+  const compactLayout = shouldUseSettingsPageCompactLayout(containerWidth);
 
   const applyPersistedSettings = (settings: AppSettings) => {
     persistedRef.current.thresholds = settings.thresholds;
@@ -339,11 +347,12 @@ export function SettingsPage() {
   const formattedCheckedAt = formatUpdateCheckedAt(lastCheckedAt, localLocale);
 
   return (
-    <div data-testid="page-settings">
+    <div data-testid="page-settings" ref={containerRef}>
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: compactLayout ? "flex-start" : "center",
+          flexDirection: compactLayout ? "column" : "row",
           gap: "12px",
           marginBottom: "16px",
           flexWrap: "wrap",
@@ -393,7 +402,7 @@ export function SettingsPage() {
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.language.description")}
           </div>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {[
               { value: "en" as const, label: tk("settings.language.english") },
               { value: "ko" as const, label: tk("settings.language.korean") },
@@ -439,7 +448,7 @@ export function SettingsPage() {
           <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
             {tk("settings.theme.description")}
           </div>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {[
               { value: "dark", label: tk("settings.theme.dark") },
               { value: "light", label: tk("settings.theme.light") },
@@ -842,7 +851,8 @@ export function SettingsPage() {
       <div
         style={{
           display: "flex",
-          alignItems: "center",
+          alignItems: compactLayout ? "stretch" : "center",
+          flexDirection: compactLayout ? "column" : "row",
           gap: "10px",
           position: "sticky",
           bottom: 0,
@@ -877,6 +887,7 @@ export function SettingsPage() {
           disabled={!isDirty || isSaving || hasValidationIssues}
           style={{
             ...btnStyle,
+            width: compactLayout ? "100%" : undefined,
             opacity: !isDirty || isSaving || hasValidationIssues ? 0.55 : 1,
             cursor:
               !isDirty || isSaving || hasValidationIssues
@@ -912,7 +923,7 @@ export function SettingsPage() {
           style={{
             fontSize: "11px",
             color: "var(--text-muted)",
-            marginLeft: "auto",
+            marginLeft: compactLayout ? 0 : "auto",
           }}
         >
           {tk("settings.footer.description")}
@@ -1012,6 +1023,7 @@ function PathRow({
       style={{
         display: "flex",
         alignItems: "center",
+        flexWrap: "wrap",
         gap: "10px",
         padding: "10px 14px",
         background: "var(--bg-primary)",
@@ -1031,7 +1043,7 @@ function PathRow({
         </div>
         <CopyableValue value={value} fontSize="13px" maxWidth="100%" />
       </div>
-      <button onClick={onOpen} style={btnStyle}>
+      <button onClick={onOpen} style={{ ...btnStyle, width: "100%", maxWidth: "160px" }}>
         {openLabel}
       </button>
     </div>
@@ -1084,7 +1096,7 @@ function ThresholdGroup({
       >
         {label}
       </div>
-      <div style={{ display: "flex", gap: "16px", alignItems: "flex-end" }}>
+      <div style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
         <div>
           <label
             style={{
@@ -1104,6 +1116,8 @@ function ThresholdGroup({
             onChange={(e) => onWarningChange(e.target.value)}
             style={{
               ...inputStyle,
+              width: "100%",
+              minWidth: "96px",
               borderColor: hasError ? "var(--accent-red)" : undefined,
             }}
           />
@@ -1127,6 +1141,8 @@ function ThresholdGroup({
             onChange={(e) => onCriticalChange(e.target.value)}
             style={{
               ...inputStyle,
+              width: "100%",
+              minWidth: "96px",
               borderColor: hasError ? "var(--accent-red)" : undefined,
             }}
           />

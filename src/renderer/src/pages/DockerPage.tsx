@@ -11,6 +11,8 @@ import { StatusMessage } from "../components/StatusMessage";
 import { PageLoading } from "../components/PageLoading";
 import { PageTab } from "../components/PageTab";
 import { useSettingsStore } from "../stores/useSettingsStore";
+import { useContainerWidth } from "../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../hooks/useResponsiveLayout";
 type DockerAvailability =
   | "checking"
   | "ready"
@@ -18,6 +20,7 @@ type DockerAvailability =
   | "daemon_unavailable";
 
 export function DockerPage() {
+  const [containerRef, containerWidth] = useContainerWidth(1100);
   const [refreshToken, setRefreshToken] = useState(0);
   const [availability, setAvailability] =
     useState<DockerAvailability>("checking");
@@ -25,6 +28,10 @@ export function DockerPage() {
   const { tk, t } = useI18n();
   const tab = useSettingsStore((s) => s.dockerTab);
   const setDockerTab = useSettingsStore((s) => s.setDockerTab);
+  const compactLayout = isCompactWidth(
+    containerWidth,
+    RESPONSIVE_WIDTH.dockerPageCompact,
+  );
 
   const handleChanged = useCallback(() => setRefreshToken((prev) => prev + 1), []);
 
@@ -71,7 +78,7 @@ export function DockerPage() {
     availability === "not_installed" || availability === "daemon_unavailable";
 
   return (
-    <div data-testid="page-docker">
+    <div data-testid="page-docker" ref={containerRef}>
       <div
         style={{
           display: "grid",
@@ -101,10 +108,13 @@ export function DockerPage() {
             aria-label={tk("docker.page.title")}
             style={{
               display: "flex",
+              flexWrap: "wrap",
               gap: "4px",
+              alignItems: "stretch",
               background: "var(--bg-secondary)",
               borderRadius: "8px",
               padding: "3px",
+              width: compactLayout ? "100%" : undefined,
             }}
           >
             <PageTab
@@ -231,4 +241,6 @@ const retryBtnStyle: React.CSSProperties = {
   background: "var(--accent-blue)",
   color: "var(--text-on-accent)",
   cursor: "pointer",
+  width: "100%",
+  maxWidth: "220px",
 };
