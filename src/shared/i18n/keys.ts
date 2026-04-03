@@ -1,7 +1,7 @@
 export const MESSAGE_KEYS = {
   "nav.overview": "Overview",
   "nav.storage": "Storage",
-  "nav.docker": "Docker",
+  "nav.docker": "Docker & Containers",
   "nav.activity": "Activity",
   "nav.devtools": "DevTools",
   "nav.applications": "Applications",
@@ -15,7 +15,7 @@ export const MESSAGE_KEYS = {
   "app.shutdown.title": "SystemScope is shutting down",
   "dashboard.page.description":
     "Monitor live system usage, review alerts, and jump into storage or process details from one place.",
-  "docker.page.title": "Docker",
+  "docker.page.title": "Docker & Containers",
   "docker.page.description":
     "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.",
   "docker.page.retry": "Retry",

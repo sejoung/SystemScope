@@ -9,7 +9,7 @@ import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useToast } from '../../components/Toast'
 import { MAX_WORKSPACE_PATHS } from '@shared/types'
 
-type DevToolsOverviewPanel = 'health' | 'workspaces' | 'servers'
+type DevToolsOverviewPanel = 'health' | 'docker' | 'workspaces' | 'servers'
 
 interface DevToolsOverviewSectionProps {
   sections?: DevToolsOverviewPanel[]
@@ -17,7 +17,7 @@ interface DevToolsOverviewSectionProps {
 }
 
 export function DevToolsOverviewSection({
-  sections = ['health', 'workspaces', 'servers'],
+  sections = ['health', 'docker', 'workspaces', 'servers'],
   compact = false,
 }: DevToolsOverviewSectionProps) {
   const { t } = useI18n()
@@ -136,6 +136,10 @@ export function DevToolsOverviewSection({
     setCurrentPage('process')
   }
 
+  function handleOpenDocker() {
+    setCurrentPage('docker')
+  }
+
   async function handleOpenWorkspace(workspacePath: string) {
     const res = await window.systemScope.showInFolder(workspacePath)
     if (!res.ok) {
@@ -169,6 +173,53 @@ export function DevToolsOverviewSection({
               <div style={emptyStyle}>{t('No environment checks are available right now.')}</div>
             ) : null}
           </div>
+        </section>
+      ) : null}
+
+      {sections.includes('docker') ? (
+        <section style={cardStyle}>
+          <div style={sectionHeaderRowStyle}>
+            <SectionHeader
+              title={t('Docker Runtime')}
+              description={t('Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.')}
+            />
+            <button type="button" onClick={handleOpenDocker} style={secondaryActionButtonStyle}>
+              {t('Open Docker')}
+            </button>
+          </div>
+          {overview?.docker ? (
+            <div style={rowCardStyle}>
+              <div style={workspaceHeaderStyle}>
+                <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
+                  <div style={tileHeaderStyle}>
+                    <span style={tileTitleStyle}>{t('Docker & Containers')}</span>
+                    <span style={{ ...statusPillStyle, ...getStatusStyle(overview.docker.status) }}>
+                      {t(
+                        overview.docker.status === 'healthy'
+                          ? 'Ready'
+                          : overview.docker.status === 'warning'
+                            ? 'Needs Review'
+                            : 'Missing',
+                      )}
+                    </span>
+                  </div>
+                  <div style={detailStyle}>{overview.docker.detail}</div>
+                  {overview.docker.hint ? <div style={hintStyle}>{overview.docker.hint}</div> : null}
+                </div>
+                <div style={workspaceMetaColumnStyle}>
+                  <div style={workspaceMetaWrapStyle}>
+                    <MetaPill label={t('Running Containers')} value={String(overview.docker.runningContainers)} />
+                    <MetaPill label={t('Stopped')} value={String(overview.docker.stoppedContainers)} />
+                    <MetaPill label={t('Unused Images')} value={String(overview.docker.unusedImages)} />
+                    <MetaPill label={t('Unused Volumes')} value={String(overview.docker.unusedVolumes)} />
+                    <MetaPill label={t('Build Cache')} value={overview.docker.reclaimableBuildCacheLabel} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={emptyStyle}>{t('Docker summary is not available right now.')}</div>
+          )}
         </section>
       ) : null}
 

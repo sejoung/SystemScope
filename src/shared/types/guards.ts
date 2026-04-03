@@ -223,6 +223,7 @@ export function isToolCleanResult(data: unknown): data is ToolCleanResult {
 export function isDevToolsOverview(data: unknown): data is DevToolsOverview {
   return isObj(data)
     && Array.isArray(data.healthChecks)
+    && isObj(data.docker)
     && Array.isArray(data.workspaces)
     && Array.isArray(data.devServers)
     && typeof data.scannedAt === 'number'

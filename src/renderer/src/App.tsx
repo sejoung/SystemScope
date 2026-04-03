@@ -144,7 +144,7 @@ function App() {
       dashboard: translateLiteral(locale, "Overview"),
       timeline: translateLiteral(locale, "Timeline"),
       disk: translateLiteral(locale, "Storage"),
-      docker: translateLiteral(locale, "Docker"),
+      docker: translateLiteral(locale, "Docker & Containers"),
       cleanup: translateLiteral(locale, "Cleanup"),
       process: translateLiteral(locale, "Activity"),
       devtools: translateLiteral(locale, "DevTools"),

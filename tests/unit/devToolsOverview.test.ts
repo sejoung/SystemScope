@@ -4,6 +4,10 @@ import type { PortInfo, ProcessInfo } from '../../src/shared/types'
 const runExternalCommand = vi.hoisted(() => vi.fn())
 const getNetworkPorts = vi.hoisted(() => vi.fn())
 const getAllProcesses = vi.hoisted(() => vi.fn())
+const listDockerContainers = vi.hoisted(() => vi.fn())
+const listDockerImages = vi.hoisted(() => vi.fn())
+const listDockerVolumes = vi.hoisted(() => vi.fn())
+const getDockerBuildCache = vi.hoisted(() => vi.fn())
 
 vi.mock('../../src/main/services/externalCommand', () => ({
   runExternalCommand,
@@ -17,6 +21,13 @@ vi.mock('../../src/main/services/processMonitor', () => ({
   getAllProcesses,
 }))
 
+vi.mock('../../src/main/services/dockerImages', () => ({
+  listDockerContainers,
+  listDockerImages,
+  listDockerVolumes,
+  getDockerBuildCache,
+}))
+
 vi.mock('../../src/main/services/profileManager', () => ({
   getActiveProfile: () => null,
 }))
@@ -28,8 +39,27 @@ describe('devToolsOverview helpers', () => {
     runExternalCommand.mockReset()
     getNetworkPorts.mockReset()
     getAllProcesses.mockReset()
+    listDockerContainers.mockReset()
+    listDockerImages.mockReset()
+    listDockerVolumes.mockReset()
+    getDockerBuildCache.mockReset()
     getNetworkPorts.mockResolvedValue([])
     getAllProcesses.mockResolvedValue([])
+    listDockerContainers.mockResolvedValue({ status: 'ready', containers: [], message: null })
+    listDockerImages.mockResolvedValue({ status: 'ready', images: [], message: null })
+    listDockerVolumes.mockResolvedValue({ status: 'ready', volumes: [], message: null })
+    getDockerBuildCache.mockResolvedValue({
+      status: 'ready',
+      summary: {
+        totalCount: 0,
+        activeCount: 0,
+        sizeBytes: 0,
+        sizeLabel: '0 B',
+        reclaimableBytes: 0,
+        reclaimableLabel: '0 B',
+      },
+      message: null,
+    })
   })
 
   it('summarizes git porcelain lines', () => {
@@ -124,6 +154,11 @@ describe('devToolsOverview helpers', () => {
       label: 'Java',
       status: 'healthy',
       version: 'openjdk version "21.0.2" 2024-01-16',
+    }))
+    expect(result.docker).toEqual(expect.objectContaining({
+      status: 'healthy',
+      runningContainers: 0,
+      reclaimableBuildCacheLabel: '0 B',
     }))
   })
 })

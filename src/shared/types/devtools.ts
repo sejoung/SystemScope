@@ -9,6 +9,18 @@ export interface DevEnvironmentCheck {
   hint: string | null
 }
 
+export interface DevDockerInsight {
+  status: DevEnvironmentStatus
+  detail: string
+  hint: string | null
+  runningContainers: number
+  stoppedContainers: number
+  unusedImages: number
+  unusedVolumes: number
+  reclaimableBuildCacheBytes: number
+  reclaimableBuildCacheLabel: string
+}
+
 export interface DevWorkspaceLargeFile {
   path: string
   size: number
@@ -44,8 +56,8 @@ export interface DevServerEntry {
 
 export interface DevToolsOverview {
   healthChecks: DevEnvironmentCheck[]
+  docker: DevDockerInsight
   workspaces: DevWorkspaceInsight[]
   devServers: DevServerEntry[]
   scannedAt: number
 }
-

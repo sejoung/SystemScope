@@ -4,6 +4,7 @@ export const KO_MESSAGES = {
     "실시간 시스템 사용량을 확인하고, 알림을 검토한 뒤 스토리지나 프로세스 상세 화면으로 바로 이동할 수 있습니다.",
   Storage: "스토리지",
   Docker: "도커",
+  "Docker & Containers": "도커·컨테이너",
   "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.":
     "Docker 리소스를 정리하기 전에 컨테이너, 이미지, 볼륨, 빌드 캐시 사용량을 먼저 확인합니다.",
   Activity: "활동",
@@ -85,6 +86,13 @@ export const KO_MESSAGES = {
   "Docker Containers": "도커 컨테이너",
   "Docker Volumes": "도커 볼륨",
   "Docker Build Cache": "도커 빌드 캐시",
+  "Docker Runtime": "도커 런타임",
+  "Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.":
+    "전체 Docker 작업 화면을 열기 전에 Docker 사용 가능 여부와 정리 대기 중인 컨테이너 리소스를 빠르게 확인합니다.",
+  "Open Docker": "도커 열기",
+  Stopped: "중지됨",
+  "Unused Images": "미사용 이미지",
+  "Docker summary is not available right now.": "지금은 Docker 요약을 불러올 수 없습니다.",
   "Loading...": "로딩 중...",
   "Data is loading...": "데이터 로딩 중...",
   "Saving...": "저장 중...",

@@ -4,6 +4,7 @@ export const EN_MESSAGES = {
     "Monitor live system usage, review alerts, and jump into storage or process details from one place.",
   Storage: "Storage",
   Docker: "Docker",
+  "Docker & Containers": "Docker & Containers",
   "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.":
     "Inspect container, image, volume, and build cache usage before cleaning up Docker resources.",
   Activity: "Activity",
@@ -80,6 +81,13 @@ export const EN_MESSAGES = {
   "Docker Containers": "Docker Containers",
   "Docker Volumes": "Docker Volumes",
   "Docker Build Cache": "Docker Build Cache",
+  "Docker Runtime": "Docker Runtime",
+  "Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.":
+    "Review whether Docker is available and how much container cleanup work is waiting before opening the full Docker workspace.",
+  "Open Docker": "Open Docker",
+  Stopped: "Stopped",
+  "Unused Images": "Unused Images",
+  "Docker summary is not available right now.": "Docker summary is not available right now.",
   "Loading...": "Loading...",
   "Data is loading...": "Data is loading...",
   "Saving...": "Saving...",

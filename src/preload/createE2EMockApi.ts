@@ -247,6 +247,17 @@ export function createE2EMockApi(): {
     getDevToolsOverview: () =>
       successResult({
         healthChecks: [],
+        docker: {
+          status: 'healthy',
+          detail: 'Docker Engine is ready.',
+          hint: null,
+          runningContainers: 0,
+          stoppedContainers: 0,
+          unusedImages: 0,
+          unusedVolumes: 0,
+          reclaimableBuildCacheBytes: 0,
+          reclaimableBuildCacheLabel: '0 B',
+        },
         workspaces: [],
         devServers: [],
         scannedAt: Date.now()
