@@ -1,9 +1,10 @@
 import { useI18n } from '../../i18n/useI18n'
+import type { TranslateFn } from '@shared/i18n'
 import type { AlertIntelligence, AlertHistoryEntry, AlertPattern } from '@shared/types'
 
 function formatDuration(
   ms: number,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   const totalSeconds = Math.floor(ms / 1000)
   const totalMinutes = Math.floor(totalSeconds / 60)
@@ -21,7 +22,7 @@ function getSeverityDotColor(severity: 'warning' | 'critical'): string {
 
 function formatAlertType(
   type: AlertPattern['type'] | AlertHistoryEntry['type'],
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   switch (type) {
     case 'cpu':

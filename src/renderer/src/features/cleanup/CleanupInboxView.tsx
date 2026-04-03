@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useCleanupStore } from '../../stores/useCleanupStore'
 import { useI18n } from '../../i18n/useI18n'
+import type { TranslateFn } from '@shared/i18n'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
@@ -21,7 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function relativeAge(
   modifiedAt: number,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   const diffMs = Date.now() - modifiedAt
   const days = Math.floor(diffMs / 86_400_000)

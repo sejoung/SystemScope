@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import type React from "react";
 import type { AppLeftoverRegistryItem } from "@shared/types";
-import type { TranslationKey } from "@shared/i18n";
+import type { TranslateFn } from "@shared/i18n";
 import { isAppLeftoverRegistryArray } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
@@ -357,7 +357,7 @@ export function RegistryApps({ refreshToken }: { refreshToken?: number }) {
 
 function renderRegistryDetails(
   item: AppLeftoverRegistryItem,
-  tk: (key: TranslationKey, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ) {
   return (
     <div style={detailPanelStyle}>

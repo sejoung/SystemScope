@@ -5,7 +5,7 @@ import {
   useState,
 } from "react";
 import type React from "react";
-import type { TranslationKey } from "@shared/i18n";
+import type { TranslateFn } from "@shared/i18n";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
@@ -435,7 +435,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
 
 function renderLeftoverDetails(
   item: { path: string; reason: string; risk: string },
-  tk: (input: string | TranslationKey, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ) {
   return (
     <div style={detailPanelStyle}>

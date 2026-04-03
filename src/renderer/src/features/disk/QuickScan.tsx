@@ -3,6 +3,7 @@ import { Accordion } from "../../components/Accordion";
 import { formatBytes } from "../../utils/format";
 import type { ScanCategory, QuickScanFolder } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
+import type { TranslateFn } from "@shared/i18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
 
@@ -388,7 +389,7 @@ export function QuickScan({ onFolderClick, state, onScan }: QuickScanProps) {
 
 function getSafetyTone(
   folder: QuickScanFolder,
-  tk: (text: string) => string,
+  tk: TranslateFn,
 ): {
   label: string;
   color: string;

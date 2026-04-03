@@ -4,7 +4,10 @@ import { MESSAGE_KEYS, type TranslationKey } from './keys'
 
 export type AppLocale = 'ko' | 'en'
 
-type Params = Record<string, string | number>
+export type TranslationParams = Record<string, string | number>
+export type TranslateFn = (input: string | TranslationKey, params?: TranslationParams) => string
+
+type Params = TranslationParams
 type LocaleMessages = Record<string, string>
 
 const EN_LOOKUP = EN_MESSAGES as LocaleMessages

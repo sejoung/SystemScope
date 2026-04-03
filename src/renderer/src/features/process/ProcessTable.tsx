@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { List, type RowComponentProps } from "react-window";
 import type { ProcessInfo, ProcessKillResult } from "@shared/types";
+import type { TranslateFn } from "@shared/i18n";
 import { formatBytes } from "../../utils/format";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
@@ -414,7 +415,7 @@ export function getCpuUsageToneLabel(
 function getProcessSortSummary(
   sortField: SortField,
   sortDir: SortDir,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ) {
   if (sortField === "cpu") {
     return {

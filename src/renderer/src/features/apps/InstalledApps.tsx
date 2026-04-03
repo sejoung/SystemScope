@@ -11,7 +11,7 @@ import type {
   AppRelatedDataItem,
   InstalledApp,
 } from "@shared/types";
-import type { TranslationKey } from "@shared/i18n";
+import type { TranslateFn } from "@shared/i18n";
 import { isInstalledAppArray, isAppRelatedDataArray, isAppRemovalResult } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
@@ -511,7 +511,7 @@ function renderRelatedDataPanel({
   handleToggleRelatedId,
 }: {
   entry: InstalledApp;
-  tk: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  tk: TranslateFn;
   relatedLoadingAppId: string | null;
   relatedDataByAppId: Record<string, AppRelatedDataItem[]>;
   selectedRelatedIdsByAppId: Record<string, string[]>;

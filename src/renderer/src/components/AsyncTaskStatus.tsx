@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useI18n } from "../i18n/useI18n";
+import type { TranslateFn } from "@shared/i18n";
 
 type AsyncTaskStage = "started" | "running" | "completed" | "failed";
 
@@ -110,7 +111,7 @@ export function AsyncTaskStatus({
 
 function getStageLabel(
   stage: AsyncTaskStage,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ) {
   switch (stage) {
     case "started":

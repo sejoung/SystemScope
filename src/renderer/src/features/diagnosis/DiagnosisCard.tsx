@@ -4,6 +4,7 @@ import { useSettingsStore, type AppPage } from '../../stores/useSettingsStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { DiagnosisResult, DiagnosisSeverity } from '@shared/types'
 import { useToast } from '../../components/Toast'
+import type { TranslateFn } from '@shared/i18n'
 
 const MAX_VISIBLE = 4
 
@@ -21,14 +22,14 @@ const severityOrder: Record<DiagnosisSeverity, number> = {
 
 function formatDiagnosisSeverity(
   severity: DiagnosisSeverity,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   return tk(severity)
 }
 
 function formatDiagnosisCategory(
   category: string,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   const labels: Record<string, string> = {
     memory_pressure: 'Memory Pressure',
@@ -163,7 +164,7 @@ function DiagnosisItem({
   onToggle: () => void
   onNavigate: (page: string) => void
   onActionError: (message: string) => void
-  tk: (text: string, params?: Record<string, string | number>) => string
+  tk: TranslateFn
 }) {
   return (
     <div style={itemContainerStyle}>

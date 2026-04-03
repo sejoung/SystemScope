@@ -4,6 +4,7 @@ import { useToast } from "../../components/Toast";
 import { usePortFinderStore } from "../../stores/usePortFinderStore";
 import { getStateStyle } from "./portStateStyles";
 import type { PortInfo, ProcessKillResult } from "@shared/types";
+import type { TranslateFn } from "@shared/i18n";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
@@ -754,7 +755,7 @@ export function PortConflictCenterPanel({
   conflicts: PortConflict[];
   onKill: (port: PortInfo) => Promise<void>;
   onInspectPort: (port: number) => void;
-  tk: (text: string, params?: Record<string, string | number>) => string;
+  tk: TranslateFn;
 }) {
   return (
     <div style={conflictCardStyle}>

@@ -1,6 +1,7 @@
 import { useSettingsStore, type AppPage } from '../../stores/useSettingsStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { DiagnosisResult, DiagnosisSeverity } from '@shared/types'
+import type { TranslateFn } from '@shared/i18n'
 
 const severityColors: Record<DiagnosisSeverity, string> = {
   critical: 'var(--accent-red)',
@@ -20,14 +21,14 @@ interface DiagnosisDetailProps {
 
 function formatDiagnosisSeverity(
   severity: DiagnosisSeverity,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   return tk(severity)
 }
 
 function formatDiagnosisCategory(
   category: string,
-  tk: (text: string, params?: Record<string, string | number>) => string,
+  tk: TranslateFn,
 ): string {
   const labels: Record<string, string> = {
     memory_pressure: 'Memory Pressure',
