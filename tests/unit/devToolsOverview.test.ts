@@ -113,6 +113,83 @@ describe('devToolsOverview helpers', () => {
     expect(detectDevServerKind(port, processInfo)).toBe('Vite')
   })
 
+  it('classifies Python and JVM development server kinds', () => {
+    const pythonPort: PortInfo = {
+      protocol: 'tcp',
+      localAddress: '127.0.0.1',
+      localPort: '8000',
+      peerAddress: '',
+      peerPort: '*',
+      state: 'LISTEN',
+      pid: 410,
+      process: 'python',
+      localPortNum: 8000,
+    }
+    const pythonProcess: ProcessInfo = {
+      pid: 410,
+      name: 'python',
+      cpu: 0,
+      memory: 0,
+      memoryBytes: 0,
+      command: 'python -m uvicorn app.main:app --reload',
+    }
+    const jvmPort: PortInfo = {
+      protocol: 'tcp',
+      localAddress: '127.0.0.1',
+      localPort: '8080',
+      peerAddress: '',
+      peerPort: '*',
+      state: 'LISTEN',
+      pid: 510,
+      process: 'java',
+      localPortNum: 8080,
+    }
+    const jvmProcess: ProcessInfo = {
+      pid: 510,
+      name: 'java',
+      cpu: 0,
+      memory: 0,
+      memoryBytes: 0,
+      command: 'java -jar build/libs/app.jar org.springframework.boot.loader.launch.JarLauncher',
+    }
+
+    expect(detectDevServerKind(pythonPort, pythonProcess)).toBe('FastAPI / Uvicorn')
+    expect(detectDevServerKind(jvmPort, jvmProcess)).toBe('Spring Boot')
+  })
+
+  it('classifies Rust runtime commands beyond cargo run', () => {
+    const rustPort: PortInfo = {
+      protocol: 'tcp',
+      localAddress: '127.0.0.1',
+      localPort: '3000',
+      peerAddress: '',
+      peerPort: '*',
+      state: 'LISTEN',
+      pid: 610,
+      process: 'api',
+      localPortNum: 3000,
+    }
+    const targetProcess: ProcessInfo = {
+      pid: 610,
+      name: 'api',
+      cpu: 0,
+      memory: 0,
+      memoryBytes: 0,
+      command: '/Users/test/work/rust-api/target/debug/api',
+    }
+    const trunkProcess: ProcessInfo = {
+      pid: 611,
+      name: 'cargo',
+      cpu: 0,
+      memory: 0,
+      memoryBytes: 0,
+      command: 'trunk serve --open',
+    }
+
+    expect(detectDevServerKind(rustPort, targetProcess)).toBe('Rust App')
+    expect(detectDevServerKind(rustPort, trunkProcess)).toBe('Trunk')
+  })
+
   it('attaches workspace matches to detected development servers', () => {
     const ports: PortInfo[] = [
       {
@@ -341,6 +418,107 @@ describe('devToolsOverview helpers', () => {
       workspacePath: workspaceRoot,
       workspaceName: path.basename(workspaceRoot),
       kind: 'Vite',
+    }))
+  })
+
+  it('detects non-Node dependency tooling for Python, JVM, Go, and Rust workspaces', async () => {
+    const baseRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-devtools-multi-'))
+    const pythonRoot = path.join(baseRoot, 'python-api')
+    const jvmRoot = path.join(baseRoot, 'spring-app')
+    const goRoot = path.join(baseRoot, 'go-api')
+    const rustRoot = path.join(baseRoot, 'rust-api')
+
+    await fs.mkdir(pythonRoot, { recursive: true })
+    await fs.mkdir(jvmRoot, { recursive: true })
+    await fs.mkdir(goRoot, { recursive: true })
+    await fs.mkdir(rustRoot, { recursive: true })
+
+    await fs.writeFile(path.join(pythonRoot, 'pyproject.toml'), '[project]\nname="api"')
+    await fs.writeFile(path.join(pythonRoot, 'uv.lock'), '')
+    await fs.mkdir(path.join(pythonRoot, '.venv'))
+    await fs.writeFile(path.join(jvmRoot, 'build.gradle.kts'), 'plugins {}')
+    await fs.mkdir(path.join(jvmRoot, '.gradle'))
+    await fs.writeFile(path.join(goRoot, 'go.mod'), 'module example.com/app')
+    await fs.writeFile(path.join(rustRoot, 'Cargo.toml'), '[package]\nname="app"\nversion="0.1.0"')
+    await fs.mkdir(path.join(rustRoot, 'target'))
+
+    getActiveProfile.mockReturnValue({
+      id: 'profile-2',
+      workspacePaths: [pythonRoot, jvmRoot, goRoot, rustRoot],
+    })
+    runExternalCommand.mockImplementation(async (command: string, args: string[], options?: { cwd?: string }) => {
+      if (command === 'git' && args[0] === 'rev-parse') {
+        return { stdout: `${options?.cwd ?? ''}\n`, stderr: '' }
+      }
+      if (command === 'git' && ['branch', 'status', 'stash', 'log'].includes(args[0] ?? '')) {
+        return { stdout: '', stderr: '' }
+      }
+      if (command === 'java') {
+        return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.workspaces.find((workspace) => workspace.path === pythonRoot)).toEqual(
+      expect.objectContaining({
+        packageManager: 'uv',
+        stacks: expect.arrayContaining(['Python']),
+        artifactDirectories: expect.arrayContaining(['.venv']),
+      }),
+    )
+    expect(result.workspaces.find((workspace) => workspace.path === jvmRoot)).toEqual(
+      expect.objectContaining({
+        packageManager: 'gradle',
+        stacks: expect.arrayContaining(['JVM']),
+        artifactDirectories: expect.arrayContaining(['.gradle']),
+      }),
+    )
+    expect(result.workspaces.find((workspace) => workspace.path === goRoot)).toEqual(
+      expect.objectContaining({
+        packageManager: 'go',
+        stacks: expect.arrayContaining(['Go']),
+      }),
+    )
+    expect(result.workspaces.find((workspace) => workspace.path === rustRoot)).toEqual(
+      expect.objectContaining({
+        packageManager: 'cargo',
+        stacks: expect.arrayContaining(['Rust']),
+        artifactDirectories: expect.arrayContaining(['target']),
+      }),
+    )
+  })
+
+  it('detects Rust workspaces when Cargo.toml exists one level below the tracked folder', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-rust-nested-'))
+    const crateRoot = path.join(root, 'crates', 'api')
+    await fs.mkdir(crateRoot, { recursive: true })
+    await fs.writeFile(path.join(crateRoot, 'Cargo.toml'), '[package]\nname="api"\nversion="0.1.0"')
+
+    getActiveProfile.mockReturnValue({
+      id: 'profile-rust-nested',
+      workspacePaths: [path.join(root, 'crates')],
+    })
+    runExternalCommand.mockImplementation(async (command: string, args: string[], options?: { cwd?: string }) => {
+      if (command === 'git' && args[0] === 'rev-parse') {
+        return { stdout: `${options?.cwd ?? ''}\n`, stderr: '' }
+      }
+      if (command === 'git' && ['branch', 'status', 'stash', 'log'].includes(args[0] ?? '')) {
+        return { stdout: '', stderr: '' }
+      }
+      if (command === 'java') {
+        return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.workspaces[0]).toEqual(expect.objectContaining({
+      path: path.join(root, 'crates'),
+      packageManager: 'cargo',
+      stacks: expect.arrayContaining(['Rust']),
     }))
   })
 })

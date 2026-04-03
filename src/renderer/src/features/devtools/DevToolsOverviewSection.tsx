@@ -291,7 +291,7 @@ export function DevToolsOverviewSection({
                     <div style={workspaceMetaColumnStyle}>
                       <div style={workspaceMetaWrapStyle}>
                         <MetaPill label={t('Branch')} value={workspace.branch ?? t('No repo')} />
-                        <MetaPill label={t('Package Manager')} value={workspace.packageManager ?? '-'} />
+                        <MetaPill label={t('Dependency Tooling')} value={workspace.packageManager ?? '-'} />
                         <MetaPill label={t('Stacks')} value={workspace.stacks.join(', ') || '-'} />
                         <MetaPill label={t('Manifests')} value={String(workspace.manifestCount)} />
                         <MetaPill label={t('Env File')} value={workspace.hasEnvFile ? t('Yes') : t('No')} />
@@ -372,8 +372,8 @@ export function DevToolsOverviewSection({
       {sections.includes('servers') ? (
         <section style={cardStyle}>
           <SectionHeader
-            title={t('Dev Servers')}
-            description={t('Detect active local development servers and data services from current listening ports.')}
+            title={t('Runtime Services')}
+            description={t('Detect active local development servers, app runtimes, and data services from current listening ports.')}
           />
           <div style={{ display: 'grid', gap: 8 }}>
             {(compact ? (overview?.devServers ?? []).slice(0, 4) : (overview?.devServers ?? [])).map((server) => (

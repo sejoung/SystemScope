@@ -98,6 +98,10 @@ export const EN_MESSAGES = {
   "Build Artifacts": "Build Artifacts",
   "Artifact": "Artifact",
   "Dev Server Ports": "Dev Server Ports",
+  "Dependency Tooling": "Dependency Tooling",
+  "Runtime Services": "Runtime Services",
+  "Detect active local development servers, app runtimes, and data services from current listening ports.":
+    "Detect active local development servers, app runtimes, and data services from current listening ports.",
   "Yes": "Yes",
   "No": "No",
   "Open Docker": "Open Docker",

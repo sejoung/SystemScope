@@ -103,6 +103,10 @@ export const KO_MESSAGES = {
   "Build Artifacts": "빌드 산출물",
   Artifact: "산출물",
   "Dev Server Ports": "개발 서버 포트",
+  "Dependency Tooling": "의존성 도구",
+  "Runtime Services": "런타임 서비스",
+  "Detect active local development servers, app runtimes, and data services from current listening ports.":
+    "현재 listening port를 기준으로 활성 개발 서버, 애플리케이션 런타임, 데이터 서비스를 감지합니다.",
   Yes: "예",
   No: "아니오",
   "Open Docker": "도커 열기",

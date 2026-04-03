@@ -317,13 +317,13 @@ async function detectWorkspaceProjectSignals(workspacePath: string): Promise<Pic
 >> {
   const fileChecks = await Promise.all([
     pathExists(path.join(workspacePath, 'package.json')),
-    pathExists(path.join(workspacePath, 'pyproject.toml')),
-    pathExists(path.join(workspacePath, 'requirements.txt')),
-    pathExists(path.join(workspacePath, 'pom.xml')),
-    pathExists(path.join(workspacePath, 'build.gradle')),
-    pathExists(path.join(workspacePath, 'build.gradle.kts')),
-    pathExists(path.join(workspacePath, 'Cargo.toml')),
-    pathExists(path.join(workspacePath, 'go.mod')),
+    pathExistsNearWorkspace(workspacePath, ['pyproject.toml']),
+    pathExistsNearWorkspace(workspacePath, ['requirements.txt']),
+    pathExistsNearWorkspace(workspacePath, ['pom.xml']),
+    pathExistsNearWorkspace(workspacePath, ['build.gradle']),
+    pathExistsNearWorkspace(workspacePath, ['build.gradle.kts']),
+    pathExistsNearWorkspace(workspacePath, ['Cargo.toml']),
+    pathExistsNearWorkspace(workspacePath, ['go.mod']),
     pathExists(path.join(workspacePath, 'tsconfig.json')),
     pathExists(path.join(workspacePath, 'jsconfig.json')),
     pathExists(path.join(workspacePath, '.env')),
@@ -417,10 +417,23 @@ async function detectPackageManager(workspacePath: string): Promise<string | nul
     ['package-lock.json', 'npm'],
     ['bun.lockb', 'bun'],
     ['bun.lock', 'bun'],
+    ['uv.lock', 'uv'],
+    ['poetry.lock', 'poetry'],
+    ['Pipfile.lock', 'pipenv'],
+    ['Pipfile', 'pipenv'],
+    ['requirements.txt', 'pip'],
+    ['pyproject.toml', 'python'],
+    ['mvnw', 'maven'],
+    ['pom.xml', 'maven'],
+    ['gradlew', 'gradle'],
+    ['build.gradle', 'gradle'],
+    ['build.gradle.kts', 'gradle'],
+    ['Cargo.toml', 'cargo'],
+    ['go.mod', 'go'],
   ] as const
 
   for (const [fileName, label] of candidates) {
-    if (await pathExists(path.join(workspacePath, fileName))) {
+    if (await pathExistsNearWorkspace(workspacePath, [fileName])) {
       return label
     }
   }
@@ -538,15 +551,32 @@ export function detectDevServerKind(port: PortInfo, processInfo?: ProcessInfo | 
   const command = (processInfo?.command ?? '').toLowerCase()
   const portNumber = port.localPortNum || Number(port.localPort) || 0
 
+  if (command.includes('storybook')) return 'Storybook'
+  if (command.includes('turbopack') || command.includes('next-server')) return 'Turbopack'
   if (command.includes('vite') || portNumber === 5173 || portNumber === 4173) return 'Vite'
   if (command.includes('next') || command.includes('next dev')) return 'Next.js'
   if (command.includes('metro') || command.includes('react-native') || portNumber === 8081) return 'Metro / React Native'
+  if (command.includes('uvicorn') || command.includes('fastapi')) return 'FastAPI / Uvicorn'
+  if (command.includes('gunicorn')) return 'Gunicorn'
+  if (command.includes('django') || command.includes('manage.py runserver')) return 'Django'
+  if (command.includes('flask')) return 'Flask'
+  if (command.includes('spring-boot') || command.includes('springboot') || command.includes('org.springframework.boot')) return 'Spring Boot'
+  if (command.includes('gradle') && (command.includes('bootrun') || command.includes('run'))) return 'Gradle App'
+  if (command.includes('rails server') || processName.includes('puma')) return 'Rails'
+  if (command.includes('mix phx.server') || processName.includes('beam.smp')) return 'Phoenix'
+  if (command.includes('laravel') || command.includes('artisan serve')) return 'Laravel'
+  if (command.includes('cargo watch') || command.includes('cargo-watch')) return 'Rust Watch'
+  if (command.includes('trunk serve')) return 'Trunk'
+  if (command.includes('wasm-pack')) return 'wasm-pack'
+  if (command.includes('actix') || command.includes('axum') || command.includes('rocket')) return 'Rust Web App'
   if (processName.includes('postgres') || portNumber === 5432) return 'PostgreSQL'
   if (processName.includes('redis') || portNumber === 6379) return 'Redis'
   if (processName.includes('docker') || command.includes('docker-proxy')) return 'Docker Service'
   if (command.includes('webpack')) return 'Webpack Dev Server'
   if (command.includes('astro')) return 'Astro'
   if (command.includes('nuxt')) return 'Nuxt'
+  if (command.includes('cargo run') || command.includes('/target/debug/') || command.includes('/target/release/')) return 'Rust App'
+  if (command.includes('go run') || command.includes('/go-build')) return 'Go App'
   if (
     portNumber === 3000 ||
     portNumber === 3001 ||
@@ -652,4 +682,28 @@ async function pathExists(targetPath: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+async function pathExistsNearWorkspace(workspacePath: string, fileNames: string[]): Promise<boolean> {
+  for (const fileName of fileNames) {
+    if (await pathExists(path.join(workspacePath, fileName))) {
+      return true
+    }
+  }
+
+  try {
+    const entries = await fs.readdir(workspacePath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+      for (const fileName of fileNames) {
+        if (await pathExists(path.join(workspacePath, entry.name, fileName))) {
+          return true
+        }
+      }
+    }
+  } catch {
+    return false
+  }
+
+  return false
 }
