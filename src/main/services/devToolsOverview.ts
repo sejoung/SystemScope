@@ -316,18 +316,18 @@ async function detectWorkspaceProjectSignals(workspacePath: string): Promise<Pic
   'stacks' | 'hasEnvFile' | 'hasDockerConfig' | 'hasTypeScriptConfig' | 'manifestCount' | 'artifactDirectories'
 >> {
   const fileChecks = await Promise.all([
-    pathExists(path.join(workspacePath, 'package.json')),
-    pathExistsNearWorkspace(workspacePath, ['pyproject.toml']),
-    pathExistsNearWorkspace(workspacePath, ['requirements.txt']),
-    pathExistsNearWorkspace(workspacePath, ['pom.xml']),
-    pathExistsNearWorkspace(workspacePath, ['build.gradle']),
-    pathExistsNearWorkspace(workspacePath, ['build.gradle.kts']),
-    pathExistsNearWorkspace(workspacePath, ['Cargo.toml']),
-    pathExistsNearWorkspace(workspacePath, ['go.mod']),
-    pathExists(path.join(workspacePath, 'tsconfig.json')),
-    pathExists(path.join(workspacePath, 'jsconfig.json')),
-    pathExists(path.join(workspacePath, '.env')),
-    pathExists(path.join(workspacePath, '.env.local')),
+    pathExistsNearWorkspace(workspacePath, ['package.json'], 2),
+    pathExistsNearWorkspace(workspacePath, ['pyproject.toml'], 2),
+    pathExistsNearWorkspace(workspacePath, ['requirements.txt'], 2),
+    pathExistsNearWorkspace(workspacePath, ['pom.xml'], 2),
+    pathExistsNearWorkspace(workspacePath, ['build.gradle'], 2),
+    pathExistsNearWorkspace(workspacePath, ['build.gradle.kts'], 2),
+    pathExistsNearWorkspace(workspacePath, ['Cargo.toml'], 2),
+    pathExistsNearWorkspace(workspacePath, ['go.mod'], 2),
+    pathExistsNearWorkspace(workspacePath, ['tsconfig.json'], 2),
+    pathExistsNearWorkspace(workspacePath, ['jsconfig.json'], 2),
+    pathExistsNearWorkspace(workspacePath, ['.env'], 2),
+    pathExistsNearWorkspace(workspacePath, ['.env.local'], 2),
     pathExists(path.join(workspacePath, 'Dockerfile')),
     pathExists(path.join(workspacePath, 'docker-compose.yml')),
     pathExists(path.join(workspacePath, 'docker-compose.yaml')),
@@ -339,6 +339,7 @@ async function detectWorkspaceProjectSignals(workspacePath: string): Promise<Pic
     pathExists(path.join(workspacePath, 'next.config.ts')),
     pathExists(path.join(workspacePath, 'astro.config.mjs')),
     pathExists(path.join(workspacePath, 'nuxt.config.ts')),
+    pathExistsNearWorkspace(workspacePath, ['tauri.conf.json', 'tauri.conf.json5', 'tauri.conf.toml'], 2),
   ])
 
   const [
@@ -365,13 +366,15 @@ async function detectWorkspaceProjectSignals(workspacePath: string): Promise<Pic
     hasNextConfigTs,
     hasAstroConfig,
     hasNuxtConfig,
+    hasTauriConfig,
   ] = fileChecks
 
   const artifactChecks = await Promise.all(
-    DEV_ARTIFACT_DIRS.map(async (dirName) => ((await pathExists(path.join(workspacePath, dirName))) ? dirName : null)),
+    DEV_ARTIFACT_DIRS.map(async (dirName) => ((await pathExistsNearWorkspace(workspacePath, [dirName], 2, true)) ? dirName : null)),
   )
 
   const stacks = [
+    hasTauriConfig ? 'Tauri' : null,
     hasViteConfigTs || hasViteConfigJs ? 'Vite' : null,
     hasNextConfigJs || hasNextConfigMjs || hasNextConfigTs ? 'Next.js' : null,
     hasAstroConfig ? 'Astro' : null,
@@ -433,7 +436,7 @@ async function detectPackageManager(workspacePath: string): Promise<string | nul
   ] as const
 
   for (const [fileName, label] of candidates) {
-    if (await pathExistsNearWorkspace(workspacePath, [fileName])) {
+    if (await pathExistsNearWorkspace(workspacePath, [fileName], 2)) {
       return label
     }
   }
@@ -684,26 +687,45 @@ async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
-async function pathExistsNearWorkspace(workspacePath: string, fileNames: string[]): Promise<boolean> {
-  for (const fileName of fileNames) {
-    if (await pathExists(path.join(workspacePath, fileName))) {
-      return true
+async function pathExistsNearWorkspace(
+  workspacePath: string,
+  fileNames: string[],
+  maxDepth = 1,
+  matchDirectory = false,
+): Promise<boolean> {
+  async function search(currentPath: string, depth: number): Promise<boolean> {
+    for (const fileName of fileNames) {
+      const candidatePath = path.join(currentPath, fileName)
+      if (matchDirectory) {
+        try {
+          const stat = await fs.stat(candidatePath)
+          if (stat.isDirectory()) return true
+        } catch {
+          // continue
+        }
+      } else if (await pathExists(candidatePath)) {
+        return true
+      }
     }
-  }
 
-  try {
-    const entries = await fs.readdir(workspacePath, { withFileTypes: true })
-    for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith('.')) continue
-      for (const fileName of fileNames) {
-        if (await pathExists(path.join(workspacePath, entry.name, fileName))) {
+    if (depth >= maxDepth) {
+      return false
+    }
+
+    try {
+      const entries = await fs.readdir(currentPath, { withFileTypes: true })
+      for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name === 'node_modules' || entry.name === 'target') continue
+        if (await search(path.join(currentPath, entry.name), depth + 1)) {
           return true
         }
       }
+    } catch {
+      return false
     }
-  } catch {
+
     return false
   }
 
-  return false
+  return search(workspacePath, 0)
 }

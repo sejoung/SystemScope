@@ -521,4 +521,41 @@ describe('devToolsOverview helpers', () => {
       stacks: expect.arrayContaining(['Rust']),
     }))
   })
+
+  it('detects Tauri Rust workspaces when src-tauri is nested below the tracked folder', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-tauri-nested-'))
+    const appRoot = path.join(root, 'apps', 'desktop')
+    const tauriRoot = path.join(appRoot, 'src-tauri')
+    await fs.mkdir(tauriRoot, { recursive: true })
+    await fs.writeFile(path.join(appRoot, 'package.json'), '{"name":"desktop"}')
+    await fs.writeFile(path.join(tauriRoot, 'Cargo.toml'), '[package]\nname="desktop"\nversion="0.1.0"')
+    await fs.writeFile(path.join(tauriRoot, 'tauri.conf.json'), '{"build":{}}')
+    await fs.mkdir(path.join(tauriRoot, 'target'))
+
+    getActiveProfile.mockReturnValue({
+      id: 'profile-tauri-nested',
+      workspacePaths: [path.join(root, 'apps')],
+    })
+    runExternalCommand.mockImplementation(async (command: string, args: string[], options?: { cwd?: string }) => {
+      if (command === 'git' && args[0] === 'rev-parse') {
+        return { stdout: `${options?.cwd ?? ''}\n`, stderr: '' }
+      }
+      if (command === 'git' && ['branch', 'status', 'stash', 'log'].includes(args[0] ?? '')) {
+        return { stdout: '', stderr: '' }
+      }
+      if (command === 'java') {
+        return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.workspaces[0]).toEqual(expect.objectContaining({
+      path: path.join(root, 'apps'),
+      packageManager: 'cargo',
+      stacks: expect.arrayContaining(['Tauri', 'Rust', 'Node.js']),
+      artifactDirectories: expect.arrayContaining(['target']),
+    }))
+  })
 })
