@@ -27,6 +27,19 @@ Renderer의 최소 폭 대응은 화면별 임시 분기보다 공통 규칙을 
 
 새 임계값이 필요하면 화면 내부 상수로 만들지 말고 `RESPONSIVE_WIDTH`에 추가합니다.
 
+현재 기준값:
+
+| Key | Threshold | Used for |
+|------|-----------|----------|
+| `installedAppsCompact` | `980` | Installed Apps compact card layout |
+| `leftoverAppsCompact` | `1080` | Leftover Data compact card layout |
+| `registryAppsCompact` | `1040` | Registry Cleanup compact card layout |
+| `listeningPortsCompact` | `1120` | Port Finder compact card layout |
+| `processTableCompact` | `980` | Processes compact card layout |
+| `portWatchCompact` | `960` | Port Watch compact layout |
+| `dockerPageCompact` | `980` | Docker page tabs and list screens compact layout |
+| `settingsPageCompact` | `920` | Settings page header and save bar compact layout |
+
 ```ts
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 
