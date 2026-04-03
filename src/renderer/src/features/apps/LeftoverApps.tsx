@@ -4,9 +4,12 @@ import {
   useMemo,
   useState,
 } from "react";
+import type React from "react";
+import type { TranslationKey } from "@shared/i18n";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
+import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { useVisibleIds } from "../../hooks/useVisibleIds";
 import { useLeftoverAppsStore } from "../../stores/useLeftoverAppsStore";
 import { StatusMessage } from "../../components/StatusMessage";
@@ -51,9 +54,16 @@ import {
   titleStyle,
 } from "./appsShared";
 
+const LEFTOVER_APPS_COMPACT_WIDTH = 1080;
+
+export function shouldUseLeftoverAppsCompactLayout(width: number): boolean {
+  return width < LEFTOVER_APPS_COMPACT_WIDTH;
+}
+
 export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
   const { t, tk } = useI18n();
+  const [containerRef, containerWidth] = useContainerWidth(1200);
   const leftoverItems = useLeftoverAppsStore((state) => state.items);
   const loadError = useLeftoverAppsStore((state) => state.loadError);
   const refreshing = useLeftoverAppsStore((state) => state.refreshing);
@@ -143,6 +153,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
     () => filteredLeftovers.filter((item) => selectedIds.includes(item.id)),
     [filteredLeftovers, selectedIds],
   );
+  const compactLayout = shouldUseLeftoverAppsCompactLayout(containerWidth);
 
   const handleRefresh = async () => {
     await refreshLeftovers();
@@ -182,7 +193,7 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
   };
 
   return (
-    <section style={sectionStyle}>
+    <section style={sectionStyle} ref={containerRef}>
       <div style={headerStyle}>
         <div style={titleRowStyle}>
           <span style={titleStyle}>{tk("apps.tab.leftover")}</span>
@@ -246,107 +257,323 @@ export function LeftoverApps({ refreshToken }: { refreshToken?: number }) {
         <StatusMessage message={tk("apps.empty.leftover")} />
       ) : (
         <>
-          <StatusMessage message={tk("apps.danger.leftover")} />
-          <div style={tableWrapStyle}>
-            <table style={{ ...tableStyle, minWidth: "980px" }}>
-              <thead>
-                <tr style={stickyHeaderRowStyle}>
-                  <th style={{ ...thStyle, width: "44px" }}>
-                    <input
-                      type="checkbox"
-                      checked={allFilteredChecked}
-                      disabled={filteredLeftovers.length === 0}
-                      onChange={(event) => {
-                        if (event.target.checked) {
-                          setSelectedIds((current) => {
-                            const next = new Set(current);
-                            filteredLeftovers.forEach((item) => next.add(item.id));
-                            return [...next];
-                          });
-                        } else {
-                          setSelectedIds((current) =>
-                            current.filter((id) => !filteredLeftovers.some((item) => item.id === id)),
-                          );
-                        }
-                      }}
-                    />
-                  </th>
-                  <th style={thStyle}>{tk("apps.table.name")}</th>
-                  <th style={thStyle}>{tk("apps.confidence.all")}</th>
-                  <th style={thStyle}>{tk("apps.table.platform")}</th>
-                  <th style={{ ...thStyle, textAlign: "right" }}>{t("Size")}</th>
-                  <th style={thStyle}>{tk("apps.table.location")}</th>
-                  <th style={{ ...thStyle, textAlign: "right", width: "180px" }}>{tk("apps.table.actions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeftovers.map((item) => {
-                  const checked = selectedIds.includes(item.id);
-                  return (
-                    <Fragment key={item.id}>
-                      <tr ref={observeRow(item.id)} style={rowStyle}>
-                        <td style={tdStyle}>
-                          <input id={`leftover-${item.id}`} type="checkbox" checked={checked} onChange={() => handleToggleId(item.id)} />
-                        </td>
-                        <td style={tdStyle}>
-                          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                            <label htmlFor={`leftover-${item.id}`} style={{ cursor: "pointer" }}>{item.appName}</label>
-                          </div>
+          <div style={{ marginBottom: "14px" }}>
+            <StatusMessage message={tk("apps.danger.leftover")} />
+          </div>
+          {compactLayout ? (
+            <div style={compactListStyle}>
+              <div style={compactBulkBarStyle}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <input
+                    type="checkbox"
+                    checked={allFilteredChecked}
+                    disabled={filteredLeftovers.length === 0}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        setSelectedIds((current) => {
+                          const next = new Set(current);
+                          filteredLeftovers.forEach((item) => next.add(item.id));
+                          return [...next];
+                        });
+                      } else {
+                        setSelectedIds((current) =>
+                          current.filter((id) => !filteredLeftovers.some((item) => item.id === id)),
+                        );
+                      }
+                    }}
+                  />
+                  <span style={compactBulkTextStyle}>
+                    {tk("common.selected", { count: selectedFilteredCount })}
+                  </span>
+                </label>
+              </div>
+
+              {filteredLeftovers.map((item) => {
+                const checked = selectedIds.includes(item.id);
+                return (
+                  <div key={item.id} ref={observeRow(item.id)} style={compactCardStyle}>
+                    <div style={compactCardHeaderStyle}>
+                      <label htmlFor={`leftover-card-${item.id}`} style={compactCardTitleWrapStyle}>
+                        <input
+                          id={`leftover-card-${item.id}`}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => handleToggleId(item.id)}
+                        />
+                        <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
+                          <div style={compactTitleStyle}>{item.appName}</div>
                           <div style={subtleTextStyle}>{item.label}</div>
-                        </td>
-                        <td style={tdStyle}>
-                          <Badge text={getConfidenceLabel(item.confidence, tk)} color={getConfidenceColor(item.confidence)} />
-                        </td>
-                        <td style={tdStyle}>
-                          <Badge text={item.platform === "mac" ? "macOS" : "Windows"} color={item.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"} />
-                        </td>
-                        <td style={{ ...monoCellStyle, textAlign: "right" }}>
-                          {item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : <span style={pendingValueStyle}>{t("Calculating...")}</span>}
-                        </td>
-                        <td style={{ ...tdStyle, maxWidth: "340px" }}>
-                          <CopyableValue value={item.path} fontSize="12px" color="var(--text-muted)" multiline maxWidth="340px" />
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
-                          <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
-                            {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
-                          </button>
-                          <button type="button" onClick={() => void handleOpenPath(item.path)} style={openBtn}>
-                            {tk("apps.action.open")}
-                          </button>
-                        </td>
-                      </tr>
-                      {expandedId === item.id ? (
-                        <tr style={rowStyle}>
-                          <td colSpan={7} style={{ padding: "0 8px 12px 8px" }}>
-                            <div style={detailPanelStyle}>
-                              <div style={detailGridStyle}>
-                                <div style={detailBlockStyle}>
-                                  <strong style={detailLabelStyle}>{tk("apps.table.location")}</strong>
-                                  <div style={detailValueStyle}>
-                                    <CopyableValue value={item.path} fontSize="12px" color="var(--text-secondary)" multiline />
-                                  </div>
-                                </div>
-                                <div style={detailBlockStyle}>
-                                  <strong style={detailLabelStyle}>{tk("apps.reason.why")}</strong>
-                                  <div style={detailsBodyTextStyle}>{t(item.reason)}</div>
-                                </div>
-                                <div style={detailBlockStyle}>
-                                  <strong style={detailLabelStyle}>{tk("apps.reason.risk")}</strong>
-                                  <div style={detailsBodyTextStyle}>{t(item.risk)}</div>
-                                </div>
-                              </div>
+                        </div>
+                      </label>
+                      <div style={compactBadgeStackStyle}>
+                        <Badge text={getConfidenceLabel(item.confidence, tk)} color={getConfidenceColor(item.confidence)} />
+                        <Badge text={item.platform === "mac" ? "macOS" : "Windows"} color={item.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"} />
+                      </div>
+                    </div>
+
+                    <div style={compactMetaGridStyle}>
+                      <CompactMeta label={t("Size")} value={item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : t("Calculating...")} mono={item.sizeBytes !== undefined} muted={item.sizeBytes === undefined} />
+                      <CompactMeta label={tk("apps.table.location")} value={item.path} multiline />
+                    </div>
+
+                    <div style={compactActionsStyle}>
+                      <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
+                        {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                      </button>
+                      <button type="button" onClick={() => void handleOpenPath(item.path)} style={openBtn}>
+                        {tk("apps.action.open")}
+                      </button>
+                    </div>
+
+                    {expandedId === item.id ? (
+                      <div style={{ marginTop: "4px" }}>
+                        {renderLeftoverDetails(item, tk, t)}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={tableWrapStyle}>
+              <table style={{ ...tableStyle, minWidth: "980px" }}>
+                <thead>
+                  <tr style={stickyHeaderRowStyle}>
+                    <th style={{ ...thStyle, width: "44px" }}>
+                      <input
+                        type="checkbox"
+                        checked={allFilteredChecked}
+                        disabled={filteredLeftovers.length === 0}
+                        onChange={(event) => {
+                          if (event.target.checked) {
+                            setSelectedIds((current) => {
+                              const next = new Set(current);
+                              filteredLeftovers.forEach((item) => next.add(item.id));
+                              return [...next];
+                            });
+                          } else {
+                            setSelectedIds((current) =>
+                              current.filter((id) => !filteredLeftovers.some((item) => item.id === id)),
+                            );
+                          }
+                        }}
+                      />
+                    </th>
+                    <th style={thStyle}>{tk("apps.table.name")}</th>
+                    <th style={thStyle}>{tk("apps.confidence.all")}</th>
+                    <th style={thStyle}>{tk("apps.table.platform")}</th>
+                    <th style={{ ...thStyle, textAlign: "right" }}>{t("Size")}</th>
+                    <th style={thStyle}>{tk("apps.table.location")}</th>
+                    <th style={{ ...thStyle, textAlign: "right", width: "180px" }}>{tk("apps.table.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeftovers.map((item) => {
+                    const checked = selectedIds.includes(item.id);
+                    return (
+                      <Fragment key={item.id}>
+                        <tr ref={observeRow(item.id)} style={rowStyle}>
+                          <td style={tdStyle}>
+                            <input id={`leftover-${item.id}`} type="checkbox" checked={checked} onChange={() => handleToggleId(item.id)} />
+                          </td>
+                          <td style={tdStyle}>
+                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                              <label htmlFor={`leftover-${item.id}`} style={{ cursor: "pointer" }}>{item.appName}</label>
                             </div>
+                            <div style={subtleTextStyle}>{item.label}</div>
+                          </td>
+                          <td style={tdStyle}>
+                            <Badge text={getConfidenceLabel(item.confidence, tk)} color={getConfidenceColor(item.confidence)} />
+                          </td>
+                          <td style={tdStyle}>
+                            <Badge text={item.platform === "mac" ? "macOS" : "Windows"} color={item.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"} />
+                          </td>
+                          <td style={{ ...monoCellStyle, textAlign: "right" }}>
+                            {item.sizeBytes !== undefined ? formatBytes(item.sizeBytes) : <span style={pendingValueStyle}>{t("Calculating...")}</span>}
+                          </td>
+                          <td style={{ ...tdStyle, maxWidth: "340px" }}>
+                            <CopyableValue value={item.path} fontSize="12px" color="var(--text-muted)" multiline maxWidth="340px" />
+                          </td>
+                          <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                            <button type="button" onClick={() => setExpandedId((c) => c === item.id ? null : item.id)} style={openBtn}>
+                              {expandedId === item.id ? tk("apps.action.hide_data") : t("Details")}
+                            </button>
+                            <button type="button" onClick={() => void handleOpenPath(item.path)} style={openBtn}>
+                              {tk("apps.action.open")}
+                            </button>
                           </td>
                         </tr>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {expandedId === item.id ? (
+                          <tr style={rowStyle}>
+                            <td colSpan={7} style={{ padding: "0 8px 12px 8px" }}>
+                              {renderLeftoverDetails(item, tk, t)}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </section>
   );
 }
+
+function renderLeftoverDetails(
+  item: { path: string; reason: string; risk: string },
+  tk: (key: TranslationKey, params?: Record<string, string | number>) => string,
+  t: (text: string, params?: Record<string, string | number>) => string,
+) {
+  return (
+    <div style={detailPanelStyle}>
+      <div style={detailGridStyle}>
+        <div style={detailBlockStyle}>
+          <strong style={detailLabelStyle}>{tk("apps.table.location")}</strong>
+          <div style={detailValueStyle}>
+            <CopyableValue value={item.path} fontSize="12px" color="var(--text-secondary)" multiline />
+          </div>
+        </div>
+        <div style={detailBlockStyle}>
+          <strong style={detailLabelStyle}>{tk("apps.reason.why")}</strong>
+          <div style={detailsBodyTextStyle}>{t(item.reason)}</div>
+        </div>
+        <div style={detailBlockStyle}>
+          <strong style={detailLabelStyle}>{tk("apps.reason.risk")}</strong>
+          <div style={detailsBodyTextStyle}>{t(item.risk)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompactMeta({
+  label,
+  value,
+  mono = false,
+  multiline = false,
+  muted = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  multiline?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div style={compactMetaItemStyle}>
+      <div style={compactMetaLabelStyle}>{label}</div>
+      <div
+        style={{
+          ...(mono ? compactMetaValueMonoStyle : compactMetaValueStyle),
+          color: muted ? "var(--text-muted)" : undefined,
+          wordBreak: multiline ? "break-word" : undefined,
+          whiteSpace: multiline ? "normal" : undefined,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+const compactListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const compactBulkBarStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: "10px",
+  border: "1px solid var(--border)",
+  background: "var(--bg-primary)",
+};
+
+const compactBulkTextStyle: React.CSSProperties = {
+  fontSize: "13px",
+  fontWeight: 600,
+  color: "var(--text-primary)",
+};
+
+const compactCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  padding: "14px",
+  borderRadius: "12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const compactCardHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+};
+
+const compactCardTitleWrapStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "10px",
+  minWidth: 0,
+  cursor: "pointer",
+};
+
+const compactTitleStyle: React.CSSProperties = {
+  fontSize: "15px",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+};
+
+const compactBadgeStackStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "6px",
+  flexWrap: "wrap",
+  justifyContent: "flex-end",
+};
+
+const compactMetaGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+};
+
+const compactMetaItemStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+};
+
+const compactMetaLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-muted)",
+};
+
+const compactMetaValueStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-primary)",
+  lineHeight: 1.5,
+};
+
+const compactMetaValueMonoStyle: React.CSSProperties = {
+  ...compactMetaValueStyle,
+  fontFamily: "monospace",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const compactActionsStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  flexWrap: "wrap",
+  alignItems: "center",
+};

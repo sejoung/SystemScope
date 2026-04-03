@@ -3,6 +3,8 @@ import {
   getConfidenceColor,
   getConfidenceLabel,
 } from "../../src/renderer/src/features/apps/appsShared";
+import { shouldUseInstalledAppsCompactLayout } from "../../src/renderer/src/features/apps/InstalledApps";
+import { shouldUseLeftoverAppsCompactLayout } from "../../src/renderer/src/features/apps/LeftoverApps";
 
 describe("AppsPage helpers", () => {
   it("maps confidence levels to localized labels", () => {
@@ -22,5 +24,18 @@ describe("AppsPage helpers", () => {
     expect(getConfidenceColor("high")).toBe("var(--accent-green)");
     expect(getConfidenceColor("medium")).toBe("var(--accent-yellow)");
     expect(getConfidenceColor("low")).toBe("var(--accent-red)");
+  });
+
+  it("switches installed apps to compact layout below the width threshold", () => {
+    expect(shouldUseInstalledAppsCompactLayout(720)).toBe(true);
+    expect(shouldUseInstalledAppsCompactLayout(979)).toBe(true);
+    expect(shouldUseInstalledAppsCompactLayout(980)).toBe(false);
+    expect(shouldUseInstalledAppsCompactLayout(1200)).toBe(false);
+  });
+
+  it("switches leftover apps to compact layout below the width threshold", () => {
+    expect(shouldUseLeftoverAppsCompactLayout(900)).toBe(true);
+    expect(shouldUseLeftoverAppsCompactLayout(1079)).toBe(true);
+    expect(shouldUseLeftoverAppsCompactLayout(1080)).toBe(false);
   });
 });

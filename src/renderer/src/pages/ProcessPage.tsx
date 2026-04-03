@@ -62,6 +62,7 @@ export function ProcessPage() {
             background: "var(--bg-secondary)",
             borderRadius: "8px",
             padding: "3px",
+            flexWrap: "wrap",
           }}
         >
           <PageTab

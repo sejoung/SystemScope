@@ -7,6 +7,7 @@ import {
   formatEndpoint,
   getDisplayedPorts,
   normalizePortState,
+  shouldUseListeningPortsCompactLayout,
   sortPortsForDisplay,
 } from "../../src/renderer/src/features/process/ListeningPorts";
 import type { PortInfo } from "../../src/shared/types";
@@ -238,5 +239,11 @@ describe("ListeningPorts helpers", () => {
       samplePorts[1],
       samplePorts[2],
     ]);
+  });
+
+  it("switches port finder to compact layout below the width threshold", () => {
+    expect(shouldUseListeningPortsCompactLayout(960)).toBe(true);
+    expect(shouldUseListeningPortsCompactLayout(1119)).toBe(true);
+    expect(shouldUseListeningPortsCompactLayout(1120)).toBe(false);
   });
 });

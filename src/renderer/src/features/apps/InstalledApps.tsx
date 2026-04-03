@@ -6,16 +6,19 @@ import {
   useRef,
   useState,
 } from "react";
+import type React from "react";
 import type {
   AppRelatedDataItem,
   InstalledApp,
 } from "@shared/types";
+import type { TranslationKey } from "@shared/i18n";
 import { isInstalledAppArray, isAppRelatedDataArray, isAppRemovalResult } from "@shared/types";
 import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
+import { useContainerWidth } from "../../hooks/useContainerWidth";
 import {
   type PlatformFilter,
   Badge,
@@ -53,10 +56,17 @@ import {
   titleStyle,
 } from "./appsShared";
 
+const INSTALLED_APPS_COMPACT_WIDTH = 980;
+
+export function shouldUseInstalledAppsCompactLayout(width: number): boolean {
+  return width < INSTALLED_APPS_COMPACT_WIDTH;
+}
+
 export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
   const showToast = useToast((s) => s.show);
   const { t, tk } = useI18n();
   const isWindows = navigator.userAgent.includes("Windows");
+  const [containerRef, containerWidth] = useContainerWidth(1200);
 
   const [apps, setApps] = useState<InstalledApp[]>([]);
   const [loadError, setLoadError] = useState<string | undefined>();
@@ -117,6 +127,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
         .sort((a, b) => a.name.localeCompare(b.name)),
     [apps, platformFilter, search.applied, pendingUninstallIds],
   );
+  const compactLayout = shouldUseInstalledAppsCompactLayout(containerWidth);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -220,7 +231,7 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
   };
 
   return (
-    <section style={sectionStyle}>
+    <section style={sectionStyle} ref={containerRef}>
       <div style={headerStyle}>
         <div style={titleRowStyle}>
           <span style={titleStyle}>{tk("apps.tab.installed")}</span>
@@ -291,133 +302,329 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
         <StatusMessage message={tk("apps.empty.installed")} />
       ) : (
         <>
-          <StatusMessage message={tk("apps.danger.installed")} />
-          <div style={tableWrapStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr style={stickyHeaderRowStyle}>
-                  <th style={thStyle}>{tk("apps.table.name")}</th>
-                  <th style={thStyle}>{tk("apps.table.version")}</th>
-                  <th style={thStyle}>{tk("apps.table.publisher")}</th>
-                  <th style={thStyle}>{tk("apps.table.platform")}</th>
-                  <th style={thStyle}>{tk("apps.table.location")}</th>
-                  <th style={{ ...thStyle, textAlign: "right", width: "220px" }}>
-                    {tk("apps.table.actions")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredApps.map((entry) => (
-                  <Fragment key={entry.id}>
-                    <tr style={rowStyle}>
-                      <td style={tdStyle}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                            {entry.name}
-                          </span>
-                          {entry.protected ? (
-                            <span style={protectedBadgeStyle}>{tk("apps.badge.protected")}</span>
-                          ) : null}
-                        </div>
-                        {entry.protectedReason ? (
-                          <div style={subtleTextStyle}>{t(entry.protectedReason)}</div>
+          <div style={{ marginBottom: "14px" }}>
+            <StatusMessage message={tk("apps.danger.installed")} />
+          </div>
+          {compactLayout ? (
+            <div style={compactListStyle}>
+              {filteredApps.map((entry) => (
+                <div key={entry.id} style={compactCardStyle}>
+                  <div style={compactCardHeaderStyle}>
+                    <div style={{ display: "grid", gap: "6px", minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                        <span style={compactTitleStyle}>{entry.name}</span>
+                        {entry.protected ? (
+                          <span style={protectedBadgeStyle}>{tk("apps.badge.protected")}</span>
                         ) : null}
-                      </td>
-                      <td style={monoCellStyle}>{entry.version ?? "-"}</td>
-                      <td style={tdStyle}>{entry.publisher ?? "-"}</td>
-                      <td style={tdStyle}>
-                        <Badge
-                          text={entry.platform === "mac" ? "macOS" : "Windows"}
-                          color={entry.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"}
-                        />
-                      </td>
-                      <td style={{ ...tdStyle, maxWidth: "340px" }}>
-                        <CopyableValue
-                          value={entry.installLocation ?? entry.launchPath ?? ""}
-                          emptyValue="-"
-                          fontSize="12px"
-                          color="var(--text-muted)"
-                          multiline
-                          maxWidth="340px"
-                        />
-                      </td>
-                      <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
-                        <button type="button" onClick={() => void handleToggleRelatedData(entry)} style={openBtn}>
-                          {expandedAppId === entry.id ? tk("apps.action.hide_data") : tk("apps.action.related_data")}
-                        </button>
-                        <button type="button" onClick={() => void handleOpenLocation(entry.id)} style={openBtn}>
-                          {tk("apps.action.open")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleUninstall(entry)}
-                          disabled={entry.protected || busyAppId === entry.id}
-                          style={{
-                            ...actionBtnStyle,
-                            opacity: entry.protected || busyAppId === entry.id ? 0.55 : 1,
-                            cursor: entry.protected || busyAppId === entry.id ? "default" : "pointer",
-                          }}
-                        >
-                          {busyAppId === entry.id
-                            ? tk("apps.action.working")
-                            : entry.platform === "mac"
-                              ? tk("apps.action.move_to_trash")
-                              : entry.uninstallKind === "open_settings"
-                                ? tk("apps.action.open_system_settings")
-                                : tk("apps.action.uninstall")}
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedAppId === entry.id ? (
+                      </div>
+                      {entry.protectedReason ? (
+                        <div style={subtleTextStyle}>{t(entry.protectedReason)}</div>
+                      ) : null}
+                    </div>
+                    <Badge
+                      text={entry.platform === "mac" ? "macOS" : "Windows"}
+                      color={entry.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"}
+                    />
+                  </div>
+
+                  <div style={compactMetaGridStyle}>
+                    <CompactMeta label={tk("apps.table.version")} value={entry.version ?? "-"} mono />
+                    <CompactMeta label={tk("apps.table.publisher")} value={entry.publisher ?? "-"} />
+                  </div>
+
+                  <div style={compactLocationBlockStyle}>
+                    <div style={compactMetaLabelStyle}>{tk("apps.table.location")}</div>
+                    <CopyableValue
+                      value={entry.installLocation ?? entry.launchPath ?? ""}
+                      emptyValue="-"
+                      fontSize="12px"
+                      color="var(--text-muted)"
+                      multiline
+                    />
+                  </div>
+
+                  <div style={compactActionsStyle}>
+                    <button type="button" onClick={() => void handleToggleRelatedData(entry)} style={openBtn}>
+                      {expandedAppId === entry.id ? tk("apps.action.hide_data") : tk("apps.action.related_data")}
+                    </button>
+                    <button type="button" onClick={() => void handleOpenLocation(entry.id)} style={openBtn}>
+                      {tk("apps.action.open")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleUninstall(entry)}
+                      disabled={entry.protected || busyAppId === entry.id}
+                      style={{
+                        ...actionBtnStyle,
+                        opacity: entry.protected || busyAppId === entry.id ? 0.55 : 1,
+                        cursor: entry.protected || busyAppId === entry.id ? "default" : "pointer",
+                        marginLeft: "auto",
+                      }}
+                    >
+                      {busyAppId === entry.id
+                        ? tk("apps.action.working")
+                        : entry.platform === "mac"
+                          ? tk("apps.action.move_to_trash")
+                          : entry.uninstallKind === "open_settings"
+                            ? tk("apps.action.open_system_settings")
+                            : tk("apps.action.uninstall")}
+                    </button>
+                  </div>
+
+                  {expandedAppId === entry.id ? (
+                    <div style={{ marginTop: "4px" }}>
+                      {renderRelatedDataPanel({
+                        entry,
+                        tk,
+                        relatedLoadingAppId,
+                        relatedDataByAppId,
+                        selectedRelatedIdsByAppId,
+                        handleToggleRelatedId,
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={tableWrapStyle}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr style={stickyHeaderRowStyle}>
+                    <th style={thStyle}>{tk("apps.table.name")}</th>
+                    <th style={thStyle}>{tk("apps.table.version")}</th>
+                    <th style={thStyle}>{tk("apps.table.publisher")}</th>
+                    <th style={thStyle}>{tk("apps.table.platform")}</th>
+                    <th style={thStyle}>{tk("apps.table.location")}</th>
+                    <th style={{ ...thStyle, textAlign: "right", width: "220px" }}>
+                      {tk("apps.table.actions")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredApps.map((entry) => (
+                    <Fragment key={entry.id}>
                       <tr style={rowStyle}>
-                        <td colSpan={6} style={{ padding: "0 6px 12px 6px" }}>
-                          <div style={relatedPanelStyle}>
-                            <div style={detailsHeaderStyle}>
-                              <div>
-                                <div style={detailsTitleStyle}>{tk("apps.related.title")}</div>
-                                <div style={detailsBodyTextStyle}>{tk("apps.related.description")}</div>
-                              </div>
-                              <div style={detailsMetaStyle}>
-                                {tk("common.selected", { count: (selectedRelatedIdsByAppId[entry.id] ?? []).length })}
-                              </div>
-                            </div>
-                            {relatedLoadingAppId === entry.id ? (
-                              <div style={relatedEmptyStyle}>{tk("apps.related.loading")}</div>
-                            ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
-                              <div style={relatedEmptyStyle}>{tk("apps.related.empty")}</div>
-                            ) : (
-                              <div style={{ display: "grid", gap: "8px" }}>
-                                {(relatedDataByAppId[entry.id] ?? []).map((item) => {
-                                  const checked = (selectedRelatedIdsByAppId[entry.id] ?? []).includes(item.id);
-                                  return (
-                                    <label key={item.id} style={relatedItemStyle}>
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={() => handleToggleRelatedId(entry.id, item.id)}
-                                      />
-                                      <div style={{ display: "grid", gap: "3px" }}>
-                                        <span style={detailsTitleStyle}>{item.label}</span>
-                                        <div style={detailsBodyTextStyle}>
-                                          <CopyableValue value={item.path} fontSize="12px" color="var(--text-muted)" multiline />
-                                        </div>
-                                      </div>
-                                    </label>
-                                  );
-                                })}
-                              </div>
-                            )}
+                        <td style={tdStyle}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                              {entry.name}
+                            </span>
+                            {entry.protected ? (
+                              <span style={protectedBadgeStyle}>{tk("apps.badge.protected")}</span>
+                            ) : null}
                           </div>
+                          {entry.protectedReason ? (
+                            <div style={subtleTextStyle}>{t(entry.protectedReason)}</div>
+                          ) : null}
+                        </td>
+                        <td style={monoCellStyle}>{entry.version ?? "-"}</td>
+                        <td style={tdStyle}>{entry.publisher ?? "-"}</td>
+                        <td style={tdStyle}>
+                          <Badge
+                            text={entry.platform === "mac" ? "macOS" : "Windows"}
+                            color={entry.platform === "mac" ? "var(--accent-cyan)" : "var(--accent-yellow)"}
+                          />
+                        </td>
+                        <td style={{ ...tdStyle, maxWidth: "340px" }}>
+                          <CopyableValue
+                            value={entry.installLocation ?? entry.launchPath ?? ""}
+                            emptyValue="-"
+                            fontSize="12px"
+                            color="var(--text-muted)"
+                            multiline
+                            maxWidth="340px"
+                          />
+                        </td>
+                        <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                          <button type="button" onClick={() => void handleToggleRelatedData(entry)} style={openBtn}>
+                            {expandedAppId === entry.id ? tk("apps.action.hide_data") : tk("apps.action.related_data")}
+                          </button>
+                          <button type="button" onClick={() => void handleOpenLocation(entry.id)} style={openBtn}>
+                            {tk("apps.action.open")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleUninstall(entry)}
+                            disabled={entry.protected || busyAppId === entry.id}
+                            style={{
+                              ...actionBtnStyle,
+                              opacity: entry.protected || busyAppId === entry.id ? 0.55 : 1,
+                              cursor: entry.protected || busyAppId === entry.id ? "default" : "pointer",
+                            }}
+                          >
+                            {busyAppId === entry.id
+                              ? tk("apps.action.working")
+                              : entry.platform === "mac"
+                                ? tk("apps.action.move_to_trash")
+                                : entry.uninstallKind === "open_settings"
+                                  ? tk("apps.action.open_system_settings")
+                                  : tk("apps.action.uninstall")}
+                          </button>
                         </td>
                       </tr>
-                    ) : null}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      {expandedAppId === entry.id ? (
+                        <tr style={rowStyle}>
+                          <td colSpan={6} style={{ padding: "0 6px 12px 6px" }}>
+                            {renderRelatedDataPanel({
+                              entry,
+                              tk,
+                              relatedLoadingAppId,
+                              relatedDataByAppId,
+                              selectedRelatedIdsByAppId,
+                              handleToggleRelatedId,
+                            })}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </section>
   );
 }
+
+function CompactMeta({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div style={compactMetaItemStyle}>
+      <div style={compactMetaLabelStyle}>{label}</div>
+      <div style={mono ? compactMetaValueMonoStyle : compactMetaValueStyle}>{value}</div>
+    </div>
+  );
+}
+
+function renderRelatedDataPanel({
+  entry,
+  tk,
+  relatedLoadingAppId,
+  relatedDataByAppId,
+  selectedRelatedIdsByAppId,
+  handleToggleRelatedId,
+}: {
+  entry: InstalledApp;
+  tk: (key: TranslationKey, params?: Record<string, string | number>) => string;
+  relatedLoadingAppId: string | null;
+  relatedDataByAppId: Record<string, AppRelatedDataItem[]>;
+  selectedRelatedIdsByAppId: Record<string, string[]>;
+  handleToggleRelatedId: (appId: string, itemId: string) => void;
+}) {
+  return (
+    <div style={relatedPanelStyle}>
+      <div style={detailsHeaderStyle}>
+        <div>
+          <div style={detailsTitleStyle}>{tk("apps.related.title")}</div>
+          <div style={detailsBodyTextStyle}>{tk("apps.related.description")}</div>
+        </div>
+        <div style={detailsMetaStyle}>
+          {tk("common.selected", { count: (selectedRelatedIdsByAppId[entry.id] ?? []).length })}
+        </div>
+      </div>
+      {relatedLoadingAppId === entry.id ? (
+        <div style={relatedEmptyStyle}>{tk("apps.related.loading")}</div>
+      ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
+        <div style={relatedEmptyStyle}>{tk("apps.related.empty")}</div>
+      ) : (
+        <div style={{ display: "grid", gap: "8px" }}>
+          {(relatedDataByAppId[entry.id] ?? []).map((item) => {
+            const checked = (selectedRelatedIdsByAppId[entry.id] ?? []).includes(item.id);
+            return (
+              <label key={item.id} style={relatedItemStyle}>
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => handleToggleRelatedId(entry.id, item.id)}
+                />
+                <div style={{ display: "grid", gap: "3px" }}>
+                  <span style={detailsTitleStyle}>{item.label}</span>
+                  <div style={detailsBodyTextStyle}>
+                    <CopyableValue value={item.path} fontSize="12px" color="var(--text-muted)" multiline />
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const compactListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const compactCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  padding: "14px",
+  borderRadius: "12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const compactCardHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+};
+
+const compactTitleStyle: React.CSSProperties = {
+  fontSize: "15px",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+};
+
+const compactMetaGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+};
+
+const compactMetaItemStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+};
+
+const compactMetaLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-muted)",
+};
+
+const compactMetaValueStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-primary)",
+  lineHeight: 1.5,
+};
+
+const compactMetaValueMonoStyle: React.CSSProperties = {
+  ...compactMetaValueStyle,
+  fontFamily: "monospace",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const compactLocationBlockStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "6px",
+};
+
+const compactActionsStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  flexWrap: "wrap",
+  alignItems: "center",
+};

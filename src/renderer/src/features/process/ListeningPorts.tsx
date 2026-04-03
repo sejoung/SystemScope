@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import type React from "react";
 import { useToast } from "../../components/Toast";
 import { usePortFinderStore } from "../../stores/usePortFinderStore";
 import { getStateStyle } from "./portStateStyles";
@@ -7,9 +8,16 @@ import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
+import { useContainerWidth } from "../../hooks/useContainerWidth";
 
 interface ListeningPortsProps {
   showConflictCenter?: boolean;
+}
+
+const LISTENING_PORTS_COMPACT_WIDTH = 1120;
+
+export function shouldUseListeningPortsCompactLayout(width: number): boolean {
+  return width < LISTENING_PORTS_COMPACT_WIDTH;
 }
 
 export function ListeningPorts({
@@ -17,6 +25,7 @@ export function ListeningPorts({
 }: ListeningPortsProps = {}) {
   const showToast = useToast((s) => s.show);
   const { tk, t } = useI18n();
+  const [containerRef, containerWidth] = useContainerWidth(1280);
   const {
     ports,
     loading,
@@ -31,6 +40,7 @@ export function ListeningPorts({
     setSearchScope,
     fetchPorts,
   } = usePortFinderStore();
+  const compactLayout = shouldUseListeningPortsCompactLayout(containerWidth);
 
   useEffect(() => {
     if (!scanned && !loading) {
@@ -103,7 +113,7 @@ export function ListeningPorts({
   };
 
   return (
-    <section style={sectionStyle}>
+    <section style={sectionStyle} ref={containerRef}>
       <div style={headerStyle}>
         <div style={titleRowStyle}>
           <span style={titleStyle}>{tk("process.port_finder.title")}</span>
@@ -113,16 +123,10 @@ export function ListeningPorts({
             </span>
           )}
         </div>
-        <div style={actionsStyle}>
+        <div style={{ ...actionsStyle, width: "100%" }}>
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              display: "flex",
-              gap: "2px",
-              background: "var(--bg-primary)",
-              borderRadius: "6px",
-              padding: "2px",
-            }}
+            style={segmentedControlStyle}
           >
             {(["process", "local", "remote", "all"] as const).map((s) => (
               <button
@@ -156,7 +160,7 @@ export function ListeningPorts({
               </button>
             ))}
           </div>
-          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center", flex: compactLayout ? "1 1 100%" : undefined }}>
             <input
               type="text"
               value={search}
@@ -172,7 +176,7 @@ export function ListeningPorts({
                     : tk("process.port_finder.search_all")
               }
               aria-label={tk("process.port_finder.title")}
-              style={{ ...searchStyle, paddingRight: "30px" }}
+              style={{ ...searchStyle, paddingRight: "30px", width: compactLayout ? "100%" : searchStyle.width }}
             />
             {search && (
               <button
@@ -351,6 +355,48 @@ export function ListeningPorts({
               }
             />
           ) : (
+            compactLayout ? (
+              <div style={portCardListStyle}>
+                {displayRows.map((p) => (
+                  <div
+                    key={`${p.protocol}-${p.localAddress}-${p.localPort}-${p.peerAddress}-${p.peerPort}-${p.state}-${p.pid}`}
+                    style={portCardStyle}
+                  >
+                    <div style={portCardHeaderStyle}>
+                      <div style={{ display: "grid", gap: "6px", minWidth: 0 }}>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                          <span style={portValueStyle}>{p.localPort}</span>
+                          <span style={protocolPillStyle}>{p.protocol.toUpperCase()}</span>
+                          <StateBadge state={p.state} />
+                        </div>
+                        <CopyableValue
+                          value={p.process}
+                          fontSize="14px"
+                          color="var(--text-primary)"
+                          multiline
+                        />
+                      </div>
+                      <ExposureBadge address={p.localAddress} />
+                    </div>
+
+                    <div style={portCardMetaGridStyle}>
+                      <PortMeta label={t("Local")} value={formatEndpoint(p.localAddress, p.localPort)} mono />
+                      <PortMeta label={tk("process.port_finder.remote")} value={formatEndpoint(p.peerAddress, p.peerPort)} mono muted />
+                      <PortMeta label="PID" value={String(p.pid)} mono />
+                    </div>
+
+                    <div style={portCardActionsStyle}>
+                      <button
+                        onClick={() => void handleKill(p)}
+                        style={killBtnStyle}
+                      >
+                        {tk("process.port_finder.kill")}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div style={{ overflowX: "auto", overflowY: "clip" }}>
               <table
                 style={{
@@ -490,6 +536,7 @@ export function ListeningPorts({
                 </tbody>
               </table>
             </div>
+            )
           )}
         </div>
       )}
@@ -912,6 +959,32 @@ function StateBadge({ state }: { state: string }) {
   );
 }
 
+function PortMeta({
+  label,
+  value,
+  mono = false,
+  muted = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div style={portMetaItemStyle}>
+      <div style={portMetaLabelStyle}>{label}</div>
+      <div
+        style={{
+          ...(mono ? portMetaValueMonoStyle : portMetaValueStyle),
+          color: muted ? "var(--text-muted)" : undefined,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function FilterBtn({
   active,
   onClick,
@@ -971,6 +1044,15 @@ const searchStyle: React.CSSProperties = {
   background: "var(--bg-primary)",
   color: "var(--text-primary)",
   outline: "none",
+};
+
+const segmentedControlStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "2px",
+  background: "var(--bg-primary)",
+  borderRadius: "6px",
+  padding: "2px",
+  flexWrap: "wrap",
 };
 
 const infoBarStyle: React.CSSProperties = {
@@ -1075,6 +1157,17 @@ const actionsStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
+const protocolPillStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  padding: "3px 8px",
+  borderRadius: "999px",
+  background: "var(--bg-primary)",
+  color: "var(--text-muted)",
+  border: "1px solid var(--border)",
+  letterSpacing: "0.04em",
+};
+
 const rowStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
 };
@@ -1096,6 +1189,71 @@ const stateBadgeStyle: React.CSSProperties = {
   fontWeight: 700,
   letterSpacing: "0.04em",
   whiteSpace: "nowrap",
+};
+
+const portCardListStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+};
+
+const portCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "12px",
+  padding: "14px",
+  borderRadius: "12px",
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border)",
+};
+
+const portCardHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: "12px",
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+};
+
+const portCardMetaGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "10px",
+};
+
+const portMetaItemStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "10px",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
+};
+
+const portMetaLabelStyle: React.CSSProperties = {
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: "var(--text-muted)",
+};
+
+const portMetaValueStyle: React.CSSProperties = {
+  fontSize: "13px",
+  color: "var(--text-primary)",
+  lineHeight: 1.5,
+  wordBreak: "break-word",
+};
+
+const portMetaValueMonoStyle: React.CSSProperties = {
+  ...portMetaValueStyle,
+  fontFamily: "monospace",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const portCardActionsStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "8px",
+  flexWrap: "wrap",
 };
 
 const conflictCardStyle: React.CSSProperties = {
