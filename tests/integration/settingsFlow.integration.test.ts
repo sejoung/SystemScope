@@ -56,6 +56,10 @@ vi.mock('../../src/main/services/growthAnalyzer', () => ({
   }
 }))
 
+vi.mock('../../src/main/services/eventStore', () => ({
+  recordEvent: vi.fn().mockResolvedValue(undefined)
+}))
+
 describe('settings flow integration', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -104,8 +108,8 @@ describe('settings flow integration', () => {
       snapshotIntervalMin: 30 as const
     }
 
-    const setResult = setHandler?.({}, payload) as { ok: boolean; data?: unknown }
-    const getResult = getHandler?.({}, undefined) as { ok: boolean; data?: unknown }
+    const setResult = await setHandler?.({}, payload) as { ok: boolean; data?: unknown }
+    const getResult = await getHandler?.({}, undefined) as { ok: boolean; data?: unknown }
 
     expect(setResult.ok).toBe(true)
     expect(getResult.ok).toBe(true)
