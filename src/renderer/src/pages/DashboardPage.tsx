@@ -135,31 +135,31 @@ export function DashboardPage() {
 
       {/* Top: Live system gauges */}
       <div className="dashboard-grid-top">
-        {!hiddenWidgets.has('cpu') && <ErrorBoundary title="CPU"><CpuWidget /></ErrorBoundary>}
-        {!hiddenWidgets.has('memory') && <ErrorBoundary title="Memory"><MemoryWidget /></ErrorBoundary>}
-        {!hiddenWidgets.has('gpu') && <ErrorBoundary title="GPU"><GpuWidget /></ErrorBoundary>}
-        {!hiddenWidgets.has('disk') && <ErrorBoundary title="Disk"><DiskWidget /></ErrorBoundary>}
-        {!hiddenWidgets.has('network') && <ErrorBoundary title="Network"><NetworkWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('cpu') && <ErrorBoundary title={tk("monitoring.cpu.title")}><CpuWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('memory') && <ErrorBoundary title={tk("monitoring.memory.title")}><MemoryWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('gpu') && <ErrorBoundary title={tk("monitoring.gpu.title")}><GpuWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('disk') && <ErrorBoundary title={tk("monitoring.disk.title")}><DiskWidget /></ErrorBoundary>}
+        {!hiddenWidgets.has('network') && <ErrorBoundary title={tk("monitoring.network.title")}><NetworkWidget /></ErrorBoundary>}
       </div>
 
       {/* Realtime trend */}
       <div className="dashboard-section">
-        {!hiddenWidgets.has('realtimeChart') && <ErrorBoundary title="Realtime Chart"><RealtimeChart /></ErrorBoundary>}
+        {!hiddenWidgets.has('realtimeChart') && <ErrorBoundary title={tk("monitoring.live_usage.title")}><RealtimeChart /></ErrorBoundary>}
       </div>
 
       {/* Diagnosis and workspace summary */}
-      <ErrorBoundary title="Diagnosis"><DiagnosisCard /></ErrorBoundary>
-      <ErrorBoundary title="Project Monitor"><ProjectMonitorCard compact /></ErrorBoundary>
+      <ErrorBoundary title={tk("diagnosis.title")}><DiagnosisCard /></ErrorBoundary>
+      <ErrorBoundary title={tk("devtools.section.project_monitor")}><ProjectMonitorCard compact /></ErrorBoundary>
 
       {/* Storage and growth analysis */}
       <div className="dashboard-grid-responsive">
-        {!hiddenWidgets.has('storage') && <ErrorBoundary title="Storage"><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>}
-        {!hiddenWidgets.has('growth') && <ErrorBoundary title="Growth"><GrowthView /></ErrorBoundary>}
+        {!hiddenWidgets.has('storage') && <ErrorBoundary title={tk("disk.section.home_storage")}><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>}
+        {!hiddenWidgets.has('growth') && <ErrorBoundary title={tk("disk.section.storage_growth")}><GrowthView /></ErrorBoundary>}
       </div>
 
       {/* Process pressure */}
       <div>
-        {!hiddenWidgets.has('topProcesses') && <ErrorBoundary title="Top Consumers"><TopResourceConsumers /></ErrorBoundary>}
+        {!hiddenWidgets.has('topProcesses') && <ErrorBoundary title={tk("process.top_resources.title")}><TopResourceConsumers /></ErrorBoundary>}
       </div>
     </div>
   );
