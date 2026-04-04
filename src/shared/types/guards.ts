@@ -1,13 +1,13 @@
 import type { DiskScanResult, DockerContainersScanResult, QuickScanFolder } from './disk'
 import type { PortInfo, ProcessSnapshot } from './process'
-import type { InstalledApp, AppRelatedDataItem, AppRemovalResult, AppLeftoverDataItem, AppLeftoverRegistryItem } from './apps'
+import type { InstalledApp, AppRelatedDataItem, AppRemovalResult, AppLeftoverRegistryItem } from './apps'
 import type { SystemStats } from './system'
 import type { Alert } from './alert'
 import type { ShutdownState } from './shutdown'
 import type { UpdateInfo, UpdateStatus } from './update'
 import type { MetricPoint, TimelineData } from './metric'
 import type { SystemEvent } from './event'
-import type { DiagnosisResult, DiagnosisSummary, AlertIntelligence } from './diagnosis'
+import type { DiagnosisSummary, AlertIntelligence } from './diagnosis'
 import type { CleanupPreview, CleanupResult, CleanupInbox } from './automation'
 import type { WorkspaceProfile } from './profile'
 import { DASHBOARD_WIDGET_KEYS } from './profile'
@@ -67,11 +67,6 @@ export function isQuickScanFolderArray(data: unknown): data is QuickScanFolder[]
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'category' in data[0] && 'cleanable' in data[0]))
 }
 
-/** AppLeftoverDataItem[] — first-element sampling: validates only data[0] for performance */
-export function isAppLeftoverDataArray(data: unknown): data is AppLeftoverDataItem[] {
-  return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'appName' in data[0] && 'confidence' in data[0]))
-}
-
 /** AppLeftoverRegistryItem[] — first-element sampling: validates only data[0] for performance */
 export function isAppLeftoverRegistryArray(data: unknown): data is AppLeftoverRegistryItem[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && 'registryPath' in data[0]))
@@ -128,13 +123,6 @@ export function isSystemEvent(data: unknown): data is SystemEvent {
 /** SystemEvent[] — first-element sampling: validates only data[0] for performance */
 export function isSystemEventArray(data: unknown): data is SystemEvent[] {
   return Array.isArray(data) && (data.length === 0 || (isObj(data[0]) && typeof data[0].id === 'string' && typeof data[0].ts === 'number' && typeof data[0].category === 'string'))
-}
-
-/** DiagnosisResult */
-export function isDiagnosisResult(data: unknown): data is DiagnosisResult {
-  return isObj(data) && typeof data.id === 'string' && typeof data.category === 'string' && typeof data.severity === 'string'
-    && typeof data.title === 'string' && typeof data.description === 'string' && Array.isArray(data.evidence) && Array.isArray(data.actions)
-    && typeof data.detectedAt === 'number'
 }
 
 /** DiagnosisSummary */

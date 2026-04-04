@@ -75,7 +75,7 @@ export const compactMetaGridStyle: React.CSSProperties = {
   gap: "10px",
 };
 
-export const compactMetaItemStyle: React.CSSProperties = {
+const compactMetaItemStyle: React.CSSProperties = {
   display: "grid",
   gap: "4px",
   padding: "10px 12px",
@@ -92,13 +92,13 @@ export const compactMetaLabelStyle: React.CSSProperties = {
   color: "var(--text-muted)",
 };
 
-export const compactMetaValueStyle: React.CSSProperties = {
+const compactMetaValueStyle: React.CSSProperties = {
   fontSize: "13px",
   color: "var(--text-primary)",
   lineHeight: 1.5,
 };
 
-export const compactMetaValueMonoStyle: React.CSSProperties = {
+const compactMetaValueMonoStyle: React.CSSProperties = {
   ...compactMetaValueStyle,
   fontFamily: "monospace",
   fontVariantNumeric: "tabular-nums",
