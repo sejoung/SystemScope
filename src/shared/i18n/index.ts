@@ -1,6 +1,5 @@
-import { EN_MESSAGES } from './locales/en'
+import { EN_MESSAGES, type TranslationKey } from './locales/en'
 import { KO_MESSAGES } from './locales/ko'
-import { MESSAGE_KEYS, type TranslationKey } from './keys'
 
 export type AppLocale = 'ko' | 'en'
 
@@ -24,7 +23,7 @@ for (const [english, korean] of Object.entries(EN_LOOKUP).map(([key, value]) => 
 }
 
 export function translate(locale: AppLocale, input: string | TranslationKey, params?: Params): string {
-  const source = resolveTranslationInput(input)
+  const source = EN_LOOKUP[input] ?? input
   const translated = (locale === 'ko' ? TO_KO : TO_EN).get(source) ?? source
   if (!params) return translated
 
@@ -36,11 +35,6 @@ export function translate(locale: AppLocale, input: string | TranslationKey, par
 
 export function getLocaleTag(locale: AppLocale): string {
   return locale === 'ko' ? 'ko-KR' : 'en-US'
-}
-
-function resolveTranslationInput(input: string | TranslationKey): string {
-  const keyed = (MESSAGE_KEYS as Record<string, string>)[input]
-  return keyed ?? input
 }
 
 export type { TranslationKey }
