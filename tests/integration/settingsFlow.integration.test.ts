@@ -60,6 +60,18 @@ vi.mock('../../src/main/services/eventStore', () => ({
   recordEvent: vi.fn().mockResolvedValue(undefined)
 }))
 
+vi.mock('../../src/main/services/logging', () => ({
+  getAccessLogDir: vi.fn(() => '/tmp/systemscope-test/logs/access'),
+  getSystemLogDir: vi.fn(() => '/tmp/systemscope-test/logs/system'),
+  logErrorAction: vi.fn(),
+  logInfoAction: vi.fn(),
+  logWarnAction: vi.fn(),
+}))
+
+vi.mock('../../src/main/services/automationScheduler', () => ({
+  restartAutomationScheduler: vi.fn()
+}))
+
 describe('settings flow integration', () => {
   beforeEach(() => {
     vi.resetModules()
