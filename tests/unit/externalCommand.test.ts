@@ -42,17 +42,24 @@ describe('ExternalCommandError', () => {
   it('should augment PATH with login shell and common executable paths', async () => {
     vi.stubEnv('SHELL', '/bin/zsh')
     vi.stubEnv('PATH', '/usr/bin')
+    const loginShellPath = process.platform === 'darwin'
+      ? '/Users/test/.nvm/versions/node/v24.0.0/bin:/opt/homebrew/bin'
+      : '/home/test/.nvm/versions/node/v24.0.0/bin:/usr/local/bin'
 
     execFileMock
       .mockImplementationOnce((_command: string, _args: string[], _options: Record<string, unknown>, callback: (error: Error | null, stdout?: string, stderr?: string) => void) => {
-        callback(null, '__SYSTEMSCOPE_PATH_START__/Users/test/.nvm/versions/node/v24.0.0/bin:/opt/homebrew/bin__SYSTEMSCOPE_PATH_END__', '')
+        callback(null, `__SYSTEMSCOPE_PATH_START__${loginShellPath}__SYSTEMSCOPE_PATH_END__`, '')
         return {} as never
       })
       .mockImplementationOnce((_command: string, _args: string[], options: Record<string, unknown>, callback: (error: Error | null, stdout?: string, stderr?: string) => void) => {
         const env = options.env as NodeJS.ProcessEnv
         expect(env.PATH).toContain('/usr/bin')
-        expect(env.PATH).toContain('/opt/homebrew/bin')
-        expect(env.PATH).toContain('/Applications/Docker.app/Contents/Resources/bin')
+        expect(env.PATH).toContain(process.platform === 'darwin' ? '/opt/homebrew/bin' : '/usr/local/bin')
+        if (process.platform === 'darwin') {
+          expect(env.PATH).toContain('/Applications/Docker.app/Contents/Resources/bin')
+        } else {
+          expect(env.PATH).toContain('/usr/sbin')
+        }
         callback(null, 'v24.0.0', '')
         return {} as never
       })
