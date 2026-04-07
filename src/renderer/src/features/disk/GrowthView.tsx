@@ -108,7 +108,7 @@ export function GrowthView() {
         <div>
           {/* Summary */}
           <div style={{
-            display: 'flex', gap: '12px', marginBottom: '16px', padding: '10px 14px',
+            display: 'flex', gap: '10px', marginBottom: '14px', padding: '9px 12px',
             background: 'var(--bg-primary)', borderRadius: 'var(--radius)', fontSize: '13px',
             flexWrap: 'wrap'
           }}>
@@ -124,10 +124,10 @@ export function GrowthView() {
           </div>
 
           {/* Top 5 Chart + List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* Bar Chart */}
             <div ref={chartRef}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 {tk('disk.storage_growth.top', { count: Math.min(top5.length, 5) })}
               </div>
               {chartWidth > 0 && (
@@ -172,10 +172,10 @@ export function GrowthView() {
 
             {/* Detail List */}
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 {tk('disk.storage_growth.all_folders')}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflow: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '180px', overflow: 'auto' }}>
                 {result.folders.map((folder, i) => (
                   <FolderRow key={folder.path} folder={folder} index={i} maxAdded={result.folders[0]?.addedSize ?? 1} />
                 ))}
@@ -196,7 +196,7 @@ function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: n
     <div
       style={{
         display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '6px 8px', borderRadius: '6px',
+        padding: '7px 8px', borderRadius: '7px',
         cursor: 'pointer', transition: 'background 0.15s'
       }}
       onClick={() => window.systemScope.showInFolder(folder.path)}

@@ -69,12 +69,12 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   return (
     <Accordion title={tk('disk.section.home_storage')} defaultOpen>
       {/* Disk capacity summary */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '13px' }}>
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
             {tk('disk.home_storage.disk_capacity')}
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <span style={{ color: 'var(--text-secondary)' }}>
               {tk('disk.home_storage.used_summary', {
                 used: formatBytes(info.diskTotal - info.diskAvailable),
@@ -139,7 +139,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: '14px', marginTop: '10px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
           <LegendItem color="var(--disk-bar-system)" label={tk('disk.home_storage.system')} value={formatBytes(usedBySystem)} />
           <LegendItem color="#22c55e" label={tk('disk.home_storage.available')} value={formatBytes(info.diskAvailable)} />
           <span style={{ color: 'var(--text-primary)', fontWeight: 600, marginLeft: 'auto' }}>
@@ -150,7 +150,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
       {/* Home directory breakdown */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {tk('disk.home_storage.your_folders')}
           </span>
@@ -159,18 +159,19 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
           </span>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {info.entries.map((entry, i) => {
             const pct = info.homeSize > 0 ? (entry.size / info.homeSize) * 100 : 0
             return (
               <div
                 key={entry.name}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '7px 10px',
-                  borderRadius: '6px',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  transition: 'background 0.15s'
+                  transition: 'background 0.15s',
+                  minWidth: 0
                 }}
                 onClick={() => onFolderClick(entry.path)}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-card-hover)' }}
@@ -183,7 +184,16 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 }} />
 
                 {/* Name */}
-                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', width: '120px', flexShrink: 0 }}>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: 'var(--text-primary)',
+                  width: '96px',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
                   {entry.name}
                 </span>
 
@@ -202,7 +212,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 {/* Size */}
                 <span style={{
                   fontSize: '12px', fontWeight: 600, fontFamily: 'monospace',
-                  color: 'var(--text-primary)', width: '70px', textAlign: 'right', flexShrink: 0
+                  color: 'var(--text-primary)', width: '76px', textAlign: 'right', flexShrink: 0
                 }}>
                   {formatBytes(entry.size)}
                 </span>
@@ -211,7 +221,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 <button
                   onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(entry.path) }}
                   style={{
-                    padding: '3px 10px',
+                    padding: '4px 10px',
                     fontSize: '11px',
                     fontWeight: 600,
                     border: 'none',

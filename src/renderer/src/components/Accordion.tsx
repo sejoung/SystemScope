@@ -30,7 +30,10 @@ export function Accordion({
       backgroundColor: 'var(--bg-card)',
       borderRadius: 'var(--radius-lg)',
       border: '1px solid var(--border)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
     }}>
       {/* 헤더 */}
       <div style={{
@@ -106,7 +109,7 @@ export function Accordion({
 
       {/* 콘텐츠 */}
       {open && (
-        <div style={{ padding: '0 16px 16px' }}>
+        <div style={{ padding: '0 16px 16px', flex: 1 }}>
           {children}
         </div>
       )}
