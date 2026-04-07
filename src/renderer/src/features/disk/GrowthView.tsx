@@ -112,14 +112,17 @@ export function GrowthView() {
             background: 'var(--bg-primary)', borderRadius: 'var(--radius)', fontSize: '13px',
             flexWrap: 'wrap'
           }}>
-            <span style={{ color: 'var(--text-muted)' }}>
-              {tk('disk.storage_growth.added')}: <strong style={{ color: 'var(--accent-yellow)' }}>+{formatBytes(result.totalAdded)}</strong>
+            <span style={summaryPillStyle}>
+              <span style={{ color: 'var(--text-muted)' }}>{tk('disk.storage_growth.added')}:</span>
+              <strong style={{ color: 'var(--accent-yellow)' }}>+{formatBytes(result.totalAdded)}</strong>
             </span>
-            <span style={{ color: 'var(--text-muted)' }}>
-              {tk('disk.storage_growth.files')}: <strong style={{ color: 'var(--text-primary)' }}>{result.totalAddedFiles.toLocaleString()}</strong>
+            <span style={summaryPillStyle}>
+              <span style={{ color: 'var(--text-muted)' }}>{tk('disk.storage_growth.files')}:</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{result.totalAddedFiles.toLocaleString()}</strong>
             </span>
-            <span style={{ color: 'var(--text-muted)' }}>
-              {tk('disk.storage_growth.period')}: <strong style={{ color: 'var(--text-primary)' }}>{PERIOD_LABELS[result.period]}</strong>
+            <span style={summaryPillStyle}>
+              <span style={{ color: 'var(--text-muted)' }}>{tk('disk.storage_growth.period')}:</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{PERIOD_LABELS[result.period]}</strong>
             </span>
           </div>
 
@@ -232,12 +235,22 @@ function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: n
 }
 
 const btnStyle: React.CSSProperties = {
-  padding: '5px 14px',
-  fontSize: '12px',
+  padding: '4px 12px',
+  fontSize: '11px',
   fontWeight: 600,
-  border: 'none',
+  border: '1px solid color-mix(in srgb, var(--accent-yellow) 35%, var(--border))',
   borderRadius: '6px',
-  background: 'var(--accent-yellow)',
+  background: 'color-mix(in srgb, var(--accent-yellow) 18%, var(--bg-card))',
   color: 'var(--text-on-accent-strong)',
   cursor: 'pointer'
+}
+
+const summaryPillStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '4px 8px',
+  borderRadius: '999px',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-card)'
 }

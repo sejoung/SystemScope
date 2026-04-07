@@ -85,13 +85,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
               onClick={() => fetchUserSpace()}
               disabled={loading}
               style={{
-                padding: '4px 12px',
-                fontSize: '11px',
-                fontWeight: 600,
-                border: 'none',
-                borderRadius: '5px',
-                background: 'var(--bg-card-hover)',
-                color: 'var(--text-primary)',
+                ...subtleActionButtonStyle,
                 cursor: loading ? 'default' : 'pointer',
                 opacity: loading ? 0.5 : 1
               }}
@@ -220,17 +214,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
                 {/* Open button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(entry.path) }}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    border: 'none',
-                    borderRadius: '5px',
-                    background: 'var(--bg-card-hover)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }}
+                  style={{ ...subtleActionButtonStyle, flexShrink: 0 }}
                 >
                   {tk('common.open')}
                 </button>
@@ -269,4 +253,14 @@ function Spinner() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>
   )
+}
+
+const subtleActionButtonStyle: React.CSSProperties = {
+  padding: '4px 12px',
+  fontSize: '11px',
+  fontWeight: 600,
+  border: '1px solid var(--border)',
+  borderRadius: '6px',
+  background: 'var(--bg-card)',
+  color: 'var(--text-primary)'
 }
