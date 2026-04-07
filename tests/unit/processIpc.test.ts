@@ -16,6 +16,7 @@ const getAllWindows = vi.hoisted(() => vi.fn());
 const getAppName = vi.hoisted(() => vi.fn());
 const getAppPath = vi.hoisted(() => vi.fn());
 const runExternalCommand = vi.hoisted(() => vi.fn());
+const getProcessNetworkUsage = vi.hoisted(() => vi.fn());
 vi.mock("electron", () => ({
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -50,6 +51,10 @@ vi.mock("../../src/main/services/processMonitor", () => ({
   getProcessByPid,
 }));
 
+vi.mock("../../src/main/services/processNetworkMonitor", () => ({
+  getProcessNetworkUsage,
+}));
+
 vi.mock("../../src/main/services/externalCommand", () => ({
   runExternalCommand,
 }));
@@ -70,6 +75,7 @@ describe("registerProcessIpc", () => {
     getAppName.mockReset();
     getAppPath.mockReset();
     runExternalCommand.mockReset();
+    getProcessNetworkUsage.mockReset();
 
     getFocusedWindow.mockReturnValue(null);
     getAllWindows.mockReturnValue([]);
@@ -301,5 +307,31 @@ describe("registerProcessIpc", () => {
 
     killSpy.mockRestore();
     Object.defineProperty(process, "platform", { value: originalPlatform });
+  });
+
+  it("PROCESS_GET_NETWORK_USAGE: returns success envelope with snapshot", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    getProcessNetworkUsage.mockResolvedValueOnce({
+      supported: true,
+      capturedAt: 123,
+      intervalSec: 2,
+      processes: [
+        { pid: 1, name: "a", rxBps: 10, txBps: 20, totalRxBytes: 100, totalTxBytes: 200 },
+      ],
+    });
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE)!;
+    const result = await handler({}) as { ok: boolean; data?: unknown };
+    expect(result.ok).toBe(true);
+    expect(result.data).toMatchObject({ supported: true, processes: [{ pid: 1 }] });
+  });
+
+  it("PROCESS_GET_NETWORK_USAGE: returns failure envelope when collector throws", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    getProcessNetworkUsage.mockRejectedValueOnce(new Error("nettop missing"));
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE)!;
+    const result = await handler({}) as { ok: boolean };
+    expect(result.ok).toBe(false);
   });
 });

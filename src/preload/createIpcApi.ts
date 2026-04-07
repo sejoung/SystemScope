@@ -86,6 +86,7 @@ export function createIpcApi(): SystemScopeApi {
     getProcessSnapshot: (limit: number) =>
       invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_SNAPSHOT, limit),
     getNetworkPorts: () => invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_PORTS),
+    getNetworkUsage: () => invokeWithRequestId(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE),
     killProcess: (request: {
       pid: number;
       name?: string;

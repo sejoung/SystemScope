@@ -2,6 +2,7 @@ import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessSnapshot } from '../services/processMonitor'
+import { getProcessNetworkUsage } from '../services/processNetworkMonitor'
 import { success, failure } from '@shared/types'
 import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
@@ -80,6 +81,21 @@ export function registerProcessIpc(): void {
       logErrorAction('process-ipc', 'ports.list', withRequestMeta(requestMeta, { error: err }))
       logProductMetric('process-ipc', 'ports.scan', 'failed', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_ports'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    try {
+      const snapshot = await getProcessNetworkUsage()
+      logInfoAction('process-ipc', 'network.usage.get', withRequestMeta(requestMeta, {
+        supported: snapshot.supported,
+        count: snapshot.processes.length,
+      }))
+      return success(snapshot)
+    } catch (err) {
+      logErrorAction('process-ipc', 'network.usage.get', withRequestMeta(requestMeta, { error: err }))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
 

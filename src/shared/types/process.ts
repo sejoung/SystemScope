@@ -38,3 +38,19 @@ export interface ProcessKillResult {
   killed: boolean
   cancelled: boolean
 }
+
+export interface ProcessNetworkUsage {
+  pid: number
+  name: string
+  rxBps: number | null      // null when no prior baseline (first tick / new PID)
+  txBps: number | null
+  totalRxBytes: number      // cumulative since boot, from nettop
+  totalTxBytes: number
+}
+
+export interface ProcessNetworkSnapshot {
+  supported: boolean        // false on non-macOS platforms
+  capturedAt: number        // ms since epoch
+  intervalSec: number | null  // seconds since previous snapshot, or null on first call
+  processes: ProcessNetworkUsage[]
+}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useProcessStore } from "../stores/useProcessStore";
 import { ProcessTable } from "../features/process/ProcessTable";
 import { ListeningPorts } from "../features/process/ListeningPorts";
+import { ProcessNetworkPanel } from "../features/process/ProcessNetworkPanel";
 import { PortWatch } from "../features/process/PortWatch";
 import { PageLoading } from "../components/PageLoading";
 import { PageTab } from "../components/PageTab";
@@ -9,7 +10,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
 import { StartupItemList } from "../features/startup/StartupItemList";
 
-type ActivityTab = "processes" | "ports" | "watch" | "startup";
+type ActivityTab = "processes" | "ports" | "network" | "watch" | "startup";
 
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
@@ -80,6 +81,13 @@ export function ProcessPage() {
             {tk("process.tab.ports")}
           </PageTab>
           <PageTab
+            id="activity-network"
+            active={tab === "network"}
+            onClick={() => setTab("network")}
+          >
+            {tk("process.tab.network")}
+          </PageTab>
+          <PageTab
             id="activity-watch"
             active={tab === "watch"}
             onClick={() => setTab("watch")}
@@ -109,12 +117,15 @@ export function ProcessPage() {
               ? tk(
                   "Review every listening port on this system, identify exposed bindings quickly, and terminate the owning process when needed.",
                 )
-              : tk("process.page.tab.watch_help")}
+              : tab === "network"
+                ? tk("process.page.tab.network_help")
+                : tk("process.page.tab.watch_help")}
         </div>
       </div>
 
       {tab === "processes" && <ErrorBoundary title={tk("process.tab.processes")}><ProcessTable processes={allProcesses} /></ErrorBoundary>}
       {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts showConflictCenter={false} /></ErrorBoundary>}
+      {tab === "network" && <ErrorBoundary title={tk("process.tab.network")}><ProcessNetworkPanel /></ErrorBoundary>}
       {tab === "watch" && <ErrorBoundary title={tk("process.tab.watch")}><PortWatch /></ErrorBoundary>}
       {tab === "startup" && <ErrorBoundary title={tk("process.tab.startup")}><StartupItemList /></ErrorBoundary>}
     </div>

@@ -44,6 +44,7 @@ export const IPC_CHANNELS = {
   PROCESS_GET_ALL: 'process:getAll',
   PROCESS_GET_SNAPSHOT: 'process:getSnapshot',
   PROCESS_GET_PORTS: 'process:getPorts',
+  PROCESS_GET_NETWORK_USAGE: 'process:getNetworkUsage',
   PROCESS_KILL: 'process:kill',
 
   // 설치된 앱

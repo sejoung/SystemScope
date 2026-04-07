@@ -58,7 +58,8 @@ import type {
   StartupItem,
   StartupToggleResult,
   ProjectMonitorSummary,
-  DevToolsOverview
+  DevToolsOverview,
+  ProcessNetworkSnapshot
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -114,6 +115,7 @@ export interface SystemScopeApi {
   getAllProcesses: () => Promise<AppResult<ProcessInfo[]>>
   getProcessSnapshot: (limit: number) => Promise<AppResult<ProcessSnapshot>>
   getNetworkPorts: () => Promise<AppResult<PortInfo[]>>
+  getNetworkUsage: () => Promise<AppResult<ProcessNetworkSnapshot>>
   killProcess: (request: ProcessKillRequest) => Promise<AppResult<ProcessKillResult>>
 
   listInstalledApps: () => Promise<AppResult<InstalledApp[]>>
