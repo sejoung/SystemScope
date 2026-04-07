@@ -112,11 +112,18 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'deleteProfile',
   'setActiveProfile',
   'getProjectMonitorSummary',
+  'getNetworkCaptureCapability',
+  'getNetworkCaptureStatus',
   'scanDevTools',
   'cleanDevToolItems',
   'getDevToolsOverview',
   'getStartupItems',
-  'toggleStartupItem'
+  'toggleStartupItem',
+  'startNetworkCapture',
+  'stopNetworkCapture',
+  'clearNetworkCapture',
+  'listRecentNetworkFlows',
+  'onNetworkCaptureUpdate'
 ]
 
 const LISTENER_KEYS: (keyof SystemScopeApi)[] = [
@@ -126,7 +133,8 @@ const LISTENER_KEYS: (keyof SystemScopeApi)[] = [
   'onUpdateAvailable',
   'onJobProgress',
   'onJobCompleted',
-  'onJobFailed'
+  'onJobFailed',
+  'onNetworkCaptureUpdate'
 ]
 
 describe('createIpcApi', () => {
@@ -255,7 +263,8 @@ describe('createIpcApi', () => {
       onUpdateAvailable: IPC_CHANNELS.EVENT_UPDATE_AVAILABLE,
       onJobProgress: IPC_CHANNELS.JOB_PROGRESS,
       onJobCompleted: IPC_CHANNELS.JOB_COMPLETED,
-      onJobFailed: IPC_CHANNELS.JOB_FAILED
+      onJobFailed: IPC_CHANNELS.JOB_FAILED,
+      onNetworkCaptureUpdate: IPC_CHANNELS.EVENT_NETWORK_CAPTURE_UPDATE
     }
 
     for (const key of LISTENER_KEYS) {

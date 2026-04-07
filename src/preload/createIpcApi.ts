@@ -206,5 +206,18 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.PROFILE_SET_ACTIVE, id),
     getProjectMonitorSummary: () =>
       invokeWithRequestId(IPC_CHANNELS.PROJECT_MONITOR_GET_SUMMARY),
+    getNetworkCaptureCapability: () =>
+      invokeWithRequestId(IPC_CHANNELS.NETWORK_CAPTURE_GET_CAPABILITY),
+    getNetworkCaptureStatus: () =>
+      invokeWithRequestId(IPC_CHANNELS.NETWORK_CAPTURE_GET_STATUS),
+    startNetworkCapture: () =>
+      invokeWithRequestId(IPC_CHANNELS.NETWORK_CAPTURE_START),
+    stopNetworkCapture: () =>
+      invokeWithRequestId(IPC_CHANNELS.NETWORK_CAPTURE_STOP),
+    clearNetworkCapture: () =>
+      invokeWithRequestId(IPC_CHANNELS.NETWORK_CAPTURE_CLEAR),
+    listRecentNetworkFlows: (limit?: number) =>
+      invokeWithRequestId(IPC_CHANNELS.NETWORK_CAPTURE_LIST_RECENT, limit),
+    onNetworkCaptureUpdate: createListener(IPC_CHANNELS.EVENT_NETWORK_CAPTURE_UPDATE),
   };
 }

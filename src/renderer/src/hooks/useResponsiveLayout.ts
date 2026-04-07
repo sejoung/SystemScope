@@ -9,6 +9,7 @@ export const RESPONSIVE_WIDTH = {
   settingsPageCompact: 920,
   shellCompact: 760,
   dashboardSingleColumn: 900,
+  devToolsNetworkCaptureSingleColumn: 1040,
 } as const
 
 export function isCompactWidth(width: number, threshold: number): boolean {

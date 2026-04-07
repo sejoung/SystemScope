@@ -131,10 +131,17 @@ export const IPC_CHANNELS = {
   PROFILE_DELETE:     'profile:delete',
   PROFILE_SET_ACTIVE: 'profile:setActive',
   PROJECT_MONITOR_GET_SUMMARY: 'projectmonitor:getSummary',
+  NETWORK_CAPTURE_GET_CAPABILITY: 'networkcapture:getCapability',
+  NETWORK_CAPTURE_GET_STATUS: 'networkcapture:getStatus',
+  NETWORK_CAPTURE_START: 'networkcapture:start',
+  NETWORK_CAPTURE_STOP: 'networkcapture:stop',
+  NETWORK_CAPTURE_CLEAR: 'networkcapture:clear',
+  NETWORK_CAPTURE_LIST_RECENT: 'networkcapture:listRecent',
 
   // 실시간 이벤트 (메인 → 렌더러)
   EVENT_SYSTEM_UPDATE: 'event:systemUpdate',
   EVENT_ALERT_FIRED: 'event:alertFired',
   EVENT_SHUTDOWN_STATE: 'event:shutdownState',
-  EVENT_UPDATE_AVAILABLE: 'event:updateAvailable'
+  EVENT_UPDATE_AVAILABLE: 'event:updateAvailable',
+  EVENT_NETWORK_CAPTURE_UPDATE: 'event:networkCaptureUpdate'
 } as const

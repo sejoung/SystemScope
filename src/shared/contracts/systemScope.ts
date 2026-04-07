@@ -59,7 +59,10 @@ import type {
   StartupToggleResult,
   ProjectMonitorSummary,
   DevToolsOverview,
-  ProcessNetworkSnapshot
+  ProcessNetworkSnapshot,
+  NetworkCaptureCapability,
+  NetworkCaptureStatus,
+  NetworkFlowSummary
 } from '@shared/types'
 
 export type IpcListener = (callback: (data: unknown) => void) => () => void
@@ -186,6 +189,13 @@ export interface SystemScopeApi {
   deleteProfile: (id: string) => Promise<AppResult<boolean>>
   setActiveProfile: (id: string | null) => Promise<AppResult<WorkspaceProfile | null>>
   getProjectMonitorSummary: () => Promise<AppResult<ProjectMonitorSummary>>
+  getNetworkCaptureCapability: () => Promise<AppResult<NetworkCaptureCapability>>
+  getNetworkCaptureStatus: () => Promise<AppResult<NetworkCaptureStatus>>
+  startNetworkCapture: () => Promise<AppResult<boolean>>
+  stopNetworkCapture: () => Promise<AppResult<boolean>>
+  clearNetworkCapture: () => Promise<AppResult<boolean>>
+  listRecentNetworkFlows: (limit?: number) => Promise<AppResult<NetworkFlowSummary[]>>
+  onNetworkCaptureUpdate: IpcListener
 }
 
 export type { AlertThresholds, DiskScanResult, ShutdownState }

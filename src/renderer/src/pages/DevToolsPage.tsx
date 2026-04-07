@@ -3,11 +3,12 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PageTab } from "../components/PageTab";
 import { DevToolsOverviewSection } from "../features/devtools/DevToolsOverviewSection";
 import { DevToolsSection } from "../features/devtools/DevToolsSection";
+import { NetworkCapturePanel } from "../features/devtools/NetworkCapturePanel";
 import { PortConflictCenterCard } from "../features/devtools/PortConflictCenterCard";
 import { ProjectMonitorCard } from "../features/monitoring/ProjectMonitorCard";
 import { useI18n } from "../i18n/useI18n";
 
-type DevToolsTab = "overview" | "workspaces" | "ports" | "cleanup";
+type DevToolsTab = "overview" | "workspaces" | "ports" | "network" | "cleanup";
 
 export function DevToolsPage() {
   const { tk } = useI18n();
@@ -72,6 +73,13 @@ export function DevToolsPage() {
             {tk("Ports")}
           </PageTab>
           <PageTab
+            id="devtools-network"
+            active={tab === "network"}
+            onClick={() => setTab("network")}
+          >
+            {tk("Network")}
+          </PageTab>
+          <PageTab
             id="devtools-cleanup"
             active={tab === "cleanup"}
             onClick={() => setTab("cleanup")}
@@ -118,6 +126,14 @@ export function DevToolsPage() {
         <div style={{ display: "grid", gap: 16 }}>
           <ErrorBoundary title={tk("Developer Tools")}>
             <DevToolsSection />
+          </ErrorBoundary>
+        </div>
+      )}
+
+      {tab === "network" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <ErrorBoundary title={tk("Network Capture")}>
+            <NetworkCapturePanel />
           </ErrorBoundary>
         </div>
       )}
