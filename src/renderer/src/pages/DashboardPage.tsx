@@ -46,7 +46,6 @@ export function DashboardPage() {
     return id ? s.profiles.find((p) => p.id === id) ?? null : null;
   });
   const hiddenWidgets = useMemo(() => new Set<DashboardWidgetKey>(activeProfile?.hiddenWidgets ?? []), [activeProfile?.hiddenWidgets]);
-  const singleColumnLayout = shouldUseDashboardSingleColumnLayout(containerWidth);
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 
@@ -170,9 +169,8 @@ export function DashboardPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: singleColumnLayout
-            ? "1fr"
-            : "repeat(auto-fit, minmax(340px, 1fr))",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+          alignItems: "start",
           gap: "16px",
           marginBottom: "16px",
         }}

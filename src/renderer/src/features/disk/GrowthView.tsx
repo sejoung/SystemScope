@@ -53,7 +53,6 @@ export function GrowthView() {
       badge={loading ? tk('common.analyzing') : hasData ? tk('disk.storage_growth.badge', { size: formatBytes(result!.totalAdded), period: PERIOD_LABELS[result!.period] }) : undefined}
       badgeColor={loading ? 'var(--text-muted)' : 'var(--accent-yellow)'}
       defaultOpen
-      forceOpen={!!hasData || loading}
       actions={
         <>
           <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-primary)', borderRadius: '6px', padding: '2px' }}>
@@ -83,21 +82,9 @@ export function GrowthView() {
       }
     >
       {!result ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-muted)', padding: '4px 0' }}>
-          {loading && (
-            <div style={{
-              width: '14px', height: '14px',
-              border: '2px solid var(--accent-yellow)',
-              borderTop: '2px solid transparent',
-              borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite'
-            }} />
-          )}
-          {loading ? tk('disk.storage_growth.loading') : tk('disk.storage_growth.description')}
-          {loading && <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>}
-        </div>
+        <GrowthPlaceholder message={loading ? tk('disk.storage_growth.loading') : tk('disk.storage_growth.description')} showSpinner={loading} />
       ) : result.totalAdded === 0 ? (
-        <div style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
+        <div style={{ ...cardBodyStyle, fontSize: '13px', color: 'var(--text-muted)', padding: '8px 0' }}>
           {tk('disk.storage_growth.no_changes', { period: PERIOD_LABELS[result.period] })}
           <br />
           <span style={{ fontSize: '11px' }}>
@@ -105,7 +92,7 @@ export function GrowthView() {
           </span>
         </div>
       ) : (
-        <div>
+        <div style={{ ...cardBodyStyle, minHeight: 'unset' }}>
           {/* Summary */}
           <div style={{
             display: 'flex', gap: '10px', marginBottom: '14px', padding: '9px 12px',
@@ -191,6 +178,45 @@ export function GrowthView() {
   )
 }
 
+function GrowthPlaceholder({ message, showSpinner }: { message: string; showSpinner: boolean }) {
+  return (
+    <div style={cardBodyStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '18px' }}>
+        {showSpinner ? (
+          <div style={spinnerStyle} />
+        ) : (
+          <div style={spinnerSpacerStyle} />
+        )}
+        {message}
+        {showSpinner && <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>}
+      </div>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+        <div style={{ ...placeholderBlockStyle, width: '120px', height: '28px', borderRadius: '999px' }} />
+        <div style={{ ...placeholderBlockStyle, width: '104px', height: '28px', borderRadius: '999px' }} />
+        <div style={{ ...placeholderBlockStyle, width: '126px', height: '28px', borderRadius: '999px' }} />
+      </div>
+      <div style={{ marginBottom: '14px' }}>
+        <div style={{ ...placeholderBlockStyle, width: '108px', height: '12px', marginBottom: '8px' }} />
+        <div style={{ ...placeholderBlockStyle, width: '100%', height: '160px' }} />
+      </div>
+      <div>
+        <div style={{ ...placeholderBlockStyle, width: '92px', height: '12px', marginBottom: '8px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--border)' }} />
+              <div style={{ ...placeholderBlockStyle, width: '78px', height: '14px' }} />
+              <div style={{ ...placeholderBlockStyle, flex: 1, height: '4px', borderRadius: '999px' }} />
+              <div style={{ ...placeholderBlockStyle, width: '65px', height: '14px' }} />
+              <div style={{ ...placeholderBlockStyle, width: '45px', height: '12px' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: number; maxAdded: number }) {
   const pct = (folder.addedSize / maxAdded) * 100
   const growthPct = (folder.growthRate * 100).toFixed(1)
@@ -253,4 +279,28 @@ const summaryPillStyle: React.CSSProperties = {
   borderRadius: '999px',
   border: '1px solid var(--border)',
   background: 'var(--bg-card)'
+}
+
+const cardBodyStyle: React.CSSProperties = {
+  minHeight: '360px'
+}
+
+const placeholderBlockStyle: React.CSSProperties = {
+  background: 'var(--bg-primary)',
+  borderRadius: '8px'
+}
+
+const spinnerStyle: React.CSSProperties = {
+  width: '14px',
+  height: '14px',
+  border: '2px solid var(--accent-yellow)',
+  borderTop: '2px solid transparent',
+  borderRadius: '50%',
+  animation: 'spin 0.8s linear infinite'
+}
+
+const spinnerSpacerStyle: React.CSSProperties = {
+  width: '14px',
+  height: '14px',
+  flexShrink: 0
 }

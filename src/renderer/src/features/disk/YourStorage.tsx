@@ -34,16 +34,18 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
     }
   }, [info, loading, fetched, fetchUserSpace])
 
+  if (!info && !fetched) {
+    return (
+      <Accordion title={tk('disk.section.home_storage')} defaultOpen>
+        <StoragePlaceholder message={tk('disk.home_storage.loading')} showSpinner={false} />
+      </Accordion>
+    )
+  }
+
   if (!info && loading) {
     return (
       <Accordion title={tk('disk.section.home_storage')} defaultOpen>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
-          color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0', justifyContent: 'center'
-        }}>
-          <Spinner />
-          {tk('disk.home_storage.loading')}
-        </div>
+        <StoragePlaceholder message={tk('disk.home_storage.loading')} showSpinner />
       </Accordion>
     )
   }
@@ -51,12 +53,17 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   if (!info) {
     return (
       <Accordion title={tk('disk.section.home_storage')} defaultOpen>
-        <div style={{
-          color: 'var(--text-muted)',
-          fontSize: '13px',
-          padding: '16px 0',
-          textAlign: 'center'
-        }}>
+        <div
+          style={{
+            ...cardBodyStyle,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-muted)',
+            fontSize: '13px',
+            textAlign: 'center'
+          }}
+        >
           {tk('disk.home_storage.load_failed')}
         </div>
       </Accordion>
@@ -69,6 +76,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   return (
     <Accordion title={tk('disk.section.home_storage')} defaultOpen>
       {/* Disk capacity summary */}
+      <div style={{ ...cardBodyStyle, minHeight: 'unset' }}>
       <div style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px', gap: '10px', flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -223,6 +231,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
           })}
         </div>
       </div>
+      </div>
     </Accordion>
   )
 }
@@ -255,6 +264,43 @@ function Spinner() {
   )
 }
 
+function StoragePlaceholder({ message, showSpinner }: { message: string; showSpinner: boolean }) {
+  return (
+    <div style={cardBodyStyle}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          color: 'var(--text-muted)',
+          fontSize: '13px',
+          marginBottom: '18px'
+        }}
+      >
+        {showSpinner ? <Spinner /> : <div style={spinnerSpacerStyle} />}
+        {message}
+      </div>
+      <div style={{ ...placeholderBlockStyle, height: '28px', marginBottom: '10px' }} />
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        <div style={{ ...placeholderBlockStyle, width: '120px', height: '12px' }} />
+        <div style={{ ...placeholderBlockStyle, width: '110px', height: '12px' }} />
+        <div style={{ ...placeholderBlockStyle, width: '84px', height: '12px', marginLeft: 'auto' }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--border)' }} />
+            <div style={{ ...placeholderBlockStyle, width: '92px', height: '14px' }} />
+            <div style={{ ...placeholderBlockStyle, flex: 1, height: '6px', borderRadius: '999px' }} />
+            <div style={{ ...placeholderBlockStyle, width: '72px', height: '14px' }} />
+            <div style={{ ...placeholderBlockStyle, width: '52px', height: '24px', borderRadius: '6px' }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const subtleActionButtonStyle: React.CSSProperties = {
   padding: '4px 12px',
   fontSize: '11px',
@@ -263,4 +309,19 @@ const subtleActionButtonStyle: React.CSSProperties = {
   borderRadius: '6px',
   background: 'var(--bg-card)',
   color: 'var(--text-primary)'
+}
+
+const cardBodyStyle: React.CSSProperties = {
+  minHeight: '360px'
+}
+
+const placeholderBlockStyle: React.CSSProperties = {
+  background: 'var(--bg-primary)',
+  borderRadius: '8px'
+}
+
+const spinnerSpacerStyle: React.CSSProperties = {
+  width: '14px',
+  height: '14px',
+  flexShrink: 0
 }

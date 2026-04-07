@@ -39,6 +39,8 @@ Renderer의 최소 폭 대응은 화면별 임시 분기보다 공통 규칙을 
 | `portWatchCompact` | `960` | Port Watch compact layout |
 | `dockerPageCompact` | `980` | Docker page tabs and list screens compact layout |
 | `settingsPageCompact` | `920` | Settings page header and save bar compact layout |
+| `shellCompact` | `760` | App shell stacks sidebar above main content |
+| `dashboardSingleColumn` | `900` | Dashboard lower sections switch to single-column layout |
 
 ```ts
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
@@ -134,6 +136,9 @@ return <section ref={containerRef}>...</section>;
   - `Installed`, `Leftover Data`, `Registry Cleanup`은 table/row형에서 카드형으로 전환
 - Activity
   - `Port Finder`, `Port Watch`, `Processes`는 좁은 폭에서 메타 중심 카드형으로 전환
+- Dashboard
+  - 상단 monitoring widgets는 카드 폭 확보를 우선하고, 좁은 폭이라도 별도 compact 위젯 변형보다 grid column 수를 줄이는 방식을 우선한다
+  - `Storage`, `Growth` 같은 하단 요약 섹션은 단일 컬럼으로 전환해 세로 읽기 흐름을 유지한다
 - Docker
   - `Containers`, `Images`, `Volumes`는 좁은 폭에서 관리용 table 대신 카드형으로 전환
   - 탭 strip은 wrap 가능해야 하고, status badge와 destructive action은 상단에서 바로 식별 가능해야 한다
@@ -153,6 +158,8 @@ return <section ref={containerRef}>...</section>;
 - [src/renderer/src/features/docker/DockerVolumes.tsx](/Users/beni/SystemScope/src/renderer/src/features/docker/DockerVolumes.tsx)
 - [src/renderer/src/pages/SettingsPage.tsx](/Users/beni/SystemScope/src/renderer/src/pages/SettingsPage.tsx)
 - [src/renderer/src/pages/DockerPage.tsx](/Users/beni/SystemScope/src/renderer/src/pages/DockerPage.tsx)
+- [src/renderer/src/pages/DashboardPage.tsx](/Users/beni/SystemScope/src/renderer/src/pages/DashboardPage.tsx)
+- [src/renderer/src/components/Layout.tsx](/Users/beni/SystemScope/src/renderer/src/components/Layout.tsx)
 
 ## 스타일 규칙
 
@@ -235,6 +242,7 @@ expect(shouldUseExampleCompactLayout(960)).toBe(false);
 - [tests/unit/portWatchLayout.test.ts](/Users/beni/SystemScope/tests/unit/portWatchLayout.test.ts)
 - [tests/unit/dockerLayout.test.ts](/Users/beni/SystemScope/tests/unit/dockerLayout.test.ts)
 - [tests/unit/settingsPage.test.ts](/Users/beni/SystemScope/tests/unit/settingsPage.test.ts)
+- [tests/unit/layoutResponsive.test.ts](/Users/beni/SystemScope/tests/unit/layoutResponsive.test.ts)
 
 ## 새 화면 추가 체크리스트
 
