@@ -44,8 +44,8 @@ export interface ProcessNetworkUsage {
   name: string
   rxBps: number | null      // null when no prior baseline (first tick / new PID)
   txBps: number | null
-  totalRxBytes: number      // cumulative since boot, from nettop
-  totalTxBytes: number
+  totalRxBytes: number | null    // null on platforms without nettop (e.g. Windows)
+  totalTxBytes: number | null
 }
 
 export interface ProcessNetworkSnapshot {

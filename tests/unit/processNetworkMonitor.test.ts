@@ -5,7 +5,15 @@ vi.mock('../../src/main/services/externalCommand', () => ({
   runExternalCommand: vi.fn(),
 }))
 
+vi.mock('systeminformation', () => ({
+  default: {
+    networkConnections: vi.fn(),
+  },
+  networkConnections: vi.fn(),
+}))
+
 import { runExternalCommand } from '../../src/main/services/externalCommand'
+import si from 'systeminformation'
 
 const FIXTURE = `time                                                                                 bytes_in       bytes_out
 12:56:05.461338 mDNSResponder.686                                                  1206434923        87387400
@@ -128,8 +136,8 @@ describe('getProcessNetworkUsage', () => {
     __resetCacheForTests()
   })
 
-  it('returns { supported: false } and does not run nettop on non-darwin', async () => {
-    Object.defineProperty(process, 'platform', { value: 'win32' })
+  it('returns { supported: false } on non-darwin / non-win32 (linux etc.)', async () => {
+    Object.defineProperty(process, 'platform', { value: 'linux' })
     const snap = await getProcessNetworkUsage()
     expect(snap.supported).toBe(false)
     expect(snap.processes).toEqual([])
@@ -152,5 +160,51 @@ describe('getProcessNetworkUsage', () => {
     expect(snap.processes).toEqual([
       { pid: 42, name: 'foo', rxBps: null, txBps: null, totalRxBytes: 10, totalTxBytes: 20 },
     ])
+  })
+})
+
+describe('getProcessNetworkUsage on win32', () => {
+  const originalPlatform = process.platform
+
+  beforeEach(() => {
+    __resetCacheForTests()
+    vi.mocked(si.networkConnections).mockReset()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: originalPlatform })
+  })
+
+  it('aggregates si.networkConnections() by pid into ProcessNetworkUsage with null bytes', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    vi.mocked(si.networkConnections).mockResolvedValueOnce([
+      // chrome.exe with two connections
+      { protocol: 'tcp', localAddress: '192.168.0.10', localPort: '50001', peerAddress: '142.250.80.46', peerPort: '443', state: 'ESTABLISHED', pid: 1234, process: 'C:\\Program Files\\Google\\Chrome\\chrome.exe' },
+      { protocol: 'tcp', localAddress: '192.168.0.10', localPort: '50002', peerAddress: '142.250.80.47', peerPort: '443', state: 'ESTABLISHED', pid: 1234, process: 'C:\\Program Files\\Google\\Chrome\\chrome.exe' },
+      // slack.exe with one
+      { protocol: 'tcp', localAddress: '192.168.0.10', localPort: '50100', peerAddress: '13.107.42.14', peerPort: '443', state: 'ESTABLISHED', pid: 5678, process: 'slack.exe' },
+      // entries with pid <= 0 should be skipped
+      { protocol: 'tcp', localAddress: '0.0.0.0', localPort: '80', peerAddress: '0.0.0.0', peerPort: '0', state: 'LISTEN', pid: 0, process: '' },
+    ] as unknown as si.Systeminformation.NetworkConnectionsData[])
+
+    const snap = await getProcessNetworkUsage()
+    expect(snap.supported).toBe(true)
+    expect(snap.processes).toHaveLength(2)
+    const chrome = snap.processes.find((p) => p.pid === 1234)!
+    expect(chrome.name).toBe('chrome')
+    expect(chrome.rxBps).toBeNull()
+    expect(chrome.txBps).toBeNull()
+    expect(chrome.totalRxBytes).toBeNull()
+    expect(chrome.totalTxBytes).toBeNull()
+    const slack = snap.processes.find((p) => p.pid === 5678)!
+    expect(slack.name).toBe('slack')
+  })
+
+  it('returns empty processes array when there are no usable connections', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    vi.mocked(si.networkConnections).mockResolvedValueOnce([])
+    const snap = await getProcessNetworkUsage()
+    expect(snap.supported).toBe(true)
+    expect(snap.processes).toEqual([])
   })
 })

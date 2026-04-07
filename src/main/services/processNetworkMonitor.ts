@@ -1,5 +1,6 @@
 import type { ProcessNetworkSnapshot, ProcessNetworkUsage } from '@shared/types'
 import { runExternalCommand } from './externalCommand'
+import si from 'systeminformation'
 
 export interface NettopRow {
   pid: number
@@ -101,12 +102,46 @@ export function computeSnapshot(rows: NettopRow[], capturedAt: number): ProcessN
 
 const NETTOP_ARGS = ['-P', '-x', '-J', 'bytes_in,bytes_out', '-l', '1']
 
-export async function getProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> {
-  if (process.platform !== 'darwin') {
-    return { supported: false, capturedAt: Date.now(), intervalSec: null, processes: [] }
-  }
+function basenameWithoutExt(processPath: string | undefined, pid: number): string {
+  if (!processPath) return `PID ${pid}`
+  // Handle both windows and posix separators
+  const parts = processPath.split(/[\\/]/)
+  const last = parts[parts.length - 1] || processPath
+  return last.replace(/\.exe$/i, '').replace(/\.app$/i, '')
+}
 
-  const { stdout } = await runExternalCommand('nettop', NETTOP_ARGS, { windowsHide: true })
-  const rows = parseNettopOutput(stdout)
-  return computeSnapshot(rows, Date.now())
+async function collectFromNetworkConnections(): Promise<ProcessNetworkSnapshot> {
+  const conns = await si.networkConnections()
+  const byPid = new Map<number, ProcessNetworkUsage>()
+  for (const c of conns) {
+    if (!c.pid || c.pid <= 0) continue
+    const existing = byPid.get(c.pid)
+    if (existing) continue  // we only need one entry per pid; counts are derived elsewhere
+    byPid.set(c.pid, {
+      pid: c.pid,
+      name: basenameWithoutExt(c.process, c.pid),
+      rxBps: null,
+      txBps: null,
+      totalRxBytes: null,
+      totalTxBytes: null,
+    })
+  }
+  return {
+    supported: true,
+    capturedAt: Date.now(),
+    intervalSec: null,
+    processes: Array.from(byPid.values()),
+  }
+}
+
+export async function getProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> {
+  if (process.platform === 'darwin') {
+    const { stdout } = await runExternalCommand('nettop', NETTOP_ARGS, { windowsHide: true })
+    const rows = parseNettopOutput(stdout)
+    return computeSnapshot(rows, Date.now())
+  }
+  if (process.platform === 'win32') {
+    return collectFromNetworkConnections()
+  }
+  return { supported: false, capturedAt: Date.now(), intervalSec: null, processes: [] }
 }

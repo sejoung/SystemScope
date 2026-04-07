@@ -1289,7 +1289,7 @@ export const EN_MESSAGES = {
   "docker.images.partial": "Partial failure: {message}",
   "main.apps.confirm.related_count": "Related Data: {count} item(s)",
   "process.network_usage.title": "Process Network Usage",
-  "process.network_usage.unsupported": "Per-process network monitoring is currently macOS only.",
+  "process.network_usage.unsupported": "Per-process network monitoring is not supported on this platform.",
   "process.network_usage.col.process": "Process",
   "process.network_usage.col.rxBps": "Download",
   "process.network_usage.col.txBps": "Upload",

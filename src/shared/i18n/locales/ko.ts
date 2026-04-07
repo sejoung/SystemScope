@@ -1291,7 +1291,7 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "docker.images.partial": "일부 실패: {message}",
   "main.apps.confirm.related_count": "관련 데이터: {count}개",
   "process.network_usage.title": "프로세스별 네트워크 사용량",
-  "process.network_usage.unsupported": "프로세스별 네트워크 모니터링은 현재 macOS에서만 지원됩니다.",
+  "process.network_usage.unsupported": "이 플랫폼에서는 프로세스별 네트워크 모니터링을 지원하지 않습니다.",
   "process.network_usage.col.process": "프로세스",
   "process.network_usage.col.rxBps": "다운로드",
   "process.network_usage.col.txBps": "업로드",
