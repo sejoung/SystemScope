@@ -116,6 +116,7 @@ export interface SystemScopeApi {
   getProcessSnapshot: (limit: number) => Promise<AppResult<ProcessSnapshot>>
   getNetworkPorts: () => Promise<AppResult<PortInfo[]>>
   getNetworkUsage: () => Promise<AppResult<ProcessNetworkSnapshot>>
+  resolveHostnames: (ips: string[]) => Promise<AppResult<Record<string, string | null>>>
   killProcess: (request: ProcessKillRequest) => Promise<AppResult<ProcessKillResult>>
 
   listInstalledApps: () => Promise<AppResult<InstalledApp[]>>

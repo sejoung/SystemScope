@@ -59,6 +59,7 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'getProcessSnapshot',
   'getNetworkPorts',
   'getNetworkUsage',
+  'resolveHostnames',
   'killProcess',
   'listInstalledApps',
   'getAppRelatedData',

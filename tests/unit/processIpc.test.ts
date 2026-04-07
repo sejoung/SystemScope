@@ -17,6 +17,10 @@ const getAppName = vi.hoisted(() => vi.fn());
 const getAppPath = vi.hoisted(() => vi.fn());
 const runExternalCommand = vi.hoisted(() => vi.fn());
 const getProcessNetworkUsage = vi.hoisted(() => vi.fn());
+const resolveHostnames = vi.hoisted(() => vi.fn());
+vi.mock("../../src/main/services/dnsResolver", () => ({
+  resolveHostnames,
+}));
 vi.mock("electron", () => ({
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -76,6 +80,7 @@ describe("registerProcessIpc", () => {
     getAppPath.mockReset();
     runExternalCommand.mockReset();
     getProcessNetworkUsage.mockReset();
+    resolveHostnames.mockReset();
 
     getFocusedWindow.mockReturnValue(null);
     getAllWindows.mockReturnValue([]);
@@ -332,6 +337,34 @@ describe("registerProcessIpc", () => {
     getProcessNetworkUsage.mockRejectedValueOnce(new Error("nettop missing"));
     const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE)!;
     const result = await handler({}) as { ok: boolean };
+    expect(result.ok).toBe(false);
+  });
+
+  it("PROCESS_RESOLVE_HOSTNAMES: validates input as string array", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
+    const result = await handler({}, "not-an-array") as { ok: boolean };
+    expect(result.ok).toBe(false);
+    expect(resolveHostnames).not.toHaveBeenCalled();
+  });
+
+  it("PROCESS_RESOLVE_HOSTNAMES: returns success envelope with map", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    resolveHostnames.mockResolvedValueOnce({ "1.2.3.4": "host.example" });
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
+    const result = await handler({}, ["1.2.3.4"]) as { ok: boolean; data?: unknown };
+    expect(result.ok).toBe(true);
+    expect(result.data).toEqual({ "1.2.3.4": "host.example" });
+  });
+
+  it("PROCESS_RESOLVE_HOSTNAMES: returns failure when service throws", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    resolveHostnames.mockRejectedValueOnce(new Error("dns down"));
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
+    const result = await handler({}, ["1.2.3.4"]) as { ok: boolean };
     expect(result.ok).toBe(false);
   });
 });

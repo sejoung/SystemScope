@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import type { ProcessNetworkSnapshot, ProcessNetworkUsage, PortInfo } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
+import { usePidNetworkHistory } from "./usePidNetworkHistory";
+import { Sparkline } from "./Sparkline";
+import { peerLabel } from './peerLabel'
 
 type SortKey = "rxBps" | "txBps" | "totalRxBytes" | "totalTxBytes";
 
@@ -38,6 +41,7 @@ interface ExpandedRowProps {
 
 function ExpandedRow({ pid }: ExpandedRowProps) {
   const [ports, setPorts] = useState<PortInfo[] | null>(null);
+  const [hostnames, setHostnames] = useState<Record<string, string | null>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,6 +50,15 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
       if (res.ok && res.data) {
         const filtered = (res.data as PortInfo[]).filter((p) => p.pid === pid);
         setPorts(filtered);
+        const peerIps = Array.from(
+          new Set(filtered.map((p) => p.peerAddress).filter((ip) => !!ip && ip !== '*'))
+        );
+        if (peerIps.length > 0) {
+          const dnsRes = await window.systemScope.resolveHostnames(peerIps);
+          if (dnsRes.ok && dnsRes.data) {
+            setHostnames(dnsRes.data as Record<string, string | null>);
+          }
+        }
       } else if (!res.ok) {
         setError(res.error?.message ?? "Unable to fetch port information.");
       }
@@ -55,7 +68,7 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
   if (error) {
     return (
       <tr>
-        <td colSpan={5} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--accent-red)" }}>
+        <td colSpan={6} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--accent-red)" }}>
           {error}
         </td>
       </tr>
@@ -65,7 +78,7 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
   if (ports === null) {
     return (
       <tr>
-        <td colSpan={5} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--text-secondary)" }}>
+        <td colSpan={6} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--text-secondary)" }}>
           Loading ports...
         </td>
       </tr>
@@ -75,7 +88,7 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
   if (ports.length === 0) {
     return (
       <tr>
-        <td colSpan={5} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--text-secondary)" }}>
+        <td colSpan={6} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--text-secondary)" }}>
           No ports found for this process.
         </td>
       </tr>
@@ -84,7 +97,7 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
 
   return (
     <tr>
-      <td colSpan={5} style={{ padding: "8px 12px 12px 12px", background: "var(--bg-subtle, var(--bg-card))" }}>
+      <td colSpan={6} style={{ padding: "8px 12px 12px 12px", background: "var(--bg-subtle, var(--bg-card))" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {ports.map((p, i) => (
             <span
@@ -98,7 +111,7 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
                 color: "var(--text-secondary)",
               }}
             >
-              {p.protocol} {p.localAddress}:{p.localPort} → {p.peerAddress}:{p.peerPort} [{p.state}]
+              {p.protocol} {p.localAddress}:{p.localPort} → {peerLabel(p.peerAddress, hostnames[p.peerAddress] ?? null)}:{p.peerPort} [{p.state}]
             </span>
           ))}
         </div>
@@ -136,6 +149,8 @@ export function ProcessNetworkPanel() {
     };
   }, []);
 
+  const history = usePidNetworkHistory(snapshot);
+
   if (snapshot && !snapshot.supported) {
     return (
       <StatusMessage
@@ -159,6 +174,14 @@ export function ProcessNetworkPanel() {
   }
 
   const sorted = sortProcesses(snapshot.processes, sortKey);
+
+  const hasBaseline = snapshot.intervalSec !== null;
+  const totalRx = hasBaseline
+    ? snapshot.processes.reduce((acc, p) => acc + (p.rxBps ?? 0), 0)
+    : null;
+  const totalTx = hasBaseline
+    ? snapshot.processes.reduce((acc, p) => acc + (p.txBps ?? 0), 0)
+    : null;
 
   const thStyle: React.CSSProperties = {
     padding: "8px 12px",
@@ -193,6 +216,50 @@ export function ProcessNetworkPanel() {
       >
         {tk("process.network_usage.title")}
       </div>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "4px 10px",
+            borderRadius: "var(--radius-sm, 4px)",
+            background: "var(--bg-tag, var(--border))",
+            fontSize: "12px",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <span style={{ color: "var(--accent-blue, #3b82f6)" }}>↓</span>
+          <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+            {tk("process.network_usage.total_download")}
+          </span>
+          <span>{totalRx === null ? "—" : formatBps(totalRx)}</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "4px 10px",
+            borderRadius: "var(--radius-sm, 4px)",
+            background: "var(--bg-tag, var(--border))",
+            fontSize: "12px",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <span style={{ color: "var(--accent-green, #10b981)" }}>↑</span>
+          <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+            {tk("process.network_usage.total_upload")}
+          </span>
+          <span>{totalTx === null ? "—" : formatBps(totalTx)}</span>
+        </div>
+      </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -209,6 +276,9 @@ export function ProcessNetworkPanel() {
                 onClick={makeThClick("txBps")}
               >
                 ↑ {tk("process.network_usage.col.txBps")}
+              </th>
+              <th style={{ ...thStyle, cursor: "default" }}>
+                {tk("process.network_usage.col.activity")}
               </th>
               <th
                 style={{ ...thStyle, color: sortKey === "totalRxBytes" ? "var(--text-primary)" : "var(--text-secondary)" }}
@@ -242,6 +312,9 @@ export function ProcessNetworkPanel() {
                     </td>
                     <td style={tdStyle}>{formatBps(proc.rxBps)}</td>
                     <td style={tdStyle}>{formatBps(proc.txBps)}</td>
+                    <td style={{ ...tdStyle, padding: "4px 12px" }}>
+                      <Sparkline samples={history.get(proc.pid)?.samples ?? []} />
+                    </td>
                     <td style={tdStyle}>{formatBytes(proc.totalRxBytes)}</td>
                     <td style={tdStyle}>{formatBytes(proc.totalTxBytes)}</td>
                   </tr>

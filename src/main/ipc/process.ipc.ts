@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessSnapshot } from '../services/processMonitor'
 import { getProcessNetworkUsage } from '../services/processNetworkMonitor'
+import { resolveHostnames } from '../services/dnsResolver'
 import { success, failure } from '@shared/types'
 import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
@@ -95,6 +96,22 @@ export function registerProcessIpc(): void {
       return success(snapshot)
     } catch (err) {
       logErrorAction('process-ipc', 'network.usage.get', withRequestMeta(requestMeta, { error: err }))
+      return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES, async (_event, payload: unknown, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    if (!Array.isArray(payload) || !payload.every((item) => typeof item === 'string')) {
+      logWarnAction('process-ipc', 'dns.resolve', withRequestMeta(requestMeta, { reason: 'invalid_input' }))
+      return failure('INVALID_INPUT', tk('main.process.error.fetch_processes'))
+    }
+    try {
+      const result = await resolveHostnames(payload)
+      logInfoAction('process-ipc', 'dns.resolve', withRequestMeta(requestMeta, { count: payload.length }))
+      return success(result)
+    } catch (err) {
+      logErrorAction('process-ipc', 'dns.resolve', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', tk('main.process.error.fetch_processes'))
     }
   })
