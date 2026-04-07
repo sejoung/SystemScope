@@ -14,6 +14,7 @@ import { useI18n } from '../i18n/useI18n'
 import { isAlertIntelligence } from '@shared/types'
 import type { TimelineRange, AlertIntelligence } from '@shared/types'
 import type { SystemEventCategory } from '@shared/types'
+import { useContainerWidth } from '../hooks/useContainerWidth'
 
 const RANGE_OPTIONS: { value: TimelineRange; labelKey: 'timeline.range.24h' | 'timeline.range.7d' | 'timeline.range.30d' }[] = [
   { value: '24h', labelKey: 'timeline.range.24h' },
@@ -31,6 +32,7 @@ const EVENT_FILTER_OPTIONS: { value: SystemEventCategory | null; labelKey: strin
 ]
 
 export function TimelinePage() {
+  const [containerRef, containerWidth] = useContainerWidth(1280)
   const range = useTimelineStore((s) => s.range)
   const setRange = useTimelineStore((s) => s.setRange)
   const data = useTimelineStore((s) => s.data)
@@ -49,6 +51,7 @@ export function TimelinePage() {
   const [intelligenceLoading, setIntelligenceLoading] = useState(false)
 
   const { tk } = useI18n()
+  const useStackedLowerLayout = containerWidth < 1180
 
   // Fetch alert intelligence on mount
   useEffect(() => {
@@ -87,7 +90,7 @@ export function TimelinePage() {
   }, [eventFilter, fetchEvents, fetchFilteredEvents])
 
   return (
-    <div data-testid="page-timeline">
+    <div data-testid="page-timeline" ref={containerRef}>
       {/* Header */}
       <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
         <div style={{ display: 'grid', gap: '6px' }}>
@@ -161,93 +164,101 @@ export function TimelinePage() {
         </ErrorBoundary>
       </div>
 
-      {/* Event History Section */}
-      <ErrorBoundary title={tk('timeline.events.title')}>
-        <div
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '14px',
-              fontWeight: 700,
-              margin: '0 0 12px 0',
-              color: 'var(--text-primary)',
-            }}
-          >
-            {tk('timeline.events.title')}
-          </h3>
-
-          {/* Event filter tabs */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: useStackedLowerLayout ? '1fr' : 'minmax(0, 1.6fr) minmax(320px, 0.9fr)',
+          gap: '16px',
+          alignItems: 'start',
+        }}
+      >
+        <ErrorBoundary title={tk('timeline.events.title')}>
           <div
-            role="tablist"
-            aria-label={tk('timeline.events.title')}
             style={{
-              display: 'flex',
-              gap: '4px',
-              background: 'var(--bg-secondary)',
-              borderRadius: '8px',
-              padding: '3px',
-              marginBottom: '12px',
-              flexWrap: 'wrap',
+              padding: '16px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              order: useStackedLowerLayout ? 2 : 1,
             }}
           >
-            {EVENT_FILTER_OPTIONS.map((opt) => (
-              <PageTab
-                key={opt.value ?? 'all'}
-                id={`event-filter-${opt.value ?? 'all'}`}
-                active={eventFilter === opt.value}
-                onClick={() => setFilter(opt.value)}
-              >
-                {tk(opt.labelKey as Parameters<typeof tk>[0])}
-              </PageTab>
-            ))}
-          </div>
+            <h3
+              style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                margin: '0 0 12px 0',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {tk('timeline.events.title')}
+            </h3>
 
-          {/* Event list */}
-          {eventsLoading ? (
-            <div style={emptyBoxStyle}>{tk('timeline.loading')}</div>
-          ) : events.length === 0 ? (
-            <div style={emptyBoxStyle}>{tk('timeline.events.empty')}</div>
-          ) : (
-            <div style={{ display: 'grid', gap: '6px' }}>
-              {events.map((event) => (
-                <EventHistoryCard key={event.id} event={event} />
+            <div
+              role="tablist"
+              aria-label={tk('timeline.events.title')}
+              style={{
+                display: 'flex',
+                gap: '4px',
+                background: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                padding: '3px',
+                marginBottom: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
+              {EVENT_FILTER_OPTIONS.map((opt) => (
+                <PageTab
+                  key={opt.value ?? 'all'}
+                  id={`event-filter-${opt.value ?? 'all'}`}
+                  active={eventFilter === opt.value}
+                  onClick={() => setFilter(opt.value)}
+                >
+                  {tk(opt.labelKey as Parameters<typeof tk>[0])}
+                </PageTab>
               ))}
             </div>
-          )}
-        </div>
-      </ErrorBoundary>
 
-      {/* Snapshots Section */}
-      <ErrorBoundary title={tk('Snapshots')}>
-        <div
-          style={{
-            padding: '16px',
-            marginTop: '16px',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-          }}
-        >
-          <h3
+            {eventsLoading ? (
+              <div style={emptyBoxStyle}>{tk('timeline.loading')}</div>
+            ) : events.length === 0 ? (
+              <div style={emptyBoxStyle}>{tk('timeline.events.empty')}</div>
+            ) : (
+              <div style={{ display: 'grid', gap: '6px' }}>
+                {events.map((event) => (
+                  <EventHistoryCard key={event.id} event={event} />
+                ))}
+              </div>
+            )}
+          </div>
+        </ErrorBoundary>
+
+        <ErrorBoundary title={tk('Snapshots')}>
+          <div
             style={{
-              fontSize: '14px',
-              fontWeight: 700,
-              margin: '0 0 12px 0',
-              color: 'var(--text-primary)',
+              padding: '16px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              position: useStackedLowerLayout ? 'static' : 'sticky',
+              top: useStackedLowerLayout ? undefined : '16px',
+              order: useStackedLowerLayout ? 1 : 2,
             }}
           >
-            {tk('Snapshots')}
-          </h3>
-          <SnapshotList />
-          <SnapshotDiffView />
-        </div>
-      </ErrorBoundary>
+            <h3
+              style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                margin: '0 0 12px 0',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {tk('Snapshots')}
+            </h3>
+            <SnapshotList />
+            <SnapshotDiffView />
+          </div>
+        </ErrorBoundary>
+      </div>
     </div>
   )
 }
