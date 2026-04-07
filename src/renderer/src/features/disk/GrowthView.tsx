@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useDiskStore } from '../../stores/useDiskStore'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
@@ -48,11 +47,10 @@ export function GrowthView() {
   const hasData = result && result.totalAdded > 0
 
   return (
-    <Accordion
+    <DashboardCard
       title={tk('disk.section.storage_growth')}
       badge={loading ? tk('common.analyzing') : hasData ? tk('disk.storage_growth.badge', { size: formatBytes(result!.totalAdded), period: PERIOD_LABELS[result!.period] }) : undefined}
       badgeColor={loading ? 'var(--text-muted)' : 'var(--accent-yellow)'}
-      defaultOpen
       actions={
         <>
           <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-primary)', borderRadius: '6px', padding: '2px' }}>
@@ -174,7 +172,48 @@ export function GrowthView() {
           </div>
         </div>
       )}
-    </Accordion>
+    </DashboardCard>
+  )
+}
+
+function DashboardCard({
+  title,
+  badge,
+  badgeColor,
+  actions,
+  children
+}: {
+  title: string
+  badge?: string
+  badgeColor?: string
+  actions?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <div style={dashboardCardStyle}>
+      <div style={dashboardCardHeaderStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
+          <div style={dashboardCardTitleStyle}>{title}</div>
+          {badge ? (
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '1px 8px',
+                borderRadius: '4px',
+                background: badgeColor ? `${badgeColor}20` : 'var(--bg-card-hover)',
+                color: badgeColor ?? 'var(--text-secondary)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {badge}
+            </span>
+          ) : null}
+        </div>
+        {actions ? <div style={dashboardCardActionsStyle}>{actions}</div> : null}
+      </div>
+      <div style={dashboardCardContentStyle}>{children}</div>
+    </div>
   )
 }
 
@@ -303,4 +342,41 @@ const spinnerSpacerStyle: React.CSSProperties = {
   width: '14px',
   height: '14px',
   flexShrink: 0
+}
+
+const dashboardCardStyle: React.CSSProperties = {
+  backgroundColor: 'var(--bg-card)',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border)',
+  display: 'flex',
+  flexDirection: 'column'
+}
+
+const dashboardCardHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  padding: '12px 16px',
+  borderBottom: '1px solid var(--border)',
+  flexWrap: 'wrap'
+}
+
+const dashboardCardTitleStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: 'var(--text-secondary)'
+}
+
+const dashboardCardActionsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  flexWrap: 'wrap'
+}
+
+const dashboardCardContentStyle: React.CSSProperties = {
+  padding: '16px'
 }

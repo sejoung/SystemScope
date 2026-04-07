@@ -170,7 +170,7 @@ export function DashboardPage() {
         style={{
           display: "grid",
           gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-          alignItems: "start",
+          alignItems: "stretch",
           gap: "16px",
           marginBottom: "16px",
         }}

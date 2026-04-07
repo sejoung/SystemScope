@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 interface AccordionProps {
   title: string
@@ -12,19 +12,11 @@ interface AccordionProps {
 
 export function Accordion({
   title,
-  defaultOpen = false,
-  forceOpen,
   badge,
   badgeColor,
   actions,
   children
 }: AccordionProps) {
-  const [open, setOpen] = useState(defaultOpen)
-
-  useEffect(() => {
-    if (forceOpen !== undefined) setOpen(forceOpen)
-  }, [forceOpen])
-
   return (
     <div style={{
       backgroundColor: 'var(--bg-card)',
@@ -39,38 +31,14 @@ export function Accordion({
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '10px 16px',
-        gap: '8px',
+        justifyContent: 'space-between',
+        padding: '12px 16px',
+        gap: '12px',
         flexWrap: 'wrap',
-        minHeight: '40px'
+        minHeight: '40px',
+        borderBottom: '1px solid var(--border)'
       }}>
-        {/* 토글 영역 */}
-        <button
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            flex: '1 1 auto',
-            minWidth: 0,
-            border: 'none',
-            background: 'none',
-            cursor: 'pointer',
-            textAlign: 'left',
-            padding: '2px 0'
-          }}
-        >
-          <span style={{
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            transition: 'transform 0.2s',
-            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
-            display: 'inline-block',
-            flexShrink: 0
-          }}>
-            ▶
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 auto', minWidth: 0, flexWrap: 'wrap' }}>
           <span style={{
             fontSize: '12px',
             fontWeight: 600,
@@ -94,25 +62,20 @@ export function Accordion({
               {badge}
             </span>
           )}
-        </button>
+        </div>
 
         {/* 액션 버튼 */}
         {actions && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
             {actions}
           </div>
         )}
       </div>
 
       {/* 콘텐츠 */}
-      {open && (
-        <div style={{ padding: '0 16px 16px', flex: 1 }}>
-          {children}
-        </div>
-      )}
+      <div style={{ padding: '16px', flex: 1 }}>
+        {children}
+      </div>
     </div>
   )
 }

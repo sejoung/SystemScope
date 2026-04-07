@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useDiskStore } from '../../stores/useDiskStore'
-import { Accordion } from '../../components/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 
@@ -36,23 +35,23 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
 
   if (!info && !fetched) {
     return (
-      <Accordion title={tk('disk.section.home_storage')} defaultOpen>
+      <DashboardCard title={tk('disk.section.home_storage')}>
         <StoragePlaceholder message={tk('disk.home_storage.loading')} showSpinner={false} />
-      </Accordion>
+      </DashboardCard>
     )
   }
 
   if (!info && loading) {
     return (
-      <Accordion title={tk('disk.section.home_storage')} defaultOpen>
+      <DashboardCard title={tk('disk.section.home_storage')}>
         <StoragePlaceholder message={tk('disk.home_storage.loading')} showSpinner />
-      </Accordion>
+      </DashboardCard>
     )
   }
 
   if (!info) {
     return (
-      <Accordion title={tk('disk.section.home_storage')} defaultOpen>
+      <DashboardCard title={tk('disk.section.home_storage')}>
         <div
           style={{
             ...cardBodyStyle,
@@ -66,7 +65,7 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
         >
           {tk('disk.home_storage.load_failed')}
         </div>
-      </Accordion>
+      </DashboardCard>
     )
   }
 
@@ -74,165 +73,178 @@ export function YourStorage({ onFolderClick }: YourStorageProps) {
   const diskUsedPercent = ((info.diskTotal - info.diskAvailable) / info.diskTotal) * 100
 
   return (
-    <Accordion title={tk('disk.section.home_storage')} defaultOpen>
-      {/* Disk capacity summary */}
+    <DashboardCard
+      title={tk('disk.section.home_storage')}
+      actions={
+        <button
+          onClick={() => fetchUserSpace()}
+          disabled={loading}
+          style={{
+            ...subtleActionButtonStyle,
+            cursor: loading ? 'default' : 'pointer',
+            opacity: loading ? 0.5 : 1
+          }}
+        >
+          {loading ? tk('common.scanning') : tk('common.rescan')}
+        </button>
+      }
+    >
       <div style={{ ...cardBodyStyle, minHeight: 'unset' }}>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px', gap: '10px', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-            {tk('disk.home_storage.disk_capacity')}
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Disk capacity summary */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+              {tk('disk.home_storage.disk_capacity')}
+            </span>
             <span style={{ color: 'var(--text-secondary)' }}>
               {tk('disk.home_storage.used_summary', {
                 used: formatBytes(info.diskTotal - info.diskAvailable),
                 total: formatBytes(info.diskTotal)
               })}
             </span>
-            <button
-              onClick={() => fetchUserSpace()}
-              disabled={loading}
-              style={{
-                ...subtleActionButtonStyle,
-                cursor: loading ? 'default' : 'pointer',
-                opacity: loading ? 0.5 : 1
-              }}
-            >
-              {loading ? tk('common.scanning') : tk('common.rescan')}
-            </button>
           </div>
-        </div>
 
-        {/* Stacked bar */}
-        <div style={{
-          width: '100%', height: '28px',
-          backgroundColor: 'var(--disk-bar-available)', borderRadius: '8px',
-          overflow: 'hidden', display: 'flex'
-        }}>
-          {/* System */}
-          <div
-            style={{
-              width: `${(usedBySystem / info.diskTotal) * 100}%`,
-              height: '100%',
-              backgroundColor: 'var(--disk-bar-system)',
-              transition: 'width 0.5s'
-            }}
-            title={tk('disk.home_storage.system') + `: ${formatBytes(usedBySystem)}`}
-          />
-          {/* Home folders */}
-          {info.entries.map((entry, i) => {
-            const pct = (entry.size / info.diskTotal) * 100
-            if (pct < 0.3) return null
-            return (
-              <div
-                key={entry.name}
-                style={{
-                  width: `${pct}%`,
-                  height: '100%',
-                  backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
-                  transition: 'width 0.5s',
-                  minWidth: '2px'
-                }}
-                title={`${entry.name}: ${formatBytes(entry.size)}`}
-              />
-            )
-          })}
-          {/* Available — 밝은 녹색 배경으로 "여유 공간" 시각화 */}
-        </div>
-
-        {/* Legend */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
-          <LegendItem color="var(--disk-bar-system)" label={tk('disk.home_storage.system')} value={formatBytes(usedBySystem)} />
-          <LegendItem color="#22c55e" label={tk('disk.home_storage.available')} value={formatBytes(info.diskAvailable)} />
-          <span style={{ color: 'var(--text-primary)', fontWeight: 600, marginLeft: 'auto' }}>
-            {tk('disk.home_storage.used_percent', { percent: diskUsedPercent.toFixed(1) })}
-          </span>
-        </div>
-      </div>
-
-      {/* Home directory breakdown */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {tk('disk.home_storage.your_folders')}
-          </span>
-          <span style={{ color: 'var(--text-secondary)' }}>
-            {tk('disk.home_storage.total', { value: formatBytes(info.homeSize) })}
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {info.entries.map((entry, i) => {
-            const pct = info.homeSize > 0 ? (entry.size / info.homeSize) * 100 : 0
-            return (
-              <div
-                key={entry.name}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s',
-                  minWidth: 0
-                }}
-                onClick={() => onFolderClick(entry.path)}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-card-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-              >
-                {/* Color dot */}
-                <div style={{
-                  width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                  backgroundColor: BAR_COLORS[i % BAR_COLORS.length]
-                }} />
-
-                {/* Name */}
-                <span style={{
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  color: 'var(--text-primary)',
-                  width: '96px',
-                  flexShrink: 0,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {entry.name}
-                </span>
-
-                {/* Bar */}
-                <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{
+          {/* Stacked bar */}
+          <div style={{
+            width: '100%', height: '28px',
+            backgroundColor: 'var(--disk-bar-available)', borderRadius: '8px',
+            overflow: 'hidden', display: 'flex'
+          }}>
+            <div
+              style={{
+                width: `${(usedBySystem / info.diskTotal) * 100}%`,
+                height: '100%',
+                backgroundColor: 'var(--disk-bar-system)',
+                transition: 'width 0.5s'
+              }}
+              title={tk('disk.home_storage.system') + `: ${formatBytes(usedBySystem)}`}
+            />
+            {info.entries.map((entry, i) => {
+              const pct = (entry.size / info.diskTotal) * 100
+              if (pct < 0.3) return null
+              return (
+                <div
+                  key={entry.name}
+                  style={{
                     width: `${pct}%`,
                     height: '100%',
                     backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
-                    borderRadius: '3px',
-                    minWidth: entry.size > 0 ? '2px' : '0',
-                    transition: 'width 0.5s'
-                  }} />
-                </div>
+                    transition: 'width 0.5s',
+                    minWidth: '2px'
+                  }}
+                  title={`${entry.name}: ${formatBytes(entry.size)}`}
+                />
+              )
+            })}
+          </div>
 
-                {/* Size */}
-                <span style={{
-                  fontSize: '12px', fontWeight: 600, fontFamily: 'monospace',
-                  color: 'var(--text-primary)', width: '76px', textAlign: 'right', flexShrink: 0
-                }}>
-                  {formatBytes(entry.size)}
-                </span>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap', fontSize: '11px', alignItems: 'center' }}>
+            <LegendItem color="var(--disk-bar-system)" label={tk('disk.home_storage.system')} value={formatBytes(usedBySystem)} />
+            <LegendItem color="#22c55e" label={tk('disk.home_storage.available')} value={formatBytes(info.diskAvailable)} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600, marginLeft: 'auto' }}>
+              {tk('disk.home_storage.used_percent', { percent: diskUsedPercent.toFixed(1) })}
+            </span>
+          </div>
+        </div>
 
-                {/* Open button */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(entry.path) }}
-                  style={{ ...subtleActionButtonStyle, flexShrink: 0 }}
+        {/* Home directory breakdown */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {tk('disk.home_storage.your_folders')}
+            </span>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {tk('disk.home_storage.total', { value: formatBytes(info.homeSize) })}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {info.entries.map((entry, i) => {
+              const pct = info.homeSize > 0 ? (entry.size / info.homeSize) * 100 : 0
+              return (
+                <div
+                  key={entry.name}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s',
+                    minWidth: 0
+                  }}
+                  onClick={() => onFolderClick(entry.path)}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-card-hover)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
-                  {tk('common.open')}
-                </button>
-              </div>
-            )
-          })}
+                  <div style={{
+                    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                    backgroundColor: BAR_COLORS[i % BAR_COLORS.length]
+                  }} />
+
+                  <span style={{
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: 'var(--text-primary)',
+                    width: '96px',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {entry.name}
+                  </span>
+
+                  <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: '100%',
+                      backgroundColor: BAR_COLORS[i % BAR_COLORS.length],
+                      borderRadius: '3px',
+                      minWidth: entry.size > 0 ? '2px' : '0',
+                      transition: 'width 0.5s'
+                    }} />
+                  </div>
+
+                  <span style={{
+                    fontSize: '12px', fontWeight: 600, fontFamily: 'monospace',
+                    color: 'var(--text-primary)', width: '76px', textAlign: 'right', flexShrink: 0
+                  }}>
+                    {formatBytes(entry.size)}
+                  </span>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); window.systemScope.showInFolder(entry.path) }}
+                    style={{ ...subtleActionButtonStyle, flexShrink: 0 }}
+                  >
+                    {tk('common.open')}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
+    </DashboardCard>
+  )
+}
+
+function DashboardCard({
+  title,
+  actions,
+  children
+}: {
+  title: string
+  actions?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <div style={dashboardCardStyle}>
+      <div style={dashboardCardHeaderStyle}>
+        <div style={dashboardCardTitleStyle}>{title}</div>
+        {actions ? <div style={dashboardCardActionsStyle}>{actions}</div> : null}
       </div>
-    </Accordion>
+      <div style={dashboardCardContentStyle}>{children}</div>
+    </div>
   )
 }
 
@@ -324,4 +336,41 @@ const spinnerSpacerStyle: React.CSSProperties = {
   width: '14px',
   height: '14px',
   flexShrink: 0
+}
+
+const dashboardCardStyle: React.CSSProperties = {
+  backgroundColor: 'var(--bg-card)',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border)',
+  display: 'flex',
+  flexDirection: 'column'
+}
+
+const dashboardCardHeaderStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '12px',
+  padding: '12px 16px',
+  borderBottom: '1px solid var(--border)',
+  flexWrap: 'wrap'
+}
+
+const dashboardCardTitleStyle: React.CSSProperties = {
+  fontSize: '12px',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  color: 'var(--text-secondary)'
+}
+
+const dashboardCardActionsStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  flexWrap: 'wrap'
+}
+
+const dashboardCardContentStyle: React.CSSProperties = {
+  padding: '16px'
 }
