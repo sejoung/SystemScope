@@ -5,6 +5,7 @@ import { useSystemStore } from '../../stores/useSystemStore'
 import { formatBytes } from '../../utils/format'
 
 const COMPACT_HEADER_HEIGHT = 108
+const DEFAULT_WIDGET_WIDTH = 360
 
 function formatRate(value: number | null): string {
   if (value === null) return 'N/A'
@@ -19,7 +20,7 @@ function formatTotal(value: number | null): string {
 export function NetworkWidget() {
   const network = useSystemStore((s) => s.current?.network)
   const { tk } = useI18n()
-  const [ref, width] = useContainerWidth(280)
+  const [ref, width] = useContainerWidth(DEFAULT_WIDGET_WIDTH)
   const isCompact = useCompactLayout(width)
 
   if (!network) {

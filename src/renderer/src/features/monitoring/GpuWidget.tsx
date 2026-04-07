@@ -6,11 +6,12 @@ import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 
 const COMPACT_HEADER_HEIGHT = 108
+const DEFAULT_WIDGET_WIDTH = 360
 
 export function GpuWidget() {
   const gpu = useSystemStore((s) => s.current?.gpu)
   const { tk } = useI18n()
-  const [ref, width] = useContainerWidth(280)
+  const [ref, width] = useContainerWidth(DEFAULT_WIDGET_WIDTH)
   const isCompact = useCompactLayout(width)
 
   if (!gpu) {

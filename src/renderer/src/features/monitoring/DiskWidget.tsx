@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n/useI18n'
 import { useSystemStore } from '../../stores/useSystemStore'
 
 const COMPACT_HEADER_HEIGHT = 108
+const DEFAULT_WIDGET_WIDTH = 360
 
 function formatIops(value: number | null): string {
   if (value === null) return 'N/A'
@@ -13,7 +14,7 @@ function formatIops(value: number | null): string {
 export function DiskWidget() {
   const disk = useSystemStore((s) => s.current?.disk)
   const { tk } = useI18n()
-  const [ref, width] = useContainerWidth(280)
+  const [ref, width] = useContainerWidth(DEFAULT_WIDGET_WIDTH)
   const isCompact = useCompactLayout(width)
 
   if (!disk) {
