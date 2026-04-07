@@ -112,14 +112,38 @@ function basenameWithoutExt(processPath: string | undefined, pid: number): strin
 
 async function collectFromNetworkConnections(): Promise<ProcessNetworkSnapshot> {
   const conns = await si.networkConnections()
+
+  // si.networkConnections() on Windows often leaves the `process` field empty
+  // (it requires elevation to populate). Resolve names from si.processes() instead.
+  const pids = new Set<number>()
+  for (const c of conns) {
+    if (c.pid && c.pid > 0) pids.add(c.pid)
+  }
+
+  let nameByPid = new Map<number, string>()
+  if (pids.size > 0) {
+    try {
+      const procData = await si.processes()
+      for (const p of procData.list) {
+        if (pids.has(p.pid)) {
+          nameByPid.set(p.pid, p.name)
+        }
+      }
+    } catch {
+      nameByPid = new Map()
+    }
+  }
+
   const byPid = new Map<number, ProcessNetworkUsage>()
   for (const c of conns) {
     if (!c.pid || c.pid <= 0) continue
-    const existing = byPid.get(c.pid)
-    if (existing) continue  // we only need one entry per pid; counts are derived elsewhere
+    if (byPid.has(c.pid)) continue
+    const resolvedName =
+      nameByPid.get(c.pid) ||
+      basenameWithoutExt(c.process, c.pid)
     byPid.set(c.pid, {
       pid: c.pid,
-      name: basenameWithoutExt(c.process, c.pid),
+      name: resolvedName,
       rxBps: null,
       txBps: null,
       totalRxBytes: null,

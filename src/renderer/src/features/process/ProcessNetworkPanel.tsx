@@ -122,7 +122,11 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
                 color: "var(--text-secondary)",
               }}
             >
-              {p.protocol} {p.localAddress}:{p.localPort} → {peerLabel(p.peerAddress, hostnames[p.peerAddress] ?? null)}{countries[p.peerAddress] ? ` ${countryToFlag(countries[p.peerAddress])} ${countries[p.peerAddress]}` : ''}:{p.peerPort} [{p.state}]
+              {p.protocol} {p.localAddress}:{p.localPort} → {peerLabel(p.peerAddress, hostnames[p.peerAddress] ?? null)}{countries[p.peerAddress] ? (
+                <span style={{ fontFamily: '"Twemoji Country Flags", var(--font-mono, monospace)' }}>
+                  {' '}{countryToFlag(countries[p.peerAddress])} {countries[p.peerAddress]}
+                </span>
+              ) : null}:{p.peerPort} [{p.state}]
             </span>
           ))}
         </div>

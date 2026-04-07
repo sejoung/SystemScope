@@ -40,6 +40,7 @@
     "node": "24.x"
   },
   "dependencies": {
+    "country-flag-emoji-polyfill": "^0.1.8",
     "d3-hierarchy": "^3.1.2",
     "electron-log": "^5.4.3",
     "electron-store": "^11.0.2",

@@ -8,8 +8,10 @@ vi.mock('../../src/main/services/externalCommand', () => ({
 vi.mock('systeminformation', () => ({
   default: {
     networkConnections: vi.fn(),
+    processes: vi.fn().mockResolvedValue({ list: [] }),
   },
   networkConnections: vi.fn(),
+  processes: vi.fn().mockResolvedValue({ list: [] }),
 }))
 
 import { runExternalCommand } from '../../src/main/services/externalCommand'
@@ -169,6 +171,7 @@ describe('getProcessNetworkUsage on win32', () => {
   beforeEach(() => {
     __resetCacheForTests()
     vi.mocked(si.networkConnections).mockReset()
+    vi.mocked(si.processes).mockResolvedValue({ list: [] } as unknown as si.Systeminformation.ProcessesData)
   })
 
   afterEach(() => {
@@ -198,6 +201,20 @@ describe('getProcessNetworkUsage on win32', () => {
     expect(chrome.totalTxBytes).toBeNull()
     const slack = snap.processes.find((p) => p.pid === 5678)!
     expect(slack.name).toBe('slack')
+  })
+
+  it('falls back to si.processes() for name when connection.process is empty (Windows non-elevated)', async () => {
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    vi.mocked(si.networkConnections).mockResolvedValueOnce([
+      { protocol: 'tcp', localAddress: '0.0.0.0', localPort: '50001', peerAddress: '1.2.3.4', peerPort: '443', state: 'ESTABLISHED', pid: 4242, process: '' },
+    ] as unknown as si.Systeminformation.NetworkConnectionsData[])
+    vi.mocked(si.processes).mockResolvedValueOnce({
+      list: [{ pid: 4242, name: 'msedge' }],
+    } as unknown as si.Systeminformation.ProcessesData)
+
+    const snap = await getProcessNetworkUsage()
+    expect(snap.processes).toHaveLength(1)
+    expect(snap.processes[0].name).toBe('msedge')
   })
 
   it('returns empty processes array when there are no usable connections', async () => {
