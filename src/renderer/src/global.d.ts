@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { SystemScopeApi } from '@shared/contracts/systemScope'
 
 declare global {
