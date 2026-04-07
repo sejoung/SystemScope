@@ -24,8 +24,15 @@ import { ProfileSelector } from "../features/profiles/ProfileSelector";
 import { useProfileStore } from "../stores/useProfileStore";
 import type { DashboardWidgetKey } from "@shared/types";
 import { ProjectMonitorCard } from "../features/monitoring/ProjectMonitorCard";
+import { useContainerWidth } from "../hooks/useContainerWidth";
+import { isCompactWidth, RESPONSIVE_WIDTH } from "../hooks/useResponsiveLayout";
+
+export function shouldUseDashboardSingleColumnLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.dashboardSingleColumn);
+}
 
 export function DashboardPage() {
+  const [containerRef, containerWidth] = useContainerWidth(1280);
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
   const current = useSystemStore((s) => s.current);
   const updateInfo = useUpdateStore((s) => s.updateInfo);
@@ -39,13 +46,14 @@ export function DashboardPage() {
     return id ? s.profiles.find((p) => p.id === id) ?? null : null;
   });
   const hiddenWidgets = useMemo(() => new Set<DashboardWidgetKey>(activeProfile?.hiddenWidgets ?? []), [activeProfile?.hiddenWidgets]);
+  const singleColumnLayout = shouldUseDashboardSingleColumnLayout(containerWidth);
 
   const visibleUpdate = updateInfo?.hasUpdate && dismissedVersion !== updateInfo.latestVersion ? updateInfo : null;
 
   if (!current) return <PageLoading message={tk("Collecting system information...")} />;
 
   return (
-    <div data-testid="page-dashboard">
+    <div data-testid="page-dashboard" ref={containerRef}>
       <div style={{ display: "grid", gap: "6px", marginBottom: "16px" }}>
         <h2 style={{ fontSize: "18px", fontWeight: 700, margin: 0 }}>
           {tk("Overview")}
@@ -134,7 +142,14 @@ export function DashboardPage() {
       <SystemEventBanner />
 
       {/* Top: Live system gauges */}
-      <div className="dashboard-grid-top">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "16px",
+          marginBottom: "16px",
+        }}
+      >
         {!hiddenWidgets.has('cpu') && <ErrorBoundary title={tk("monitoring.cpu.title")}><CpuWidget /></ErrorBoundary>}
         {!hiddenWidgets.has('memory') && <ErrorBoundary title={tk("monitoring.memory.title")}><MemoryWidget /></ErrorBoundary>}
         {!hiddenWidgets.has('gpu') && <ErrorBoundary title={tk("monitoring.gpu.title")}><GpuWidget /></ErrorBoundary>}
@@ -143,7 +158,7 @@ export function DashboardPage() {
       </div>
 
       {/* Realtime trend */}
-      <div className="dashboard-section">
+      <div style={{ marginBottom: "16px" }}>
         {!hiddenWidgets.has('realtimeChart') && <ErrorBoundary title={tk("monitoring.live_usage.title")}><RealtimeChart /></ErrorBoundary>}
       </div>
 
@@ -152,7 +167,16 @@ export function DashboardPage() {
       <ErrorBoundary title={tk("devtools.section.project_monitor")}><ProjectMonitorCard compact /></ErrorBoundary>
 
       {/* Storage and growth analysis */}
-      <div className="dashboard-grid-responsive">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: singleColumnLayout
+            ? "1fr"
+            : "repeat(auto-fit, minmax(340px, 1fr))",
+          gap: "16px",
+          marginBottom: "16px",
+        }}
+      >
         {!hiddenWidgets.has('storage') && <ErrorBoundary title={tk("disk.section.home_storage")}><YourStorage onFolderClick={() => setCurrentPage("disk")} /></ErrorBoundary>}
         {!hiddenWidgets.has('growth') && <ErrorBoundary title={tk("disk.section.storage_growth")}><GrowthView /></ErrorBoundary>}
       </div>

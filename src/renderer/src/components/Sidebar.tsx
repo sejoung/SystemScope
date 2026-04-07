@@ -109,7 +109,11 @@ function NavIcon({ id }: { id: string }) {
   }
 }
 
-export function Sidebar() {
+export function Sidebar({
+  compactLayout = false,
+}: {
+  compactLayout?: boolean;
+}) {
   const currentPage = useSettingsStore((s) => s.currentPage);
   const hasUnsavedSettings = useSettingsStore((s) => s.hasUnsavedSettings);
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
@@ -132,15 +136,17 @@ export function Sidebar() {
       <aside
         className="app-sidebar"
         style={{
-          width: "var(--sidebar-width)",
+          width: compactLayout ? "100%" : "var(--sidebar-width)",
           backgroundColor: "var(--bg-secondary)",
-          borderRight: "1px solid var(--border)",
+          borderRight: compactLayout ? "none" : "1px solid var(--border)",
+          borderBottom: compactLayout ? "1px solid var(--border)" : "none",
           display: "flex",
           flexDirection: "column",
           paddingInline: "10px",
           paddingTop: navigator.userAgent.includes("Macintosh")
             ? "48px"
             : "12px",
+          paddingBottom: compactLayout ? "12px" : undefined,
         }}
       >
         <div
@@ -201,7 +207,8 @@ export function Sidebar() {
           className="titlebar-no-drag"
           style={{
             display: "flex",
-            flexDirection: "column",
+            flexDirection: compactLayout ? "row" : "column",
+            flexWrap: compactLayout ? "wrap" : "nowrap",
             gap: "4px",
             padding: "0 2px",
           }}

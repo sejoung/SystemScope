@@ -7,6 +7,8 @@ export const RESPONSIVE_WIDTH = {
   portWatchCompact: 960,
   dockerPageCompact: 980,
   settingsPageCompact: 920,
+  shellCompact: 760,
+  dashboardSingleColumn: 900,
 } as const
 
 export function isCompactWidth(width: number, threshold: number): boolean {
