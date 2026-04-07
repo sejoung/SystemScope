@@ -32,7 +32,7 @@ export function shouldUseDashboardSingleColumnLayout(width: number): boolean {
 }
 
 export function DashboardPage() {
-  const [containerRef, containerWidth] = useContainerWidth(1280);
+  const [containerRef] = useContainerWidth(1280);
   const setCurrentPage = useSettingsStore((s) => s.setCurrentPage);
   const current = useSystemStore((s) => s.current);
   const updateInfo = useUpdateStore((s) => s.updateInfo);
