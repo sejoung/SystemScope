@@ -28,16 +28,19 @@ export function CpuWidget() {
           display: 'flex',
           gap: '20px',
           alignItems: 'flex-start',
-          flexDirection: 'row'
+          flexDirection: 'row',
+          flexWrap: 'wrap'
         }}
       >
-        <GaugeChart
-          value={cpu.usage}
-          label={tk('monitoring.cpu.usage')}
-          color={cpu.usage > 80 ? 'var(--accent-red)' : cpu.usage > 50 ? 'var(--accent-yellow)' : 'var(--accent-green)'}
-          subtitle={cpu.model}
-          size={120}
-        />
+        <div style={{ flexShrink: 0, marginInline: 'auto' }}>
+          <GaugeChart
+            value={cpu.usage}
+            label={tk('monitoring.cpu.usage')}
+            color={cpu.usage > 80 ? 'var(--accent-red)' : cpu.usage > 50 ? 'var(--accent-yellow)' : 'var(--accent-green)'}
+            subtitle={cpu.model}
+            size={120}
+          />
+        </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
           {cpu.cores.slice(0, 8).map((core, coreIndex) => (
             <ProgressBar

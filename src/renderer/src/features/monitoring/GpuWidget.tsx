@@ -64,7 +64,7 @@ export function GpuWidget() {
             justifyContent: 'center'
           }}
         >
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {gpu.usage !== null && (
               <GaugeChart
                 value={gpu.usage}
