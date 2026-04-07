@@ -21,6 +21,10 @@ const resolveHostnames = vi.hoisted(() => vi.fn());
 vi.mock("../../src/main/services/dnsResolver", () => ({
   resolveHostnames,
 }));
+const resolveCountries = vi.hoisted(() => vi.fn());
+vi.mock("../../src/main/services/geoIpResolver", () => ({
+  resolveCountries,
+}));
 vi.mock("electron", () => ({
   ipcMain: {
     handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -81,6 +85,7 @@ describe("registerProcessIpc", () => {
     runExternalCommand.mockReset();
     getProcessNetworkUsage.mockReset();
     resolveHostnames.mockReset();
+    resolveCountries.mockReset();
 
     getFocusedWindow.mockReturnValue(null);
     getAllWindows.mockReturnValue([]);
@@ -365,6 +370,34 @@ describe("registerProcessIpc", () => {
     resolveHostnames.mockRejectedValueOnce(new Error("dns down"));
     const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
     const result = await handler({}, ["1.2.3.4"]) as { ok: boolean };
+    expect(result.ok).toBe(false);
+  });
+
+  it("PROCESS_RESOLVE_COUNTRIES: validates input as string array", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES)!;
+    const result = await handler({}, "nope") as { ok: boolean };
+    expect(result.ok).toBe(false);
+    expect(resolveCountries).not.toHaveBeenCalled();
+  });
+
+  it("PROCESS_RESOLVE_COUNTRIES: returns success envelope", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    resolveCountries.mockResolvedValueOnce({ "8.8.8.8": "US" });
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES)!;
+    const result = await handler({}, ["8.8.8.8"]) as { ok: boolean; data?: unknown };
+    expect(result.ok).toBe(true);
+    expect(result.data).toEqual({ "8.8.8.8": "US" });
+  });
+
+  it("PROCESS_RESOLVE_COUNTRIES: returns failure when service throws", async () => {
+    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
+    registerProcessIpc();
+    resolveCountries.mockRejectedValueOnce(new Error("db missing"));
+    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES)!;
+    const result = await handler({}, ["8.8.8.8"]) as { ok: boolean };
     expect(result.ok).toBe(false);
   });
 });

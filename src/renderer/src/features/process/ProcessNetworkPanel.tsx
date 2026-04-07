@@ -35,6 +35,12 @@ function sortProcesses(list: ProcessNetworkUsage[], key: SortKey): ProcessNetwor
   return [...list].sort((a, b) => nullLastDesc(a[key], b[key]));
 }
 
+function countryToFlag(iso2: string | null | undefined): string {
+  if (!iso2 || iso2.length !== 2) return ''
+  const codePoints = iso2.toUpperCase().split('').map((c) => 0x1f1e6 - 65 + c.charCodeAt(0))
+  return String.fromCodePoint(...codePoints)
+}
+
 interface ExpandedRowProps {
   pid: number;
 }
@@ -42,6 +48,7 @@ interface ExpandedRowProps {
 function ExpandedRow({ pid }: ExpandedRowProps) {
   const [ports, setPorts] = useState<PortInfo[] | null>(null);
   const [hostnames, setHostnames] = useState<Record<string, string | null>>({});
+  const [countries, setCountries] = useState<Record<string, string | null>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,6 +64,10 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
           const dnsRes = await window.systemScope.resolveHostnames(peerIps);
           if (dnsRes.ok && dnsRes.data) {
             setHostnames(dnsRes.data as Record<string, string | null>);
+          }
+          const cRes = await window.systemScope.resolveCountries(peerIps);
+          if (cRes.ok && cRes.data) {
+            setCountries(cRes.data as Record<string, string | null>);
           }
         }
       } else if (!res.ok) {
@@ -111,7 +122,7 @@ function ExpandedRow({ pid }: ExpandedRowProps) {
                 color: "var(--text-secondary)",
               }}
             >
-              {p.protocol} {p.localAddress}:{p.localPort} → {peerLabel(p.peerAddress, hostnames[p.peerAddress] ?? null)}:{p.peerPort} [{p.state}]
+              {p.protocol} {p.localAddress}:{p.localPort} → {peerLabel(p.peerAddress, hostnames[p.peerAddress] ?? null)}{countries[p.peerAddress] ? ` ${countryToFlag(countries[p.peerAddress])} ${countries[p.peerAddress]}` : ''}:{p.peerPort} [{p.state}]
             </span>
           ))}
         </div>
@@ -126,6 +137,8 @@ export function ProcessNetworkPanel() {
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rxBps");
   const [expandedPid, setExpandedPid] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [activeOnly, setActiveOnly] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -174,6 +187,21 @@ export function ProcessNetworkPanel() {
   }
 
   const sorted = sortProcesses(snapshot.processes, sortKey);
+
+  const filtered = sorted.filter((p) => {
+    if (activeOnly) {
+      const rx = p.rxBps ?? 0;
+      const tx = p.txBps ?? 0;
+      if (rx === 0 && tx === 0) return false;
+    }
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase();
+      if (!p.name.toLowerCase().includes(needle) && !String(p.pid).includes(needle)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const hasBaseline = snapshot.intervalSec !== null;
   const totalRx = hasBaseline
@@ -260,6 +288,34 @@ export function ProcessNetworkPanel() {
           <span>{totalTx === null ? "—" : formatBps(totalTx)}</span>
         </div>
       </div>
+      <div style={{ display: "flex", gap: "12px", alignItems: "center", margin: "8px 0 12px" }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={tk("process.network_usage.search_placeholder")}
+          style={{
+            flex: "0 0 220px",
+            padding: "6px 10px",
+            fontSize: "12px",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm, 4px)",
+            background: "var(--bg-input, var(--bg-card))",
+            color: "var(--text-primary)",
+          }}
+        />
+        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--text-secondary)", cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={activeOnly}
+            onChange={(e) => setActiveOnly(e.target.checked)}
+          />
+          {tk("process.network_usage.active_only")}
+        </label>
+        <span style={{ fontSize: "11px", color: "var(--text-secondary)", marginLeft: "auto" }}>
+          {tk("process.network_usage.row_count", { count: filtered.length, total: snapshot.processes.length })}
+        </span>
+      </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -269,13 +325,13 @@ export function ProcessNetworkPanel() {
                 style={{ ...thStyle, color: sortKey === "rxBps" ? "var(--text-primary)" : "var(--text-secondary)" }}
                 onClick={makeThClick("rxBps")}
               >
-                ↓ {tk("process.network_usage.col.rxBps")}
+                ↓ {tk("process.network_usage.col.rxBps")} {sortKey === "rxBps" ? "▼" : ""}
               </th>
               <th
                 style={{ ...thStyle, color: sortKey === "txBps" ? "var(--text-primary)" : "var(--text-secondary)" }}
                 onClick={makeThClick("txBps")}
               >
-                ↑ {tk("process.network_usage.col.txBps")}
+                ↑ {tk("process.network_usage.col.txBps")} {sortKey === "txBps" ? "▼" : ""}
               </th>
               <th style={{ ...thStyle, cursor: "default" }}>
                 {tk("process.network_usage.col.activity")}
@@ -284,18 +340,18 @@ export function ProcessNetworkPanel() {
                 style={{ ...thStyle, color: sortKey === "totalRxBytes" ? "var(--text-primary)" : "var(--text-secondary)" }}
                 onClick={makeThClick("totalRxBytes")}
               >
-                {tk("process.network_usage.col.totalRx")}
+                {tk("process.network_usage.col.totalRx")} {sortKey === "totalRxBytes" ? "▼" : ""}
               </th>
               <th
                 style={{ ...thStyle, color: sortKey === "totalTxBytes" ? "var(--text-primary)" : "var(--text-secondary)" }}
                 onClick={makeThClick("totalTxBytes")}
               >
-                {tk("process.network_usage.col.totalTx")}
+                {tk("process.network_usage.col.totalTx")} {sortKey === "totalTxBytes" ? "▼" : ""}
               </th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((proc) => {
+            {filtered.map((proc) => {
               const isExpanded = expandedPid === proc.pid;
               return (
                 <>
