@@ -19,6 +19,10 @@ type DockerAvailability =
   | "not_installed"
   | "daemon_unavailable";
 
+export function shouldUseDockerPageCompactLayout(width: number): boolean {
+  return isCompactWidth(width, RESPONSIVE_WIDTH.dockerPageCompact);
+}
+
 export function DockerPage() {
   const [containerRef, containerWidth] = useContainerWidth(1100);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -28,10 +32,7 @@ export function DockerPage() {
   const { tk } = useI18n();
   const tab = useSettingsStore((s) => s.dockerTab);
   const setDockerTab = useSettingsStore((s) => s.setDockerTab);
-  const compactLayout = isCompactWidth(
-    containerWidth,
-    RESPONSIVE_WIDTH.dockerPageCompact,
-  );
+  const compactLayout = shouldUseDockerPageCompactLayout(containerWidth);
 
   const handleChanged = useCallback(() => setRefreshToken((prev) => prev + 1), []);
 

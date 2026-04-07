@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { shouldUseDockerContainersCompactLayout } from "../../src/renderer/src/features/docker/DockerContainers";
 import { shouldUseDockerImagesCompactLayout } from "../../src/renderer/src/features/disk/DockerImages";
 import { shouldUseDockerVolumesCompactLayout } from "../../src/renderer/src/features/docker/DockerVolumes";
+import { shouldUseDockerPageCompactLayout } from "../../src/renderer/src/pages/DockerPage";
 
 describe("Docker layout helpers", () => {
   it("switches docker containers to compact layout below the width threshold", () => {
@@ -20,5 +21,11 @@ describe("Docker layout helpers", () => {
     expect(shouldUseDockerVolumesCompactLayout(720)).toBe(true);
     expect(shouldUseDockerVolumesCompactLayout(979)).toBe(true);
     expect(shouldUseDockerVolumesCompactLayout(980)).toBe(false);
+  });
+
+  it("switches docker page tabs to compact layout below the width threshold", () => {
+    expect(shouldUseDockerPageCompactLayout(720)).toBe(true);
+    expect(shouldUseDockerPageCompactLayout(979)).toBe(true);
+    expect(shouldUseDockerPageCompactLayout(980)).toBe(false);
   });
 });

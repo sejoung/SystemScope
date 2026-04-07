@@ -3,6 +3,12 @@ import { getStateStyle } from "./portStateStyles";
 import { formatPortAddress } from "./portWatchUtils";
 import { useI18n } from "../../i18n/useI18n";
 import {
+  CompactMetaItem,
+  compactCardStyle,
+  compactListStyle,
+  compactMetaGridStyle,
+} from "../../components/CompactPrimitives";
+import {
   detailsBtn,
   removeBtnStyle,
   sectionTitle,
@@ -302,11 +308,11 @@ function WatchDetailTable({
       )}
       <div style={{ maxHeight: compactLayout ? undefined : "250px", overflow: compactLayout ? "visible" : "auto" }}>
         {compactLayout ? (
-          <div style={compactWatchCardListStyle}>
+          <div style={compactListStyle}>
             {display.map((m) => (
               <div
                 key={`${m.protocol}-${m.localAddress}-${m.localPort}-${m.peerAddress}-${m.peerPort}`}
-                style={compactWatchCardStyle}
+                style={compactCardStyle}
               >
                 <div style={compactWatchCardHeaderStyle}>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
@@ -315,9 +321,19 @@ function WatchDetailTable({
                   </div>
                   <div style={compactWatchProcessStyle}>{m.process}</div>
                 </div>
-                <div style={compactWatchMetaGridStyle}>
-                  <WatchMeta label={tk("process.port_watch.local")} value={formatPortAddress(m.localAddress, m.localPort)} />
-                  <WatchMeta label={tk("process.port_watch.remote")} value={formatPortAddress(m.peerAddress, m.peerPort)} />
+                <div style={compactMetaGridStyle}>
+                  <CompactMetaItem
+                    label={tk("process.port_watch.local")}
+                    value={formatPortAddress(m.localAddress, m.localPort)}
+                    mono
+                    multiline
+                  />
+                  <CompactMetaItem
+                    label={tk("process.port_watch.remote")}
+                    value={formatPortAddress(m.peerAddress, m.peerPort)}
+                    mono
+                    multiline
+                  />
                 </div>
               </div>
             ))}
@@ -413,15 +429,6 @@ function WatchDetailTable({
   );
 }
 
-function WatchMeta({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={compactWatchMetaItemStyle}>
-      <div style={compactWatchMetaLabelStyle}>{label}</div>
-      <div style={compactWatchMetaValueStyle}>{value}</div>
-    </div>
-  );
-}
-
 function StateCount({
   label,
   count,
@@ -489,20 +496,6 @@ function StateBadge({ state }: { state: string }) {
   );
 }
 
-const compactWatchCardListStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "8px",
-};
-
-const compactWatchCardStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "12px",
-  borderRadius: "10px",
-  background: "var(--bg-card)",
-  border: "1px solid var(--border)",
-};
-
 const compactWatchCardHeaderStyle: React.CSSProperties = {
   display: "grid",
   gap: "8px",
@@ -522,36 +515,5 @@ const compactWatchProcessStyle: React.CSSProperties = {
   fontSize: "14px",
   fontWeight: 600,
   color: "var(--text-primary)",
-  wordBreak: "break-word",
-};
-
-const compactWatchMetaGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "10px",
-};
-
-const compactWatchMetaItemStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  padding: "10px 12px",
-  borderRadius: "10px",
-  background: "var(--bg-primary)",
-  border: "1px solid var(--border)",
-};
-
-const compactWatchMetaLabelStyle: React.CSSProperties = {
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "var(--text-muted)",
-};
-
-const compactWatchMetaValueStyle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "var(--text-primary)",
-  lineHeight: 1.5,
-  fontFamily: "monospace",
   wordBreak: "break-word",
 };

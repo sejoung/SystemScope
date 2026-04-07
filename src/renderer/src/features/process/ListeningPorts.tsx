@@ -9,6 +9,14 @@ import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
 import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
+import {
+  CompactMetaItem,
+  compactActionsStyle,
+  compactCardHeaderStyle,
+  compactCardStyle,
+  compactListStyle,
+  compactMetaGridStyle,
+} from "../../components/CompactPrimitives";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 
@@ -356,13 +364,13 @@ export function ListeningPorts({
             />
           ) : (
             compactLayout ? (
-              <div style={portCardListStyle}>
+              <div style={compactListStyle}>
                 {displayRows.map((p) => (
                   <div
                     key={`${p.protocol}-${p.localAddress}-${p.localPort}-${p.peerAddress}-${p.peerPort}-${p.state}-${p.pid}`}
-                    style={portCardStyle}
+                    style={compactCardStyle}
                   >
-                    <div style={portCardHeaderStyle}>
+                    <div style={compactCardHeaderStyle}>
                       <div style={{ display: "grid", gap: "6px", minWidth: 0 }}>
                         <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
                           <span style={portValueStyle}>{p.localPort}</span>
@@ -379,13 +387,27 @@ export function ListeningPorts({
                       <ExposureBadge address={p.localAddress} />
                     </div>
 
-                    <div style={portCardMetaGridStyle}>
-                      <PortMeta label={tk("Local")} value={formatEndpoint(p.localAddress, p.localPort)} mono />
-                      <PortMeta label={tk("process.port_finder.remote")} value={formatEndpoint(p.peerAddress, p.peerPort)} mono muted />
-                      <PortMeta label="PID" value={String(p.pid)} mono />
+                    <div style={compactMetaGridStyle}>
+                      <CompactMetaItem
+                        label={tk("Local")}
+                        value={formatEndpoint(p.localAddress, p.localPort)}
+                        mono
+                      />
+                      <CompactMetaItem
+                        label={tk("process.port_finder.remote")}
+                        value={formatEndpoint(p.peerAddress, p.peerPort)}
+                        mono
+                        muted
+                      />
+                      <CompactMetaItem label="PID" value={String(p.pid)} mono />
                     </div>
 
-                    <div style={portCardActionsStyle}>
+                    <div
+                      style={{
+                        ...compactActionsStyle,
+                        justifyContent: "flex-end",
+                      }}
+                    >
                       <button
                         onClick={() => void handleKill(p)}
                         style={killBtnStyle}
@@ -959,32 +981,6 @@ function StateBadge({ state }: { state: string }) {
   );
 }
 
-function PortMeta({
-  label,
-  value,
-  mono = false,
-  muted = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-  muted?: boolean;
-}) {
-  return (
-    <div style={portMetaItemStyle}>
-      <div style={portMetaLabelStyle}>{label}</div>
-      <div
-        style={{
-          ...(mono ? portMetaValueMonoStyle : portMetaValueStyle),
-          color: muted ? "var(--text-muted)" : undefined,
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
 function FilterBtn({
   active,
   onClick,
@@ -1189,71 +1185,6 @@ const stateBadgeStyle: React.CSSProperties = {
   fontWeight: 700,
   letterSpacing: "0.04em",
   whiteSpace: "nowrap",
-};
-
-const portCardListStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const portCardStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-  padding: "14px",
-  borderRadius: "12px",
-  background: "var(--bg-primary)",
-  border: "1px solid var(--border)",
-};
-
-const portCardHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "12px",
-  alignItems: "flex-start",
-  flexWrap: "wrap",
-};
-
-const portCardMetaGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "10px",
-};
-
-const portMetaItemStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  padding: "10px 12px",
-  borderRadius: "10px",
-  background: "var(--bg-card)",
-  border: "1px solid var(--border)",
-};
-
-const portMetaLabelStyle: React.CSSProperties = {
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "var(--text-muted)",
-};
-
-const portMetaValueStyle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "var(--text-primary)",
-  lineHeight: 1.5,
-  wordBreak: "break-word",
-};
-
-const portMetaValueMonoStyle: React.CSSProperties = {
-  ...portMetaValueStyle,
-  fontFamily: "monospace",
-  fontVariantNumeric: "tabular-nums",
-};
-
-const portCardActionsStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
 };
 
 const conflictCardStyle: React.CSSProperties = {

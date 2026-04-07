@@ -7,6 +7,14 @@ import { useToast } from "../../components/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/StatusMessage";
 import { CopyableValue } from "../../components/CopyableValue";
+import {
+  CompactMetaItem,
+  compactActionsStyle,
+  compactCardHeaderStyle,
+  compactCardStyle,
+  compactListStyle,
+  compactMetaGridStyle,
+} from "../../components/CompactPrimitives";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 
@@ -315,10 +323,10 @@ export function ProcessTable({ processes }: ProcessTableProps) {
           </div>
         ) : (
           compactLayout ? (
-            <div style={processCardListStyle}>
+            <div style={compactListStyle}>
               {filtered.map((p) => (
-                <div key={p.pid} style={processCardStyle}>
-                  <div style={processCardHeaderStyle}>
+                <div key={p.pid} style={compactCardStyle}>
+                  <div style={compactCardHeaderStyle}>
                     <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
                       <div style={processNameStyle}>{p.name}</div>
                       <div style={processPidStyle}>PID {p.pid}</div>
@@ -338,11 +346,20 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                       multiline
                     />
                   ) : null}
-                  <div style={processMetaGridStyle}>
-                    <ProcessMeta label={tk("process.table.memory")} value={formatBytes(p.memoryBytes)} mono />
-                    <ProcessMeta label="PID" value={String(p.pid)} mono />
+                  <div style={compactMetaGridStyle}>
+                    <CompactMetaItem
+                      label={tk("process.table.memory")}
+                      value={formatBytes(p.memoryBytes)}
+                      mono
+                    />
+                    <CompactMetaItem label="PID" value={String(p.pid)} mono />
                   </div>
-                  <div style={processCardActionsStyle}>
+                  <div
+                    style={{
+                      ...compactActionsStyle,
+                      justifyContent: "flex-end",
+                    }}
+                  >
                     <button
                       onClick={() => void handleKill(p)}
                       style={killBtnStyle}
@@ -366,23 +383,6 @@ export function ProcessTable({ processes }: ProcessTableProps) {
         )}
       </div>
     </section>
-  );
-}
-
-function ProcessMeta({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div style={processMetaItemStyle}>
-      <div style={processMetaLabelStyle}>{label}</div>
-      <div style={mono ? processMetaValueMonoStyle : processMetaValueStyle}>{value}</div>
-    </div>
   );
 }
 
@@ -575,28 +575,6 @@ const killBtnStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
-const processCardListStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const processCardStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "12px",
-  padding: "14px",
-  borderRadius: "12px",
-  background: "var(--bg-primary)",
-  border: "1px solid var(--border)",
-};
-
-const processCardHeaderStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "12px",
-  alignItems: "flex-start",
-  flexWrap: "wrap",
-};
-
 const processNameStyle: React.CSSProperties = {
   fontSize: "15px",
   fontWeight: 700,
@@ -613,46 +591,6 @@ const processMetricStackStyle: React.CSSProperties = {
   display: "grid",
   justifyItems: "end",
   gap: "6px",
-};
-
-const processMetaGridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "10px",
-};
-
-const processMetaItemStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "4px",
-  padding: "10px 12px",
-  borderRadius: "10px",
-  background: "var(--bg-card)",
-  border: "1px solid var(--border)",
-};
-
-const processMetaLabelStyle: React.CSSProperties = {
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  color: "var(--text-muted)",
-};
-
-const processMetaValueStyle: React.CSSProperties = {
-  fontSize: "13px",
-  color: "var(--text-primary)",
-  lineHeight: 1.5,
-};
-
-const processMetaValueMonoStyle: React.CSSProperties = {
-  ...processMetaValueStyle,
-  fontFamily: "monospace",
-  fontVariantNumeric: "tabular-nums",
-};
-
-const processCardActionsStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
 };
 
 const sectionStyle: React.CSSProperties = {
