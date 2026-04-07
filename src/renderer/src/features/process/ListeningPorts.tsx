@@ -28,6 +28,9 @@ export function shouldUseListeningPortsCompactLayout(width: number): boolean {
   return isCompactWidth(width, RESPONSIVE_WIDTH.listeningPortsCompact);
 }
 
+const DESKTOP_PORT_GRID_TEMPLATE =
+  "74px 104px minmax(180px, 1.2fr) 72px 116px minmax(220px, 1fr) 124px 92px";
+
 export function ListeningPorts({
   showConflictCenter = true,
 }: ListeningPortsProps = {}) {
@@ -419,60 +422,59 @@ export function ListeningPorts({
                 ))}
               </div>
             ) : (
-            <div style={{ overflowX: "auto", overflowY: "clip" }}>
-              <table
+            <div style={desktopTableWrapStyle}>
+              <div
                 style={{
                   width: "100%",
                   minWidth: "980px",
-                  borderCollapse: "collapse",
                   fontSize: "13px",
                 }}
               >
-                <thead>
-                  <tr
-                    style={{
-                      borderBottom: "1px solid var(--border)",
-                      position: "sticky",
-                      top: 0,
-                      background: "var(--bg-card)",
-                      zIndex: 1,
-                      boxShadow: "0 1px 0 var(--border)",
-                    }}
+                <div
+                  role="row"
+                  style={{
+                    ...stickyHeaderRowStyle,
+                    display: "grid",
+                    gridTemplateColumns: DESKTOP_PORT_GRID_TEMPLATE,
+                  }}
+                >
+                  <div style={thStyle}>{tk("process.port_finder.proto")}</div>
+                  <div style={thStyle}>
+                    {tk("process.port_finder.local_port")}
+                  </div>
+                  <div style={thStyle}>{tk("process.port_finder.process")}</div>
+                  <div style={thStyle}>PID</div>
+                  <div style={thStyle}>{tk("Exposure")}</div>
+                  <div style={thStyle}>{tk("process.port_finder.remote")}</div>
+                  <div style={thStyle}>{tk("process.port_finder.state")}</div>
+                  <div
+                    style={{ ...thStyle, textAlign: "center", width: "92px" }}
                   >
-                    <th style={thStyle}>{tk("process.port_finder.proto")}</th>
-                    <th style={thStyle}>
-                      {tk("process.port_finder.local_port")}
-                    </th>
-                    <th style={thStyle}>{tk("process.port_finder.process")}</th>
-                    <th style={thStyle}>PID</th>
-                    <th style={thStyle}>{tk("Exposure")}</th>
-                    <th style={thStyle}>{tk("process.port_finder.remote")}</th>
-                    <th style={thStyle}>{tk("process.port_finder.state")}</th>
-                    <th
-                      style={{ ...thStyle, textAlign: "center", width: "92px" }}
-                    >
-                      {tk("process.port_finder.action")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    {tk("process.port_finder.action")}
+                  </div>
+                </div>
+                <div>
                   {displayRows.map((p) => (
-                    <tr
+                    <div
                       key={`${p.protocol}-${p.localAddress}-${p.localPort}-${p.peerAddress}-${p.peerPort}-${p.state}-${p.pid}`}
-                      style={rowStyle}
+                      style={{
+                        ...rowStyle,
+                        display: "grid",
+                        gridTemplateColumns: DESKTOP_PORT_GRID_TEMPLATE,
+                        alignItems: "center",
+                      }}
                     >
-                      <td
+                      <div
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "13px",
                           color: "var(--text-muted)",
                           fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         {p.protocol}
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
@@ -483,13 +485,13 @@ export function ListeningPorts({
                         }}
                       >
                         <span style={portValueStyle}>{p.localPort}</span>
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
                           ...tdStyle,
                           fontWeight: 500,
                           color: "var(--text-primary)",
-                          maxWidth: "200px",
+                          overflow: "hidden",
                         }}
                       >
                         <CopyableValue
@@ -498,35 +500,34 @@ export function ListeningPorts({
                           color="var(--text-primary)"
                           maxWidth="200px"
                         />
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "13px",
                           color: "var(--text-muted)",
                           fontVariantNumeric: "tabular-nums",
                           whiteSpace: "nowrap",
                         }}
                       >
                         {p.pid}
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
                           ...tdStyle,
                           whiteSpace: "nowrap",
                         }}
                       >
                         <ExposureBadge address={p.localAddress} />
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
                           ...tdStyle,
                           fontFamily: "monospace",
-                          fontSize: "13px",
                           color: "var(--text-muted)",
                           fontVariantNumeric: "tabular-nums",
                           lineHeight: 1.45,
+                          overflow: "hidden",
                         }}
                       >
                         <CopyableValue
@@ -535,11 +536,11 @@ export function ListeningPorts({
                           color="var(--text-muted)"
                           maxWidth="220px"
                         />
-                      </td>
-                      <td style={tdStyle}>
+                      </div>
+                      <div style={tdStyle}>
                         <StateBadge state={p.state} />
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
                           ...tdStyle,
                           textAlign: "center",
@@ -552,11 +553,11 @@ export function ListeningPorts({
                         >
                           {tk("process.port_finder.kill")}
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
             )
           )}
@@ -1025,16 +1026,16 @@ const thStyle: React.CSSProperties = {
 };
 
 const tdStyle: React.CSSProperties = {
-  padding: "12px 8px",
+  padding: "10px 8px",
   color: "var(--text-secondary)",
-  fontSize: "14px",
+  fontSize: "13px",
   lineHeight: 1.4,
 };
 
 const searchStyle: React.CSSProperties = {
   padding: "8px 12px",
   fontSize: "13px",
-  width: "220px",
+  width: "240px",
   border: "1px solid var(--border)",
   borderRadius: "6px",
   background: "var(--bg-primary)",
@@ -1068,7 +1069,7 @@ const summaryGridStyle: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
   gap: "10px",
-  marginBottom: "12px",
+  marginBottom: "10px",
 };
 
 const infoLabelStyle: React.CSSProperties = {
@@ -1140,8 +1141,8 @@ const badgeStyle: React.CSSProperties = {
   fontWeight: 600,
   padding: "2px 8px",
   borderRadius: "999px",
-  background: "color-mix(in srgb, var(--accent-cyan) 16%, transparent)",
-  color: "var(--accent-cyan)",
+  background: "var(--bg-card-hover)",
+  color: "var(--text-secondary)",
   whiteSpace: "nowrap",
 };
 
@@ -1166,6 +1167,23 @@ const protocolPillStyle: React.CSSProperties = {
 
 const rowStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--border)",
+};
+
+const desktopTableWrapStyle: React.CSSProperties = {
+  overflowX: "auto",
+  overflowY: "clip",
+  border: "1px solid var(--border)",
+  borderRadius: "12px",
+  background: "var(--bg-card)",
+};
+
+const stickyHeaderRowStyle: React.CSSProperties = {
+  borderBottom: "1px solid var(--border)",
+  position: "sticky",
+  top: 0,
+  background: "var(--bg-card)",
+  zIndex: 1,
+  boxShadow: "0 1px 0 var(--border)",
 };
 
 const portValueStyle: React.CSSProperties = {
