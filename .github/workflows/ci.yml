@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
     paths-ignore:
       - 'README.md'
       - 'README.ko.md'
       - 'docs/**'
   pull_request:
-    branches: [main]
+    branches: [ main ]
     paths-ignore:
       - 'README.md'
       - 'README.ko.md'
@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [ macos-latest, windows-latest ]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -69,3 +69,4 @@ jobs:
             playwright-report
             test-results
           if-no-files-found: ignore
+          retention-days: 7
