@@ -158,6 +158,8 @@ export function createIpcApi(): SystemScopeApi {
       invokeWithRequestId(IPC_CHANNELS.EVENT_GET_HISTORY, options),
     getRecentEvents: (count?: number) =>
       invokeWithRequestId(IPC_CHANNELS.EVENT_GET_RECENT, count),
+    clearEventHistory: () =>
+      invokeWithRequestId(IPC_CHANNELS.EVENT_CLEAR_HISTORY),
 
     getCleanupRules: () =>
       invokeWithRequestId(IPC_CHANNELS.CLEANUP_GET_RULES),

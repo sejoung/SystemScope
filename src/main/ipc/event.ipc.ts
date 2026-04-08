@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import type { EventQueryOptions } from '@shared/types'
-import { getEventHistory, getRecentEvents } from '../services/eventStore'
+import { clearEventHistory, getEventHistory, getRecentEvents } from '../services/eventStore'
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
@@ -28,6 +28,18 @@ export function registerEventIpc(): void {
     } catch (err) {
       logErrorAction('event-ipc', 'recent.get', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', 'Failed to get recent events')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.EVENT_CLEAR_HISTORY, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    try {
+      const clearedCount = await clearEventHistory()
+      logInfoAction('event-ipc', 'history.clear', withRequestMeta(requestMeta, { clearedCount }))
+      return success(clearedCount)
+    } catch (err) {
+      logErrorAction('event-ipc', 'history.clear', withRequestMeta(requestMeta, { error: err }))
+      return failure('UNKNOWN_ERROR', 'Failed to clear event history')
     }
   })
 }

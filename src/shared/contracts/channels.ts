@@ -97,6 +97,7 @@ export const IPC_CHANNELS = {
   // 이벤트 히스토리
   EVENT_GET_HISTORY: 'event:getHistory',
   EVENT_GET_RECENT: 'event:getRecent',
+  EVENT_CLEAR_HISTORY: 'event:clearHistory',
 
   // 정리 자동화
   CLEANUP_GET_RULES: 'cleanup:getRules',

@@ -10,6 +10,8 @@ import { SnapshotDiffView } from '../features/sessionSnapshot/SnapshotDiffView'
 import { PageTab } from '../components/PageTab'
 import { PageLoading } from '../components/PageLoading'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
 import { useI18n } from '../i18n/useI18n'
 import { isAlertIntelligence } from '@shared/types'
 import type { TimelineRange, AlertIntelligence } from '@shared/types'
@@ -46,11 +48,14 @@ export function TimelinePage() {
   const setFilter = useEventStore((s) => s.setFilter)
   const fetchEvents = useEventStore((s) => s.fetchEvents)
   const fetchFilteredEvents = useEventStore((s) => s.fetchFilteredEvents)
+  const clearEventHistory = useEventStore((s) => s.clearEventHistory)
 
   const [intelligence, setIntelligence] = useState<AlertIntelligence | null>(null)
   const [intelligenceLoading, setIntelligenceLoading] = useState(false)
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false)
 
   const { tk } = useI18n()
+  const showToast = useToast((s) => s.show)
   const useStackedLowerLayout = containerWidth < 1180
 
   // Fetch alert intelligence on mount
@@ -88,6 +93,21 @@ export function TimelinePage() {
       void fetchEvents()
     }
   }, [eventFilter, fetchEvents, fetchFilteredEvents])
+
+  const handleConfirmClearHistory = async () => {
+    const clearedCount = await clearEventHistory()
+    setConfirmClearOpen(false)
+
+    if (clearedCount === null) {
+      showToast(tk('timeline.events.clear_failed'), 'danger')
+      return
+    }
+
+    showToast(
+      tk('timeline.events.cleared', { count: clearedCount }),
+      'success',
+    )
+  }
 
   return (
     <div data-testid="page-timeline" ref={containerRef}>
@@ -182,16 +202,44 @@ export function TimelinePage() {
               order: useStackedLowerLayout ? 2 : 1,
             }}
           >
-            <h3
+            <div
               style={{
-                fontSize: '14px',
-                fontWeight: 700,
-                margin: '0 0 12px 0',
-                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                marginBottom: '12px',
+                flexWrap: 'wrap',
               }}
             >
-              {tk('timeline.events.title')}
-            </h3>
+              <h3
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  margin: 0,
+                  color: 'var(--text-primary)',
+                }}
+              >
+                {tk('timeline.events.title')}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setConfirmClearOpen(true)}
+                disabled={eventsLoading || events.length === 0}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: eventsLoading || events.length === 0 ? 'var(--bg-card-hover)' : 'var(--accent-red)',
+                  color: eventsLoading || events.length === 0 ? 'var(--text-muted)' : 'var(--text-on-accent)',
+                  cursor: eventsLoading || events.length === 0 ? 'not-allowed' : 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}
+              >
+                {tk('timeline.events.clear')}
+              </button>
+            </div>
 
             <div
               role="tablist"
@@ -259,6 +307,20 @@ export function TimelinePage() {
           </div>
         </ErrorBoundary>
       </div>
+
+      <ConfirmDialog
+        open={confirmClearOpen}
+        title={tk('timeline.events.clear_confirm_title')}
+        message={tk('timeline.events.clear_confirm_message')}
+        confirmLabel={tk('timeline.events.clear')}
+        cancelLabel={tk('common.cancel')}
+        tone="danger"
+        details={tk('timeline.events.clear_confirm_detail')}
+        onConfirm={() => {
+          void handleConfirmClearHistory()
+        }}
+        onCancel={() => setConfirmClearOpen(false)}
+      />
     </div>
   )
 }

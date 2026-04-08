@@ -88,3 +88,13 @@ export async function getEventHistory(options?: EventQueryOptions): Promise<Syst
 export async function getRecentEvents(count: number = 20): Promise<SystemEvent[]> {
   return getEventHistory({ limit: count })
 }
+
+export async function clearEventHistory(): Promise<number> {
+  if (!store) return 0
+
+  const events = await store.load()
+  const clearedCount = events.length
+  await store.clear()
+
+  return clearedCount
+}

@@ -84,6 +84,7 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'getTimelinePointDetail',
   'getEventHistory',
   'getRecentEvents',
+  'clearEventHistory',
   'getDiagnosisSummary',
   'getAlertIntelligence',
   'getAlertHistory',
@@ -215,6 +216,14 @@ describe('createIpcApi', () => {
       await api.selectFolder()
       expect(invokeMock).toHaveBeenCalledWith(
         IPC_CHANNELS.DIALOG_SELECT_FOLDER,
+        requestMeta
+      )
+    })
+
+    it('clearEventHistory → EVENT_CLEAR_HISTORY', async () => {
+      await api.clearEventHistory()
+      expect(invokeMock).toHaveBeenCalledWith(
+        IPC_CHANNELS.EVENT_CLEAR_HISTORY,
         requestMeta
       )
     })

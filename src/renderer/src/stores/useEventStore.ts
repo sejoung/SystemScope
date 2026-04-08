@@ -10,6 +10,7 @@ interface EventState {
 
   fetchEvents: (limit?: number) => Promise<void>
   fetchFilteredEvents: (category: SystemEventCategory) => Promise<void>
+  clearEventHistory: () => Promise<number | null>
   setFilter: (category: SystemEventCategory | null) => void
   clearEvents: () => void
 }
@@ -53,6 +54,26 @@ export const useEventStore = create<EventState>((set, get) => ({
       }
     } catch {
       set({ loading: false, error: 'Failed to fetch filtered events' })
+    }
+  },
+
+  clearEventHistory: async () => {
+    if (get().loading) return null
+    set({ loading: true, error: null })
+    try {
+      const res = await window.systemScope.clearEventHistory()
+      if (res.ok && typeof res.data === 'number') {
+        set({ events: [], loading: false, filter: null })
+        return res.data
+      }
+      set({
+        loading: false,
+        error: res.ok ? 'Invalid event clear result' : res.error.message
+      })
+      return null
+    } catch {
+      set({ loading: false, error: 'Failed to clear event history' })
+      return null
     }
   },
 

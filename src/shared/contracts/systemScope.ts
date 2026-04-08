@@ -158,6 +158,7 @@ export interface SystemScopeApi {
   getTimelinePointDetail: (timestamp: number) => Promise<AppResult<MetricPointDetail>>
   getEventHistory: (options?: EventQueryOptions) => Promise<AppResult<SystemEvent[]>>
   getRecentEvents: (count?: number) => Promise<AppResult<SystemEvent[]>>
+  clearEventHistory: () => Promise<AppResult<number>>
 
   getCleanupRules: () => Promise<AppResult<CleanupRule[]>>
   setCleanupRuleConfig: (config: CleanupRuleConfig) => Promise<AppResult<void>>
