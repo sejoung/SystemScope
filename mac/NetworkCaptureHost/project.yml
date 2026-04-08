@@ -1,0 +1,70 @@
+name: NetworkCaptureHost
+options:
+  bundleIdPrefix: com.systemscope
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.3"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: "" # override in Xcode or via env
+
+targets:
+  NetworkCaptureHost:
+    type: application
+    platform: macOS
+    sources:
+      - path: NetworkCaptureHost
+      - path: Shared
+    info:
+      path: NetworkCaptureHost/Info.plist
+      properties:
+        CFBundleName: NetworkCaptureHost
+        CFBundleIdentifier: com.systemscope.NetworkCaptureHost
+        LSUIElement: true
+        NSHumanReadableCopyright: ""
+    entitlements:
+      path: NetworkCaptureHost/NetworkCaptureHost.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.developer.networking.networkextension:
+          - content-filter-provider
+          - app-proxy-provider
+          - packet-tunnel-provider
+        com.apple.developer.system-extension.install: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.systemscope.NetworkCaptureHost
+        ENABLE_HARDENED_RUNTIME: YES
+    dependencies:
+      - target: NetworkCaptureExtension
+        embed: true
+
+  NetworkCaptureExtension:
+    type: system-extension
+    platform: macOS
+    sources:
+      - path: NetworkCaptureExtension
+      - path: Shared
+    info:
+      path: NetworkCaptureExtension/Info.plist
+      properties:
+        CFBundleName: NetworkCaptureExtension
+        CFBundleIdentifier: com.systemscope.NetworkCaptureHost.NetworkCaptureExtension
+        NSSystemExtensionUsageDescription: SystemScope uses this extension to observe network flow metadata for its DevTools Network panel.
+        NetworkExtension:
+          NEProviderClasses:
+            com.apple.networkextension.app-proxy: $(PRODUCT_MODULE_NAME).TransparentProxyProvider
+    entitlements:
+      path: NetworkCaptureExtension/NetworkCaptureExtension.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.developer.networking.networkextension:
+          - app-proxy-provider
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.systemscope.NetworkCaptureHost.NetworkCaptureExtension
+        ENABLE_HARDENED_RUNTIME: YES

@@ -7,7 +7,15 @@ export interface NetworkCaptureCapability {
   canInspectBodies: boolean
 }
 
-export type NetworkCaptureState = 'unsupported' | 'available' | 'starting' | 'running' | 'error'
+export type NetworkCaptureState =
+  | 'unsupported'
+  | 'helperNotInstalled'
+  | 'approvalRequired'
+  | 'helperDisconnected'
+  | 'available'
+  | 'starting'
+  | 'running'
+  | 'error'
 
 export interface NetworkCaptureStatus {
   state: NetworkCaptureState

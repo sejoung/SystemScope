@@ -62,3 +62,11 @@ Thumbs.db
 .eslintcache
 
 .claude
+
+# Xcode / macOS NetworkCaptureHost
+mac/**/*.xcodeproj/
+mac/**/*.xcworkspace/
+mac/**/xcuserdata/
+mac/**/DerivedData/
+mac/**/build/
+mac/**/*.xcuserstate
