@@ -46,7 +46,8 @@ vi.mock('electron', () => ({
       if (name === 'userData') return '/tmp/systemscope-test'
       return '/tmp'
     }),
-    quit: vi.fn()
+    quit: vi.fn(),
+    requestSingleInstanceLock: vi.fn(() => true)
   },
   BrowserWindow: {
     getAllWindows: vi.fn(() => [])
