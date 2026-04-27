@@ -3,15 +3,17 @@ import type { SystemEvent } from '@shared/types'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { useI18n } from '../../i18n/useI18n'
 
-const DISMISSED_STORAGE_KEY = 'systemScope:dismissedEventBannerIds'
+const DISMISSED_STORAGE_KEY = 'systemscope.dismissedEventBannerIds'
 const MAX_DISMISSED_TRACKED = 200
 
 function getSafeLocalStorage(): Storage | undefined {
-  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
-  if (!descriptor || !('value' in descriptor)) {
+  try {
+    if (typeof globalThis === 'undefined') return undefined
+    const storage = (globalThis as { localStorage?: Storage }).localStorage
+    return storage ?? undefined
+  } catch {
     return undefined
   }
-  return descriptor.value as Storage | undefined
 }
 
 function loadDismissedIds(): string[] {

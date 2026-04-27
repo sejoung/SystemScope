@@ -59,12 +59,13 @@ function saveDockerTab(tab: DockerTab): void {
 }
 
 function getSafeLocalStorage(): Storage | undefined {
-  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
-  if (!descriptor || !('value' in descriptor)) {
+  try {
+    if (typeof globalThis === 'undefined') return undefined
+    const storage = (globalThis as { localStorage?: Storage }).localStorage
+    return storage ?? undefined
+  } catch {
     return undefined
   }
-
-  return descriptor.value as Storage | undefined
 }
 
 function isDockerTab(value: unknown): value is DockerTab {
