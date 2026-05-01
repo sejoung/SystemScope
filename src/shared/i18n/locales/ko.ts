@@ -259,7 +259,7 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "process.table.search_placeholder": "이름, PID, 명령어 검색...",
   "main.process.error.kill_failed": "프로세스를 종료할 수 없습니다.",
   "process.port_finder.kill_sent":
-    '"{name}" (PID {pid}) 종료 요청을 보냈습니다.',
+    '"{name}" (PID {pid}) 프로세스를 종료했습니다.',
   "process.table.helper":
     "프로세스는 CPU 사용량 순으로 먼저 정렬됩니다. 종료 요청을 보내면 실행 중인 작업이 즉시 멈출 수 있으니, 명령어를 확인한 뒤 진행하세요.",
   "monitoring.cpu.status.high": "높음",
@@ -361,7 +361,8 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "main.process.error.not_found": "프로세스를 찾을 수 없습니다.",
   "main.process.error.protected":
     "앱 자신이나 보호된 프로세스는 종료할 수 없습니다.",
-  "main.process.confirm.warning": "저장되지 않은 작업이 손실될 수 있습니다.",
+  "main.process.confirm.warning":
+    "정리 과정 없이 즉시 종료(SIGKILL / -9)됩니다. 저장되지 않은 데이터, 진행 중인 쓰기, 자식 프로세스가 손실될 수 있습니다.",
   "main.process.confirm.title": "프로세스 종료",
   "main.process.confirm.message": '"{name}" 프로세스를 종료하시겠습니까?',
   "main.process.error.changed":
@@ -1314,7 +1315,7 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "process.page.tab.network_help": "프로세스별 네트워크 대역폭을 실시간으로 모니터링합니다.",
   "process.tab.startup": "시작 프로그램",
   "process.table.empty_search": '"{query}" 검색 결과 없음',
-  "process.table.kill_sent": '"{name}" (PID {pid}) 종료 요청을 보냈습니다.',
+  "process.table.kill_sent": '"{name}" (PID {pid}) 프로세스를 종료했습니다.',
   "startup.search_no_results": "\"{query}\" 검색 결과 없음",
   "startup.search_results": "{count}건 결과",
   "{count} conflicts": "충돌 {count}건",

@@ -168,7 +168,7 @@ describe("registerProcessIpc", () => {
       cancelled: false,
     });
     expect(showMessageBox).toHaveBeenCalled();
-    expect(killSpy).toHaveBeenCalledWith(4321, "SIGTERM");
+    expect(killSpy).toHaveBeenCalledWith(4321, "SIGKILL");
     expect(logInfoAction).toHaveBeenCalled();
     killSpy.mockRestore();
   });

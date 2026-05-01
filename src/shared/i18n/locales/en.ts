@@ -257,7 +257,7 @@ export const EN_MESSAGES = {
   "process.table.search_placeholder": "Search name, PID, command...",
   "main.process.error.kill_failed": "Unable to terminate the process.",
   "process.port_finder.kill_sent":
-    'Sent a terminate request for "{name}" (PID {pid}).',
+    'Killed "{name}" (PID {pid}).',
   "process.table.helper":
     "Processes are sorted by CPU usage first. Killing a process stops the running task immediately, so review the command before sending the terminate request.",
   "monitoring.cpu.status.high": "High",
@@ -360,7 +360,8 @@ export const EN_MESSAGES = {
   "main.process.error.not_found": "Unable to find the process.",
   "main.process.error.protected":
     "You cannot terminate the app itself or a protected process.",
-  "main.process.confirm.warning": "Unsaved work may be lost.",
+  "main.process.confirm.warning":
+    "Process will be killed immediately (SIGKILL / -9) without cleanup. Unsaved data, pending writes, and child processes may be lost.",
   "main.process.confirm.title": "Kill Process",
   "main.process.confirm.message": 'Do you want to terminate "{name}"?',
   "main.process.error.changed":
@@ -1312,7 +1313,7 @@ export const EN_MESSAGES = {
   "process.page.tab.network_help": "Monitor per-process network bandwidth in real time.",
   "process.tab.startup": "Startup",
   "process.table.empty_search": 'No results for "{query}"',
-  "process.table.kill_sent": 'Sent a terminate request for "{name}" (PID {pid}).',
+  "process.table.kill_sent": 'Killed "{name}" (PID {pid}).',
   "startup.search_no_results": 'No results for "{query}"',
   "startup.search_results": "{count} results",
   "{count} conflicts": "{count} conflicts",

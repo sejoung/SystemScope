@@ -210,7 +210,7 @@ export function registerProcessIpc(): void {
 
 async function terminateProcess(pid: number): Promise<void> {
   try {
-    process.kill(pid, 'SIGTERM')
+    process.kill(pid, 'SIGKILL')
     return
   } catch (error) {
     if (!shouldFallbackToTaskkill(error)) {

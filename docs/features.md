@@ -151,6 +151,7 @@ Shows the size of major folders under the user’s home directory.
 - Search/filter by name, PID, or command path
 - Sort by PID / name / CPU% / memory
 - Process termination with protection for the app itself and protected targets
+  - Sends `SIGKILL` (`kill -9`) for immediate termination; on Windows it falls back to `taskkill /F` when needed
 - Dashboard includes top CPU / memory / GPU resource consumers
 
 ## 11. Port Finder
@@ -160,7 +161,7 @@ Inspects active ports and owning processes.
 - Search scope: Local / Remote / All
 - State filters: All / Listening / Established / Other
 - TCP states shown with status colors
-- Kill process by PID from the port view
+- Kill process by PID from the port view (`SIGKILL` / `kill -9`)
 - Normalizes Windows `.exe` and macOS `.app` paths into display-friendly names
 
 ## 12. Port Watch

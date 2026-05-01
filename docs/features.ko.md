@@ -146,6 +146,7 @@
 - 이름, PID, command 경로 실시간 검색/필터링
 - PID / Name / CPU% / Memory 컬럼 정렬
 - 프로세스 종료 기능 + 보호 대상 프로세스 종료 차단
+  - `SIGKILL`(`kill -9`)을 보내 즉시 종료 (Windows에서는 필요 시 `taskkill /F` 폴백)
 - 대시보드에서 Top Resource Consumers (CPU/Memory/GPU 통합)
 
 ## 11. 포트 찾기
@@ -155,7 +156,7 @@
 - 검색 범위 선택: Local / Remote / All
 - 상태별 필터: All / Listening / Established / Other
 - TCP 전체 상태 지원, 상태별 색상 뱃지
-- 포트 점유 PID 기준 프로세스 종료 지원
+- 포트 점유 PID 기준 프로세스 종료(`SIGKILL` / `kill -9`) 지원
 - Windows 경로(`.exe`)와 macOS 앱 번들(`.app`)을 표시 이름으로 정규화
 
 ## 12. 포트 모니터링
