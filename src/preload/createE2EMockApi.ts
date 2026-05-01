@@ -110,6 +110,9 @@ export function createE2EMockApi(): {
   const mockProcesses = [
     {
       pid: 1001,
+      ppid: 100,
+      parentName: 'npm',
+      descendantCount: 0,
       name: 'node',
       cpu: 12.5,
       memory: 120,

@@ -94,6 +94,7 @@ export function createIpcApi(): SystemScopeApi {
       name?: string;
       command?: string;
       reason?: string;
+      tree?: boolean;
     }) => invokeWithRequestId(IPC_CHANNELS.PROCESS_KILL, request),
 
     listInstalledApps: () =>

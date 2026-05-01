@@ -1,5 +1,8 @@
 export interface ProcessInfo {
   pid: number
+  ppid: number
+  parentName: string | null
+  descendantCount: number
   name: string
   cpu: number
   memory: number
@@ -30,6 +33,7 @@ export interface ProcessKillRequest {
   name?: string
   command?: string
   reason?: string
+  tree?: boolean
 }
 
 export interface ProcessKillResult {
@@ -37,6 +41,7 @@ export interface ProcessKillResult {
   name: string
   killed: boolean
   cancelled: boolean
+  killedPids: number[]
 }
 
 export interface ProcessNetworkUsage {

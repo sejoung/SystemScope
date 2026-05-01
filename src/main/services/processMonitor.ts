@@ -27,35 +27,90 @@ async function getCachedProcesses(): Promise<si.Systeminformation.ProcessesData>
   return pendingProcesses
 }
 
+function buildPidNameMap(
+  list: si.Systeminformation.ProcessesProcessData[]
+): Map<number, string> {
+  const map = new Map<number, string>()
+  for (const p of list) map.set(p.pid, p.name)
+  return map
+}
+
+// Builds a pid → transitive descendant count map. Uses memoized DFS over the parent graph.
+function buildDescendantCounts(
+  list: si.Systeminformation.ProcessesProcessData[]
+): Map<number, number> {
+  const childrenByParent = new Map<number, number[]>()
+  for (const p of list) {
+    const arr = childrenByParent.get(p.parentPid)
+    if (arr) arr.push(p.pid)
+    else childrenByParent.set(p.parentPid, [p.pid])
+  }
+
+  const counts = new Map<number, number>()
+  const visiting = new Set<number>()
+  const compute = (pid: number): number => {
+    const cached = counts.get(pid)
+    if (cached !== undefined) return cached
+    if (visiting.has(pid)) return 0 // defensive: cycle guard
+    visiting.add(pid)
+    const children = childrenByParent.get(pid) ?? []
+    let total = children.length
+    for (const child of children) total += compute(child)
+    visiting.delete(pid)
+    counts.set(pid, total)
+    return total
+  }
+  for (const p of list) compute(p.pid)
+  return counts
+}
+
+interface ProcessContext {
+  pidToName: Map<number, string>
+  descendantCounts: Map<number, number>
+}
+
+function buildProcessContext(
+  list: si.Systeminformation.ProcessesProcessData[]
+): ProcessContext {
+  return {
+    pidToName: buildPidNameMap(list),
+    descendantCounts: buildDescendantCounts(list)
+  }
+}
+
 export async function getTopCpuProcesses(limit: number = 10): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
+  const ctx = buildProcessContext(data.list)
   return [...data.list]
     .sort((a, b) => b.cpu - a.cpu)
     .slice(0, limit)
-    .map(toProcessInfo)
+    .map((p) => toProcessInfo(p, ctx))
 }
 
 export async function getTopMemoryProcesses(limit: number = 10): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
+  const ctx = buildProcessContext(data.list)
   return [...data.list]
     .sort((a, b) => b.mem - a.mem)
     .slice(0, limit)
-    .map(toProcessInfo)
+    .map((p) => toProcessInfo(p, ctx))
 }
 
 export async function getAllProcesses(): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
+  const ctx = buildProcessContext(data.list)
   return [...data.list]
     .filter((p) => p.cpu > 0 || p.memRss > 0)
     .sort((a, b) => b.cpu - a.cpu)
-    .map(toProcessInfo)
+    .map((p) => toProcessInfo(p, ctx))
 }
 
 export async function getProcessSnapshot(limit: number = 10): Promise<ProcessSnapshot> {
   const data = await getCachedProcesses()
+  const ctx = buildProcessContext(data.list)
   const mapped = data.list
     .filter((processInfo) => processInfo.cpu > 0 || processInfo.memRss > 0)
-    .map(toProcessInfo)
+    .map((p) => toProcessInfo(p, ctx))
 
   const byCpu = mapped.slice().sort((left, right) => right.cpu - left.cpu)
   const byMemory = mapped.slice().sort((left, right) => right.memory - left.memory)
@@ -70,7 +125,35 @@ export async function getProcessSnapshot(limit: number = 10): Promise<ProcessSna
 export async function getProcessByPid(pid: number): Promise<ProcessInfo | null> {
   const data = await getCachedProcesses()
   const found = data.list.find((processInfo) => processInfo.pid === pid)
-  return found ? toProcessInfo(found) : null
+  if (!found) return null
+  return toProcessInfo(found, buildProcessContext(data.list))
+}
+
+// Returns descendants of `rootPid` ordered shallowest-first. Excludes rootPid itself.
+export async function getProcessDescendants(rootPid: number): Promise<ProcessInfo[]> {
+  const data = await getCachedProcesses()
+  const ctx = buildProcessContext(data.list)
+  const byParent = new Map<number, si.Systeminformation.ProcessesProcessData[]>()
+  for (const p of data.list) {
+    const list = byParent.get(p.parentPid)
+    if (list) list.push(p)
+    else byParent.set(p.parentPid, [p])
+  }
+
+  const result: ProcessInfo[] = []
+  const queue: number[] = [rootPid]
+  const seen = new Set<number>([rootPid])
+  while (queue.length > 0) {
+    const pid = queue.shift() as number
+    const children = byParent.get(pid) ?? []
+    for (const child of children) {
+      if (seen.has(child.pid)) continue
+      seen.add(child.pid)
+      result.push(toProcessInfo(child, ctx))
+      queue.push(child.pid)
+    }
+  }
+  return result
 }
 
 export async function getNetworkPorts(): Promise<PortInfo[]> {
@@ -110,9 +193,16 @@ function toNum(v: string | number | undefined | null): number {
   return isNaN(n) ? 0 : n
 }
 
-function toProcessInfo(p: si.Systeminformation.ProcessesProcessData): ProcessInfo {
+function toProcessInfo(
+  p: si.Systeminformation.ProcessesProcessData,
+  ctx: ProcessContext
+): ProcessInfo {
+  const ppid = p.parentPid
   return {
     pid: p.pid,
+    ppid,
+    parentName: ppid > 1 ? ctx.pidToName.get(ppid) ?? null : null,
+    descendantCount: ctx.descendantCounts.get(p.pid) ?? 0,
     name: p.name,
     cpu: Math.round(p.cpu * 100) / 100,
     memory: Math.round(p.mem * 100) / 100,

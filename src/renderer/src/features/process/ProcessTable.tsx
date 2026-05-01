@@ -25,7 +25,7 @@ type CpuUsageTone = "high" | "medium" | "normal";
 
 const ROW_HEIGHT = 56;
 const LIST_HEIGHT = 520;
-const COL_WIDTHS = { pid: "60px", name: "1fr", cpu: "100px", memory: "100px", action: "92px" };
+const COL_WIDTHS = { pid: "60px", name: "1fr", cpu: "100px", memory: "100px", action: "184px" };
 const GRID_TEMPLATE = `${COL_WIDTHS.pid} ${COL_WIDTHS.name} ${COL_WIDTHS.cpu} ${COL_WIDTHS.memory} ${COL_WIDTHS.action}`;
 
 export function shouldUseProcessTableCompactLayout(width: number): boolean {
@@ -101,12 +101,13 @@ export function ProcessTable({ processes }: ProcessTableProps) {
 
   const sortSummary = getProcessSortSummary(sortField, sortDir, tk);
 
-  const handleKill = async (processInfo: ProcessInfo) => {
+  const handleKill = async (processInfo: ProcessInfo, tree: boolean) => {
     const res = await window.systemScope.killProcess({
       pid: processInfo.pid,
       name: processInfo.name,
       command: processInfo.command,
       reason: "Activity > Processes",
+      tree,
     });
     if (!res.ok) {
       showToast(res.error?.message ?? tk("process.table.kill_failed"));
@@ -116,8 +117,14 @@ export function ProcessTable({ processes }: ProcessTableProps) {
     const result = res.data as ProcessKillResult;
     if (result.cancelled) return;
     if (result.killed) {
+      const descendants = result.killedPids.length - 1;
       showToast(
-        tk("process.table.kill_sent", { name: result.name, pid: result.pid }),
+        descendants > 0
+          ? tk("process.table.kill_tree_sent", {
+              name: result.name,
+              count: descendants,
+            })
+          : tk("process.table.kill_sent", { name: result.name, pid: result.pid }),
       );
     }
   };
@@ -158,6 +165,22 @@ export function ProcessTable({ processes }: ProcessTableProps) {
             <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {p.name}
             </div>
+            {p.ppid > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSearch(String(p.ppid));
+                }}
+                style={parentChipStyle}
+                title={tk("process.table.jump_to_parent")}
+              >
+                {tk("process.table.parent_chip", {
+                  name: p.parentName ?? `PID ${p.ppid}`,
+                  pid: p.ppid,
+                })}
+              </button>
+            )}
             {p.command && p.command !== p.name && (
               <div
                 style={{
@@ -206,12 +229,25 @@ export function ProcessTable({ processes }: ProcessTableProps) {
             {formatBytes(p.memoryBytes)}
           </div>
           <div style={{ ...cellStyle, textAlign: "center" }}>
-            <button
-              onClick={() => void handleKill(p)}
-              style={killBtnStyle}
-            >
-              {tk("process.table.kill")}
-            </button>
+            <div style={actionCellStyle}>
+              <button
+                onClick={() => void handleKill(p, false)}
+                style={killBtnStyle}
+              >
+                {tk("process.table.kill")}
+              </button>
+              {p.descendantCount > 0 && (
+                <button
+                  onClick={() => void handleKill(p, true)}
+                  style={killTreeBtnStyle}
+                  title={tk("process.table.kill_tree")}
+                >
+                  {tk("process.table.kill_tree_with_count", {
+                    count: p.descendantCount,
+                  })}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -330,6 +366,22 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                     <div style={{ display: "grid", gap: "4px", minWidth: 0 }}>
                       <div style={processNameStyle}>{p.name}</div>
                       <div style={processPidStyle}>PID {p.pid}</div>
+                      {p.ppid > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSearch(String(p.ppid));
+                          }}
+                          style={parentChipStyle}
+                          title={tk("process.table.jump_to_parent")}
+                        >
+                          {tk("process.table.parent_chip", {
+                            name: p.parentName ?? `PID ${p.ppid}`,
+                            pid: p.ppid,
+                          })}
+                        </button>
+                      )}
                     </div>
                     <div style={processMetricStackStyle}>
                       <span style={cpuValueStyle}>{p.cpu.toFixed(1)}%</span>
@@ -361,11 +413,22 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                     }}
                   >
                     <button
-                      onClick={() => void handleKill(p)}
+                      onClick={() => void handleKill(p, false)}
                       style={killBtnStyle}
                     >
                       {tk("process.table.kill")}
                     </button>
+                    {p.descendantCount > 0 && (
+                      <button
+                        onClick={() => void handleKill(p, true)}
+                        style={killTreeBtnStyle}
+                        title={tk("process.table.kill_tree")}
+                      >
+                        {tk("process.table.kill_tree_with_count", {
+                          count: p.descendantCount,
+                        })}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -573,6 +636,42 @@ const killBtnStyle: React.CSSProperties = {
   background: "rgba(239, 68, 68, 0.12)",
   color: "var(--accent-red)",
   cursor: "pointer",
+};
+
+const killTreeBtnStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  fontSize: "12px",
+  fontWeight: 700,
+  border: "1px solid var(--accent-red)",
+  borderRadius: "6px",
+  background: "var(--accent-red)",
+  color: "var(--text-on-accent)",
+  cursor: "pointer",
+};
+
+const actionCellStyle: React.CSSProperties = {
+  display: "inline-flex",
+  gap: "6px",
+  justifyContent: "center",
+  flexWrap: "wrap",
+};
+
+const parentChipStyle: React.CSSProperties = {
+  alignSelf: "flex-start",
+  marginTop: "2px",
+  padding: "1px 6px",
+  fontSize: "11px",
+  fontWeight: 500,
+  border: "1px solid var(--border)",
+  borderRadius: "4px",
+  background: "transparent",
+  color: "var(--accent-cyan)",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  maxWidth: "260px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 const processNameStyle: React.CSSProperties = {

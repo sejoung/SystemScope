@@ -104,6 +104,9 @@ describe('devToolsOverview helpers', () => {
     const processInfo: ProcessInfo = {
       pid: 300,
       name: 'node',
+      ppid: 1,
+      parentName: null,
+      descendantCount: 0,
       cpu: 0,
       memory: 0,
       memoryBytes: 0,
@@ -128,6 +131,9 @@ describe('devToolsOverview helpers', () => {
     const pythonProcess: ProcessInfo = {
       pid: 410,
       name: 'python',
+      ppid: 1,
+      parentName: null,
+      descendantCount: 0,
       cpu: 0,
       memory: 0,
       memoryBytes: 0,
@@ -147,6 +153,9 @@ describe('devToolsOverview helpers', () => {
     const jvmProcess: ProcessInfo = {
       pid: 510,
       name: 'java',
+      ppid: 1,
+      parentName: null,
+      descendantCount: 0,
       cpu: 0,
       memory: 0,
       memoryBytes: 0,
@@ -172,6 +181,9 @@ describe('devToolsOverview helpers', () => {
     const targetProcess: ProcessInfo = {
       pid: 610,
       name: 'api',
+      ppid: 1,
+      parentName: null,
+      descendantCount: 0,
       cpu: 0,
       memory: 0,
       memoryBytes: 0,
@@ -180,6 +192,9 @@ describe('devToolsOverview helpers', () => {
     const trunkProcess: ProcessInfo = {
       pid: 611,
       name: 'cargo',
+      ppid: 1,
+      parentName: null,
+      descendantCount: 0,
       cpu: 0,
       memory: 0,
       memoryBytes: 0,
@@ -208,6 +223,9 @@ describe('devToolsOverview helpers', () => {
       {
         pid: 101,
         name: 'node',
+        ppid: 1,
+        parentName: null,
+        descendantCount: 0,
         cpu: 0,
         memory: 0,
         memoryBytes: 0,
@@ -372,6 +390,9 @@ describe('devToolsOverview helpers', () => {
       {
         pid: 3100,
         name: 'node',
+        ppid: 1,
+        parentName: null,
+        descendantCount: 0,
         cpu: 0,
         memory: 0,
         memoryBytes: 0,

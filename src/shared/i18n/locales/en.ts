@@ -276,6 +276,9 @@ export const EN_MESSAGES = {
   "process.port_watch.state": "State",
   "process.port_watch.remote": "Remote",
   "process.port_finder.kill": "Kill PID",
+  "process.port_finder.kill_tree": "Kill Tree",
+  "process.port_finder.kill_tree_sent":
+    'Killed "{name}" and {count} descendant process(es).',
   "process.port_watch.description":
     "Register a port number, IP address, or IP:Port to monitor connection status in real time.",
   "process.port_watch.placeholder_local": "Local port or address",
@@ -364,6 +367,13 @@ export const EN_MESSAGES = {
     "Process will be killed immediately (SIGKILL / -9) without cleanup. Unsaved data, pending writes, and child processes may be lost.",
   "main.process.confirm.title": "Kill Process",
   "main.process.confirm.message": 'Do you want to terminate "{name}"?',
+  "main.process.confirm.tree_title": "Kill Process Tree",
+  "main.process.confirm.tree_message":
+    'Kill "{name}" and {count} descendant process(es)?',
+  "main.process.confirm.tree_descendants": "Descendants ({count}):",
+  "main.process.confirm.kill_tree": "Kill Tree",
+  "main.process.error.tree_protected":
+    'Cannot kill tree: descendant "{name}" (PID {pid}) is a protected process.',
   "main.process.error.changed":
     "The process changed before termination, so the action was cancelled.",
   "apps.error.load_installed":
@@ -978,7 +988,12 @@ export const EN_MESSAGES = {
   "process.table.cpu_high": "High",
   "process.table.cpu_normal": "Normal",
   "process.table.kill": "Kill",
+  "process.table.kill_tree": "Kill Tree",
+  "process.table.kill_tree_with_count": "Kill Tree ({count})",
   "process.table.kill_failed": "Unable to terminate the process.",
+  "process.table.parent_chip": "↑ {name} (PID {pid})",
+  "process.table.jump_to_parent":
+    "Jump to parent process. Useful when the real owner of a port or session is an ancestor.",
   "process.table.memory": "Memory",
   "process.table.name": "Name",
   "process.top_resources.cpu": "CPU",
@@ -1314,6 +1329,8 @@ export const EN_MESSAGES = {
   "process.tab.startup": "Startup",
   "process.table.empty_search": 'No results for "{query}"',
   "process.table.kill_sent": 'Killed "{name}" (PID {pid}).',
+  "process.table.kill_tree_sent":
+    'Killed "{name}" and {count} descendant process(es).',
   "startup.search_no_results": 'No results for "{query}"',
   "startup.search_results": "{count} results",
   "{count} conflicts": "{count} conflicts",

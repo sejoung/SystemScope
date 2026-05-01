@@ -31,12 +31,13 @@ export function PortConflictCenterCard() {
 
   const conflicts = useMemo(() => getPortConflicts(ports), [ports]);
 
-  const handleKill = async (portInfo: PortInfo) => {
+  const handleKill = async (portInfo: PortInfo, tree: boolean) => {
     const res = await window.systemScope.killProcess({
       pid: portInfo.pid,
       name: portInfo.process,
       command: `${portInfo.protocol.toUpperCase()} ${portInfo.localAddress}:${portInfo.localPort}`,
       reason: "DevTools > Port Conflict Center",
+      tree,
     });
     if (!res.ok) {
       showToast(res.error?.message ?? tk("process.port_finder.kill_failed"));
@@ -46,11 +47,17 @@ export function PortConflictCenterCard() {
     const result = res.data as ProcessKillResult;
     if (result.cancelled) return;
     if (result.killed) {
+      const descendants = result.killedPids.length - 1;
       showToast(
-        tk("process.port_finder.kill_sent", {
-          name: result.name,
-          pid: result.pid,
-        }),
+        descendants > 0
+          ? tk("process.port_finder.kill_tree_sent", {
+              name: result.name,
+              count: descendants,
+            })
+          : tk("process.port_finder.kill_sent", {
+              name: result.name,
+              pid: result.pid,
+            }),
       );
       await fetchPorts();
     }

@@ -278,6 +278,9 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "process.port_watch.state": "상태",
   "process.port_watch.remote": "원격",
   "process.port_finder.kill": "PID 종료",
+  "process.port_finder.kill_tree": "트리 종료",
+  "process.port_finder.kill_tree_sent":
+    '"{name}" 및 자손 {count}개를 종료했습니다.',
   "process.port_watch.description":
     "포트 번호, IP 주소, 또는 IP:Port를 등록하면 실시간으로 연결 상태를 감시합니다.",
   "process.port_watch.placeholder_local": "로컬 포트 또는 주소",
@@ -365,6 +368,13 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
     "정리 과정 없이 즉시 종료(SIGKILL / -9)됩니다. 저장되지 않은 데이터, 진행 중인 쓰기, 자식 프로세스가 손실될 수 있습니다.",
   "main.process.confirm.title": "프로세스 종료",
   "main.process.confirm.message": '"{name}" 프로세스를 종료하시겠습니까?',
+  "main.process.confirm.tree_title": "프로세스 트리 종료",
+  "main.process.confirm.tree_message":
+    '"{name}" 프로세스와 자손 {count}개를 모두 종료하시겠습니까?',
+  "main.process.confirm.tree_descendants": "자손 프로세스 ({count}개):",
+  "main.process.confirm.kill_tree": "트리 종료",
+  "main.process.error.tree_protected":
+    '트리 종료 불가: 자손 프로세스 "{name}" (PID {pid})은(는) 보호 대상입니다.',
   "main.process.error.changed":
     "프로세스 상태가 변경되어 종료를 중단했습니다.",
   "apps.error.load_installed":
@@ -980,7 +990,12 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "process.table.cpu_high": "높음",
   "process.table.cpu_normal": "정상",
   "process.table.kill": "종료",
+  "process.table.kill_tree": "트리 종료",
+  "process.table.kill_tree_with_count": "트리 종료 ({count})",
   "process.table.kill_failed": "프로세스를 종료할 수 없습니다.",
+  "process.table.parent_chip": "↑ {name} (PID {pid})",
+  "process.table.jump_to_parent":
+    "부모 프로세스로 이동합니다. 포트나 세션의 진짜 주인이 조상일 때 유용합니다.",
   "process.table.memory": "메모리",
   "process.table.name": "이름",
   "process.top_resources.cpu": "CPU",
@@ -1316,6 +1331,8 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "process.tab.startup": "시작 프로그램",
   "process.table.empty_search": '"{query}" 검색 결과 없음',
   "process.table.kill_sent": '"{name}" (PID {pid}) 프로세스를 종료했습니다.',
+  "process.table.kill_tree_sent":
+    '"{name}" 및 자손 {count}개를 종료했습니다.',
   "startup.search_no_results": "\"{query}\" 검색 결과 없음",
   "startup.search_results": "{count}건 결과",
   "{count} conflicts": "충돌 {count}건",

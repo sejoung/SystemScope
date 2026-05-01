@@ -29,7 +29,7 @@ export function shouldUseListeningPortsCompactLayout(width: number): boolean {
 }
 
 const DESKTOP_PORT_GRID_TEMPLATE =
-  "74px 104px minmax(180px, 1.2fr) 72px 116px minmax(220px, 1fr) 124px 92px";
+  "74px 104px minmax(180px, 1.2fr) 72px 116px minmax(220px, 1fr) 124px 200px";
 
 export function ListeningPorts({
   showConflictCenter = true,
@@ -97,13 +97,14 @@ export function ListeningPorts({
     listeningPorts.map((port) => port.pid),
   ).size;
 
-  const handleKill = async (portInfo: PortInfo) => {
+  const handleKill = async (portInfo: PortInfo, tree: boolean) => {
     const remote = formatEndpoint(portInfo.peerAddress, portInfo.peerPort);
     const res = await window.systemScope.killProcess({
       pid: portInfo.pid,
       name: portInfo.process,
       command: `${portInfo.protocol.toUpperCase()} ${portInfo.localAddress}:${portInfo.localPort} -> ${remote}`,
       reason: "Activity > Ports",
+      tree,
     });
     if (!res.ok) {
       showToast(res.error?.message ?? tk("process.port_finder.kill_failed"));
@@ -113,11 +114,17 @@ export function ListeningPorts({
     const result = res.data as ProcessKillResult;
     if (result.cancelled) return;
     if (result.killed) {
+      const descendants = result.killedPids.length - 1;
       showToast(
-        tk("process.port_finder.kill_sent", {
-          name: result.name,
-          pid: result.pid,
-        }),
+        descendants > 0
+          ? tk("process.port_finder.kill_tree_sent", {
+              name: result.name,
+              count: descendants,
+            })
+          : tk("process.port_finder.kill_sent", {
+              name: result.name,
+              pid: result.pid,
+            }),
       );
       await fetchPorts();
     }
@@ -411,12 +418,21 @@ export function ListeningPorts({
                         justifyContent: "flex-end",
                       }}
                     >
-                      <button
-                        onClick={() => void handleKill(p)}
-                        style={killBtnStyle}
-                      >
-                        {tk("process.port_finder.kill")}
-                      </button>
+                      <div style={killActionsStyle}>
+                        <button
+                          onClick={() => void handleKill(p, false)}
+                          style={killBtnStyle}
+                        >
+                          {tk("process.port_finder.kill")}
+                        </button>
+                        <button
+                          onClick={() => void handleKill(p, true)}
+                          style={killTreeBtnStyle}
+                          title={tk("process.port_finder.kill_tree")}
+                        >
+                          {tk("process.port_finder.kill_tree")}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -448,7 +464,7 @@ export function ListeningPorts({
                   <div style={thStyle}>{tk("process.port_finder.remote")}</div>
                   <div style={thStyle}>{tk("process.port_finder.state")}</div>
                   <div
-                    style={{ ...thStyle, textAlign: "center", width: "92px" }}
+                    style={{ ...thStyle, textAlign: "center" }}
                   >
                     {tk("process.port_finder.action")}
                   </div>
@@ -547,12 +563,21 @@ export function ListeningPorts({
                           whiteSpace: "nowrap",
                         }}
                       >
-                        <button
-                          onClick={() => void handleKill(p)}
-                          style={killBtnStyle}
-                        >
-                          {tk("process.port_finder.kill")}
-                        </button>
+                        <div style={killActionsStyle}>
+                          <button
+                            onClick={() => void handleKill(p, false)}
+                            style={killBtnStyle}
+                          >
+                            {tk("process.port_finder.kill")}
+                          </button>
+                          <button
+                            onClick={() => void handleKill(p, true)}
+                            style={killTreeBtnStyle}
+                            title={tk("process.port_finder.kill_tree")}
+                          >
+                            {tk("process.port_finder.kill_tree")}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -776,7 +801,7 @@ export function PortConflictCenterPanel({
   tk,
 }: {
   conflicts: PortConflict[];
-  onKill: (port: PortInfo) => Promise<void>;
+  onKill: (port: PortInfo, tree: boolean) => Promise<void>;
   onInspectPort: (port: number) => void;
   tk: TranslateFn;
 }) {
@@ -827,10 +852,18 @@ export function PortConflictCenterPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() => void onKill(conflict.portInfo)}
+                  onClick={() => void onKill(conflict.portInfo, false)}
                   style={resolveBtnStyle}
                 >
                   {tk("Kill PID")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onKill(conflict.portInfo, true)}
+                  style={resolveTreeBtnStyle}
+                  title={tk("process.port_finder.kill_tree")}
+                >
+                  {tk("process.port_finder.kill_tree")}
                 </button>
               </div>
             </div>
@@ -1105,6 +1138,24 @@ const killBtnStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const killTreeBtnStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  fontSize: "12px",
+  fontWeight: 700,
+  border: "1px solid var(--accent-red)",
+  borderRadius: "6px",
+  background: "var(--accent-red)",
+  color: "var(--text-on-accent)",
+  cursor: "pointer",
+};
+
+const killActionsStyle: React.CSSProperties = {
+  display: "inline-flex",
+  gap: "6px",
+  justifyContent: "center",
+  flexWrap: "wrap",
+};
+
 const sectionStyle: React.CSSProperties = {
   backgroundColor: "var(--bg-card)",
   borderRadius: "var(--radius-lg)",
@@ -1318,6 +1369,17 @@ const resolveBtnStyle: React.CSSProperties = {
   border: "1px solid rgba(239, 68, 68, 0.25)",
   background: "rgba(239, 68, 68, 0.12)",
   color: "var(--accent-red)",
+  cursor: "pointer",
+  fontSize: "12px",
+  fontWeight: 700,
+};
+
+const resolveTreeBtnStyle: React.CSSProperties = {
+  padding: "6px 10px",
+  borderRadius: "8px",
+  border: "1px solid var(--accent-red)",
+  background: "var(--accent-red)",
+  color: "var(--text-on-accent)",
   cursor: "pointer",
   fontSize: "12px",
   fontWeight: 700,

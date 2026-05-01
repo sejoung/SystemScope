@@ -150,8 +150,10 @@ Shows the size of major folders under the user’s home directory.
 - Full process list where CPU or memory usage is greater than zero
 - Search/filter by name, PID, or command path
 - Sort by PID / name / CPU% / memory
+- Each row shows a `↑ parent (PID)` chip when applicable; clicking it filters to the parent so you can walk up the tree to the real session root
 - Process termination with protection for the app itself and protected targets
-  - Sends `SIGKILL` (`kill -9`) for immediate termination; on Windows it falls back to `taskkill /F` when needed
+  - **Kill**: terminates a single process via `SIGKILL` (`kill -9`); on Windows falls back to `taskkill /F` when needed
+  - **Kill Tree (N)**: appears only when the target has descendants. Terminates the target and all `N` descendants (e.g. `npm run dev` → `vite` → `esbuild`); aborts if any descendant is a protected process. Uses descendants-first `SIGKILL` on macOS/Linux and `taskkill /T /F` on Windows
 - Dashboard includes top CPU / memory / GPU resource consumers
 
 ## 11. Port Finder
@@ -161,7 +163,7 @@ Inspects active ports and owning processes.
 - Search scope: Local / Remote / All
 - State filters: All / Listening / Established / Other
 - TCP states shown with status colors
-- Kill process by PID from the port view (`SIGKILL` / `kill -9`)
+- Kill process by PID from the port view (single-process `SIGKILL` or whole-tree termination)
 - Normalizes Windows `.exe` and macOS `.app` paths into display-friendly names
 
 ## 12. Port Watch

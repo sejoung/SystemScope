@@ -145,8 +145,10 @@
 - 전체 프로세스 목록 (CPU 또는 메모리 사용량 > 0)
 - 이름, PID, command 경로 실시간 검색/필터링
 - PID / Name / CPU% / Memory 컬럼 정렬
+- 각 행에 부모 프로세스가 있으면 `↑ 부모이름 (PID)` 칩 표시. 클릭하면 부모로 필터링되어 세션의 실제 루트까지 한 단계씩 올라갈 수 있음
 - 프로세스 종료 기능 + 보호 대상 프로세스 종료 차단
-  - `SIGKILL`(`kill -9`)을 보내 즉시 종료 (Windows에서는 필요 시 `taskkill /F` 폴백)
+  - **종료**: 단일 프로세스를 `SIGKILL`(`kill -9`)로 즉시 종료 (Windows에서는 필요 시 `taskkill /F` 폴백)
+  - **트리 종료 (N)**: 자손이 있을 때만 표시. 대상과 자손 N개를 한 번에 종료 (예: `npm run dev` → `vite` → `esbuild`). 자손 중 보호 대상이 있으면 중단. macOS/Linux는 자손부터 SIGKILL, Windows는 `taskkill /T /F` 사용
 - 대시보드에서 Top Resource Consumers (CPU/Memory/GPU 통합)
 
 ## 11. 포트 찾기
@@ -156,7 +158,7 @@
 - 검색 범위 선택: Local / Remote / All
 - 상태별 필터: All / Listening / Established / Other
 - TCP 전체 상태 지원, 상태별 색상 뱃지
-- 포트 점유 PID 기준 프로세스 종료(`SIGKILL` / `kill -9`) 지원
+- 포트 점유 PID 기준 프로세스 종료 또는 트리 통째로 종료 지원
 - Windows 경로(`.exe`)와 macOS 앱 번들(`.app`)을 표시 이름으로 정규화
 
 ## 12. 포트 모니터링

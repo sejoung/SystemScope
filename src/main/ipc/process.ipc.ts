@@ -1,7 +1,7 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
-import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessSnapshot } from '../services/processMonitor'
+import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessDescendants, getProcessSnapshot } from '../services/processMonitor'
 import { getProcessNetworkUsage } from '../services/processNetworkMonitor'
 import { resolveHostnames } from '../services/dnsResolver'
 import { resolveCountries } from '../services/geoIpResolver'
@@ -151,53 +151,87 @@ export function registerProcessIpc(): void {
         return failure('PERMISSION_DENIED', tk('main.process.error.protected'))
       }
 
+      const tree = request.tree === true
+      const descendants = tree ? await getProcessDescendants(target.pid) : []
+      if (tree) {
+        const blocked = descendants.find(isProtectedProcess)
+        if (blocked) {
+          logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, {
+            reason: 'tree_protected_descendant', pid: target.pid, blockedPid: blocked.pid, blockedName: blocked.name
+          }))
+          return failure('PERMISSION_DENIED', tk('main.process.error.tree_protected', { name: blocked.name, pid: blocked.pid }))
+        }
+      }
+
       const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      const parentLine = target.ppid > 1 && target.parentName
+        ? `Parent: ${target.parentName} (PID ${target.ppid})`
+        : null
       const detailLines = [
         `PID: ${target.pid}`,
         `Name: ${target.name}`,
+        parentLine,
         target.command ? `Command: ${target.command}` : null,
         request.reason ? `Reason: ${request.reason}` : null,
+        ...(tree && descendants.length > 0
+          ? ['', tk('main.process.confirm.tree_descendants', { count: descendants.length }), ...descendants.slice(0, 8).map((d) => `  • ${d.name} (PID ${d.pid})`),
+             descendants.length > 8 ? `  … +${descendants.length - 8}` : null]
+          : []),
         '',
         tk('main.process.confirm.warning')
       ].filter(Boolean)
 
+      const isTreeWithChildren = tree && descendants.length > 0
       const confirm = await dialog.showMessageBox(win ?? undefined, {
         type: 'warning',
-        buttons: [tk('main.process.confirm.cancel'), tk('main.process.confirm.kill')],
+        buttons: [
+          tk('main.process.confirm.cancel'),
+          isTreeWithChildren ? tk('main.process.confirm.kill_tree') : tk('main.process.confirm.kill')
+        ],
         defaultId: 0,
         cancelId: 0,
-        title: tk('main.process.confirm.title'),
-        message: tk('main.process.confirm.message', { name: target.name }),
+        title: isTreeWithChildren ? tk('main.process.confirm.tree_title') : tk('main.process.confirm.title'),
+        message: isTreeWithChildren
+          ? tk('main.process.confirm.tree_message', { name: target.name, count: descendants.length })
+          : tk('main.process.confirm.message', { name: target.name }),
         detail: detailLines.join('\n')
       })
 
       if (confirm.response === 0) {
-        logInfoAction('process-ipc', 'process.kill.cancel', withRequestMeta(requestMeta, { pid: target.pid, name: target.name }))
-        logProductMetric('process-ipc', 'process.kill', 'cancelled', withRequestMeta(requestMeta, { pid: target.pid, name: target.name }))
+        logInfoAction('process-ipc', 'process.kill.cancel', withRequestMeta(requestMeta, { pid: target.pid, name: target.name, tree }))
+        logProductMetric('process-ipc', 'process.kill', 'cancelled', withRequestMeta(requestMeta, { pid: target.pid, name: target.name, tree }))
         const result: ProcessKillResult = {
           pid: target.pid,
           name: target.name,
           killed: false,
-          cancelled: true
+          cancelled: true,
+          killedPids: []
         }
         return success(result)
       }
 
       const confirmedTarget = await getProcessByPid(request.pid)
       if (!confirmedTarget || confirmedTarget.name !== target.name || confirmedTarget.command !== target.command) {
-        logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { reason: 'target_changed', pid: request.pid }))
+        logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { reason: 'target_changed', pid: request.pid, tree }))
         return failure('UNKNOWN_ERROR', tk('main.process.error.changed'))
       }
 
-      await terminateProcess(confirmedTarget.pid)
-      logInfoAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, { pid: confirmedTarget.pid, name: confirmedTarget.name }))
-      logProductMetric('process-ipc', 'process.kill', 'succeeded', withRequestMeta(requestMeta, { pid: confirmedTarget.pid, name: confirmedTarget.name }))
+      const descendantPids = descendants.map((d) => d.pid)
+      await terminateProcess(confirmedTarget.pid, tree, descendantPids)
+      const killedPids = [confirmedTarget.pid, ...descendantPids]
+      logInfoAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, {
+        pid: confirmedTarget.pid, name: confirmedTarget.name, tree, killedCount: killedPids.length
+      }))
+      logProductMetric('process-ipc', 'process.kill', 'succeeded', withRequestMeta(requestMeta, {
+        pid: confirmedTarget.pid, name: confirmedTarget.name, tree, killedCount: killedPids.length
+      }))
 
       const result: ProcessKillResult = {
         pid: confirmedTarget.pid,
         name: confirmedTarget.name,
         killed: true,
-        cancelled: false
+        cancelled: false,
+        killedPids
       }
       return success(result)
     } catch (err) {
@@ -208,9 +242,26 @@ export function registerProcessIpc(): void {
   })
 }
 
-async function terminateProcess(pid: number): Promise<void> {
+async function terminateProcess(rootPid: number, tree: boolean, descendantPids: number[]): Promise<void> {
+  if (process.platform === 'win32' && tree) {
+    // taskkill /T natively handles the whole tree; skip Node's process.kill
+    await runExternalCommand('taskkill', ['/PID', String(rootPid), '/T', '/F'], { windowsHide: true })
+    return
+  }
+
+  if (tree) {
+    // Unix: kill descendants deepest-first so they don't get reparented to init
+    for (const pid of [...descendantPids].reverse()) {
+      try {
+        process.kill(pid, 'SIGKILL')
+      } catch {
+        // ignore — descendant may have already exited
+      }
+    }
+  }
+
   try {
-    process.kill(pid, 'SIGKILL')
+    process.kill(rootPid, 'SIGKILL')
     return
   } catch (error) {
     if (!shouldFallbackToTaskkill(error)) {
@@ -218,7 +269,7 @@ async function terminateProcess(pid: number): Promise<void> {
     }
   }
 
-  await runExternalCommand('taskkill', ['/PID', String(pid), '/T', '/F'], {
+  await runExternalCommand('taskkill', ['/PID', String(rootPid), '/T', '/F'], {
     windowsHide: true
   })
 }
