@@ -171,18 +171,28 @@ export function DevToolsOverviewSection({
           />
           {error ? <div style={errorStyle}>{error}</div> : null}
           <div style={gridStyle}>
-            {(compact ? (overview?.healthChecks ?? []).slice(0, 6) : (overview?.healthChecks ?? [])).map((check) => (
-              <div key={check.id} style={tileStyle}>
-                <div style={tileHeaderStyle}>
-                  <span style={tileTitleStyle}>{check.label}</span>
-                  <span style={{ ...statusPillStyle, ...getStatusStyle(check.status) }}>
-                    {tk(check.status === 'healthy' ? 'Ready' : check.status === 'warning' ? 'Needs Review' : 'Missing')}
-                  </span>
+            {(compact ? (overview?.healthChecks ?? []).slice(0, 6) : (overview?.healthChecks ?? [])).map((check) => {
+              const gpuModel = typeof check.extra?.gpuModel === 'string' ? check.extra.gpuModel : null
+              const torchCudaAvailable = typeof check.extra?.torchCudaAvailable === 'boolean'
+                ? check.extra.torchCudaAvailable
+                : null
+              return (
+                <div key={check.id} style={tileStyle}>
+                  <div style={tileHeaderStyle}>
+                    <span style={tileTitleStyle}>{check.label}</span>
+                    <span style={{ ...statusPillStyle, ...getStatusStyle(check.status) }}>
+                      {tk(check.status === 'healthy' ? 'Ready' : check.status === 'warning' ? 'Needs Review' : 'Missing')}
+                    </span>
+                  </div>
+                  <div style={detailStyle}>{check.version ?? check.detail}</div>
+                  {gpuModel ? <div style={hintStyle}>GPU: {gpuModel}</div> : null}
+                  {torchCudaAvailable !== null ? (
+                    <div style={hintStyle}>{tk('CUDA Available')}: {torchCudaAvailable ? tk('Yes') : tk('No')}</div>
+                  ) : null}
+                  {check.hint && !gpuModel ? <div style={hintStyle}>{check.hint}</div> : null}
                 </div>
-                <div style={detailStyle}>{check.version ?? check.detail}</div>
-                {check.hint ? <div style={hintStyle}>{check.hint}</div> : null}
-              </div>
-            ))}
+              )
+            })}
             {!loading && (overview?.healthChecks.length ?? 0) === 0 ? (
               <div style={emptyStyle}>{tk('No environment checks are available right now.')}</div>
             ) : null}
@@ -326,6 +336,38 @@ export function DevToolsOverviewSection({
                           <MetaPill key={`${workspace.path}-${artifact}`} label={tk('Artifact')} value={artifact} />
                         ))}
                       </div>
+                    </div>
+                  ) : null}
+                  {workspace.pythonEnv ? (
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div style={subsectionLabelStyle}>{tk('Python Environment')}</div>
+                      <div style={workspaceMetaWrapStyle}>
+                        <MetaPill label={tk('Env Type')} value={workspace.pythonEnv.envType} />
+                        <MetaPill
+                          label={tk('Python')}
+                          value={workspace.pythonEnv.pythonVersion ?? '-'}
+                        />
+                        <MetaPill
+                          label={tk('PyTorch')}
+                          value={workspace.pythonEnv.torchVersion ?? tk('Not installed')}
+                        />
+                        {workspace.pythonEnv.torchVersion ? (
+                          <MetaPill
+                            label={tk('CUDA Available')}
+                            value={
+                              workspace.pythonEnv.torchCudaAvailable === null
+                                ? tk('Unknown')
+                                : workspace.pythonEnv.torchCudaAvailable
+                                  ? tk('Yes')
+                                  : tk('No')
+                            }
+                          />
+                        ) : null}
+                      </div>
+                      <div style={pathStyle}>{workspace.pythonEnv.interpreterPath}</div>
+                      {workspace.pythonEnv.detectionNote ? (
+                        <div style={hintStyle}>{workspace.pythonEnv.detectionNote}</div>
+                      ) : null}
                     </div>
                   ) : null}
                   {workspace.activeDevServerPorts.length > 0 ? (

@@ -579,4 +579,181 @@ describe('devToolsOverview helpers', () => {
       artifactDirectories: expect.arrayContaining(['target']),
     }))
   })
+
+  it('detects Python, CUDA Toolkit, NVIDIA driver, and system PyTorch when available', async () => {
+    if (process.platform === 'darwin') {
+      // macOS doesn't expose nvidia-smi/nvcc; skip non-portable parts by asserting the python branch only.
+    }
+
+    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+      if (command === 'git') return { stdout: '', stderr: '' }
+      if (command === 'which' || command === 'where') {
+        return { stdout: '/usr/bin/python3\n', stderr: '' }
+      }
+      if (command === 'python3' && args[0] === '--version') {
+        return { stdout: 'Python 3.11.6', stderr: '' }
+      }
+      if (command === '/usr/bin/python3' && args[0] === '-c') {
+        return {
+          stdout: JSON.stringify({ ok: true, version: '2.4.1', cuda: true }) + '\n',
+          stderr: '',
+        }
+      }
+      if (command === 'nvcc' && args[0] === '--version') {
+        return {
+          stdout:
+            'nvcc: NVIDIA (R) Cuda compiler driver\nCuda compilation tools, release 12.4, V12.4.131',
+          stderr: '',
+        }
+      }
+      if (command === 'nvidia-smi') {
+        return { stdout: '535.183.01, NVIDIA GeForce RTX 4090\n', stderr: '' }
+      }
+      if (command === 'java') return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+
+    expect(result.healthChecks.find((entry) => entry.id === 'python')).toEqual(
+      expect.objectContaining({ status: 'healthy', version: 'Python 3.11.6' }),
+    )
+
+    if (process.platform !== 'darwin') {
+      expect(result.healthChecks.find((entry) => entry.id === 'cuda')).toEqual(
+        expect.objectContaining({ status: 'healthy', version: '12.4' }),
+      )
+      const nvidia = result.healthChecks.find((entry) => entry.id === 'nvidia-driver')
+      expect(nvidia).toEqual(expect.objectContaining({ status: 'healthy', version: '535.183.01' }))
+      expect(nvidia?.extra?.gpuModel).toBe('NVIDIA GeForce RTX 4090')
+    } else {
+      expect(result.healthChecks.find((entry) => entry.id === 'cuda')).toBeUndefined()
+      expect(result.healthChecks.find((entry) => entry.id === 'nvidia-driver')).toBeUndefined()
+    }
+
+    const torch = result.healthChecks.find((entry) => entry.id === 'pytorch')
+    expect(torch).toEqual(
+      expect.objectContaining({
+        status: 'healthy',
+        version: '2.4.1',
+      }),
+    )
+    expect(torch?.extra?.torchCudaAvailable).toBe(true)
+  })
+
+  it('reports missing PyTorch when the python probe says torch is not installed', async () => {
+    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+      if (command === 'git') return { stdout: '', stderr: '' }
+      if (command === 'which' || command === 'where') {
+        return { stdout: '/usr/bin/python3\n', stderr: '' }
+      }
+      if (command === 'python3' && args[0] === '--version') {
+        return { stdout: 'Python 3.12.0', stderr: '' }
+      }
+      if (command === '/usr/bin/python3' && args[0] === '-c') {
+        return { stdout: JSON.stringify({ ok: false, reason: 'missing' }) + '\n', stderr: '' }
+      }
+      if (command === 'java') return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      const err = Object.assign(new Error('not found'), { kind: 'command_not_found' })
+      if (command === 'nvcc' || command === 'nvidia-smi') throw err
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+    expect(result.healthChecks.find((entry) => entry.id === 'pytorch')).toEqual(
+      expect.objectContaining({ status: 'missing', version: null }),
+    )
+  })
+
+  it('detects workspace .venv with PyTorch installed', async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-pyenv-'))
+    const interpreterSubpath = process.platform === 'win32'
+      ? path.join('Scripts', 'python.exe')
+      : path.join('bin', 'python')
+    const venvDir = path.join(workspaceRoot, '.venv')
+    const interpreterPath = path.join(venvDir, interpreterSubpath)
+    await fs.mkdir(path.dirname(interpreterPath), { recursive: true })
+    await fs.writeFile(interpreterPath, '#!/usr/bin/env python3\n', { mode: 0o755 })
+    await fs.writeFile(path.join(workspaceRoot, 'pyproject.toml'), '[project]\nname="ml"')
+
+    getActiveProfile.mockReturnValue({
+      id: 'profile-pyenv',
+      workspacePaths: [workspaceRoot],
+    })
+    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+      if (command === 'git') return { stdout: '', stderr: '' }
+      if (command === 'which' || command === 'where') {
+        return { stdout: '/usr/bin/python3\n', stderr: '' }
+      }
+      if (command === interpreterPath && args[0] === '--version') {
+        return { stdout: 'Python 3.10.12', stderr: '' }
+      }
+      if (command === interpreterPath && args[0] === '-c') {
+        return {
+          stdout: JSON.stringify({ ok: true, version: '2.3.0+cu121', cuda: true }) + '\n',
+          stderr: '',
+        }
+      }
+      if (command === 'java') return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+    const workspace = result.workspaces.find((entry) => entry.path === workspaceRoot)
+
+    expect(workspace?.pythonEnv).toEqual(
+      expect.objectContaining({
+        envType: 'venv',
+        envPath: venvDir,
+        interpreterPath,
+        pythonVersion: 'Python 3.10.12',
+        torchVersion: '2.3.0+cu121',
+        torchCudaAvailable: true,
+      }),
+    )
+  })
+
+  it('detects workspace .venv but flags PyTorch as not installed', async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'systemscope-pyenv-no-torch-'))
+    const interpreterSubpath = process.platform === 'win32'
+      ? path.join('Scripts', 'python.exe')
+      : path.join('bin', 'python')
+    const venvDir = path.join(workspaceRoot, '.venv')
+    const interpreterPath = path.join(venvDir, interpreterSubpath)
+    await fs.mkdir(path.dirname(interpreterPath), { recursive: true })
+    await fs.writeFile(interpreterPath, '#!/usr/bin/env python3\n', { mode: 0o755 })
+
+    getActiveProfile.mockReturnValue({
+      id: 'profile-pyenv-empty',
+      workspacePaths: [workspaceRoot],
+    })
+    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+      if (command === 'git') return { stdout: '', stderr: '' }
+      if (command === 'which' || command === 'where') {
+        return { stdout: '/usr/bin/python3\n', stderr: '' }
+      }
+      if (command === interpreterPath && args[0] === '--version') {
+        return { stdout: 'Python 3.11.0', stderr: '' }
+      }
+      if (command === interpreterPath && args[0] === '-c') {
+        return { stdout: JSON.stringify({ ok: false, reason: 'missing' }) + '\n', stderr: '' }
+      }
+      if (command === 'java') return { stdout: '', stderr: 'openjdk version "21.0.2"' }
+      return { stdout: `${command} 1.0.0`, stderr: '' }
+    })
+
+    const result = await getDevToolsOverview()
+    const workspace = result.workspaces.find((entry) => entry.path === workspaceRoot)
+
+    expect(workspace?.pythonEnv).toEqual(
+      expect.objectContaining({
+        envType: 'venv',
+        interpreterPath,
+        pythonVersion: 'Python 3.11.0',
+        torchVersion: null,
+        torchCudaAvailable: null,
+      }),
+    )
+    expect(workspace?.pythonEnv?.detectionNote).toMatch(/not installed/i)
+  })
 })

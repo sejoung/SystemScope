@@ -1,5 +1,7 @@
 export type DevEnvironmentStatus = 'healthy' | 'warning' | 'missing'
 
+export type DevEnvironmentExtra = Record<string, string | boolean | null>
+
 export interface DevEnvironmentCheck {
   id: string
   label: string
@@ -7,6 +9,19 @@ export interface DevEnvironmentCheck {
   detail: string
   version: string | null
   hint: string | null
+  extra?: DevEnvironmentExtra | null
+}
+
+export type DevWorkspacePythonEnvType = 'venv' | 'conda' | 'system'
+
+export interface DevWorkspacePythonEnv {
+  envType: DevWorkspacePythonEnvType
+  envPath: string | null
+  interpreterPath: string
+  pythonVersion: string | null
+  torchVersion: string | null
+  torchCudaAvailable: boolean | null
+  detectionNote: string | null
 }
 
 export interface DevDockerInsight {
@@ -46,6 +61,7 @@ export interface DevWorkspaceInsight {
   largeUntrackedFiles: DevWorkspaceLargeFile[]
   activeDevServerCount: number
   activeDevServerPorts: number[]
+  pythonEnv: DevWorkspacePythonEnv | null
 }
 
 export interface DevServerEntry {

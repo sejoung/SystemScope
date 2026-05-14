@@ -7,6 +7,8 @@ import type {
   DevServerEntry,
   DevToolsOverview,
   DevWorkspaceInsight,
+  DevWorkspacePythonEnv,
+  DevWorkspacePythonEnvType,
   PortInfo,
   ProcessInfo,
 } from '@shared/types'
@@ -56,6 +58,8 @@ export async function getDevToolsOverview(options?: { forceRefresh?: boolean }):
 }
 
 async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
+  const isMac = process.platform === 'darwin'
+  const pythonCheck = await detectPython()
   const checks = await Promise.all([
     runVersionCheck('git', 'Git', ['--version'], 'Install Git to enable workspace insights and branch status.'),
     runVersionCheck('node', 'Node.js', ['--version'], 'Install Node.js to run local JavaScript toolchains.'),
@@ -64,15 +68,311 @@ async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
     runVersionCheck('pnpm', 'pnpm', ['--version'], 'Install pnpm if your workspaces use pnpm-lock.yaml.'),
     runVersionCheck('yarn', 'Yarn', ['--version'], 'Install Yarn if your workspaces use yarn.lock.'),
     runVersionCheck('docker', 'Docker CLI', ['--version'], 'Install Docker Desktop or Docker Engine to use Docker commands locally.'),
-    process.platform === 'darwin'
+    isMac
       ? runVersionCheck('xcodebuild', 'Xcode CLI', ['-version'], 'Install Xcode Command Line Tools for Apple platform builds.')
       : Promise.resolve<DevEnvironmentCheck | null>(null),
-    process.platform === 'darwin'
+    isMac
       ? detectAndroidSdk()
+      : Promise.resolve<DevEnvironmentCheck | null>(null),
+    Promise.resolve<DevEnvironmentCheck | null>(pythonCheck),
+    isMac
+      ? Promise.resolve<DevEnvironmentCheck | null>(null)
+      : detectCuda(),
+    isMac
+      ? Promise.resolve<DevEnvironmentCheck | null>(null)
+      : detectNvidiaDriver(),
+    pythonCheck && pythonCheck.status === 'healthy' && pythonCheck.extra?.interpreterPath
+      ? detectSystemPyTorch(String(pythonCheck.extra.interpreterPath))
       : Promise.resolve<DevEnvironmentCheck | null>(null),
   ])
 
   return checks.filter((entry): entry is DevEnvironmentCheck => entry !== null)
+}
+
+async function detectPython(): Promise<DevEnvironmentCheck> {
+  const candidates = process.platform === 'win32' ? ['python', 'python3', 'py'] : ['python3', 'python']
+
+  for (const command of candidates) {
+    try {
+      const { stdout, stderr } = await runExternalCommand(command, ['--version'], { timeout: 3000 })
+      const combined = `${stdout}\n${stderr}`.trim()
+      const version = extractVersion(combined)
+      const interpreterPath = await resolveCommandPath(command)
+      return {
+        id: 'python',
+        label: 'Python',
+        status: 'healthy',
+        detail: version ? 'Python is available.' : 'Available',
+        version,
+        hint: null,
+        extra: {
+          interpreterPath: interpreterPath ?? command,
+          command,
+        },
+      }
+    } catch (error) {
+      if (isExternalCommandError(error) && error.kind === 'command_not_found') {
+        continue
+      }
+      return {
+        id: 'python',
+        label: 'Python',
+        status: 'warning',
+        detail: 'Python could not be verified.',
+        version: null,
+        hint: 'Ensure python3 or python is installed and on PATH.',
+        extra: null,
+      }
+    }
+  }
+
+  return {
+    id: 'python',
+    label: 'Python',
+    status: 'missing',
+    detail: 'Python is not installed.',
+    version: null,
+    hint: 'Install Python 3.10+ for ML/AI toolchains, FastAPI, and PyTorch workflows.',
+    extra: null,
+  }
+}
+
+async function detectCuda(): Promise<DevEnvironmentCheck> {
+  try {
+    const { stdout, stderr } = await runExternalCommand('nvcc', ['--version'], { timeout: 3000 })
+    const combined = `${stdout}\n${stderr}`.trim()
+    const version = parseCudaToolkitVersion(combined) ?? extractVersion(combined)
+    return {
+      id: 'cuda',
+      label: 'CUDA Toolkit',
+      status: 'healthy',
+      detail: version ? 'CUDA Toolkit is available.' : 'Available',
+      version,
+      hint: null,
+      extra: null,
+    }
+  } catch (error) {
+    if (isExternalCommandError(error) && error.kind === 'command_not_found') {
+      const fallback = await detectCudaFromFilesystem()
+      if (fallback) return fallback
+      return {
+        id: 'cuda',
+        label: 'CUDA Toolkit',
+        status: 'missing',
+        detail: 'CUDA Toolkit is not installed.',
+        version: null,
+        hint: 'Install the NVIDIA CUDA Toolkit to build GPU-accelerated code.',
+        extra: null,
+      }
+    }
+    return {
+      id: 'cuda',
+      label: 'CUDA Toolkit',
+      status: 'warning',
+      detail: 'CUDA Toolkit could not be verified.',
+      version: null,
+      hint: 'nvcc was found but did not report a version.',
+      extra: null,
+    }
+  }
+}
+
+async function detectCudaFromFilesystem(): Promise<DevEnvironmentCheck | null> {
+  const candidates: string[] = []
+  if (process.platform === 'win32') {
+    if (process.env.CUDA_PATH) candidates.push(path.join(process.env.CUDA_PATH, 'version.txt'))
+  } else {
+    candidates.push('/usr/local/cuda/version.txt', '/usr/local/cuda/version.json')
+    if (process.env.CUDA_HOME) candidates.push(path.join(process.env.CUDA_HOME, 'version.txt'))
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const content = await fs.readFile(candidate, 'utf8')
+      const version = parseCudaVersionFile(content)
+      if (version) {
+        return {
+          id: 'cuda',
+          label: 'CUDA Toolkit',
+          status: 'healthy',
+          detail: 'CUDA Toolkit detected via filesystem.',
+          version,
+          hint: `Found at ${path.dirname(candidate)}. Add nvcc to PATH for full integration.`,
+          extra: null,
+        }
+      }
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
+async function detectNvidiaDriver(): Promise<DevEnvironmentCheck> {
+  try {
+    const { stdout } = await runExternalCommand(
+      'nvidia-smi',
+      ['--query-gpu=driver_version,name', '--format=csv,noheader'],
+      { timeout: 4000 },
+    )
+    const firstLine = stdout.split(/\r?\n/).map((entry) => entry.trim()).find(Boolean)
+    if (!firstLine) {
+      return {
+        id: 'nvidia-driver',
+        label: 'NVIDIA Driver',
+        status: 'warning',
+        detail: 'nvidia-smi returned no output.',
+        version: null,
+        hint: 'Verify that an NVIDIA GPU is present and the driver is loaded.',
+        extra: null,
+      }
+    }
+    const [driverVersion, ...rest] = firstLine.split(',').map((entry) => entry.trim())
+    const gpuModel = rest.join(', ') || null
+    return {
+      id: 'nvidia-driver',
+      label: 'NVIDIA Driver',
+      status: 'healthy',
+      detail: 'NVIDIA driver is available.',
+      version: driverVersion || null,
+      hint: gpuModel,
+      extra: gpuModel ? { gpuModel, driverVersion: driverVersion || null } : { driverVersion: driverVersion || null },
+    }
+  } catch (error) {
+    if (isExternalCommandError(error) && error.kind === 'command_not_found') {
+      return {
+        id: 'nvidia-driver',
+        label: 'NVIDIA Driver',
+        status: 'missing',
+        detail: 'NVIDIA driver tools are not installed.',
+        version: null,
+        hint: 'Install the NVIDIA driver if this machine has an NVIDIA GPU.',
+        extra: null,
+      }
+    }
+    return {
+      id: 'nvidia-driver',
+      label: 'NVIDIA Driver',
+      status: 'warning',
+      detail: 'NVIDIA driver could not be verified.',
+      version: null,
+      hint: 'nvidia-smi failed. The driver may not be loaded.',
+      extra: null,
+    }
+  }
+}
+
+async function detectSystemPyTorch(interpreterPath: string): Promise<DevEnvironmentCheck> {
+  const torchProbe = await probeTorch(interpreterPath)
+  if (torchProbe.status === 'missing') {
+    return {
+      id: 'pytorch',
+      label: 'PyTorch (system)',
+      status: 'missing',
+      detail: 'PyTorch is not installed in the system Python.',
+      version: null,
+      hint: 'Install with: pip install torch (or follow pytorch.org for CUDA-enabled wheels).',
+      extra: null,
+    }
+  }
+  if (torchProbe.status === 'error') {
+    return {
+      id: 'pytorch',
+      label: 'PyTorch (system)',
+      status: 'warning',
+      detail: 'PyTorch could not be verified.',
+      version: null,
+      hint: torchProbe.note,
+      extra: null,
+    }
+  }
+  return {
+    id: 'pytorch',
+    label: 'PyTorch (system)',
+    status: 'healthy',
+    detail: torchProbe.cudaAvailable
+      ? 'PyTorch is available with CUDA support.'
+      : 'PyTorch is available (CPU only).',
+    version: torchProbe.version,
+    hint: `Interpreter: ${interpreterPath}`,
+    extra: {
+      interpreterPath,
+      torchCudaAvailable: torchProbe.cudaAvailable,
+    },
+  }
+}
+
+type TorchProbeResult =
+  | { status: 'ready'; version: string; cudaAvailable: boolean | null; note: string | null }
+  | { status: 'missing'; note: string | null }
+  | { status: 'error'; note: string }
+
+async function probeTorch(interpreterPath: string): Promise<TorchProbeResult> {
+  const script = 'import json,sys\ntry:\n  import torch\n  cuda=None\n  try:\n    cuda=bool(torch.cuda.is_available())\n  except Exception:\n    cuda=None\n  print(json.dumps({"ok":True,"version":torch.__version__,"cuda":cuda}))\nexcept ModuleNotFoundError:\n  print(json.dumps({"ok":False,"reason":"missing"}))\nexcept Exception as exc:\n  print(json.dumps({"ok":False,"reason":"error","message":str(exc)}))\n'
+  try {
+    const { stdout } = await runExternalCommand(interpreterPath, ['-c', script], { timeout: 6000 })
+    const line = stdout.split(/\r?\n/).map((entry) => entry.trim()).filter(Boolean).pop() ?? ''
+    if (!line) {
+      return { status: 'error', note: 'Empty response from python probe.' }
+    }
+    let parsed: { ok?: boolean; version?: string; cuda?: boolean | null; reason?: string; message?: string }
+    try {
+      parsed = JSON.parse(line) as typeof parsed
+    } catch {
+      return { status: 'error', note: 'Unexpected probe output.' }
+    }
+    if (parsed.ok && typeof parsed.version === 'string') {
+      return {
+        status: 'ready',
+        version: parsed.version,
+        cudaAvailable: parsed.cuda ?? null,
+        note: null,
+      }
+    }
+    if (parsed.reason === 'missing') {
+      return { status: 'missing', note: null }
+    }
+    return { status: 'error', note: parsed.message ?? 'torch import raised an error.' }
+  } catch (error) {
+    if (isExternalCommandError(error) && error.kind === 'command_not_found') {
+      return { status: 'error', note: 'Python interpreter not executable.' }
+    }
+    return { status: 'error', note: 'Python probe failed.' }
+  }
+}
+
+function parseCudaToolkitVersion(output: string): string | null {
+  const match = output.match(/release\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)/i)
+  return match ? match[1] : null
+}
+
+function parseCudaVersionFile(content: string): string | null {
+  const trimmed = content.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith('{')) {
+    try {
+      const json = JSON.parse(trimmed) as { cuda?: { version?: string } }
+      if (json?.cuda?.version) return json.cuda.version
+    } catch {
+      // fall through
+    }
+  }
+  const match = trimmed.match(/CUDA Version\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)/i)
+  return match ? match[1] : null
+}
+
+async function resolveCommandPath(command: string): Promise<string | null> {
+  if (command.includes(path.sep)) {
+    return command
+  }
+  const finder = process.platform === 'win32' ? 'where' : 'which'
+  try {
+    const { stdout } = await runExternalCommand(finder, [command], { timeout: 2000 })
+    const first = stdout.split(/\r?\n/).map((entry) => entry.trim()).find(Boolean)
+    return first ?? null
+  } catch {
+    return null
+  }
 }
 
 async function runVersionCheck(
@@ -92,6 +392,7 @@ async function runVersionCheck(
       detail: version ? `${label} is available.` : 'Available',
       version,
       hint: null,
+      extra: null,
     }
   } catch (error) {
     if (isExternalCommandError(error) && error.kind === 'command_not_found') {
@@ -102,6 +403,7 @@ async function runVersionCheck(
         detail: `${label} is not installed.`,
         version: null,
         hint,
+        extra: null,
       }
     }
 
@@ -112,6 +414,7 @@ async function runVersionCheck(
       detail: `${label} could not be verified.`,
       version: null,
       hint,
+      extra: null,
     }
   }
 }
@@ -133,6 +436,7 @@ async function detectAndroidSdk(): Promise<DevEnvironmentCheck> {
         detail: 'Android SDK path detected.',
         version: null,
         hint: sdkPath,
+        extra: null,
       }
     } catch {
       continue
@@ -146,6 +450,7 @@ async function detectAndroidSdk(): Promise<DevEnvironmentCheck> {
     detail: 'Android SDK path was not found.',
     version: null,
     hint: 'Set ANDROID_SDK_ROOT or install Android Studio.',
+    extra: null,
   }
 }
 
@@ -263,16 +568,21 @@ async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorksp
     largeUntrackedFiles: [],
     activeDevServerCount: 0,
     activeDevServerPorts: [],
+    pythonEnv: null,
   }
 
   if (!exists) {
     return base
   }
 
-  const projectSignals = await detectWorkspaceProjectSignals(workspacePath)
+  const [projectSignals, pythonEnv] = await Promise.all([
+    detectWorkspaceProjectSignals(workspacePath),
+    detectWorkspacePythonEnv(workspacePath),
+  ])
   const withSignals: DevWorkspaceInsight = {
     ...base,
     ...projectSignals,
+    pythonEnv,
   }
 
   try {
@@ -298,6 +608,7 @@ async function collectWorkspaceInsight(workspacePath: string): Promise<DevWorksp
     return {
       ...base,
       ...projectSignals,
+      pythonEnv,
       isGitRepo: true,
       branch,
       dirtyFileCount,
@@ -411,6 +722,136 @@ async function detectWorkspaceProjectSignals(workspacePath: string): Promise<Pic
 async function runGitCommand(cwd: string, args: string[]): Promise<string> {
   const { stdout } = await runExternalCommand('git', args, { cwd, timeout: 4000 })
   return stdout.trim()
+}
+
+const PYTHON_ENV_CANDIDATE_NAMES = ['.venv', 'venv', '.env', 'env'] as const
+
+interface PythonEnvCandidate {
+  envType: DevWorkspacePythonEnvType
+  envPath: string | null
+  interpreterPath: string
+}
+
+export async function findWorkspacePythonInterpreter(workspacePath: string): Promise<PythonEnvCandidate | null> {
+  const interpreterSubpath = process.platform === 'win32'
+    ? path.join('Scripts', 'python.exe')
+    : path.join('bin', 'python')
+
+  // Search up to depth 2 for a venv-style folder.
+  const found = await searchPythonEnv(workspacePath, interpreterSubpath, 0, 2)
+  if (found) return found
+
+  // Look for explicit conda env marker (`conda-meta`) inside workspace.
+  const condaCandidate = await findCondaEnv(workspacePath, 0, 2)
+  if (condaCandidate) return condaCandidate
+
+  return null
+}
+
+async function searchPythonEnv(
+  currentPath: string,
+  interpreterSubpath: string,
+  depth: number,
+  maxDepth: number,
+): Promise<PythonEnvCandidate | null> {
+  for (const envName of PYTHON_ENV_CANDIDATE_NAMES) {
+    const envPath = path.join(currentPath, envName)
+    const interpreterPath = path.join(envPath, interpreterSubpath)
+    if (await pathExists(interpreterPath)) {
+      return { envType: 'venv', envPath, interpreterPath }
+    }
+  }
+  if (depth >= maxDepth) return null
+
+  try {
+    const entries = await fs.readdir(currentPath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      if (entry.name === 'node_modules' || entry.name === 'target' || entry.name.startsWith('.')) continue
+      const child = await searchPythonEnv(path.join(currentPath, entry.name), interpreterSubpath, depth + 1, maxDepth)
+      if (child) return child
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+async function findCondaEnv(
+  currentPath: string,
+  depth: number,
+  maxDepth: number,
+): Promise<PythonEnvCandidate | null> {
+  if (await pathExists(path.join(currentPath, 'conda-meta'))) {
+    const interpreterSubpath = process.platform === 'win32' ? 'python.exe' : path.join('bin', 'python')
+    const interpreterPath = path.join(currentPath, interpreterSubpath)
+    if (await pathExists(interpreterPath)) {
+      return { envType: 'conda', envPath: currentPath, interpreterPath }
+    }
+  }
+  if (depth >= maxDepth) return null
+  try {
+    const entries = await fs.readdir(currentPath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+      if (entry.name === 'node_modules' || entry.name === 'target' || entry.name.startsWith('.')) continue
+      const child = await findCondaEnv(path.join(currentPath, entry.name), depth + 1, maxDepth)
+      if (child) return child
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+async function detectWorkspacePythonEnv(workspacePath: string): Promise<DevWorkspacePythonEnv | null> {
+  const candidate = await findWorkspacePythonInterpreter(workspacePath)
+  if (!candidate) return null
+
+  let pythonVersion: string | null = null
+  let detectionNote: string | null = null
+  try {
+    const { stdout, stderr } = await runExternalCommand(candidate.interpreterPath, ['--version'], {
+      timeout: 3000,
+    })
+    pythonVersion = extractVersion(`${stdout}\n${stderr}`.trim())
+  } catch {
+    detectionNote = 'Interpreter could not report a version.'
+  }
+
+  const torchProbe = await probeTorch(candidate.interpreterPath)
+  if (torchProbe.status === 'ready') {
+    return {
+      envType: candidate.envType,
+      envPath: candidate.envPath,
+      interpreterPath: candidate.interpreterPath,
+      pythonVersion,
+      torchVersion: torchProbe.version,
+      torchCudaAvailable: torchProbe.cudaAvailable,
+      detectionNote,
+    }
+  }
+  if (torchProbe.status === 'missing') {
+    return {
+      envType: candidate.envType,
+      envPath: candidate.envPath,
+      interpreterPath: candidate.interpreterPath,
+      pythonVersion,
+      torchVersion: null,
+      torchCudaAvailable: null,
+      detectionNote: detectionNote ?? 'PyTorch is not installed in this environment.',
+    }
+  }
+  return {
+    envType: candidate.envType,
+    envPath: candidate.envPath,
+    interpreterPath: candidate.interpreterPath,
+    pythonVersion,
+    torchVersion: null,
+    torchCudaAvailable: null,
+    detectionNote: detectionNote ?? torchProbe.note,
+  }
 }
 
 async function detectPackageManager(workspacePath: string): Promise<string | null> {
