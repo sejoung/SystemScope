@@ -40,6 +40,12 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   const showToast = useToast((s) => s.show);
   const { tk } = useI18n();
   const [search, setSearch] = useState("");
+  // Exact-PID focus used by the "jump to parent" chip, so jumping to PID 123 doesn't
+  // also surface 1234/5123 the way a substring text search would.
+  const [focusPid, setFocusPid] = useState<number | null>(null);
+  // PID currently being killed — used to disable the row's kill buttons so the
+  // non-blocking native confirm dialog can't be queued twice.
+  const [killingPid, setKillingPid] = useState<number | null>(null);
   const [sortField, setSortField] = useState<SortField>("cpu");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [containerRef, containerWidth] = useContainerWidth(720);
@@ -57,7 +63,9 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   const filtered = useMemo(() => {
     let list = processes;
 
-    if (search.trim()) {
+    if (focusPid !== null) {
+      list = list.filter((p) => p.pid === focusPid);
+    } else if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
         (p) =>
@@ -87,7 +95,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
     });
 
     return list;
-  }, [processes, search, sortField, sortDir]);
+  }, [processes, search, focusPid, sortField, sortDir]);
 
   const sortIcon = (field: SortField) => {
     if (sortField !== field) return "";
@@ -102,30 +110,36 @@ export function ProcessTable({ processes }: ProcessTableProps) {
   const sortSummary = getProcessSortSummary(sortField, sortDir, tk);
 
   const handleKill = async (processInfo: ProcessInfo, tree: boolean) => {
-    const res = await window.systemScope.killProcess({
-      pid: processInfo.pid,
-      name: processInfo.name,
-      command: processInfo.command,
-      reason: "Activity > Processes",
-      tree,
-    });
-    if (!res.ok) {
-      showToast(res.error?.message ?? tk("process.table.kill_failed"));
-      return;
-    }
+    if (killingPid !== null) return;
+    setKillingPid(processInfo.pid);
+    try {
+      const res = await window.systemScope.killProcess({
+        pid: processInfo.pid,
+        name: processInfo.name,
+        command: processInfo.command,
+        reason: "Activity > Processes",
+        tree,
+      });
+      if (!res.ok) {
+        showToast(res.error?.message ?? tk("process.table.kill_failed"));
+        return;
+      }
 
-    const result = res.data as ProcessKillResult;
-    if (result.cancelled) return;
-    if (result.killed) {
-      const descendants = result.killedPids.length - 1;
-      showToast(
-        descendants > 0
-          ? tk("process.table.kill_tree_sent", {
-              name: result.name,
-              count: descendants,
-            })
-          : tk("process.table.kill_sent", { name: result.name, pid: result.pid }),
-      );
+      const result = res.data as ProcessKillResult;
+      if (result.cancelled) return;
+      if (result.killed) {
+        const descendants = result.killedPids.length - 1;
+        showToast(
+          descendants > 0
+            ? tk("process.table.kill_tree_sent", {
+                name: result.name,
+                count: descendants,
+              })
+            : tk("process.table.kill_sent", { name: result.name, pid: result.pid }),
+        );
+      }
+    } finally {
+      setKillingPid(null);
     }
   };
 
@@ -170,7 +184,8 @@ export function ProcessTable({ processes }: ProcessTableProps) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSearch(String(p.ppid));
+                  setSearch("");
+                  setFocusPid(p.ppid);
                 }}
                 style={parentChipStyle}
                 title={tk("process.table.jump_to_parent")}
@@ -232,6 +247,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
             <div style={actionCellStyle}>
               <button
                 onClick={() => void handleKill(p, false)}
+                disabled={killingPid !== null}
                 style={killBtnStyle}
               >
                 {tk("process.table.kill")}
@@ -239,6 +255,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
               {p.descendantCount > 0 && (
                 <button
                   onClick={() => void handleKill(p, true)}
+                  disabled={killingPid !== null}
                   style={killTreeBtnStyle}
                   title={tk("process.table.kill_tree")}
                 >
@@ -252,7 +269,7 @@ export function ProcessTable({ processes }: ProcessTableProps) {
         </div>
       );
     },
-    [filtered, tk],
+    [filtered, tk, killingPid],
   );
 
   const listHeight = Math.min(LIST_HEIGHT, filtered.length * ROW_HEIGHT);
@@ -273,15 +290,21 @@ export function ProcessTable({ processes }: ProcessTableProps) {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setFocusPid(null);
+                setSearch(e.target.value);
+              }}
               placeholder={tk("process.table.search_placeholder")}
               aria-label={tk("process.table.search_placeholder")}
               style={{ ...searchStyle, paddingRight: "30px" }}
             />
-            {search && (
+            {(search || focusPid !== null) && (
               <button
                 type="button"
-                onClick={() => setSearch("")}
+                onClick={() => {
+                  setSearch("");
+                  setFocusPid(null);
+                }}
                 aria-label={tk("Clear search")}
                 style={{
                   position: "absolute",

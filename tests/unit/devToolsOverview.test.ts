@@ -675,24 +675,25 @@ describe('devToolsOverview helpers', () => {
     await fs.mkdir(path.dirname(interpreterPath), { recursive: true })
     await fs.writeFile(interpreterPath, '#!/usr/bin/env python3\n', { mode: 0o755 })
     await fs.writeFile(path.join(workspaceRoot, 'pyproject.toml'), '[project]\nname="ml"')
+    // Static metadata read instead of executing the interpreter (security).
+    await fs.writeFile(path.join(venvDir, 'pyvenv.cfg'), 'home = /usr/bin\nversion = 3.10.12\n')
+    const sitePackages = process.platform === 'win32'
+      ? path.join(venvDir, 'Lib', 'site-packages')
+      : path.join(venvDir, 'lib', 'python3.10', 'site-packages')
+    await fs.mkdir(path.join(sitePackages, 'torch'), { recursive: true })
+    await fs.writeFile(
+      path.join(sitePackages, 'torch', 'version.py'),
+      "__version__ = '2.3.0+cu121'\ncuda: str = '12.1'\n",
+    )
 
     getActiveProfile.mockReturnValue({
       id: 'profile-pyenv',
       workspacePaths: [workspaceRoot],
     })
-    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+    runExternalCommand.mockImplementation(async (command: string) => {
       if (command === 'git') return { stdout: '', stderr: '' }
       if (command === 'which' || command === 'where') {
         return { stdout: '/usr/bin/python3\n', stderr: '' }
-      }
-      if (command === interpreterPath && args[0] === '--version') {
-        return { stdout: 'Python 3.10.12', stderr: '' }
-      }
-      if (command === interpreterPath && args[0] === '-c') {
-        return {
-          stdout: JSON.stringify({ ok: true, version: '2.3.0+cu121', cuda: true }) + '\n',
-          stderr: '',
-        }
       }
       if (command === 'java') return { stdout: '', stderr: 'openjdk version "21.0.2"' }
       return { stdout: `${command} 1.0.0`, stderr: '' }
@@ -701,12 +702,14 @@ describe('devToolsOverview helpers', () => {
     const result = await getDevToolsOverview()
     const workspace = result.workspaces.find((entry) => entry.path === workspaceRoot)
 
+    // The interpreter must never be executed during workspace scanning.
+    expect(runExternalCommand).not.toHaveBeenCalledWith(interpreterPath, expect.anything(), expect.anything())
     expect(workspace?.pythonEnv).toEqual(
       expect.objectContaining({
         envType: 'venv',
         envPath: venvDir,
         interpreterPath,
-        pythonVersion: 'Python 3.10.12',
+        pythonVersion: '3.10.12',
         torchVersion: '2.3.0+cu121',
         torchCudaAvailable: true,
       }),
@@ -722,21 +725,17 @@ describe('devToolsOverview helpers', () => {
     const interpreterPath = path.join(venvDir, interpreterSubpath)
     await fs.mkdir(path.dirname(interpreterPath), { recursive: true })
     await fs.writeFile(interpreterPath, '#!/usr/bin/env python3\n', { mode: 0o755 })
+    // Static metadata read instead of executing the interpreter (security).
+    await fs.writeFile(path.join(venvDir, 'pyvenv.cfg'), 'home = /usr/bin\nversion = 3.11.0\n')
 
     getActiveProfile.mockReturnValue({
       id: 'profile-pyenv-empty',
       workspacePaths: [workspaceRoot],
     })
-    runExternalCommand.mockImplementation(async (command: string, args: string[]) => {
+    runExternalCommand.mockImplementation(async (command: string) => {
       if (command === 'git') return { stdout: '', stderr: '' }
       if (command === 'which' || command === 'where') {
         return { stdout: '/usr/bin/python3\n', stderr: '' }
-      }
-      if (command === interpreterPath && args[0] === '--version') {
-        return { stdout: 'Python 3.11.0', stderr: '' }
-      }
-      if (command === interpreterPath && args[0] === '-c') {
-        return { stdout: JSON.stringify({ ok: false, reason: 'missing' }) + '\n', stderr: '' }
       }
       if (command === 'java') return { stdout: '', stderr: 'openjdk version "21.0.2"' }
       return { stdout: `${command} 1.0.0`, stderr: '' }
@@ -745,15 +744,16 @@ describe('devToolsOverview helpers', () => {
     const result = await getDevToolsOverview()
     const workspace = result.workspaces.find((entry) => entry.path === workspaceRoot)
 
+    expect(runExternalCommand).not.toHaveBeenCalledWith(interpreterPath, expect.anything(), expect.anything())
     expect(workspace?.pythonEnv).toEqual(
       expect.objectContaining({
         envType: 'venv',
         interpreterPath,
-        pythonVersion: 'Python 3.11.0',
+        pythonVersion: '3.11.0',
         torchVersion: null,
         torchCudaAvailable: null,
       }),
     )
-    expect(workspace?.pythonEnv?.detectionNote).toMatch(/not installed/i)
+    expect(workspace?.pythonEnv?.detectionNote).toMatch(/not detected/i)
   })
 })

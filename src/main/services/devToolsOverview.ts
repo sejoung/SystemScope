@@ -59,7 +59,18 @@ export async function getDevToolsOverview(options?: { forceRefresh?: boolean }):
 
 async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
   const isMac = process.platform === 'darwin'
-  const pythonCheck = await detectPython()
+
+  // Run the Python detection + dependent PyTorch probe concurrently with the other
+  // checks instead of awaiting it first (which serialized it ahead of everything).
+  const pythonAndTorch = (async (): Promise<DevEnvironmentCheck[]> => {
+    const pythonCheck = await detectPython()
+    const result: DevEnvironmentCheck[] = [pythonCheck]
+    if (pythonCheck.status === 'healthy' && pythonCheck.extra?.interpreterPath) {
+      result.push(await detectSystemPyTorch(String(pythonCheck.extra.interpreterPath)))
+    }
+    return result
+  })()
+
   const checks = await Promise.all([
     runVersionCheck('git', 'Git', ['--version'], 'Install Git to enable workspace insights and branch status.'),
     runVersionCheck('node', 'Node.js', ['--version'], 'Install Node.js to run local JavaScript toolchains.'),
@@ -74,19 +85,16 @@ async function collectEnvironmentChecks(): Promise<DevEnvironmentCheck[]> {
     isMac
       ? detectAndroidSdk()
       : Promise.resolve<DevEnvironmentCheck | null>(null),
-    Promise.resolve<DevEnvironmentCheck | null>(pythonCheck),
     isMac
       ? Promise.resolve<DevEnvironmentCheck | null>(null)
       : detectCuda(),
     isMac
       ? Promise.resolve<DevEnvironmentCheck | null>(null)
       : detectNvidiaDriver(),
-    pythonCheck && pythonCheck.status === 'healthy' && pythonCheck.extra?.interpreterPath
-      ? detectSystemPyTorch(String(pythonCheck.extra.interpreterPath))
-      : Promise.resolve<DevEnvironmentCheck | null>(null),
   ])
 
-  return checks.filter((entry): entry is DevEnvironmentCheck => entry !== null)
+  const flat = checks.filter((entry): entry is DevEnvironmentCheck => entry !== null)
+  return [...flat, ...(await pythonAndTorch)]
 }
 
 async function detectPython(): Promise<DevEnvironmentCheck> {
@@ -310,7 +318,7 @@ type TorchProbeResult =
 async function probeTorch(interpreterPath: string): Promise<TorchProbeResult> {
   const script = 'import json,sys\ntry:\n  import torch\n  cuda=None\n  try:\n    cuda=bool(torch.cuda.is_available())\n  except Exception:\n    cuda=None\n  print(json.dumps({"ok":True,"version":torch.__version__,"cuda":cuda}))\nexcept ModuleNotFoundError:\n  print(json.dumps({"ok":False,"reason":"missing"}))\nexcept Exception as exc:\n  print(json.dumps({"ok":False,"reason":"error","message":str(exc)}))\n'
   try {
-    const { stdout } = await runExternalCommand(interpreterPath, ['-c', script], { timeout: 6000 })
+    const { stdout } = await runExternalCommand(interpreterPath, ['-c', script], { timeout: 6000, maxBuffer: 4 * 1024 * 1024 })
     const line = stdout.split(/\r?\n/).map((entry) => entry.trim()).filter(Boolean).pop() ?? ''
     if (!line) {
       return { status: 'error', note: 'Empty response from python probe.' }
@@ -809,48 +817,95 @@ async function detectWorkspacePythonEnv(workspacePath: string): Promise<DevWorks
   const candidate = await findWorkspacePythonInterpreter(workspacePath)
   if (!candidate) return null
 
-  let pythonVersion: string | null = null
-  let detectionNote: string | null = null
-  try {
-    const { stdout, stderr } = await runExternalCommand(candidate.interpreterPath, ['--version'], {
-      timeout: 3000,
-    })
-    pythonVersion = extractVersion(`${stdout}\n${stderr}`.trim())
-  } catch {
-    detectionNote = 'Interpreter could not report a version.'
-  }
+  // SECURITY: never execute an interpreter discovered by scanning a workspace tree —
+  // a hostile/cloned repo could ship a malicious `venv/bin/python`. Detect Python and
+  // PyTorch statically from on-disk metadata (pyvenv.cfg, conda-meta, torch/version.py)
+  // instead of running the binary. Only the PATH-resolved system Python is executed.
+  const pythonVersion = await readWorkspacePythonVersion(candidate)
+  const torch = await readWorkspaceTorchInfo(candidate)
 
-  const torchProbe = await probeTorch(candidate.interpreterPath)
-  if (torchProbe.status === 'ready') {
-    return {
-      envType: candidate.envType,
-      envPath: candidate.envPath,
-      interpreterPath: candidate.interpreterPath,
-      pythonVersion,
-      torchVersion: torchProbe.version,
-      torchCudaAvailable: torchProbe.cudaAvailable,
-      detectionNote,
-    }
-  }
-  if (torchProbe.status === 'missing') {
-    return {
-      envType: candidate.envType,
-      envPath: candidate.envPath,
-      interpreterPath: candidate.interpreterPath,
-      pythonVersion,
-      torchVersion: null,
-      torchCudaAvailable: null,
-      detectionNote: detectionNote ?? 'PyTorch is not installed in this environment.',
-    }
-  }
-  return {
+  const base = {
     envType: candidate.envType,
     envPath: candidate.envPath,
     interpreterPath: candidate.interpreterPath,
     pythonVersion,
+  }
+
+  if (torch?.version) {
+    return {
+      ...base,
+      torchVersion: torch.version,
+      // Statically derived: reflects whether the wheel was built with CUDA, not a
+      // live torch.cuda.is_available() check (which would require executing torch).
+      torchCudaAvailable: torch.cudaBuild,
+      detectionNote: 'Detected statically (interpreter not executed).',
+    }
+  }
+
+  return {
+    ...base,
     torchVersion: null,
     torchCudaAvailable: null,
-    detectionNote: detectionNote ?? torchProbe.note,
+    detectionNote: 'PyTorch not detected in this environment.',
+  }
+}
+
+// Reads the Python version without executing the interpreter: from pyvenv.cfg for
+// venvs, or the python package record filename in conda-meta for conda envs.
+async function readWorkspacePythonVersion(candidate: PythonEnvCandidate): Promise<string | null> {
+  if (!candidate.envPath) return null
+  if (candidate.envType === 'venv') {
+    try {
+      const cfg = await fs.readFile(path.join(candidate.envPath, 'pyvenv.cfg'), 'utf-8')
+      const match = cfg.match(/^\s*version(?:_info)?\s*=\s*(.+?)\s*$/im)
+      return match ? extractVersion(match[1]) ?? match[1] : null
+    } catch {
+      return null
+    }
+  }
+  try {
+    const metas = await fs.readdir(path.join(candidate.envPath, 'conda-meta'))
+    const record = metas.find((name) => /^python-\d+\.\d+\.\d+/.test(name))
+    const match = record?.match(/^python-(\d+\.\d+\.\d+)/)
+    return match ? match[1] : null
+  } catch {
+    return null
+  }
+}
+
+// Locates site-packages/torch/version.py and parses it statically — no execution.
+async function readWorkspaceTorchInfo(
+  candidate: PythonEnvCandidate
+): Promise<{ version: string | null; cudaBuild: boolean | null } | null> {
+  if (!candidate.envPath) return null
+  for (const sitePackages of await resolveSitePackagesDirs(candidate.envPath)) {
+    try {
+      const content = await fs.readFile(path.join(sitePackages, 'torch', 'version.py'), 'utf-8')
+      const versionMatch = content.match(/__version__\s*[:=]\s*['"]([^'"]+)['"]/)
+      const cudaMatch = content.match(/\bcuda\b\s*(?::\s*[^=]+)?=\s*(None|['"][^'"]*['"])/)
+      return {
+        version: versionMatch ? versionMatch[1] : null,
+        cudaBuild: cudaMatch ? cudaMatch[1] !== 'None' : null,
+      }
+    } catch {
+      // Try the next candidate site-packages directory.
+    }
+  }
+  return null
+}
+
+async function resolveSitePackagesDirs(envPath: string): Promise<string[]> {
+  if (process.platform === 'win32') {
+    return [path.join(envPath, 'Lib', 'site-packages')]
+  }
+  const libDir = path.join(envPath, 'lib')
+  try {
+    const entries = await fs.readdir(libDir, { withFileTypes: true })
+    return entries
+      .filter((entry) => entry.isDirectory() && entry.name.startsWith('python'))
+      .map((entry) => path.join(libDir, entry.name, 'site-packages'))
+  } catch {
+    return []
   }
 }
 

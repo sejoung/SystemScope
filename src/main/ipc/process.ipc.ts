@@ -216,7 +216,25 @@ export function registerProcessIpc(): void {
         return failure('UNKNOWN_ERROR', tk('main.process.error.changed'))
       }
 
-      const descendantPids = descendants.map((d) => d.pid)
+      let descendantPids: number[] = []
+      if (tree) {
+        // Re-derive descendants AFTER the confirm dialog: a child shown earlier may
+        // have exited and had its PID recycled by an unrelated process during the
+        // (arbitrarily long) dialog. Kill only PIDs that were both shown to the user
+        // AND are still descendants, and re-run the protected-process check on the
+        // current set so a freshly-spawned protected child can't be caught.
+        const freshDescendants = await getProcessDescendants(confirmedTarget.pid)
+        const blocked = freshDescendants.find(isProtectedProcess)
+        if (blocked) {
+          logWarnAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, {
+            reason: 'tree_protected_descendant', pid: confirmedTarget.pid, blockedPid: blocked.pid, blockedName: blocked.name
+          }))
+          return failure('PERMISSION_DENIED', tk('main.process.error.tree_protected', { name: blocked.name, pid: blocked.pid }))
+        }
+        const shownPids = new Set(descendants.map((d) => d.pid))
+        descendantPids = freshDescendants.filter((d) => shownPids.has(d.pid)).map((d) => d.pid)
+      }
+
       await terminateProcess(confirmedTarget.pid, tree, descendantPids)
       const killedPids = [confirmedTarget.pid, ...descendantPids]
       logInfoAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, {
