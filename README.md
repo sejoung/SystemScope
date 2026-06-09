@@ -45,12 +45,14 @@
 ## Highlights
 
 - **Real-time monitoring**: CPU, memory, GPU, and disk metrics with live charts
+- **Timeline**: system health history, event timeline, point details, and alert intelligence (sustained alerts and recurring patterns)
 - **Alerts**: configurable disk / memory / GPU usage alerts
 - **Disk analysis**: folder scan, treemap, large files, extension breakdown, old file scan, recent growth, and duplicate detection
-- **Quick cleanup**: scan common cache, log, build, and temp locations
+- **Cleanup & automation**: rule-based cleanup of cache / log / build / temp locations, a review inbox, and scheduled automated cleanup
 - **Docker management**: inspect and clean up containers, images, volumes, and build cache
-- **Process tools**: search, inspect, and terminate processes
+- **Process tools**: search, inspect, and terminate processes — including force-kill and whole process-tree termination
 - **Port tools**: inspect active ports and monitor specific ports/IPs
+- **Developer tooling**: environment health checks (Node, Python, Java, Docker, CUDA, PyTorch), toolchain cache cleanup, a port conflict center, project monitor, and workspace profiles
 - **Application cleanup**: uninstall installed apps, review leftover app data, and clean leftover uninstall registry entries on Windows
 - **Growth tracking**: snapshot-based folder growth analysis over 1 hour / 24 hours / 7 days
 - **Update checks**: packaged builds can check for new releases and open the download page
@@ -65,9 +67,12 @@ For more detailed behavior, see [docs/features.md](docs/features.md).
 | Page | Description |
 |------|------|
 | **Overview** | Live gauges, charts, alerts, storage summary, top consumers |
+| **Timeline** | System health history, event timeline, point details, alert intelligence |
 | **Storage** | Folder scan, treemap, large/old/duplicate file insights, recent growth, quick cleanup, file deletion |
 | **Docker** | Containers / images / volumes / build cache management |
+| **Cleanup** | Rule-based cleanup, preview, review inbox, and automation schedule/history |
 | **Activity** | Processes, ports, and live port watch |
+| **DevTools** | Dev environment health, dev servers, toolchain cache cleanup, port conflicts, project monitor, workspaces |
 | **Applications** | Installed apps, related data cleanup, leftover data cleanup, Windows-only leftover registry cleanup |
 | **Preferences** | Theme, language, alert thresholds, snapshot interval, update check, app data/log paths |
 
@@ -151,9 +156,9 @@ Pushing a `v*` tag triggers the release workflow, which builds platform artifact
 
 ```text
 src/
-  main/        Electron main process, IPC, services, system collection
+  main/        Electron main process — IPC handlers and services grouped into domain packages (each with an index.ts barrel)
   preload/     contextBridge API exposed to the renderer
-  renderer/    React UI, pages, stores, components
+  renderer/    React UI — pages, feature modules, domain-grouped stores, and ui/layout components
   shared/      IPC channels, shared types, constants, contracts
 tests/
   unit/        unit tests

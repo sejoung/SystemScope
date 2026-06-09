@@ -56,7 +56,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
+      # Cache the Electron binary download so the E2E launch is reliable and fast.
+      - name: Cache Electron binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/Library/Caches/electron
+            ~/AppData/Local/electron/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
       - run: npm ci --prefer-offline --no-audit
+      # Playwright launches the real Electron binary. `npm ci` can report success
+      # without the binary actually being present, which surfaces later as a cryptic
+      # "Electron failed to install correctly". Run the installer explicitly so the
+      # download happens (or is restored from cache) and fails loudly here if not.
+      - name: Ensure Electron binary is installed
+        run: node node_modules/electron/install.js
       - run: npm run test:e2e:build
         env:
           DEBUG: pw:browser*
@@ -69,4 +84,4 @@ jobs:
             playwright-report
             test-results
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 1
