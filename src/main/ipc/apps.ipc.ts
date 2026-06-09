@@ -14,12 +14,12 @@ import {
   removeLeftoverAppRegistry,
   openSystemUninstallSettings,
   uninstallInstalledApp
-} from '../services/installedApps'
-import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
+} from '@main/services/apps'
+import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '@main/services/core'
 import { tk } from '../i18n'
-import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
-import { registerShellPaths } from '../services/shellPathRegistry'
-import { recordEvent } from '../services/eventStore'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
+import { registerShellPaths } from '@main/services/devtools'
+import { recordEvent } from '@main/services/history'
 
 export function registerAppsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async (_event, metaArg?: IpcRequestMetaArg) => {

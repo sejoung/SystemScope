@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Accordion } from '../../components/Accordion'
+import { Accordion } from '../../components/ui/Accordion'
 import { formatBytes } from '../../utils/format'
 import type { RecentGrowthEntry } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'

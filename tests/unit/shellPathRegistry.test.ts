@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const PATH_TTL_MS = 2 * 60 * 60 * 1000
 
 async function loadModule() {
-  const mod = await import('../../src/main/services/shellPathRegistry')
+  const mod = await import('../../src/main/services/devtools/shellPathRegistry')
   return mod
 }
 

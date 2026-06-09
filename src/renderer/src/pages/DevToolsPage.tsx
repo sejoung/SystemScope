@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ErrorBoundary } from "../components/ErrorBoundary";
-import { PageTab } from "../components/PageTab";
+import { ErrorBoundary } from "../components/layout/ErrorBoundary";
+import { PageTab } from "../components/ui/PageTab";
 import { DevToolsOverviewSection } from "../features/devtools/DevToolsOverviewSection";
 import { DevToolsSection } from "../features/devtools/DevToolsSection";
 import { PortConflictCenterCard } from "../features/devtools/PortConflictCenterCard";

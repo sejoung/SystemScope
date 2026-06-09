@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findLargeFiles, getExtensionBreakdown } from '../../src/main/services/diskAnalyzer'
+import { findLargeFiles, getExtensionBreakdown } from '../../src/main/services/disk/diskAnalyzer'
 import type { FolderNode } from '../../src/shared/types'
 
 function makeTree(): FolderNode {

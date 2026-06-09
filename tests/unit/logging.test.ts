@@ -31,7 +31,7 @@ vi.mock('electron-log', () => ({
   }
 }))
 
-const logging = await import('../../src/main/services/logging')
+const logging = await import('../../src/main/services/core/logging')
 const {
   cleanupOldLogs,
   formatDateForLogFile,

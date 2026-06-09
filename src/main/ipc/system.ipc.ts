@@ -1,11 +1,11 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { SYSTEM_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
-import { getSystemStats } from '../services/systemMonitor'
-import { checkAlerts } from '../services/alertManager'
-import { recordEvent } from '../services/eventStore'
+import { getSystemStats } from '@main/services/system'
+import { checkAlerts } from '@main/services/alerts'
+import { recordEvent } from '@main/services/history'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfoAction } from '../services/logging'
+import { logErrorAction, logInfoAction } from '@main/services/core'
 import { tk } from '../i18n'
 import {
   addSystemSubscriber,
@@ -14,8 +14,8 @@ import {
   isSystemSubscriber,
   retainSystemSubscribers,
   resetSystemSubscribers
-} from './systemSubscriptions'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+} from './_shared/systemSubscriptions'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 let updateTimer: ReturnType<typeof setTimeout> | null = null
 let isRunning = false

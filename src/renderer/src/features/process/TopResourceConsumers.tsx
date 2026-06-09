@@ -1,6 +1,6 @@
-import { useProcessStore } from '../../stores/useProcessStore'
-import { useSystemStore } from '../../stores/useSystemStore'
-import { Accordion } from '../../components/Accordion'
+import { useProcessStore } from '../../stores/process/useProcessStore'
+import { useSystemStore } from '../../stores/system/useSystemStore'
+import { Accordion } from '../../components/ui/Accordion'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 

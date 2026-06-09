@@ -7,7 +7,7 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   getSettings: getSettingsMock
 }))
 
-vi.mock('../../src/main/services/alertManager', () => ({
+vi.mock('../../src/main/services/alerts/alertManager', () => ({
   setThresholds: setThresholdsMock
 }))
 

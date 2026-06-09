@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useDiskStore } from '../../stores/useDiskStore'
+import { useDiskStore } from '../../stores/disk/useDiskStore'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 

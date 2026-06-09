@@ -4,7 +4,7 @@ vi.mock('../../src/main/utils/getDirSize', () => ({
   getDirSizeEstimate: vi.fn().mockResolvedValue(1024 * 1024 * 30)
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: vi.fn(), logDebug: vi.fn(), logError: vi.fn()
 }))
 
@@ -31,7 +31,7 @@ describe('vscodeAnalyzer', () => {
     const { dirExists } = await import('../../src/main/utils/fsHelpers')
     vi.mocked(dirExists).mockResolvedValue(false)
 
-    const { scanVSCode } = await import('../../src/main/services/vscodeAnalyzer')
+    const { scanVSCode } = await import('../../src/main/services/devtools/vscodeAnalyzer')
     const result = await scanVSCode()
 
     expect(result.tool).toBe('vscode')
@@ -49,7 +49,7 @@ describe('vscodeAnalyzer', () => {
       { name: 'publisher.ext-2.0.0', isDirectory: () => true, isFile: () => false, isSymbolicLink: () => false },
     ])
 
-    const { scanVSCode } = await import('../../src/main/services/vscodeAnalyzer')
+    const { scanVSCode } = await import('../../src/main/services/devtools/vscodeAnalyzer')
     const result = await scanVSCode()
 
     expect(result.status).toBe('ready')

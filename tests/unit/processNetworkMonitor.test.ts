@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
-import { parseNettopOutput, computeSnapshot, __resetCacheForTests, getProcessNetworkUsage } from '../../src/main/services/processNetworkMonitor'
+import { parseNettopOutput, computeSnapshot, __resetCacheForTests, getProcessNetworkUsage } from '../../src/main/services/process/processNetworkMonitor'
 
-vi.mock('../../src/main/services/externalCommand', () => ({
+vi.mock('../../src/main/services/core/externalCommand', () => ({
   runExternalCommand: vi.fn(),
 }))
 
@@ -14,7 +14,7 @@ vi.mock('systeminformation', () => ({
   processes: vi.fn().mockResolvedValue({ list: [] }),
 }))
 
-import { runExternalCommand } from '../../src/main/services/externalCommand'
+import { runExternalCommand } from '../../src/main/services/core/externalCommand'
 import si from 'systeminformation'
 
 const FIXTURE = `time                                                                                 bytes_in       bytes_out

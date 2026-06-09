@@ -6,7 +6,7 @@ vi.mock('node:dns/promises', () => ({
   reverse,
 }))
 
-import { resolveHostnames, __resetDnsCacheForTests } from '../../src/main/services/dnsResolver'
+import { resolveHostnames, __resetDnsCacheForTests } from '../../src/main/services/process/dnsResolver'
 
 describe('resolveHostnames', () => {
   beforeEach(() => {

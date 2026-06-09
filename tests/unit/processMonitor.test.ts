@@ -61,7 +61,7 @@ describe('processMonitor.getNetworkPorts', () => {
       }
     ] as unknown as Systeminformation.NetworkConnectionsData[])
 
-    const { getNetworkPorts } = await import('../../src/main/services/processMonitor')
+    const { getNetworkPorts } = await import('../../src/main/services/process/processMonitor')
     const ports = await getNetworkPorts()
 
     expect(ports).toHaveLength(2)
@@ -94,7 +94,7 @@ describe('processMonitor.getNetworkPorts', () => {
       }
     ] as unknown as Systeminformation.NetworkConnectionsData[])
 
-    const { getNetworkPorts } = await import('../../src/main/services/processMonitor')
+    const { getNetworkPorts } = await import('../../src/main/services/process/processMonitor')
     const ports = await getNetworkPorts()
 
     expect(ports).toHaveLength(1)
@@ -119,7 +119,7 @@ describe('processMonitor process caching', () => {
       resolveProcesses = resolve
     }))
 
-    const { getAllProcesses, getTopCpuProcesses, getTopMemoryProcesses } = await import('../../src/main/services/processMonitor')
+    const { getAllProcesses, getTopCpuProcesses, getTopMemoryProcesses } = await import('../../src/main/services/process/processMonitor')
 
     const pending = Promise.all([
       getAllProcesses(),
@@ -163,7 +163,7 @@ describe('processMonitor process caching', () => {
       list
     } as Systeminformation.ProcessesData)
 
-    const { getAllProcesses } = await import('../../src/main/services/processMonitor')
+    const { getAllProcesses } = await import('../../src/main/services/process/processMonitor')
     const all = await getAllProcesses()
     const byPid = new Map(all.map((p) => [p.pid, p]))
 

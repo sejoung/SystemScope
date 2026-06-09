@@ -1,4 +1,4 @@
-import { useSessionSnapshotStore } from '../../stores/useSessionSnapshotStore'
+import { useSessionSnapshotStore } from '../../stores/snapshot/useSessionSnapshotStore'
 import { useI18n } from '../../i18n/useI18n'
 import { formatBytes } from '@shared/utils/formatBytes'
 import type { SnapshotDiffDelta } from '@shared/types'

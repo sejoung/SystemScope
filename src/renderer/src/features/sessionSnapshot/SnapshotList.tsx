@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { useSessionSnapshotStore } from '../../stores/useSessionSnapshotStore'
+import { useSessionSnapshotStore } from '../../stores/snapshot/useSessionSnapshotStore'
 import { useI18n } from '../../i18n/useI18n'
-import { useToast } from '../../components/Toast'
+import { useToast } from '../../components/ui/Toast'
 
 export function SnapshotList() {
   const { tk } = useI18n()

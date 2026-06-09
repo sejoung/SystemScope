@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from "react";
 import { isJobCompleted, isJobFailed, isJobProgress, isQuickScanFolderArray } from "@shared/types";
-import { useToast } from "../../components/Toast";
+import { useToast } from "../../components/ui/Toast";
 import { useIpcListener } from "../../hooks/useIpc";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { useI18n } from "../../i18n/useI18n";
-import { useDiskStore } from "../../stores/useDiskStore";
+import { useDiskStore } from "../../stores/disk/useDiskStore";
 import type { ScanOutcome, StorageTab } from "./diskAnalysisHelpers";
 
 export function useDiskAnalysisController() {

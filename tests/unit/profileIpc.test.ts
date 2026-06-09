@@ -18,14 +18,14 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/profileManager', () => ({
+vi.mock('../../src/main/services/profile/profileManager', () => ({
   getProfiles: getProfilesMock,
   saveProfile: saveProfileMock,
   deleteProfile: deleteProfileMock,
   setActiveProfile: setActiveProfileMock
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfoAction: logInfoActionMock,
   logErrorAction: logErrorActionMock
 }))

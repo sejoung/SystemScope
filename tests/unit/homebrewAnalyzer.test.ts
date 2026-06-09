@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const runExternalCommand = vi.hoisted(() => vi.fn())
 
-vi.mock('../../src/main/services/externalCommand', () => ({
+vi.mock('../../src/main/services/core/externalCommand', () => ({
   runExternalCommand,
   isExternalCommandError: (error: unknown) => {
     return Boolean(error) && typeof error === 'object' && 'kind' in (error as Record<string, unknown>)
@@ -13,7 +13,7 @@ vi.mock('../../src/main/utils/getDirSize', () => ({
   getDirSizeEstimate: vi.fn().mockResolvedValue(1024 * 1024 * 50)
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: vi.fn(), logDebug: vi.fn(), logError: vi.fn()
 }))
 
@@ -37,7 +37,7 @@ describe('homebrewAnalyzer', () => {
     const { access } = await import('node:fs/promises')
     vi.mocked(access).mockRejectedValue(new Error('ENOENT'))
 
-    const { scanHomebrew } = await import('../../src/main/services/homebrewAnalyzer')
+    const { scanHomebrew } = await import('../../src/main/services/devtools/homebrewAnalyzer')
     const result = await scanHomebrew()
 
     expect(result.tool).toBe('homebrew')
@@ -59,7 +59,7 @@ describe('homebrewAnalyzer', () => {
       return { stdout: '', stderr: '' }
     })
 
-    const { scanHomebrew } = await import('../../src/main/services/homebrewAnalyzer')
+    const { scanHomebrew } = await import('../../src/main/services/devtools/homebrewAnalyzer')
     const result = await scanHomebrew()
 
     expect(result.status).toBe('ready')
@@ -78,7 +78,7 @@ describe('homebrewAnalyzer', () => {
 
     runExternalCommand.mockRejectedValue({ kind: 'execution_failed', message: 'brew failed', stdout: '', stderr: '' })
 
-    const { scanHomebrew } = await import('../../src/main/services/homebrewAnalyzer')
+    const { scanHomebrew } = await import('../../src/main/services/devtools/homebrewAnalyzer')
     const result = await scanHomebrew()
 
     // Individual command failures are caught internally, so status is still 'ready'

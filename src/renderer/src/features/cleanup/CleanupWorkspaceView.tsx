@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
-import { ErrorBoundary } from "../../components/ErrorBoundary";
-import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
+import { ErrorBoundary } from "../../components/layout/ErrorBoundary";
+import { AsyncTaskStatus } from "../../components/ui/AsyncTaskStatus";
 import { useI18n } from "../../i18n/useI18n";
 import { useDiskAnalysisController } from "../disk/useDiskAnalysisController";
 

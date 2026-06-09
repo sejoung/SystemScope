@@ -1,6 +1,6 @@
-import { Accordion } from '../../components/Accordion'
+import { Accordion } from '../../components/ui/Accordion'
 import { useI18n } from '../../i18n/useI18n'
-import { useSystemStore } from '../../stores/useSystemStore'
+import { useSystemStore } from '../../stores/system/useSystemStore'
 
 function formatIops(value: number | null): string {
   if (value === null) return 'N/A'

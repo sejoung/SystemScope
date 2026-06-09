@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useProfileStore } from '../../stores/useProfileStore'
+import { useProfileStore } from '../../stores/profile/useProfileStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { WorkspaceProfile, AlertThresholds, DashboardWidgetKey } from '@shared/types'
 import { DEFAULT_THRESHOLDS, DASHBOARD_WIDGET_KEYS, PROFILE_NAME_MAX_LENGTH, MAX_WORKSPACE_PATHS } from '@shared/types'

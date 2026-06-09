@@ -23,30 +23,30 @@ vi.mock('fs/promises', () => ({
   constants: { R_OK: 4 }
 }))
 
-vi.mock('../../src/main/services/diskAnalyzer', () => ({
+vi.mock('../../src/main/services/disk/diskAnalyzer', () => ({
   scanFolder: vi.fn(),
   findLargeFiles: vi.fn(() => []),
   getExtensionBreakdown: vi.fn(() => [])
 }))
 
-vi.mock('../../src/main/services/quickScan', () => ({
+vi.mock('../../src/main/services/disk/quickScan', () => ({
   runQuickScan: vi.fn()
 }))
 
-vi.mock('../../src/main/services/userSpace', () => ({
+vi.mock('../../src/main/services/disk/userSpace', () => ({
   getUserSpaceInfo: vi.fn()
 }))
 
-vi.mock('../../src/main/services/diskInsights', () => ({
+vi.mock('../../src/main/services/disk/diskInsights', () => ({
   findRecentGrowth: vi.fn(),
   findDuplicates: vi.fn()
 }))
 
-vi.mock('../../src/main/services/growthAnalyzer', () => ({
+vi.mock('../../src/main/services/disk/growthAnalyzer', () => ({
   analyzeGrowth: vi.fn()
 }))
 
-vi.mock('../../src/main/services/oldFileFinder', () => ({
+vi.mock('../../src/main/services/disk/oldFileFinder', () => ({
   findOldFiles: vi.fn()
 }))
 
@@ -58,22 +58,22 @@ vi.mock('../../src/main/jobs/jobManager', () => ({
   sendJobFailed: vi.fn()
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logErrorAction: vi.fn(),
   logInfoAction: vi.fn(),
   logProductMetric: vi.fn()
 }))
 
-vi.mock('../../src/main/services/trashService', () => ({
+vi.mock('../../src/main/services/core/trashService', () => ({
   trashItemsWithConfirm: vi.fn()
 }))
 
-vi.mock('../../src/main/services/shellPathRegistry', () => ({
+vi.mock('../../src/main/services/devtools/shellPathRegistry', () => ({
   registerShellPath,
   registerShellPaths: vi.fn()
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   recordEvent: vi.fn(),
   initEventStore: vi.fn(),
   stopEventStore: vi.fn()

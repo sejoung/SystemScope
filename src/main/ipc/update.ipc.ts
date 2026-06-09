@@ -2,9 +2,9 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
 import { tk } from '../i18n'
-import { checkForUpdates, getUpdateStatus, openReleasePage } from '../services/updateChecker'
-import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { checkForUpdates, getUpdateStatus, openReleasePage } from '@main/services/update'
+import { logErrorAction, logInfoAction, logWarnAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerUpdateIpc(): void {
   ipcMain.handle(IPC_CHANNELS.UPDATE_GET_STATUS, (_event, metaArg?: IpcRequestMetaArg) => {

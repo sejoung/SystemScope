@@ -43,21 +43,21 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   setSettings: setSettingsMock
 }))
 
-vi.mock('../../src/main/services/growthAnalyzer', () => ({
+vi.mock('../../src/main/services/disk/growthAnalyzer', () => ({
   restartSnapshotScheduler: (intervalMs: number) => {
     schedulerCalls.push(intervalMs)
   }
 }))
 
-vi.mock('../../src/main/services/alertManager', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/main/services/alertManager')>()
+vi.mock('../../src/main/services/alerts/alertManager', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/main/services/alerts/alertManager')>()
   return {
     ...actual,
     setThresholds: setThresholdsMock
   }
 })
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   getAccessLogDir: vi.fn(() => '/tmp/systemscope-test/logs/access'),
   getSystemLogDir: vi.fn(() => '/tmp/systemscope-test/logs/system'),
   logErrorAction: vi.fn(),
@@ -65,7 +65,7 @@ vi.mock('../../src/main/services/logging', () => ({
   logWarnAction: vi.fn(),
 }))
 
-vi.mock('../../src/main/services/automationScheduler', () => ({
+vi.mock('../../src/main/services/cleanup/automationScheduler', () => ({
   restartAutomationScheduler: vi.fn()
 }))
 

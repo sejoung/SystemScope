@@ -13,26 +13,26 @@ const listDockerVolumes = vi.hoisted(() => vi.fn())
 const getDockerBuildCache = vi.hoisted(() => vi.fn())
 const getActiveProfile = vi.hoisted(() => vi.fn())
 
-vi.mock('../../src/main/services/externalCommand', () => ({
+vi.mock('../../src/main/services/core/externalCommand', () => ({
   runExternalCommand,
   isExternalCommandError: (error: unknown) => {
     return Boolean(error) && typeof error === 'object' && 'kind' in (error as Record<string, unknown>)
   },
 }))
 
-vi.mock('../../src/main/services/processMonitor', () => ({
+vi.mock('../../src/main/services/process/processMonitor', () => ({
   getNetworkPorts,
   getAllProcesses,
 }))
 
-vi.mock('../../src/main/services/dockerImages', () => ({
+vi.mock('../../src/main/services/docker/dockerImages', () => ({
   listDockerContainers,
   listDockerImages,
   listDockerVolumes,
   getDockerBuildCache,
 }))
 
-vi.mock('../../src/main/services/profileManager', () => ({
+vi.mock('../../src/main/services/profile/profileManager', () => ({
   getActiveProfile,
 }))
 
@@ -42,7 +42,7 @@ import {
   getDevToolsOverview,
   resetDevToolsOverviewCacheForTest,
   summarizeGitStatusLines,
-} from '../../src/main/services/devToolsOverview'
+} from '../../src/main/services/devtools/devToolsOverview'
 
 describe('devToolsOverview helpers', () => {
   beforeEach(() => {

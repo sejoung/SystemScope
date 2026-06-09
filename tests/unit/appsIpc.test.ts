@@ -35,7 +35,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/installedApps', () => ({
+vi.mock('../../src/main/services/apps/installedApps', () => ({
   listInstalledApps: listInstalledAppsMock,
   getInstalledAppById: getInstalledAppByIdMock,
   getInstalledAppRelatedData: getInstalledAppRelatedDataMock,
@@ -47,7 +47,7 @@ vi.mock('../../src/main/services/installedApps', () => ({
   uninstallInstalledApp: uninstallInstalledAppMock
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logErrorAction: logErrorActionMock,
   logError: logErrorMock,
   logInfoAction: logInfoActionMock,
@@ -57,7 +57,7 @@ vi.mock('../../src/main/services/logging', () => ({
   logWarn: logWarnMock
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   recordEvent: vi.fn(),
   initEventStore: vi.fn(),
   stopEventStore: vi.fn()

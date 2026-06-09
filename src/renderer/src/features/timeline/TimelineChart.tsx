@@ -10,7 +10,7 @@ import {
   ReferenceDot,
 } from 'recharts'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
-import { useTimelineStore } from '../../stores/useTimelineStore'
+import { useTimelineStore } from '../../stores/timeline/useTimelineStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { TimelineData, TimelineRange } from '@shared/types'
 

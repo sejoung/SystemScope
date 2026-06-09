@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useSettingsStore } from "../../stores/useSettingsStore";
-import { usePortFinderStore } from "../../stores/usePortFinderStore";
-import { useToast } from "../../components/Toast";
+import { useSettingsStore } from "../../stores/settings/useSettingsStore";
+import { usePortFinderStore } from "../../stores/process/usePortFinderStore";
+import { useToast } from "../../components/ui/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import {
   PortConflictCenterPanel,

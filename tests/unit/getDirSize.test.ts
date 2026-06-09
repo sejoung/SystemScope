@@ -14,11 +14,11 @@ vi.mock('fs/promises', () => ({
   stat
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logDebug: vi.fn()
 }))
 
-vi.mock('../../src/main/services/externalCommand', () => ({
+vi.mock('../../src/main/services/core/externalCommand', () => ({
   isExternalCommandError: vi.fn(() => false),
   runExternalCommand: vi.fn()
 }))

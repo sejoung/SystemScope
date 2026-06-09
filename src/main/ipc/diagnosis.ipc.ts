@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
-import { getDiagnosisSummary } from '../services/diagnosisAdvisor'
+import { getDiagnosisSummary } from '@main/services/diagnosis'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfoAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { logErrorAction, logInfoAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerDiagnosisIpc(): void {
   ipcMain.handle(IPC_CHANNELS.DIAGNOSIS_GET_SUMMARY, async (_event, metaArg?: IpcRequestMetaArg) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useDevToolsStore } from '../../stores/useDevToolsStore'
+import { useDevToolsStore } from '../../stores/devtools/useDevToolsStore'
 import { useI18n } from '../../i18n/useI18n'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { DevToolsDetailDialog } from './DevToolsDetailDialog'

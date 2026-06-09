@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldUseShellCompactLayout } from "../../src/renderer/src/components/Layout";
+import { shouldUseShellCompactLayout } from "../../src/renderer/src/components/layout/Layout";
 import { shouldUseDashboardSingleColumnLayout } from "../../src/renderer/src/pages/DashboardPage";
 
 describe("Layout responsive helpers", () => {

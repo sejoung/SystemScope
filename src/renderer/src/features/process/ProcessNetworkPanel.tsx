@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ProcessNetworkSnapshot, ProcessNetworkUsage, PortInfo } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
-import { StatusMessage } from "../../components/StatusMessage";
+import { StatusMessage } from "../../components/ui/StatusMessage";
 import { usePidNetworkHistory } from "./usePidNetworkHistory";
 import { Sparkline } from "./Sparkline";
 import { peerLabel } from './peerLabel'

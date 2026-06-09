@@ -1,10 +1,10 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
-import { getTimelineData, getPointDetail } from '../services/metricsStore'
+import { getTimelineData, getPointDetail } from '@main/services/history'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
+import { logErrorAction, logInfoAction, logWarnAction } from '@main/services/core'
 import { tk } from '../i18n'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 import type { TimelineRange } from '@shared/types/metric'
 
 const VALID_RANGES = new Set<TimelineRange>(['24h', '7d', '30d'])

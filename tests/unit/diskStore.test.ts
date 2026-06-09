@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useDiskStore } from '../../src/renderer/src/stores/useDiskStore'
+import { useDiskStore } from '../../src/renderer/src/stores/disk/useDiskStore'
 
 describe('useDiskStore', () => {
   beforeEach(() => {

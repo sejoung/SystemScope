@@ -6,15 +6,15 @@ import {
 } from "react";
 import type React from "react";
 import type { TranslateFn } from "@shared/i18n";
-import { useToast } from "../../components/Toast";
+import { useToast } from "../../components/ui/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import { useVisibleIds } from "../../hooks/useVisibleIds";
-import { useLeftoverAppsStore } from "../../stores/useLeftoverAppsStore";
-import { StatusMessage } from "../../components/StatusMessage";
-import { CopyableValue } from "../../components/CopyableValue";
+import { useLeftoverAppsStore } from "../../stores/apps/useLeftoverAppsStore";
+import { StatusMessage } from "../../components/ui/StatusMessage";
+import { CopyableValue } from "../../components/ui/CopyableValue";
 import {
   CompactMetaItem,
   compactActionsStyle,
@@ -25,7 +25,7 @@ import {
   compactListStyle,
   compactMetaGridStyle,
   compactStatusSpacingStyle,
-} from "../../components/CompactPrimitives";
+} from "../../components/ui/CompactPrimitives";
 import { formatBytes } from "../../utils/format";
 import {
   type ConfidenceFilter,

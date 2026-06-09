@@ -7,7 +7,7 @@ import {
   compactCardStyle,
   compactListStyle,
   compactMetaGridStyle,
-} from "../../components/CompactPrimitives";
+} from "../../components/ui/CompactPrimitives";
 import {
   detailsBtn,
   removeBtnStyle,

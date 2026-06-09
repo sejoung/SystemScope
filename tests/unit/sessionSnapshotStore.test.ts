@@ -17,7 +17,7 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   })
 }))
 
-const { computeSnapshotDiff } = await import('../../src/main/services/sessionSnapshotStore')
+const { computeSnapshotDiff } = await import('../../src/main/services/history/sessionSnapshotStore')
 
 const makeSnapshot = (overrides: Partial<SessionSnapshot> = {}): SessionSnapshot => ({
   id: 'snap-1',

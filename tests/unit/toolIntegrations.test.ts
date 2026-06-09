@@ -4,23 +4,23 @@ vi.mock('electron', () => ({
   shell: { trashItem: vi.fn().mockResolvedValue(undefined) }
 }))
 
-vi.mock('../../src/main/services/homebrewAnalyzer', () => ({
+vi.mock('../../src/main/services/devtools/homebrewAnalyzer', () => ({
   scanHomebrew: vi.fn().mockResolvedValue({ tool: 'homebrew', status: 'ready', message: null, summary: [], reclaimable: [{ id: 'r1', tool: 'homebrew', path: '/tmp/brew-item', label: 'test', size: 100, category: 'cache', safetyLevel: 'safe' }], lastScannedAt: 1 })
 }))
 
-vi.mock('../../src/main/services/xcodeAnalyzer', () => ({
+vi.mock('../../src/main/services/devtools/xcodeAnalyzer', () => ({
   scanXcode: vi.fn().mockResolvedValue({ tool: 'xcode', status: 'not_installed', message: null, summary: [], reclaimable: [], lastScannedAt: 1 })
 }))
 
-vi.mock('../../src/main/services/vscodeAnalyzer', () => ({
+vi.mock('../../src/main/services/devtools/vscodeAnalyzer', () => ({
   scanVSCode: vi.fn().mockResolvedValue({ tool: 'vscode', status: 'ready', message: null, summary: [], reclaimable: [{ id: 'r2', tool: 'vscode', path: '/tmp/vscode-item', label: 'test', size: 200, category: 'cache', safetyLevel: 'safe' }], lastScannedAt: 1 })
 }))
 
-vi.mock('../../src/main/services/toolchainAnalyzer', () => ({
+vi.mock('../../src/main/services/devtools/toolchainAnalyzer', () => ({
   scanToolchain: vi.fn().mockResolvedValue({ tool: 'toolchain', status: 'ready', message: null, summary: [], reclaimable: [], lastScannedAt: 1 })
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: vi.fn(), logError: vi.fn(), logWarn: vi.fn()
 }))
 
@@ -30,7 +30,7 @@ describe('toolIntegrations', () => {
   })
 
   it('should scan all tools and build allowlist', async () => {
-    const { scanAllTools } = await import('../../src/main/services/toolIntegrations')
+    const { scanAllTools } = await import('../../src/main/services/devtools/toolIntegrations')
     const results = await scanAllTools()
 
     expect(results.length).toBeGreaterThanOrEqual(2)
@@ -38,7 +38,7 @@ describe('toolIntegrations', () => {
   })
 
   it('should reject clean request for path not in scan results', async () => {
-    const { scanAllTools, cleanToolItems } = await import('../../src/main/services/toolIntegrations')
+    const { scanAllTools, cleanToolItems } = await import('../../src/main/services/devtools/toolIntegrations')
     await scanAllTools()
 
     const result = await cleanToolItems(['/etc/passwd'])
@@ -47,7 +47,7 @@ describe('toolIntegrations', () => {
   })
 
   it('should allow cleaning paths from scan results', async () => {
-    const { scanAllTools, cleanToolItems } = await import('../../src/main/services/toolIntegrations')
+    const { scanAllTools, cleanToolItems } = await import('../../src/main/services/devtools/toolIntegrations')
     await scanAllTools()
 
     const result = await cleanToolItems(['/tmp/vscode-item'])

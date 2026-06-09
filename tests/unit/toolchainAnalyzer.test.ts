@@ -4,7 +4,7 @@ vi.mock('../../src/main/utils/getDirSize', () => ({
   getDirSizeEstimate: vi.fn().mockResolvedValue(1024 * 1024 * 200)
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: vi.fn(), logError: vi.fn()
 }))
 
@@ -21,7 +21,7 @@ describe('toolchainAnalyzer', () => {
     const { dirExists } = await import('../../src/main/utils/fsHelpers')
     vi.mocked(dirExists).mockResolvedValue(false)
 
-    const { scanToolchain } = await import('../../src/main/services/toolchainAnalyzer')
+    const { scanToolchain } = await import('../../src/main/services/devtools/toolchainAnalyzer')
     const result = await scanToolchain()
 
     expect(result.tool).toBe('toolchain')
@@ -34,7 +34,7 @@ describe('toolchainAnalyzer', () => {
       return p.includes('.npm') || p.includes('npm-cache')
     })
 
-    const { scanToolchain } = await import('../../src/main/services/toolchainAnalyzer')
+    const { scanToolchain } = await import('../../src/main/services/devtools/toolchainAnalyzer')
     const result = await scanToolchain()
 
     expect(result.status).toBe('ready')

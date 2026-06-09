@@ -1,4 +1,4 @@
-import { PageTab } from "../components/PageTab";
+import { PageTab } from "../components/ui/PageTab";
 import { DiskAnalysisOverviewTab } from "../features/disk/DiskAnalysisOverviewTab";
 import { DiskAnalysisScanTab } from "../features/disk/DiskAnalysisScanTab";
 import { useDiskAnalysisController } from "../features/disk/useDiskAnalysisController";

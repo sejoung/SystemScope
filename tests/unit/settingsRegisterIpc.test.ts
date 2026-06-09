@@ -39,15 +39,15 @@ vi.mock('../../src/main/store/settingsSchema', () => ({
   validatePartialSettings: validatePartialSettingsMock
 }))
 
-vi.mock('../../src/main/services/growthAnalyzer', () => ({
+vi.mock('../../src/main/services/disk/growthAnalyzer', () => ({
   restartSnapshotScheduler: restartSnapshotSchedulerMock
 }))
 
-vi.mock('../../src/main/services/alertManager', () => ({
+vi.mock('../../src/main/services/alerts/alertManager', () => ({
   setThresholds: setThresholdsMock
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   getAccessLogDir: getAccessLogDirMock,
   getSystemLogDir: getSystemLogDirMock,
   logErrorAction: logErrorActionMock,

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const runExternalCommand = vi.hoisted(() => vi.fn())
 
-vi.mock('../../src/main/services/externalCommand', () => ({
+vi.mock('../../src/main/services/core/externalCommand', () => ({
   runExternalCommand,
   isExternalCommandError: (error: unknown) => {
     return Boolean(error) && typeof error === 'object' && 'kind' in (error as Record<string, unknown>)
@@ -24,7 +24,7 @@ describe('dockerImages service', () => {
       stderr: ''
     })
 
-    const { listDockerImages } = await import('../../src/main/services/dockerImages')
+    const { listDockerImages } = await import('../../src/main/services/docker/dockerImages')
     const result = await listDockerImages()
 
     expect(result.status).toBe('not_installed')
@@ -35,7 +35,7 @@ describe('dockerImages service', () => {
   it('should return a friendly message when docker daemon is unavailable', async () => {
     runExternalCommand.mockRejectedValue(new Error('failed to connect to the docker API at unix:///Users/test/.docker/run/docker.sock'))
 
-    const { listDockerImages } = await import('../../src/main/services/dockerImages')
+    const { listDockerImages } = await import('../../src/main/services/docker/dockerImages')
     const result = await listDockerImages()
 
     expect(result.status).toBe('daemon_unavailable')
@@ -58,7 +58,7 @@ describe('dockerImages service', () => {
       throw new Error(`unexpected args: ${joined}`)
     })
 
-    const { listDockerImages } = await import('../../src/main/services/dockerImages')
+    const { listDockerImages } = await import('../../src/main/services/docker/dockerImages')
     const result = await listDockerImages()
 
     expect(result.status).toBe('ready')
@@ -92,7 +92,7 @@ describe('dockerImages service', () => {
       throw new Error(`unexpected args: ${joined}`)
     })
 
-    const { listDockerContainers } = await import('../../src/main/services/dockerImages')
+    const { listDockerContainers } = await import('../../src/main/services/docker/dockerImages')
     const result = await listDockerContainers()
 
     expect(result.status).toBe('ready')
@@ -126,7 +126,7 @@ describe('dockerImages service', () => {
       throw new Error(`unexpected args: ${joined}`)
     })
 
-    const { listDockerVolumes } = await import('../../src/main/services/dockerImages')
+    const { listDockerVolumes } = await import('../../src/main/services/docker/dockerImages')
     const result = await listDockerVolumes()
 
     expect(result.status).toBe('ready')
@@ -150,7 +150,7 @@ describe('dockerImages service', () => {
       throw new Error(`unexpected args: ${joined}`)
     })
 
-    const { getDockerBuildCache } = await import('../../src/main/services/dockerImages')
+    const { getDockerBuildCache } = await import('../../src/main/services/docker/dockerImages')
     const result = await getDockerBuildCache()
 
     expect(result.status).toBe('ready')
@@ -165,7 +165,7 @@ describe('dockerImages service', () => {
   it('should include common docker installation paths when executing docker commands', async () => {
     runExternalCommand.mockResolvedValue({ stdout: '', stderr: '' })
 
-    const { listDockerImages } = await import('../../src/main/services/dockerImages')
+    const { listDockerImages } = await import('../../src/main/services/docker/dockerImages')
     await listDockerImages()
 
     expect(runExternalCommand).toHaveBeenCalledWith(

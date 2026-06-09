@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { usePortFinderStore } from "../../src/renderer/src/stores/usePortFinderStore";
+import { usePortFinderStore } from "../../src/renderer/src/stores/process/usePortFinderStore";
 
 describe("usePortFinderStore", () => {
   it("defaults the port finder search scope to local", () => {

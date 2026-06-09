@@ -1,7 +1,7 @@
-import { useSystemStore } from '../../stores/useSystemStore'
-import { Accordion } from '../../components/Accordion'
-import { GaugeChart } from '../../components/GaugeChart'
-import { ProgressBar } from '../../components/ProgressBar'
+import { useSystemStore } from '../../stores/system/useSystemStore'
+import { Accordion } from '../../components/ui/Accordion'
+import { GaugeChart } from '../../components/ui/GaugeChart'
+import { ProgressBar } from '../../components/ui/ProgressBar'
 import { useI18n } from '../../i18n/useI18n'
 
 export function CpuWidget() {

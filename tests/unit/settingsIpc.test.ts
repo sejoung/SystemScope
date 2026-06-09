@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { didShellOpenPathFail, isPathInsideAnyParent, isPathInsideParent } from '../../src/main/ipc/settingsPathUtils'
+import { didShellOpenPathFail, isPathInsideAnyParent, isPathInsideParent } from '../../src/main/ipc/_shared/settingsPathUtils'
 
 describe('settings IPC helpers', () => {
   it('should allow only the parent path itself or true descendants', () => {

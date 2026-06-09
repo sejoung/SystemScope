@@ -36,13 +36,13 @@ vi.mock('electron-log', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: vi.fn(),
   logError: vi.fn(),
   logDebug: vi.fn()
 }))
 
-vi.mock('../../src/main/services/snapshotStore', () => ({
+vi.mock('../../src/main/services/history/snapshotStore', () => ({
   saveSnapshot: async (snapshot: { timestamp: number; folders: Array<{ name: string; path: string; size: number }>; totalSize: number }) => {
     snapshotState.snapshots.push(snapshot)
   },
@@ -76,7 +76,7 @@ describe('growth analysis integration', () => {
       }
     ]
 
-    const { analyzeGrowth } = await import('../../src/main/services/growthAnalyzer')
+    const { analyzeGrowth } = await import('../../src/main/services/disk/growthAnalyzer')
     const result = await analyzeGrowth('24h')
 
     expect(snapshotState.snapshots).toHaveLength(2)
@@ -98,7 +98,7 @@ describe('growth analysis integration', () => {
       }
     ]
 
-    const { analyzeGrowth } = await import('../../src/main/services/growthAnalyzer')
+    const { analyzeGrowth } = await import('../../src/main/services/disk/growthAnalyzer')
     const result = await analyzeGrowth('24h')
 
     expect(snapshotState.snapshots).toHaveLength(1)
@@ -131,7 +131,7 @@ describe('growth analysis integration', () => {
       }
     ]
 
-    const { analyzeGrowth } = await import('../../src/main/services/growthAnalyzer')
+    const { analyzeGrowth } = await import('../../src/main/services/disk/growthAnalyzer')
     const result = await analyzeGrowth('24h')
 
     expect(result.totalAdded).toBe(180 * 1024)
@@ -156,7 +156,7 @@ describe('growth analysis integration', () => {
       }
     ]
 
-    const { analyzeGrowth } = await import('../../src/main/services/growthAnalyzer')
+    const { analyzeGrowth } = await import('../../src/main/services/disk/growthAnalyzer')
     const result = await analyzeGrowth('24h')
 
     expect(result.totalAdded).toBe(0)

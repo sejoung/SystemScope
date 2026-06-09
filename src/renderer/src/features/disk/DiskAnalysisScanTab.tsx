@@ -1,12 +1,12 @@
 import { lazy, Suspense } from "react";
 import type { DiskScanResult } from "@shared/types";
-import { Accordion } from "../../components/Accordion";
-import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
-import { CopyableValue } from "../../components/CopyableValue";
-import { ErrorBoundary } from "../../components/ErrorBoundary";
-import { StatusMessage } from "../../components/StatusMessage";
+import { Accordion } from "../../components/ui/Accordion";
+import { AsyncTaskStatus } from "../../components/ui/AsyncTaskStatus";
+import { CopyableValue } from "../../components/ui/CopyableValue";
+import { ErrorBoundary } from "../../components/layout/ErrorBoundary";
+import { StatusMessage } from "../../components/ui/StatusMessage";
 import { useI18n } from "../../i18n/useI18n";
-import { type useDiskStore } from "../../stores/useDiskStore";
+import { type useDiskStore } from "../../stores/disk/useDiskStore";
 import { formatBytes } from "../../utils/format";
 import { SectionFallback, Stat } from "./DiskAnalysisShared";
 import {

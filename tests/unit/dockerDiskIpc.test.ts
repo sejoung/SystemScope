@@ -52,7 +52,7 @@ vi.mock('electron-log', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/dockerImages', () => ({
+vi.mock('../../src/main/services/docker/dockerImages', () => ({
   listDockerImages,
   removeDockerImages,
   listDockerContainers,
@@ -64,7 +64,7 @@ vi.mock('../../src/main/services/dockerImages', () => ({
   pruneDockerBuildCache
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logErrorAction,
   logError,
   logInfoAction,
@@ -74,7 +74,7 @@ vi.mock('../../src/main/services/logging', () => ({
   logDebug: vi.fn()
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   recordEvent: vi.fn(),
   initEventStore: vi.fn(),
   stopEventStore: vi.fn()

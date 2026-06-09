@@ -22,11 +22,11 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   setSettings: (...args: unknown[]) => mockSetSettings(...args)
 }))
 
-vi.mock('../../src/main/services/alertManager', () => ({
+vi.mock('../../src/main/services/alerts/alertManager', () => ({
   setThresholds: (...args: unknown[]) => mockSetThresholds(...args)
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: (...args: unknown[]) => mockLogInfo(...args),
   logWarn: (...args: unknown[]) => mockLogInfo(...args)
 }))
@@ -39,7 +39,7 @@ import {
   setActiveProfile,
   getEffectiveThresholds,
   getEffectiveCleanupRules
-} from '../../src/main/services/profileManager'
+} from '../../src/main/services/profile/profileManager'
 
 function createTestProfile(overrides?: Partial<WorkspaceProfile>): WorkspaceProfile {
   return {

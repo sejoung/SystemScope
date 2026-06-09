@@ -3,7 +3,7 @@ import type { Dirent, Stats } from 'node:fs'
 
 const runExternalCommand = vi.hoisted(() => vi.fn())
 
-vi.mock('../../src/main/services/externalCommand', () => ({
+vi.mock('../../src/main/services/core/externalCommand', () => ({
   runExternalCommand,
   isExternalCommandError: (error: unknown) => {
     return Boolean(error) && typeof error === 'object' && 'kind' in (error as Record<string, unknown>)
@@ -14,7 +14,7 @@ vi.mock('../../src/main/utils/getDirSize', () => ({
   getDirSizeEstimate: vi.fn().mockResolvedValue(1024 * 1024 * 100)
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: vi.fn(), logDebug: vi.fn(), logError: vi.fn()
 }))
 
@@ -42,7 +42,7 @@ describe('xcodeAnalyzer', () => {
     const { stat } = await import('node:fs/promises')
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'))
 
-    const { scanXcode } = await import('../../src/main/services/xcodeAnalyzer')
+    const { scanXcode } = await import('../../src/main/services/devtools/xcodeAnalyzer')
     const result = await scanXcode()
 
     expect(result.tool).toBe('xcode')
@@ -62,7 +62,7 @@ describe('xcodeAnalyzer', () => {
     })
     runExternalCommand.mockRejectedValue({ kind: 'command_not_found', message: 'xcrun not found', stdout: '', stderr: '' })
 
-    const { scanXcode } = await import('../../src/main/services/xcodeAnalyzer')
+    const { scanXcode } = await import('../../src/main/services/devtools/xcodeAnalyzer')
     const result = await scanXcode()
 
     expect(result.status).toBe('ready')
@@ -93,7 +93,7 @@ describe('xcodeAnalyzer', () => {
       stderr: ''
     })
 
-    const { scanXcode } = await import('../../src/main/services/xcodeAnalyzer')
+    const { scanXcode } = await import('../../src/main/services/devtools/xcodeAnalyzer')
     const result = await scanXcode()
 
     expect(result.status).toBe('ready')

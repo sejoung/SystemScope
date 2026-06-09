@@ -1,6 +1,6 @@
 import type { AppSettings } from '@shared/types'
 import type { SystemScopeAboutInfo } from '@shared/contracts/systemScope'
-import { useSettingsStore } from '../stores/useSettingsStore'
+import { useSettingsStore } from '../stores/settings/useSettingsStore'
 import { reportRendererError } from './rendererLogging'
 
 export function applySettingsToStore(settings: AppSettings): void {

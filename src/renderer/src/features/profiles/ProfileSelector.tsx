@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useProfileStore } from '../../stores/useProfileStore'
+import { useProfileStore } from '../../stores/profile/useProfileStore'
 import { useI18n } from '../../i18n/useI18n'
 
 export function ProfileSelector() {

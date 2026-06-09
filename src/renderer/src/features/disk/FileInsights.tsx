@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Accordion } from '../../components/Accordion'
+import { Accordion } from '../../components/ui/Accordion'
 import { formatBytes } from '../../utils/format'
-import { useToast } from '../../components/Toast'
+import { useToast } from '../../components/ui/Toast'
 import type { DuplicateFileEntry, LargeFile, ExtensionGroup, DuplicateGroup, TrashResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
-import { CopyableValue } from '../../components/CopyableValue'
+import { CopyableValue } from '../../components/ui/CopyableValue'
 
 type Tab = 'types' | 'largest' | 'old' | 'duplicates'
 

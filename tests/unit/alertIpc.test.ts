@@ -14,7 +14,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logErrorAction,
   logWarnAction,
   logInfoAction
@@ -30,8 +30,8 @@ describe('registerAlertIpc', () => {
   })
 
   it('should return active alerts and allow dismissing them', async () => {
-    const { registerAlertIpc } = await import('../../src/main/ipc/alert.ipc')
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { registerAlertIpc } = await import('../../src/main/ipc/alert/alert.ipc')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     registerAlertIpc()
 
     checkAlerts({
@@ -104,7 +104,7 @@ describe('registerAlertIpc', () => {
   })
 
   it('should reject invalid or unknown alert ids', async () => {
-    const { registerAlertIpc } = await import('../../src/main/ipc/alert.ipc')
+    const { registerAlertIpc } = await import('../../src/main/ipc/alert/alert.ipc')
     registerAlertIpc()
 
     const dismissHandler = handlers.get(IPC_CHANNELS.ALERT_DISMISS)

@@ -1,6 +1,6 @@
-import { Accordion } from '../../components/Accordion'
+import { Accordion } from '../../components/ui/Accordion'
 import { useI18n } from '../../i18n/useI18n'
-import { useSystemStore } from '../../stores/useSystemStore'
+import { useSystemStore } from '../../stores/system/useSystemStore'
 import { formatBytes } from '../../utils/format'
 
 function formatRate(value: number | null): string {

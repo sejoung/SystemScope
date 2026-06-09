@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { formatBytes } from '../../utils/format'
-import { useDiskStore } from '../../stores/useDiskStore'
+import { useDiskStore } from '../../stores/disk/useDiskStore'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { GrowthFolder } from '@shared/types'

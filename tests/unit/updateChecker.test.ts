@@ -13,7 +13,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-import { compareVersions, normalizeVersion, parseLatestRelease } from '../../src/main/services/updateChecker'
+import { compareVersions, normalizeVersion, parseLatestRelease } from '../../src/main/services/update/updateChecker'
 
 describe('updateChecker', () => {
   describe('compareVersions', () => {

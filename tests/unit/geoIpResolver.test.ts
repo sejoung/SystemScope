@@ -6,7 +6,7 @@ vi.mock('geoip-country', () => ({
   lookup,
 }))
 
-import { resolveCountries, __resetGeoIpCacheForTests } from '../../src/main/services/geoIpResolver'
+import { resolveCountries, __resetGeoIpCacheForTests } from '../../src/main/services/process/geoIpResolver'
 
 describe('resolveCountries', () => {
   beforeEach(() => {

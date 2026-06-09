@@ -2,9 +2,9 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import type { ReportOptions, SaveReportOptions } from '@shared/types'
-import { buildDiagnosticReport, saveDiagnosticReport } from '../services/reportBuilder'
-import { logErrorAction, logInfoAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { buildDiagnosticReport, saveDiagnosticReport } from '@main/services/report'
+import { logErrorAction, logInfoAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 function isReportOptions(value: unknown): value is ReportOptions {
   if (!value || typeof value !== 'object') return false

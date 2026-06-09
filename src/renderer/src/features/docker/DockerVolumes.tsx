@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Accordion } from '../../components/Accordion'
-import { useToast } from '../../components/Toast'
+import { Accordion } from '../../components/ui/Accordion'
+import { useToast } from '../../components/ui/Toast'
 import type { DockerRemoveResult, DockerVolumeSummary, DockerVolumesScanResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
-import { CopyableValue } from '../../components/CopyableValue'
+import { CopyableValue } from '../../components/ui/CopyableValue'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
 import { isCompactWidth, RESPONSIVE_WIDTH } from '../../hooks/useResponsiveLayout'
-import { CompactMetaItem, compactActionsStyle, compactCardHeaderStyle, compactCardStyle, compactListStyle, compactMetaGridStyle } from '../../components/CompactPrimitives'
+import { CompactMetaItem, compactActionsStyle, compactCardHeaderStyle, compactCardStyle, compactListStyle, compactMetaGridStyle } from '../../components/ui/CompactPrimitives'
 
 export function shouldUseDockerVolumesCompactLayout(width: number): boolean {
   return isCompactWidth(width, RESPONSIVE_WIDTH.dockerPageCompact)

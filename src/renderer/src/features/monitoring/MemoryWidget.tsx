@@ -1,6 +1,6 @@
-import { useSystemStore } from '../../stores/useSystemStore'
-import { Accordion } from '../../components/Accordion'
-import { GaugeChart } from '../../components/GaugeChart'
+import { useSystemStore } from '../../stores/system/useSystemStore'
+import { Accordion } from '../../components/ui/Accordion'
+import { GaugeChart } from '../../components/ui/GaugeChart'
 import { formatBytes } from '../../utils/format'
 import { useI18n } from '../../i18n/useI18n'
 

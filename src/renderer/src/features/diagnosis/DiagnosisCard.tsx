@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useDiagnosisStore } from '../../stores/useDiagnosisStore'
-import { useSettingsStore, type AppPage } from '../../stores/useSettingsStore'
+import { useDiagnosisStore } from '../../stores/diagnosis/useDiagnosisStore'
+import { useSettingsStore, type AppPage } from '../../stores/settings/useSettingsStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { DiagnosisResult, DiagnosisSeverity } from '@shared/types'
-import { useToast } from '../../components/Toast'
+import { useToast } from '../../components/ui/Toast'
 import type { TranslateFn } from '@shared/i18n'
 
 const MAX_VISIBLE = 4

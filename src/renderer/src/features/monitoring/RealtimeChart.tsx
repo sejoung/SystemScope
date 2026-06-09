@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useSystemStore } from '../../stores/useSystemStore'
-import { Accordion } from '../../components/Accordion'
+import { useSystemStore } from '../../stores/system/useSystemStore'
+import { Accordion } from '../../components/ui/Accordion'
 import { useContainerWidth } from '../../hooks/useContainerWidth'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import { useI18n } from '../../i18n/useI18n'

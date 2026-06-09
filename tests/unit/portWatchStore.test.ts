@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { usePortWatchStore } from "../../src/renderer/src/stores/usePortWatchStore";
+import { usePortWatchStore } from "../../src/renderer/src/stores/process/usePortWatchStore";
 
 describe("usePortWatchStore", () => {
   beforeEach(() => {

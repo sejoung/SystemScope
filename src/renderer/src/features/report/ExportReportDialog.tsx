@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../../i18n/useI18n'
-import { useToast } from '../../components/Toast'
+import { useToast } from '../../components/ui/Toast'
 import type { ReportSections } from '@shared/types'
 import { isDiagnosticReportData } from '@shared/types/guards'
 

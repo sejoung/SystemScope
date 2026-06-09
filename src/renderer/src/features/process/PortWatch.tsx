@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useInterval } from "../../hooks/useInterval";
-import { useToast } from "../../components/Toast";
-import { usePortWatchStore } from "../../stores/usePortWatchStore";
+import { useToast } from "../../components/ui/Toast";
+import { usePortWatchStore } from "../../stores/process/usePortWatchStore";
 import type { PortInfo } from "@shared/types";
 import { isPortInfoArray } from "@shared/types";
 import { useContainerWidth } from "../../hooks/useContainerWidth";

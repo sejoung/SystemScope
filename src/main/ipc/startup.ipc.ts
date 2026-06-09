@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
-import { getStartupItems, toggleStartupItem } from '../services/startupManager'
-import { logInfoAction, logErrorAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getStartupItems, toggleStartupItem } from '@main/services/apps'
+import { logInfoAction, logErrorAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerStartupIpc(): void {
   ipcMain.handle(IPC_CHANNELS.STARTUP_GET_ALL, async (_event, metaArg?: IpcRequestMetaArg) => {

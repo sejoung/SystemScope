@@ -36,7 +36,7 @@ vi.mock('electron-log', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logError,
   logInfoAction,
   logWarnAction,

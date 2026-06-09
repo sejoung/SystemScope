@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useCleanupStore } from '../../stores/useCleanupStore'
+import { useCleanupStore } from '../../stores/cleanup/useCleanupStore'
 import { useI18n } from '../../i18n/useI18n'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ErrorBoundary } from '../../components/layout/ErrorBoundary'
 import { CleanupPreviewDialog } from './CleanupPreviewDialog'
 import type { CleanupRule } from '@shared/types'
 

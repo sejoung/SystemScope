@@ -10,14 +10,14 @@ import {
   removeDockerImages,
   removeDockerVolumes,
   stopDockerContainers
-} from '../services/dockerImages'
+} from '@main/services/docker'
 import { success, failure } from '@shared/types'
 import type { AppResult } from '@shared/types'
-import { logErrorAction, logInfoAction } from '../services/logging'
+import { logErrorAction, logInfoAction } from '@main/services/core'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../i18n'
-import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
-import { recordEvent } from '../services/eventStore'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
+import { recordEvent } from '@main/services/history'
 
 interface ConfirmDialogOptions {
   actionButton: string

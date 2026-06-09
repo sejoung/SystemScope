@@ -58,7 +58,7 @@ describe("trashService", () => {
     });
 
     const { trashItemsWithConfirm } =
-      await import("../../src/main/services/trashService");
+      await import("../../src/main/services/core/trashService");
     const result = await trashItemsWithConfirm(
       ["/Users/test/a.log", "/Users/test/b.log", "/Users/test/c.log"],
       "test",
@@ -77,7 +77,7 @@ describe("trashService", () => {
     showMessageBox.mockResolvedValue({ response: 0 });
 
     const { trashItemsWithConfirm } =
-      await import("../../src/main/services/trashService");
+      await import("../../src/main/services/core/trashService");
     const result = await trashItemsWithConfirm(["/Users/test/a.log"], "test");
 
     expect(result.successCount).toBe(0);
@@ -92,7 +92,7 @@ describe("trashService", () => {
     }));
 
     const { trashItemsWithConfirm } =
-      await import("../../src/main/services/trashService");
+      await import("../../src/main/services/core/trashService");
     await trashItemsWithConfirm(["/Users/test/folder"], "test");
 
     expect(getDirSize).toHaveBeenCalledWith("/Users/test/folder");

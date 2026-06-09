@@ -13,7 +13,7 @@ vi.mock('electron', () => ({
   shell: {}
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logDebug: vi.fn(),
   logError: vi.fn(),
   logInfo: vi.fn(),
@@ -28,7 +28,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should parse Windows uninstall registry output into installed app records', async () => {
-    const { parseWindowsRegistryOutput } = await import('../../src/main/services/installedApps')
+    const { parseWindowsRegistryOutput } = await import('../../src/main/services/apps/installedApps')
 
     const parsed = parseWindowsRegistryOutput([
       'HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\ExampleApp',
@@ -61,7 +61,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should build macOS related data candidates from app name and bundle id', async () => {
-    const { getMacRelatedDataCandidates } = await import('../../src/main/services/installedApps')
+    const { getMacRelatedDataCandidates } = await import('../../src/main/services/apps/installedApps')
 
     const candidates = getMacRelatedDataCandidates(
       { name: 'ToF', bundleId: 'com.example.tof' },
@@ -79,7 +79,7 @@ describe('installedApps helpers', () => {
     process.env.LOCALAPPDATA = 'C:\\Users\\Test\\AppData\\Local'
     process.env.ProgramData = 'C:\\ProgramData'
 
-    const { getWindowsRelatedDataCandidates } = await import('../../src/main/services/installedApps')
+    const { getWindowsRelatedDataCandidates } = await import('../../src/main/services/apps/installedApps')
 
     const candidates = getWindowsRelatedDataCandidates({
       name: 'Example App',
@@ -92,7 +92,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should infer macOS leftover app names from plist and saved state names', async () => {
-    const { inferMacLeftoverAppName } = await import('../../src/main/services/installedApps')
+    const { inferMacLeftoverAppName } = await import('../../src/main/services/apps/installedApps')
 
     expect(inferMacLeftoverAppName('com.example.tof.plist')).toBe('com.example.tof')
     expect(inferMacLeftoverAppName('com.example.tof.savedState')).toBe('com.example.tof')
@@ -100,7 +100,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should parse bare Windows uninstaller executables without arguments', async () => {
-    const { parseUninstallCommand } = await import('../../src/main/services/installedApps')
+    const { parseUninstallCommand } = await import('../../src/main/services/apps/installedApps')
 
     expect(parseUninstallCommand('C:\\KED\\FindAgent\\uninst.exe')).toEqual({
       file: 'C:\\KED\\FindAgent\\uninst.exe',
@@ -109,7 +109,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should parse unquoted Windows executable paths that contain spaces', async () => {
-    const { parseUninstallCommand } = await import('../../src/main/services/installedApps')
+    const { parseUninstallCommand } = await import('../../src/main/services/apps/installedApps')
 
     expect(parseUninstallCommand('C:\\Program Files\\AhnLab\\Safe Transaction\\V3Medic.exe -Uninstall')).toEqual({
       file: 'C:\\Program Files\\AhnLab\\Safe Transaction\\V3Medic.exe',
@@ -118,7 +118,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should split quoted Windows uninstall arguments correctly', async () => {
-    const { splitWindowsCommandArgs } = await import('../../src/main/services/installedApps')
+    const { splitWindowsCommandArgs } = await import('../../src/main/services/apps/installedApps')
 
     expect(splitWindowsCommandArgs('/S /D="C:\\Program Files\\Example App"')).toEqual([
       '/S',
@@ -127,7 +127,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should build elevated PowerShell launch command for Windows uninstallers', async () => {
-    const { buildWindowsUninstallerPowerShellCommand } = await import('../../src/main/services/installedApps')
+    const { buildWindowsUninstallerPowerShellCommand } = await import('../../src/main/services/apps/installedApps')
 
     expect(
       buildWindowsUninstallerPowerShellCommand('C:\\KED\\FindAgent\\uninst.exe', [])
@@ -141,7 +141,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should mark Windows apps without an uninstall command as open_settings', async () => {
-    const { parseWindowsRegistryOutput } = await import('../../src/main/services/installedApps')
+    const { parseWindowsRegistryOutput } = await import('../../src/main/services/apps/installedApps')
 
     const parsed = parseWindowsRegistryOutput([
       'HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\SettingsOnlyApp',
@@ -160,7 +160,7 @@ describe('installedApps helpers', () => {
   })
 
   it('should not protect Windows apps whose install path only matches the current app by prefix', async () => {
-    const { parseWindowsRegistryOutput } = await import('../../src/main/services/installedApps')
+    const { parseWindowsRegistryOutput } = await import('../../src/main/services/apps/installedApps')
 
     const parsed = parseWindowsRegistryOutput([
       'HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\PrefixOnlyApp',

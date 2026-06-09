@@ -31,16 +31,16 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   setSettings: setSettingsMock
 }))
 
-vi.mock('../../src/main/services/dockerImages', () => ({
+vi.mock('../../src/main/services/docker/dockerImages', () => ({
   listDockerContainers: listDockerContainersMock,
   removeDockerContainers: removeDockerContainersMock
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   recordEvent: recordEventMock
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfo: logInfoMock,
   logWarn: logWarnMock
 }))
@@ -80,7 +80,7 @@ describe('cleanupRules', () => {
     })
     getDirSizeMock.mockResolvedValue(4096)
 
-    const { previewCleanup } = await import('../../src/main/services/cleanupRules')
+    const { previewCleanup } = await import('../../src/main/services/cleanup/cleanupRules')
     const preview = await previewCleanup()
 
     const item = preview.items.find((entry) => entry.path.endsWith('DerivedData-old'))
@@ -102,7 +102,7 @@ describe('cleanupRules', () => {
       cancelled: false
     })
 
-    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanupRules')
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanup/cleanupRules')
     __setPreviewedTargetsForTests(['docker:container:container-1'])
     const result = await executeCleanup(['docker:container:container-1'])
 
@@ -122,7 +122,7 @@ describe('cleanupRules', () => {
     })
     getDirSizeMock.mockResolvedValue(8192)
 
-    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanupRules')
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanup/cleanupRules')
     __setPreviewedTargetsForTests(['/tmp/cache-dir'])
     const result = await executeCleanup(['/tmp/cache-dir'])
 
@@ -135,7 +135,7 @@ describe('cleanupRules', () => {
     statMock.mockResolvedValue({ isDirectory: () => false, size: 100 })
     trashItemMock.mockResolvedValue(undefined)
 
-    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanupRules')
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanup/cleanupRules')
     __setPreviewedTargetsForTests(['/tmp/previewed-dir'])
     const result = await executeCleanup(['/etc/passwd', '/tmp/previewed-dir'])
 

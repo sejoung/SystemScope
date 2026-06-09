@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Accordion } from '../../components/Accordion'
-import { useToast } from '../../components/Toast'
+import { Accordion } from '../../components/ui/Accordion'
+import { useToast } from '../../components/ui/Toast'
 import type { DockerBuildCacheScanResult, DockerPruneResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
 

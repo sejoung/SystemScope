@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import * as os from 'node:os'
-import { findDuplicates } from '../../src/main/services/diskInsights'
+import { findDuplicates } from '../../src/main/services/disk/diskInsights'
 
 const tempRoots: string[] = []
 

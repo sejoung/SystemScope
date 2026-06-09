@@ -1,4 +1,4 @@
-import { ErrorBoundary } from "../../components/ErrorBoundary";
+import { ErrorBoundary } from "../../components/layout/ErrorBoundary";
 import { useI18n } from "../../i18n/useI18n";
 import { GrowthView } from "./GrowthView";
 import { YourStorage } from "./YourStorage";

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { translate } from '@shared/i18n'
 import type { SystemScopeAboutInfo } from '@shared/contracts/systemScope'
-import { useSettingsStore } from '../stores/useSettingsStore'
+import { useSettingsStore } from '../stores/settings/useSettingsStore'
 import { useI18n } from '../i18n/useI18n'
-import { useToast } from '../components/Toast'
+import { useToast } from '../components/ui/Toast'
 import { applySettingsToStore, loadAboutInfo, loadAppSettings } from '../utils/settingsBootstrap'
 
 const appIconUrl = new URL('../../../../resources/systemscope_icon.svg', import.meta.url).href

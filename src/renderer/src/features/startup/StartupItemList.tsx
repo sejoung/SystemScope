@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useStartupStore } from '../../stores/useStartupStore'
+import { useStartupStore } from '../../stores/apps/useStartupStore'
 import { useI18n } from '../../i18n/useI18n'
-import { useToast } from '../../components/Toast'
+import { useToast } from '../../components/ui/Toast'
 import type { StartupItem } from '@shared/types'
 
 const TYPE_LABELS: Record<string, string> = {

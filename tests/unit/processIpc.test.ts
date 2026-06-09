@@ -19,11 +19,11 @@ const getAppPath = vi.hoisted(() => vi.fn());
 const runExternalCommand = vi.hoisted(() => vi.fn());
 const getProcessNetworkUsage = vi.hoisted(() => vi.fn());
 const resolveHostnames = vi.hoisted(() => vi.fn());
-vi.mock("../../src/main/services/dnsResolver", () => ({
+vi.mock("../../src/main/services/process/dnsResolver", () => ({
   resolveHostnames,
 }));
 const resolveCountries = vi.hoisted(() => vi.fn());
-vi.mock("../../src/main/services/geoIpResolver", () => ({
+vi.mock("../../src/main/services/process/geoIpResolver", () => ({
   resolveCountries,
 }));
 vi.mock("electron", () => ({
@@ -45,14 +45,14 @@ vi.mock("electron", () => ({
   },
 }));
 
-vi.mock("../../src/main/services/logging", () => ({
+vi.mock("../../src/main/services/core/logging", () => ({
   logErrorAction,
   logWarnAction,
   logInfoAction,
   logProductMetric,
 }));
 
-vi.mock("../../src/main/services/processMonitor", () => ({
+vi.mock("../../src/main/services/process/processMonitor", () => ({
   getTopCpuProcesses: vi.fn(),
   getTopMemoryProcesses: vi.fn(),
   getAllProcesses: vi.fn(),
@@ -61,11 +61,11 @@ vi.mock("../../src/main/services/processMonitor", () => ({
   getProcessDescendants,
 }));
 
-vi.mock("../../src/main/services/processNetworkMonitor", () => ({
+vi.mock("../../src/main/services/process/processNetworkMonitor", () => ({
   getProcessNetworkUsage,
 }));
 
-vi.mock("../../src/main/services/externalCommand", () => ({
+vi.mock("../../src/main/services/core/externalCommand", () => ({
   runExternalCommand,
 }));
 

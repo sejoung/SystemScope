@@ -3,13 +3,13 @@ import type React from "react";
 import type { AppLeftoverRegistryItem } from "@shared/types";
 import type { TranslateFn } from "@shared/i18n";
 import { isAppLeftoverRegistryArray } from "@shared/types";
-import { useToast } from "../../components/Toast";
+import { useToast } from "../../components/ui/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
-import { StatusMessage } from "../../components/StatusMessage";
-import { CopyableValue } from "../../components/CopyableValue";
+import { StatusMessage } from "../../components/ui/StatusMessage";
+import { CopyableValue } from "../../components/ui/CopyableValue";
 import {
   CompactMetaItem,
   compactActionsStyle,
@@ -20,7 +20,7 @@ import {
   compactListStyle,
   compactMetaGridStyle,
   compactStatusSpacingStyle,
-} from "../../components/CompactPrimitives";
+} from "../../components/ui/CompactPrimitives";
 import {
   Badge,
   SearchInput,

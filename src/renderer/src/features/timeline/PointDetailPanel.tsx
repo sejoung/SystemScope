@@ -1,4 +1,4 @@
-import { useTimelineStore } from '../../stores/useTimelineStore'
+import { useTimelineStore } from '../../stores/timeline/useTimelineStore'
 import { useI18n } from '../../i18n/useI18n'
 
 export function PointDetailPanel() {

@@ -2,10 +2,10 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import type { WorkspaceProfile } from '@shared/types'
-import { getProfiles, saveProfile, deleteProfile, setActiveProfile } from '../services/profileManager'
+import { getProfiles, saveProfile, deleteProfile, setActiveProfile } from '@main/services/profile'
 import { isWorkspaceProfileValue } from '../store/settingsSchema'
-import { logErrorAction, logInfoAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { logErrorAction, logInfoAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerProfileIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROFILE_GET_ALL, (_event, metaArg?: IpcRequestMetaArg) => {

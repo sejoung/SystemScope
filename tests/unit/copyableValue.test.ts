@@ -4,8 +4,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   CopyableValue,
   canExpandCopyableValue,
-} from "../../src/renderer/src/components/CopyableValue";
-import { useSettingsStore } from "../../src/renderer/src/stores/useSettingsStore";
+} from "../../src/renderer/src/components/ui/CopyableValue";
+import { useSettingsStore } from "../../src/renderer/src/stores/settings/useSettingsStore";
 
 describe("CopyableValue", () => {
   beforeEach(() => {

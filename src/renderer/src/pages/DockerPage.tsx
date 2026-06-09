@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ErrorBoundary } from "../components/ErrorBoundary";
+import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { DockerOverview } from "../features/docker/DockerOverview";
 import { DockerContainers } from "../features/docker/DockerContainers";
 import { DockerVolumes } from "../features/docker/DockerVolumes";
@@ -7,10 +7,10 @@ import { DockerBuildCache } from "../features/docker/DockerBuildCache";
 import { DockerImages } from "../features/disk/DockerImages";
 import { useI18n } from "../i18n/useI18n";
 import { isDockerContainersScanResult } from "@shared/types";
-import { StatusMessage } from "../components/StatusMessage";
-import { PageLoading } from "../components/PageLoading";
-import { PageTab } from "../components/PageTab";
-import { useSettingsStore } from "../stores/useSettingsStore";
+import { StatusMessage } from "../components/ui/StatusMessage";
+import { PageLoading } from "../components/ui/PageLoading";
+import { PageTab } from "../components/ui/PageTab";
+import { useSettingsStore } from "../stores/settings/useSettingsStore";
 import { useContainerWidth } from "../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../hooks/useResponsiveLayout";
 type DockerAvailability =

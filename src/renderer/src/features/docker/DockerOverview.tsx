@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Accordion } from '../../components/Accordion'
+import { Accordion } from '../../components/ui/Accordion'
 import type { DockerBuildCacheScanResult, DockerContainersScanResult, DockerImagesScanResult, DockerVolumesScanResult } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
 

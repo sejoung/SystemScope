@@ -1,4 +1,4 @@
-import { useSettingsStore, type AppPage } from '../../stores/useSettingsStore'
+import { useSettingsStore, type AppPage } from '../../stores/settings/useSettingsStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { DiagnosisResult, DiagnosisSeverity } from '@shared/types'
 import type { TranslateFn } from '@shared/i18n'

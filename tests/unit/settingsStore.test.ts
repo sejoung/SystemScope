@@ -14,7 +14,7 @@ describe('useSettingsStore', () => {
       setItem,
     })
 
-    const { useSettingsStore } = await import('../../src/renderer/src/stores/useSettingsStore')
+    const { useSettingsStore } = await import('../../src/renderer/src/stores/settings/useSettingsStore')
 
     expect(useSettingsStore.getState().dockerTab).toBe('images')
 
@@ -30,7 +30,7 @@ describe('useSettingsStore', () => {
       setItem: vi.fn(),
     })
 
-    const { useSettingsStore } = await import('../../src/renderer/src/stores/useSettingsStore')
+    const { useSettingsStore } = await import('../../src/renderer/src/stores/settings/useSettingsStore')
 
     expect(useSettingsStore.getState().dockerTab).toBe('overview')
   })

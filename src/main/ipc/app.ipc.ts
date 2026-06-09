@@ -2,10 +2,10 @@ import { ipcMain, shell } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
 import { setUnsavedSettingsState } from '../app/rendererState'
-import { logError, logErrorAction, logInfoAction, logWarnAction } from '../services/logging'
+import { logError, logErrorAction, logInfoAction, logWarnAction } from '@main/services/core'
 import { tk } from '../i18n'
 import { getAboutInfo, getHomepageUrl, openAboutWindow } from '../app/aboutWindow'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 const MAX_RENDERER_SCOPE_LENGTH = 120
 const MAX_RENDERER_MESSAGE_LENGTH = 1000

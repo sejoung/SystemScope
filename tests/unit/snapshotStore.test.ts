@@ -35,7 +35,7 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   })
 }))
 
-const snapshotStore = await import('../../src/main/services/snapshotStore')
+const snapshotStore = await import('../../src/main/services/history/snapshotStore')
 const { areSnapshotsEquivalent, getMaxSnapshots, parseSnapshotData, saveSnapshot, loadSnapshots } = snapshotStore
 
 describe('snapshotStore', () => {

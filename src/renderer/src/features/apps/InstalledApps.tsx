@@ -13,11 +13,11 @@ import type {
 } from "@shared/types";
 import type { TranslateFn } from "@shared/i18n";
 import { isInstalledAppArray, isAppRelatedDataArray, isAppRemovalResult } from "@shared/types";
-import { useToast } from "../../components/Toast";
+import { useToast } from "../../components/ui/Toast";
 import { useI18n } from "../../i18n/useI18n";
 import { useSearchFilter } from "../../hooks/useSearchFilter";
-import { StatusMessage } from "../../components/StatusMessage";
-import { CopyableValue } from "../../components/CopyableValue";
+import { StatusMessage } from "../../components/ui/StatusMessage";
+import { CopyableValue } from "../../components/ui/CopyableValue";
 import {
   CompactMetaItem,
   compactActionsStyle,
@@ -27,7 +27,7 @@ import {
   compactMetaLabelStyle,
   compactMetaGridStyle,
   compactStatusSpacingStyle,
-} from "../../components/CompactPrimitives";
+} from "../../components/ui/CompactPrimitives";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import {

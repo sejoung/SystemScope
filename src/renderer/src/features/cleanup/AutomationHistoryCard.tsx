@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import type { SystemEvent } from '@shared/types'
 import { formatBytes } from '@shared/utils/formatBytes'
 import { useI18n } from '../../i18n/useI18n'
-import { useCleanupStore } from '../../stores/useCleanupStore'
-import { useToast } from '../../components/Toast'
+import { useCleanupStore } from '../../stores/cleanup/useCleanupStore'
+import { useToast } from '../../components/ui/Toast'
 
 export function AutomationHistoryCard() {
   const { tk } = useI18n()

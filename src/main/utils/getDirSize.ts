@@ -1,8 +1,8 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import { platform } from 'node:os'
-import { logDebug } from '../services/logging'
-import { isExternalCommandError, runExternalCommand } from '../services/externalCommand'
+import { logDebug } from '@main/services/core'
+import { isExternalCommandError, runExternalCommand } from '@main/services/core'
 
 /** 플랫폼에 따라 최적의 방법으로 디렉토리 크기를 측정 */
 export async function getDirSize(dirPath: string): Promise<number> {

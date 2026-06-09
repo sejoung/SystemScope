@@ -1,12 +1,12 @@
 import { Tray, Menu, app, BrowserWindow, nativeImage } from 'electron'
 import { join } from 'node:path'
 import { platform } from 'node:os'
-import { logError } from '../services/logging'
-import { getSystemStats } from '../services/systemMonitor'
+import { logError } from '@main/services/core'
+import { getSystemStats } from '@main/services/system'
 import { getCpuMeterText } from './trayIconFactory'
 import { CPU_TRAY_THRESHOLDS } from '@shared/constants/thresholds'
 import { openAboutWindow } from './aboutWindow'
-import { checkForUpdates, getUpdateStatus, openReleasePage } from '../services/updateChecker'
+import { checkForUpdates, getUpdateStatus, openReleasePage } from '@main/services/update'
 
 let tray: Tray | null = null
 let trayUpdateTimer: ReturnType<typeof setInterval> | null = null

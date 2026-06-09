@@ -16,13 +16,13 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   getEventHistory: getEventHistoryMock,
   getRecentEvents: getRecentEventsMock,
   clearEventHistory: clearEventHistoryMock
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   logInfoAction: logInfoActionMock,
   logErrorAction: logErrorActionMock
 }))

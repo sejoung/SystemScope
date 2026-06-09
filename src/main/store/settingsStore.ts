@@ -7,32 +7,40 @@ import { DEFAULT_SETTINGS, sanitizeAppSettings } from './settingsSchema'
 // ensures the constructor is found regardless of how the module is loaded.
 const Store = (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
 
-const store = new Store<AppSettings>({
-  defaults: DEFAULT_SETTINGS
-})
+// Instantiate lazily: ElectronStore touches the app's userData path at construction,
+// which fails outside a running Electron app (e.g. unit tests that transitively import
+// this module via a service barrel). Creating it on first use keeps importing this
+// module side-effect free.
+let storeInstance: ElectronStore<AppSettings> | null = null
+function store(): ElectronStore<AppSettings> {
+  storeInstance ??= new Store<AppSettings>({ defaults: DEFAULT_SETTINGS })
+  return storeInstance
+}
 
 export function getSettings(): AppSettings {
+  const s = store()
   return sanitizeAppSettings({
-    thresholds: store.get('thresholds'),
-    theme: store.get('theme'),
-    locale: store.get('locale'),
-    snapshotIntervalMin: store.get('snapshotIntervalMin'),
-    history: store.get('history'),
-    diagnostics: store.get('diagnostics'),
-    automation: store.get('automation'),
-    profiles: store.get('profiles'),
-    activeProfileId: store.get('activeProfileId')
+    thresholds: s.get('thresholds'),
+    theme: s.get('theme'),
+    locale: s.get('locale'),
+    snapshotIntervalMin: s.get('snapshotIntervalMin'),
+    history: s.get('history'),
+    diagnostics: s.get('diagnostics'),
+    automation: s.get('automation'),
+    profiles: s.get('profiles'),
+    activeProfileId: s.get('activeProfileId')
   })
 }
 
 export function setSettings(settings: Partial<AppSettings>): void {
-  if (settings.thresholds !== undefined) store.set('thresholds', settings.thresholds)
-  if (settings.theme !== undefined) store.set('theme', settings.theme)
-  if (settings.locale !== undefined) store.set('locale', settings.locale)
-  if (settings.snapshotIntervalMin !== undefined) store.set('snapshotIntervalMin', settings.snapshotIntervalMin)
-  if (settings.history !== undefined) store.set('history', settings.history)
-  if (settings.diagnostics !== undefined) store.set('diagnostics', settings.diagnostics)
-  if (settings.automation !== undefined) store.set('automation', settings.automation)
-  if (settings.profiles !== undefined) store.set('profiles', settings.profiles)
-  if (settings.activeProfileId !== undefined) store.set('activeProfileId', settings.activeProfileId)
+  const s = store()
+  if (settings.thresholds !== undefined) s.set('thresholds', settings.thresholds)
+  if (settings.theme !== undefined) s.set('theme', settings.theme)
+  if (settings.locale !== undefined) s.set('locale', settings.locale)
+  if (settings.snapshotIntervalMin !== undefined) s.set('snapshotIntervalMin', settings.snapshotIntervalMin)
+  if (settings.history !== undefined) s.set('history', settings.history)
+  if (settings.diagnostics !== undefined) s.set('diagnostics', settings.diagnostics)
+  if (settings.automation !== undefined) s.set('automation', settings.automation)
+  if (settings.profiles !== undefined) s.set('profiles', settings.profiles)
+  if (settings.activeProfileId !== undefined) s.set('activeProfileId', settings.activeProfileId)
 }

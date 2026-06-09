@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ExternalCommandError } from '../../src/main/services/externalCommand'
+import { ExternalCommandError } from '../../src/main/services/core/externalCommand'
 
 const execFileMock = vi.hoisted(() => vi.fn())
 
@@ -64,7 +64,7 @@ describe('ExternalCommandError', () => {
         return {} as never
       })
 
-    const { runExternalCommand } = await import('../../src/main/services/externalCommand')
+    const { runExternalCommand } = await import('../../src/main/services/core/externalCommand')
     await runExternalCommand('node', ['--version'])
     expect(execFileMock).toHaveBeenCalledTimes(2)
     expect(execFileMock.mock.calls[0]?.[0]).toBe('/bin/zsh')
@@ -86,7 +86,7 @@ describe('ExternalCommandError', () => {
         return {} as never
       })
 
-    const { runExternalCommand } = await import('../../src/main/services/externalCommand')
+    const { runExternalCommand } = await import('../../src/main/services/core/externalCommand')
     await runExternalCommand('pnpm', ['--version'], {
       env: {
         PATH: '/override/bin',

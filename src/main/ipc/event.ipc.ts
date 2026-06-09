@@ -2,9 +2,9 @@ import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import type { EventQueryOptions } from '@shared/types'
-import { clearEventHistory, getEventHistory, getRecentEvents } from '../services/eventStore'
-import { logErrorAction, logInfoAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { clearEventHistory, getEventHistory, getRecentEvents } from '@main/services/history'
+import { logErrorAction, logInfoAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerEventIpc(): void {
   ipcMain.handle(IPC_CHANNELS.EVENT_GET_HISTORY, async (_event, options?: EventQueryOptions, metaArg?: IpcRequestMetaArg) => {

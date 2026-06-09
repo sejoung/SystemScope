@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
-import { saveSessionSnapshot, getSessionSnapshots, deleteSessionSnapshot, getSessionSnapshotDiff } from '../services/sessionSnapshotStore'
-import { logErrorAction, logInfoAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { saveSessionSnapshot, getSessionSnapshots, deleteSessionSnapshot, getSessionSnapshotDiff } from '@main/services/history'
+import { logErrorAction, logInfoAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerSessionSnapshotIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SNAPSHOT_SAVE, async (_event, label?: string, metaArg?: IpcRequestMetaArg) => {

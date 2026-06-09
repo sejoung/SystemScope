@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSettingsStore } from "../stores/useSettingsStore";
-import { useToast } from "../components/Toast";
+import { useSettingsStore } from "../stores/settings/useSettingsStore";
+import { useToast } from "../components/ui/Toast";
 import type {
   AlertThresholds,
   AppSettings,
@@ -10,12 +10,12 @@ import type {
 import { useI18n } from "../i18n/useI18n";
 import { translate, type AppLocale } from "@shared/i18n";
 import type { SystemScopeAboutInfo } from "@shared/contracts/systemScope";
-import { CopyableValue } from "../components/CopyableValue";
-import { ErrorBoundary } from "../components/ErrorBoundary";
+import { CopyableValue } from "../components/ui/CopyableValue";
+import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { ProfileSection } from "../features/profiles/ProfileSection";
 import { useContainerWidth } from "../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../hooks/useResponsiveLayout";
-import { useUpdateStore } from "../stores/useUpdateStore";
+import { useUpdateStore } from "../stores/update/useUpdateStore";
 import {
   applySettingsToStore,
   loadAboutInfo,

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useAlertStore } from "../../stores/useAlertStore";
+import { useAlertStore } from "../../stores/alerts/useAlertStore";
 import { useI18n } from "../../i18n/useI18n";
 
 export function AlertBanner() {

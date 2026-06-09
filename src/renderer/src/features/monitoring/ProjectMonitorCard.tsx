@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { formatBytes } from '@shared/utils/formatBytes'
-import { useProjectMonitorStore } from '../../stores/useProjectMonitorStore'
+import { useProjectMonitorStore } from '../../stores/projectMonitor/useProjectMonitorStore'
 import { useI18n } from '../../i18n/useI18n'
-import { useToast } from '../../components/Toast'
+import { useToast } from '../../components/ui/Toast'
 
 interface ProjectMonitorCardProps {
   compact?: boolean

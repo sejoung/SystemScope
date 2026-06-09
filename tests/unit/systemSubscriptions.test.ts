@@ -6,7 +6,7 @@ import {
   removeSystemSubscriber,
   resetSystemSubscribers,
   retainSystemSubscribers
-} from '../../src/main/ipc/systemSubscriptions'
+} from '../../src/main/ipc/_shared/systemSubscriptions'
 
 describe('systemSubscriptions', () => {
   beforeEach(() => {

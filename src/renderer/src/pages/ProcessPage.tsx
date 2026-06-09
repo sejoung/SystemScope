@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useProcessStore } from "../stores/useProcessStore";
+import { useProcessStore } from "../stores/process/useProcessStore";
 import { ProcessTable } from "../features/process/ProcessTable";
 import { ListeningPorts } from "../features/process/ListeningPorts";
 import { ProcessNetworkPanel } from "../features/process/ProcessNetworkPanel";
 import { PortWatch } from "../features/process/PortWatch";
-import { PageLoading } from "../components/PageLoading";
-import { PageTab } from "../components/PageTab";
-import { ErrorBoundary } from "../components/ErrorBoundary";
+import { PageLoading } from "../components/ui/PageLoading";
+import { PageTab } from "../components/ui/PageTab";
+import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
 import { StartupItemList } from "../features/startup/StartupItemList";
 

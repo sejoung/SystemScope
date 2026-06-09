@@ -1,15 +1,15 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
-import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessDescendants, getProcessSnapshot } from '../services/processMonitor'
-import { getProcessNetworkUsage } from '../services/processNetworkMonitor'
-import { resolveHostnames } from '../services/dnsResolver'
-import { resolveCountries } from '../services/geoIpResolver'
+import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessDescendants, getProcessSnapshot } from '@main/services/process'
+import { getProcessNetworkUsage } from '@main/services/process'
+import { resolveHostnames } from '@main/services/process'
+import { resolveCountries } from '@main/services/process'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
-import { runExternalCommand } from '../services/externalCommand'
+import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '@main/services/core'
+import { runExternalCommand } from '@main/services/core'
 import { tk } from '../i18n'
-import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerProcessIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_CPU, async (_event, limit: number = 10, metaArg?: IpcRequestMetaArg) => {

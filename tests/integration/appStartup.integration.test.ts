@@ -67,16 +67,16 @@ vi.mock('../../src/main/app/initializeRuntimeSettings', () => ({
   initializeRuntimeSettings: initializeRuntimeSettingsMock
 }))
 
-vi.mock('../../src/main/services/growthAnalyzer', () => ({
+vi.mock('../../src/main/services/disk/growthAnalyzer', () => ({
   startSnapshotScheduler: startSnapshotSchedulerMock
 }))
 
-vi.mock('../../src/main/services/updateChecker', () => ({
+vi.mock('../../src/main/services/update/updateChecker', () => ({
   startUpdateChecker: startUpdateCheckerMock,
   stopUpdateChecker: stopUpdateCheckerMock
 }))
 
-vi.mock('../../src/main/services/snapshotStore', () => ({
+vi.mock('../../src/main/services/history/snapshotStore', () => ({
   ensureSnapshotDir: ensureSnapshotDirMock
 }))
 
@@ -88,7 +88,7 @@ vi.mock('../../src/main/app/tray', () => ({
   createTray: createTrayMock
 }))
 
-vi.mock('../../src/main/services/logging', () => ({
+vi.mock('../../src/main/services/core/logging', () => ({
   initializeLogging: initializeLoggingMock,
   logError: logErrorMock
 }))
@@ -99,23 +99,23 @@ vi.mock('../../src/main/app/shutdown', () => ({
   markQuitAfterShutdown: markQuitAfterShutdownMock
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   initEventStore: initEventStoreMock,
   stopEventStore: vi.fn(),
   recordEvent: vi.fn()
 }))
 
-vi.mock('../../src/main/services/metricsStore', () => ({
+vi.mock('../../src/main/services/history/metricsStore', () => ({
   initMetricsStore: initMetricsStoreMock,
   stopMetricsStore: stopMetricsStoreMock
 }))
 
-vi.mock('../../src/main/services/diagnosisAdvisor', () => ({
+vi.mock('../../src/main/services/diagnosis/diagnosisAdvisor', () => ({
   initDiagnosisAdvisor: vi.fn(() => Promise.resolve()),
   stopDiagnosisAdvisor: vi.fn()
 }))
 
-vi.mock('../../src/main/services/alertHistory', () => ({
+vi.mock('../../src/main/services/alerts/alertHistory', () => ({
   initAlertHistory: vi.fn(() => Promise.resolve()),
   stopAlertHistory: vi.fn(),
   onAlertFired: vi.fn(),
@@ -132,16 +132,16 @@ vi.mock('../../src/main/jobs/jobManager', () => ({
   stopJobPruner: stopJobPrunerMock
 }))
 
-vi.mock('../../src/main/services/cleanupInbox', () => ({
+vi.mock('../../src/main/services/cleanup/cleanupInbox', () => ({
   initCleanupInbox: initCleanupInboxMock
 }))
 
-vi.mock('../../src/main/services/automationScheduler', () => ({
+vi.mock('../../src/main/services/cleanup/automationScheduler', () => ({
   initAutomationScheduler: initAutomationSchedulerMock,
   stopAutomationScheduler: stopAutomationSchedulerMock
 }))
 
-vi.mock('../../src/main/services/projectMonitor', () => ({
+vi.mock('../../src/main/services/projectMonitor/projectMonitor', () => ({
   initProjectMonitor: initProjectMonitorMock,
   stopProjectMonitor: stopProjectMonitorMock
 }))

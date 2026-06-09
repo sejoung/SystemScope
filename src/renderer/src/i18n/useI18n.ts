@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { getLocaleTag, translate, type TranslateFn } from '@shared/i18n'
-import { useSettingsStore } from '../stores/useSettingsStore'
+import { useSettingsStore } from '../stores/settings/useSettingsStore'
 
 export function useI18n() {
   const locale = useSettingsStore((state) => state.locale)

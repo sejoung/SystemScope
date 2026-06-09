@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { Accordion } from "../../components/Accordion";
+import { Accordion } from "../../components/ui/Accordion";
 import { formatBytes } from "../../utils/format";
 import type { ScanCategory, QuickScanFolder } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
 import type { TranslateFn } from "@shared/i18n";
-import { StatusMessage } from "../../components/StatusMessage";
-import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
+import { StatusMessage } from "../../components/ui/StatusMessage";
+import { AsyncTaskStatus } from "../../components/ui/AsyncTaskStatus";
 
 const CATEGORY_ORDER: ScanCategory[] = [
   "system",

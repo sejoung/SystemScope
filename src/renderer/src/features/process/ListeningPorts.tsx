@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef } from "react";
 import type React from "react";
-import { useToast } from "../../components/Toast";
-import { usePortFinderStore } from "../../stores/usePortFinderStore";
+import { useToast } from "../../components/ui/Toast";
+import { usePortFinderStore } from "../../stores/process/usePortFinderStore";
 import { getStateStyle } from "./portStateStyles";
 import type { PortInfo, ProcessKillResult } from "@shared/types";
 import type { TranslateFn } from "@shared/i18n";
 import { useI18n } from "../../i18n/useI18n";
-import { StatusMessage } from "../../components/StatusMessage";
-import { CopyableValue } from "../../components/CopyableValue";
-import { AsyncTaskStatus } from "../../components/AsyncTaskStatus";
+import { StatusMessage } from "../../components/ui/StatusMessage";
+import { CopyableValue } from "../../components/ui/CopyableValue";
+import { AsyncTaskStatus } from "../../components/ui/AsyncTaskStatus";
 import {
   CompactMetaItem,
   compactActionsStyle,
@@ -16,7 +16,7 @@ import {
   compactCardStyle,
   compactListStyle,
   compactMetaGridStyle,
-} from "../../components/CompactPrimitives";
+} from "../../components/ui/CompactPrimitives";
 import { useContainerWidth } from "../../hooks/useContainerWidth";
 import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 

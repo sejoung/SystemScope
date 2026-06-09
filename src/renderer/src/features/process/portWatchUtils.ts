@@ -1,5 +1,5 @@
 import type { PortInfo } from '@shared/types'
-import type { WatchEntry } from '../../stores/usePortWatchStore'
+import type { WatchEntry } from '../../stores/process/usePortWatchStore'
 
 export function parseWatchPattern(
   input: string,

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import type { CleanupPreview } from '@shared/types'
 import { formatBytes } from '@shared/utils/formatBytes'
-import { useCleanupStore } from '../../stores/useCleanupStore'
+import { useCleanupStore } from '../../stores/cleanup/useCleanupStore'
 import { useI18n } from '../../i18n/useI18n'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 
 interface CleanupPreviewDialogProps {
   preview: CleanupPreview

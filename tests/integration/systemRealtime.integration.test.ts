@@ -27,21 +27,21 @@ vi.mock('electron', () => ({
   }
 }))
 
-vi.mock('../../src/main/services/systemMonitor', () => ({
+vi.mock('../../src/main/services/system/systemMonitor', () => ({
   getSystemStats: getSystemStatsMock
 }))
 
-vi.mock('../../src/main/services/alertManager', () => ({
+vi.mock('../../src/main/services/alerts/alertManager', () => ({
   checkAlerts: checkAlertsMock
 }))
 
-vi.mock('../../src/main/services/eventStore', () => ({
+vi.mock('../../src/main/services/history/eventStore', () => ({
   recordEvent: vi.fn(),
   initEventStore: vi.fn(),
   stopEventStore: vi.fn()
 }))
 
-vi.mock('../../src/main/services/metricsStore', () => ({
+vi.mock('../../src/main/services/history/metricsStore', () => ({
   collectMetricPoint: vi.fn(() => Promise.resolve()),
   initMetricsStore: vi.fn(),
   stopMetricsStore: vi.fn()

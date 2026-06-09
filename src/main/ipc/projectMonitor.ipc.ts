@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
-import { getProjectMonitorSummary } from '../services/projectMonitor'
-import { logErrorAction, logInfoAction } from '../services/logging'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getProjectMonitorSummary } from '@main/services/projectMonitor'
+import { logErrorAction, logInfoAction } from '@main/services/core'
+import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
 export function registerProjectMonitorIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROJECT_MONITOR_GET_SUMMARY, async (_event, metaArg?: IpcRequestMetaArg) => {

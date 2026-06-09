@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { PageTab } from '../components/PageTab'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { PageTab } from '../components/ui/PageTab'
+import { ErrorBoundary } from '../components/layout/ErrorBoundary'
 import { CleanupInboxView } from '../features/cleanup/CleanupInboxView'
 import { CleanupRulesView } from '../features/cleanup/CleanupRulesView'
 import { AutomationHistoryCard } from '../features/cleanup/AutomationHistoryCard'

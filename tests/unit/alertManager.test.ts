@@ -65,13 +65,13 @@ describe('AlertManager', () => {
   })
 
   it('should not fire alerts when values are below thresholds', async () => {
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     const alerts = checkAlerts(makeStats({ memoryUsage: 50, diskUsage: 50 }))
     expect(alerts).toHaveLength(0)
   })
 
   it('should fire warning alert when disk usage exceeds warning threshold', async () => {
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     const alerts = checkAlerts(makeStats({ diskUsage: 85 }))
     expect(alerts.length).toBeGreaterThan(0)
     expect(alerts[0].type).toBe('disk')
@@ -80,14 +80,14 @@ describe('AlertManager', () => {
   })
 
   it('should fire critical alert when disk usage exceeds critical threshold', async () => {
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     const alerts = checkAlerts(makeStats({ diskUsage: 95 }))
     expect(alerts.length).toBeGreaterThan(0)
     expect(alerts[0].severity).toBe('critical')
   })
 
   it('should fire memory warning alert', async () => {
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     const alerts = checkAlerts(makeStats({ memoryUsage: 85 }))
     const memAlert = alerts.find((a) => a.type === 'memory')
     expect(memAlert).toBeDefined()
@@ -95,7 +95,7 @@ describe('AlertManager', () => {
   })
 
   it('should fire memory critical alert', async () => {
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     const alerts = checkAlerts(makeStats({ memoryUsage: 95 }))
     const memAlert = alerts.find((a) => a.type === 'memory')
     expect(memAlert).toBeDefined()
@@ -103,7 +103,7 @@ describe('AlertManager', () => {
   })
 
   it('should respect cooldown and not fire duplicate alerts', async () => {
-    const { checkAlerts } = await import('../../src/main/services/alertManager')
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     const alerts1 = checkAlerts(makeStats({ memoryUsage: 95 }))
     expect(alerts1.length).toBeGreaterThan(0)
 
@@ -113,7 +113,7 @@ describe('AlertManager', () => {
   })
 
   it('should allow dismissing alerts', async () => {
-    const { checkAlerts, getActiveAlerts, dismissAlert } = await import('../../src/main/services/alertManager')
+    const { checkAlerts, getActiveAlerts, dismissAlert } = await import('../../src/main/services/alerts/alertManager')
     const alerts = checkAlerts(makeStats({ diskUsage: 95 }))
     expect(alerts.length).toBeGreaterThan(0)
 
@@ -128,7 +128,7 @@ describe('AlertManager', () => {
   })
 
   it('should handle custom thresholds', async () => {
-    const { setThresholds, checkAlerts } = await import('../../src/main/services/alertManager')
+    const { setThresholds, checkAlerts } = await import('../../src/main/services/alerts/alertManager')
     setThresholds({ diskWarning: 50, diskCritical: 60 })
     const alerts = checkAlerts(makeStats({ diskUsage: 55 }))
     expect(alerts.length).toBeGreaterThan(0)

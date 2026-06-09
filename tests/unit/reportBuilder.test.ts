@@ -17,7 +17,7 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   })
 }))
 
-const { maskSensitivePaths } = await import('../../src/main/services/reportBuilder')
+const { maskSensitivePaths } = await import('../../src/main/services/report/reportBuilder')
 
 describe('reportBuilder', () => {
   describe('maskSensitivePaths', () => {

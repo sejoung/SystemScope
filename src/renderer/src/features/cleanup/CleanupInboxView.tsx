@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useCleanupStore } from '../../stores/useCleanupStore'
+import { useCleanupStore } from '../../stores/cleanup/useCleanupStore'
 import { useI18n } from '../../i18n/useI18n'
 import type { TranslateFn } from '@shared/i18n'
 import { formatBytes } from '@shared/utils/formatBytes'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { ErrorBoundary } from '../../components/layout/ErrorBoundary'
 
 const SAFETY_COLORS: Record<string, string> = {
   safe: 'var(--accent-green)',
