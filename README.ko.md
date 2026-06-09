@@ -131,8 +131,7 @@ npm run dist:win    # Windows .exe
 npm test            # unit/integration 테스트
 npm run test:watch
 npm run build
-npm run test:e2e    # Electron + Playwright E2E (기존 build 사용)
-npm run test:e2e:build
+npm run test:e2e    # Electron + Playwright E2E (--mode e2e로 빌드 후 실행)
 npm run test:e2e:debug
 npm run check       # typecheck -> lint -> test -> build
 ```

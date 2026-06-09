@@ -131,8 +131,7 @@ npm run dist:win    # Windows .exe
 npm test            # unit/integration tests
 npm run test:watch
 npm run build
-npm run test:e2e    # Electron + Playwright E2E (uses existing build)
-npm run test:e2e:build
+npm run test:e2e    # Electron + Playwright E2E (builds with --mode e2e, then runs)
 npm run test:e2e:debug
 npm run check       # typecheck -> lint -> test -> build
 ```

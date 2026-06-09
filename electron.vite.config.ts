@@ -2,7 +2,10 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
-export default defineConfig({
+// `electron-vite build --mode e2e` opts the preload bundle into the E2E test mock.
+// In any other mode (production / release) __E2E__ is false, so the mock import is
+// dead-code-eliminated and never ships in the packaged app.
+export default defineConfig(({ mode }) => ({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
@@ -24,6 +27,9 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    define: {
+      __E2E__: JSON.stringify(mode === 'e2e')
+    },
     build: {
       lib: {
         entry: resolve(__dirname, 'src/preload/index.ts'),
@@ -57,4 +63,4 @@ export default defineConfig({
     },
     plugins: [react()]
   }
-})
+}))

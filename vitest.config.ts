@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config'
 import { resolve } from 'path'
 
 export default defineConfig({
+  // Compile-time flag injected into the preload by electron-vite; define it here so
+  // the preload module under test resolves it instead of throwing ReferenceError.
+  define: {
+    __E2E__: 'true'
+  },
   test: {
     globals: true,
     environment: 'node',
