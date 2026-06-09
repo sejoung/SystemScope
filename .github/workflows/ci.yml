@@ -45,6 +45,11 @@ jobs:
     needs: verify
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    # Force Electron's binary download even if the runner environment globally sets
+    # ELECTRON_SKIP_BINARY_DOWNLOAD (an empty string is falsy, so install.js won't skip).
+    # E2E launches the real Electron, so the binary must actually be present.
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: ''
     strategy:
       fail-fast: false
       matrix:
@@ -68,10 +73,17 @@ jobs:
       - run: npm ci --prefer-offline --no-audit
       # Playwright launches the real Electron binary. `npm ci` can report success
       # without the binary actually being present, which surfaces later as a cryptic
-      # "Electron failed to install correctly". Run the installer explicitly so the
-      # download happens (or is restored from cache) and fails loudly here if not.
+      # "Electron failed to install correctly". Run the installer explicitly and then
+      # assert path.txt exists so a missing binary fails loudly here with a clear cause.
       - name: Ensure Electron binary is installed
-        run: node node_modules/electron/install.js
+        shell: bash
+        run: |
+          node node_modules/electron/install.js
+          if [ ! -f node_modules/electron/path.txt ]; then
+            echo "::error::Electron binary missing after install — ELECTRON_SKIP_BINARY_DOWNLOAD is set in the runner environment, or the download is blocked."
+            exit 1
+          fi
+          echo "Electron binary OK: $(cat node_modules/electron/path.txt)"
       - run: npm run test:e2e:build
         env:
           DEBUG: pw:browser*
