@@ -104,6 +104,11 @@ describe('processMonitor.getNetworkPorts', () => {
 
 describe('processMonitor process caching', () => {
   beforeEach(() => {
+    // Reset the module so processMonitor's module-level process cache starts cold.
+    // Without this, whichever caching test ran first leaves a warm cache and the
+    // next one sees a cached result (0 si.processes calls) — an order-dependent
+    // failure that surfaced only under certain test orderings (e.g. on CI).
+    vi.resetModules()
     processes.mockReset()
   })
 
@@ -144,7 +149,6 @@ describe('processMonitor process caching', () => {
   })
 
   it('populates ppid, parentName, and transitive descendantCount', async () => {
-    vi.resetModules()
     // tree: 100 (zsh) → 200 (npm) → 300 (node) → 400 (esbuild)
     //                                          ↘ 401 (esbuild-worker)
     const list = [
