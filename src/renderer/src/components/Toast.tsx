@@ -38,6 +38,10 @@ export function ToastContainer() {
   const messages = useToast((s) => s.messages);
   const hide = useToast((s) => s.hide);
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
+  // Ids we have already scheduled timers for. Keyed off the message lifecycle so a
+  // toast is shown/dismissed exactly once — re-running this effect (e.g. when
+  // visibleIds changes as a timer fires) must not re-show an already-dismissed toast.
+  const scheduledIdsRef = useRef<Set<string>>(new Set());
   const timersRef = useRef<
     Map<
       string,
@@ -49,24 +53,21 @@ export function ToastContainer() {
   >(new Map());
 
   useEffect(() => {
-    if (messages.length === 0) {
-      setVisibleIds((current) => (current.length === 0 ? current : []));
-      return;
-    }
+    const newMessages = messages.filter(
+      (message) => !scheduledIdsRef.current.has(message.id),
+    );
 
-    const nextVisibleIds = messages
-      .filter((message) => !visibleIds.includes(message.id))
-      .map((message) => message.id);
+    if (newMessages.length === 0) return;
 
-    if (nextVisibleIds.length === 0) return;
+    const newIds = newMessages.map((message) => message.id);
+    newIds.forEach((id) => scheduledIdsRef.current.add(id));
+    setVisibleIds((current) => [...current, ...newIds]);
 
-    setVisibleIds((current) => [...current, ...nextVisibleIds]);
-    nextVisibleIds.forEach((id) => {
-      const message = messages.find((m) => m.id === id);
-      const duration = message?.tone === "danger" ? 6000 : 3000;
+    newMessages.forEach((message) => {
+      const id = message.id;
+      const duration = message.tone === "danger" ? 6000 : 3000;
 
       const hideVisibleTimer = setTimeout(() => {
-        timersRef.current.delete(id);
         setVisibleIds((current) => current.filter((value) => value !== id));
       }, duration);
 
@@ -80,7 +81,7 @@ export function ToastContainer() {
         removeToastTimer,
       });
     });
-  }, [messages, hide, visibleIds]);
+  }, [messages, hide]);
 
   useEffect(() => {
     const currentMessageIds = new Set(messages.map((message) => message.id));
@@ -94,6 +95,17 @@ export function ToastContainer() {
       clearTimeout(timers.removeToastTimer);
       timersRef.current.delete(id);
     }
+
+    // Forget ids whose messages are gone so a future reused id can schedule again.
+    for (const id of scheduledIdsRef.current) {
+      if (!currentMessageIds.has(id)) {
+        scheduledIdsRef.current.delete(id);
+      }
+    }
+
+    setVisibleIds((current) =>
+      current.filter((id) => currentMessageIds.has(id)),
+    );
   }, [messages]);
 
   useEffect(() => {

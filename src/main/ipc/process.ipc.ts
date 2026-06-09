@@ -9,7 +9,7 @@ import { success, failure } from '@shared/types'
 import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '../services/logging'
 import { runExternalCommand } from '../services/externalCommand'
 import { tk } from '../i18n'
-import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
+import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
 export function registerProcessIpc(): void {
   ipcMain.handle(IPC_CHANNELS.PROCESS_GET_TOP_CPU, async (_event, limit: number = 10, metaArg?: IpcRequestMetaArg) => {
@@ -103,7 +103,7 @@ export function registerProcessIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES, async (_event, payload: unknown, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (!Array.isArray(payload) || !payload.every((item) => typeof item === 'string')) {
+    if (!isValidStringArray(payload)) {
       logWarnAction('process-ipc', 'dns.resolve', withRequestMeta(requestMeta, { reason: 'invalid_input' }))
       return failure('INVALID_INPUT', tk('main.process.error.fetch_processes'))
     }
@@ -119,7 +119,7 @@ export function registerProcessIpc(): void {
 
   ipcMain.handle(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES, async (_event, payload: unknown, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
-    if (!Array.isArray(payload) || !payload.every((item) => typeof item === 'string')) {
+    if (!isValidStringArray(payload)) {
       logWarnAction('process-ipc', 'geoip.resolve', withRequestMeta(requestMeta, { reason: 'invalid_input' }))
       return failure('INVALID_INPUT', tk('main.process.error.fetch_processes'))
     }

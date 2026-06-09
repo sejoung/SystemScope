@@ -298,14 +298,25 @@ export function splitWindowsCommandArgs(args: string): string[] {
   return result
 }
 
+// PowerShell single-quoted literals don't interpolate $()/backticks, so doubling
+// the single quote is sufficient. We also strip CR/LF/control chars so a malformed
+// registry value can't span lines in the joined -Command string.
+function escapePsSingleQuote(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\x00-\x1F]/g, ' ').replace(/'/g, "''")
+}
+
 export function buildWindowsUninstallerPowerShellCommand(file: string, args: string[]): string {
-  const escapedFile = file.replace(/'/g, "''")
+  const escapedFile = escapePsSingleQuote(file)
+  // Derive the working directory from the raw path, then escape — running
+  // path.dirname on an already-escaped string would mangle paths containing quotes.
+  const escapedWorkingDir = escapePsSingleQuote(path.dirname(file))
   const argListLiteral = args.length > 0
-    ? `-ArgumentList @(${args.map((arg) => `'${arg.replace(/'/g, "''")}'`).join(', ')})`
+    ? `-ArgumentList @(${args.map((arg) => `'${escapePsSingleQuote(arg)}'`).join(', ')})`
     : ''
   return [
     '$ErrorActionPreference = \'Stop\'',
-    `$process = Start-Process -FilePath '${escapedFile}' ${argListLiteral} -WorkingDirectory '${path.dirname(escapedFile)}' -Verb RunAs -PassThru`,
+    `$process = Start-Process -FilePath '${escapedFile}' ${argListLiteral} -WorkingDirectory '${escapedWorkingDir}' -Verb RunAs -PassThru`,
     'if ($null -eq $process) { throw \'Failed to launch uninstaller process.\' }'
   ].join('; ')
 }

@@ -6,9 +6,32 @@ import { buildDiagnosticReport, saveDiagnosticReport } from '../services/reportB
 import { logErrorAction, logInfoAction } from '../services/logging'
 import { getRequestMeta, withRequestMeta, type IpcRequestMetaArg } from './requestContext'
 
+function isReportOptions(value: unknown): value is ReportOptions {
+  if (!value || typeof value !== 'object') return false
+  const opts = value as Record<string, unknown>
+  return (
+    typeof opts.maskSensitivePaths === 'boolean' &&
+    !!opts.sections &&
+    typeof opts.sections === 'object'
+  )
+}
+
+function isSaveReportOptions(value: unknown): value is SaveReportOptions {
+  if (!value || typeof value !== 'object') return false
+  const opts = value as Record<string, unknown>
+  return (
+    (opts.format === 'markdown' || opts.format === 'json') &&
+    !!opts.report &&
+    typeof opts.report === 'object'
+  )
+}
+
 export function registerReportIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.REPORT_BUILD, async (_event, options: ReportOptions, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.REPORT_BUILD, async (_event, options: unknown, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
+    if (!isReportOptions(options)) {
+      return failure('INVALID_INPUT', 'Invalid report options')
+    }
     try {
       const report = await buildDiagnosticReport(options)
       logInfoAction('report-ipc', 'report.build', withRequestMeta(requestMeta, { sectionCount: report.sections.length }))
@@ -19,8 +42,11 @@ export function registerReportIpc(): void {
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.REPORT_SAVE, async (_event, options: SaveReportOptions, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.REPORT_SAVE, async (_event, options: unknown, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
+    if (!isSaveReportOptions(options)) {
+      return failure('INVALID_INPUT', 'Invalid save report options')
+    }
     try {
       const filePath = await saveDiagnosticReport(options)
       logInfoAction('report-ipc', 'report.save', withRequestMeta(requestMeta, { filePath, format: options.format }))

@@ -1,9 +1,22 @@
 import dns from 'node:dns/promises'
 
+const MAX_CACHE_ENTRIES = 4096
 const cache = new Map<string, string | null>()
 
 export function __resetDnsCacheForTests(): void {
   cache.clear()
+}
+
+function setCache(ip: string, value: string | null): void {
+  // Bound the cache to avoid unbounded growth over the lifetime of the process.
+  // Map preserves insertion order, so deleting the first key evicts the oldest.
+  if (cache.size >= MAX_CACHE_ENTRIES) {
+    const oldest = cache.keys().next().value
+    if (oldest !== undefined) {
+      cache.delete(oldest)
+    }
+  }
+  cache.set(ip, value)
 }
 
 const SKIP_PREFIXES = ['127.', '169.254.', 'fe80:', 'fe80::']
@@ -20,16 +33,16 @@ function shouldSkip(ip: string): boolean {
 async function lookupOne(ip: string): Promise<string | null> {
   if (cache.has(ip)) return cache.get(ip) ?? null
   if (shouldSkip(ip)) {
-    cache.set(ip, null)
+    setCache(ip, null)
     return null
   }
   try {
     const names = await dns.reverse(ip)
     const name = names[0] ?? null
-    cache.set(ip, name)
+    setCache(ip, name)
     return name
   } catch {
-    cache.set(ip, null)
+    setCache(ip, null)
     return null
   }
 }

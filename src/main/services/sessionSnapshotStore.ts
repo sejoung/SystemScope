@@ -93,10 +93,7 @@ export async function deleteSessionSnapshot(id: string): Promise<boolean> {
   const filtered = entries.filter((e) => e.id !== id)
   if (filtered.length === entries.length) return false
 
-  await s.clear()
-  if (filtered.length > 0) {
-    await s.appendBatch(filtered)
-  }
+  await s.replaceAll(filtered)
   logInfo('session-snapshot', 'Snapshot deleted', { id })
   return true
 }

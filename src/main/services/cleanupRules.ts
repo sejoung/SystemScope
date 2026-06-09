@@ -90,6 +90,18 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 const DOCKER_CONTAINER_PREFIX = 'docker:container:'
 
 /**
+ * Targets surfaced by the most recent previewCleanup() run. executeCleanup only
+ * acts on entries present here, so a compromised/buggy renderer cannot ask us to
+ * trash arbitrary filesystem paths it never saw in a preview.
+ */
+let previewedTargets = new Set<string>()
+
+/** Test-only: seed the set of targets executeCleanup is allowed to act on. */
+export function __setPreviewedTargetsForTests(targets: string[]): void {
+  previewedTargets = new Set(targets)
+}
+
+/**
  * Merge BUILT_IN_RULES with user config from settings.automation.rules.
  * Returns full CleanupRule objects with enabled/minAgeDays from config.
  */
@@ -184,6 +196,8 @@ export async function previewCleanup(): Promise<CleanupPreview> {
 
   const totalSize = allItems.reduce((sum, item) => sum + item.size, 0)
 
+  previewedTargets = new Set(allItems.map((item) => item.path))
+
   logInfo('cleanup-rules', 'Cleanup preview completed', {
     totalItems: allItems.length,
     totalSize,
@@ -210,6 +224,16 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
   const fileSystemPaths: string[] = []
 
   for (const target of paths) {
+    // Containment: only act on targets that the most recent preview produced.
+    // Anything else (e.g. an arbitrary path injected by a compromised renderer)
+    // is rejected outright instead of being trashed.
+    if (!previewedTargets.has(target)) {
+      failedCount++
+      failedPaths.push(target)
+      logWarn('cleanup-rules', 'Rejected cleanup target not present in last preview', { path: target })
+      continue
+    }
+
     const dockerContainerId = parseDockerContainerCleanupTarget(target)
     if (dockerContainerId) {
       dockerContainerIds.push(dockerContainerId)

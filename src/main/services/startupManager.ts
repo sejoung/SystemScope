@@ -121,18 +121,17 @@ async function toggleMacItem(item: StartupItem, enabled: boolean): Promise<void>
       data.Disabled = true
     }
 
-    // Write back via plutil
+    // Write back via plutil. execFile cannot pipe JSON to plutil's stdin, so we
+    // convert from a temp file rather than reading from `-` (which would receive
+    // no input and could truncate item.path).
     const jsonStr = JSON.stringify(data)
-    await runExternalCommand('plutil', ['-convert', 'xml1', '-o', item.path, '-'], {
-      timeout: 5000,
-      // Pass JSON via stdin isn't supported by execFile, so write temp file
-    }).catch(async () => {
-      // Fallback: write JSON then convert
-      const tmpPath = item.path + '.tmp.json'
+    const tmpPath = item.path + '.tmp.json'
+    try {
       await fs.writeFile(tmpPath, jsonStr, 'utf-8')
       await runExternalCommand('plutil', ['-convert', 'xml1', tmpPath, '-o', item.path], { timeout: 5000 })
+    } finally {
       await fs.unlink(tmpPath).catch(() => {})
-    })
+    }
 
     // Load/unload the agent
     if (item.scope === 'user') {

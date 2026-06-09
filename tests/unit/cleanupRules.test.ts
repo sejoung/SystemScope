@@ -102,7 +102,8 @@ describe('cleanupRules', () => {
       cancelled: false
     })
 
-    const { executeCleanup } = await import('../../src/main/services/cleanupRules')
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanupRules')
+    __setPreviewedTargetsForTests(['docker:container:container-1'])
     const result = await executeCleanup(['docker:container:container-1'])
 
     expect(removeDockerContainersMock).toHaveBeenCalledWith(['container-1'])
@@ -121,11 +122,27 @@ describe('cleanupRules', () => {
     })
     getDirSizeMock.mockResolvedValue(8192)
 
-    const { executeCleanup } = await import('../../src/main/services/cleanupRules')
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanupRules')
+    __setPreviewedTargetsForTests(['/tmp/cache-dir'])
     const result = await executeCleanup(['/tmp/cache-dir'])
 
     expect(getDirSizeMock).toHaveBeenCalledWith('/tmp/cache-dir')
     expect(trashItemMock).toHaveBeenCalledWith('/tmp/cache-dir')
     expect(result.deletedSize).toBe(8192)
+  })
+
+  it('should reject targets that were not part of the last preview', async () => {
+    statMock.mockResolvedValue({ isDirectory: () => false, size: 100 })
+    trashItemMock.mockResolvedValue(undefined)
+
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanupRules')
+    __setPreviewedTargetsForTests(['/tmp/previewed-dir'])
+    const result = await executeCleanup(['/etc/passwd', '/tmp/previewed-dir'])
+
+    // Only the previewed path is stat'd/trashed; the injected path never touches the FS.
+    expect(statMock).not.toHaveBeenCalledWith('/etc/passwd')
+    expect(trashItemMock).not.toHaveBeenCalledWith('/etc/passwd')
+    expect(result.failedCount).toBe(1)
+    expect(result.failedPaths).toContain('/etc/passwd')
   })
 })

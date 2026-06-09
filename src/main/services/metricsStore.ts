@@ -28,6 +28,9 @@ export async function initMetricsStore(): Promise<void> {
   await store.load()
 
   const intervalMs = history.metricsIntervalSec * 1000
+  if (collectionTimer) {
+    clearInterval(collectionTimer)
+  }
   collectionTimer = setInterval(() => {
     void collectAndStore()
   }, intervalMs)

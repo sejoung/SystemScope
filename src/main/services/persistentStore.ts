@@ -1,5 +1,6 @@
 import * as fs from 'node:fs'
 import * as fsp from 'node:fs/promises'
+import * as path from 'node:path'
 import { logError, logWarn } from './logging'
 
 interface StoreData<T> {
@@ -93,6 +94,20 @@ export class PersistentStore<T> {
     return this.writeQueue
   }
 
+  /**
+   * Atomically replace the entire contents in a single queued write, avoiding the
+   * momentary empty window that clear()+appendBatch() would expose to readers.
+   */
+  async replaceAll(entries: T[]): Promise<void> {
+    this.writeQueue = this.writeQueue.catch(() => undefined).then(async () => {
+      this.cachedEntries = [...entries]
+      this.applyRetentionToCache()
+      await this.flush()
+    })
+
+    return this.writeQueue
+  }
+
   async clear(): Promise<void> {
     this.writeQueue = this.writeQueue.catch(() => undefined).then(async () => {
       this.cachedEntries = []
@@ -155,7 +170,7 @@ export class PersistentStore<T> {
   }
 
   private async flush(): Promise<void> {
-    const dir = this.filePath.substring(0, this.filePath.lastIndexOf('/'))
+    const dir = path.dirname(this.filePath)
     const tempPath = this.getTempPath()
 
     await fsp.mkdir(dir, { recursive: true })

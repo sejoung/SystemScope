@@ -398,6 +398,9 @@ export async function initDiagnosisAdvisor(): Promise<void> {
 
   // Start periodic diagnosis
   const intervalMs = DEFAULT_INTERVAL_SEC * 1000
+  if (diagnosisTimer) {
+    clearInterval(diagnosisTimer)
+  }
   diagnosisTimer = setInterval(() => {
     void runDiagnosis().catch((err) => {
       logWarn('diagnosis-advisor', 'Periodic diagnosis run failed', { error: err })
