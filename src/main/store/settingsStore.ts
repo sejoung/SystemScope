@@ -1,19 +1,22 @@
-import ElectronStore from 'electron-store'
+import type ElectronStore from 'electron-store'
 import type { AppSettings } from '@shared/types'
 import { DEFAULT_SETTINGS, sanitizeAppSettings } from './settingsSchema'
 
-// electron-store v11 ships ESM with a default export, but electron-vite may
-// resolve it as CJS depending on the interop mode. This dual-import pattern
-// ensures the constructor is found regardless of how the module is loaded.
-const Store = (ElectronStore as unknown as { default?: typeof ElectronStore }).default ?? ElectronStore
-
-// Instantiate lazily: ElectronStore touches the app's userData path at construction,
-// which fails outside a running Electron app (e.g. unit tests that transitively import
-// this module via a service barrel). Creating it on first use keeps importing this
-// module side-effect free.
+// Instantiate lazily AND require electron-store lazily. electron-store `require()`s
+// the electron binary at module load, which throws outside a running Electron app
+// (e.g. unit tests that transitively import this module via a service barrel). Doing
+// both the import and construction on first real settings access keeps importing this
+// module completely side-effect free.
 let storeInstance: ElectronStore<AppSettings> | null = null
 function store(): ElectronStore<AppSettings> {
-  storeInstance ??= new Store<AppSettings>({ defaults: DEFAULT_SETTINGS })
+  if (!storeInstance) {
+    // electron-store v11 ships ESM with a default export, but electron-vite may
+    // resolve it as CJS — this dual lookup finds the constructor either way.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('electron-store') as { default?: typeof ElectronStore }
+    const Store = mod.default ?? (mod as unknown as typeof ElectronStore)
+    storeInstance = new Store<AppSettings>({ defaults: DEFAULT_SETTINGS })
+  }
   return storeInstance
 }
 
