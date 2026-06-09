@@ -56,53 +56,46 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
-      # Cache the Electron binary download so the E2E launch is reliable and fast.
-      - name: Cache Electron binaries
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/electron
-            ~/Library/Caches/electron
-            ~/AppData/Local/electron/Cache
-          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
       - run: npm ci --prefer-offline --no-audit
-      # DIAGNOSTIC: report exactly why the Electron binary download fails on this
-      # runner. Prints the HTTP status from the GitHub release CDN and the npmmirror,
-      # plus @electron/get debug. Never fails the job, so the full picture is visible.
-      #   - HTTP 403/429  -> rate limit (fixable: token/retry/mirror)
-      #   - timeout/refused/could-not-resolve -> network block (infra issue)
-      #   - HTTP 200 + correct size but install.js still fails -> @electron/get issue
-      - name: Diagnose Electron download
+      # The download itself works fine on the runner (full 116MB, HTTP 200), but
+      # electron's install.js can finish without writing path.txt (its extract step
+      # silently no-ops on the macOS app bundle / a stale @electron/get cache), which
+      # makes Playwright report "Electron failed to install correctly". Try install.js
+      # first; if path.txt is still missing, download and extract the binary manually
+      # (system unzip handles the .app symlinks) and write path.txt ourselves.
+      - name: Install Electron binary
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set +e
+          set -e
+          DEST=node_modules/electron
+          rm -rf "$DEST/dist" "$DEST/path.txt" ~/.cache/electron ~/Library/Caches/electron
+          env -u ELECTRON_SKIP_BINARY_DOWNLOAD force_no_cache=true node "$DEST/install.js" || true
+          if [ -f "$DEST/path.txt" ]; then
+            echo "Electron installed via install.js: $(cat "$DEST/path.txt")"
+            exit 0
+          fi
+          echo "install.js did not produce path.txt — extracting manually"
           VER=$(node -p "require('electron/package.json').version")
           PLAT=$(node -p "process.platform")
           ARCH=$(node -p "process.arch")
           case "$PLAT" in
-            darwin) FILE="electron-v${VER}-darwin-${ARCH}.zip" ;;
-            win32)  FILE="electron-v${VER}-win32-${ARCH}.zip" ;;
-            *)      FILE="electron-v${VER}-linux-${ARCH}.zip" ;;
+            darwin) FILE="electron-v${VER}-darwin-${ARCH}.zip"; REL="Electron.app/Contents/MacOS/Electron" ;;
+            win32)  FILE="electron-v${VER}-win32-${ARCH}.zip";  REL="electron.exe" ;;
+            *)      FILE="electron-v${VER}-linux-${ARCH}.zip";  REL="electron" ;;
           esac
-          echo "version=$VER platform=$PLAT arch=$ARCH file=$FILE"
-          GH="https://github.com/electron/electron/releases/download/v${VER}/${FILE}"
-          MR="https://npmmirror.com/mirrors/electron/${VER}/${FILE}"
-          echo "--- curl GitHub release CDN ---"
-          curl -sSL --retry 2 --max-time 90 -o /tmp/gh.zip \
-            -w "github => HTTP=%{http_code} size=%{size_download} time=%{time_total}s final=%{url_effective}\n" "$GH"
-          echo "curl-exit=$?"
-          echo "--- curl npmmirror CDN ---"
-          curl -sSL --retry 2 --max-time 90 -o /tmp/mr.zip \
-            -w "mirror => HTTP=%{http_code} size=%{size_download} time=%{time_total}s final=%{url_effective}\n" "$MR"
-          echo "curl-exit=$?"
-          echo "--- install.js (clean, @electron/get debug) ---"
-          rm -rf node_modules/electron/dist node_modules/electron/path.txt
-          env -u ELECTRON_SKIP_BINARY_DOWNLOAD DEBUG='@electron/get*' node node_modules/electron/install.js
-          echo "install.js-exit=$?"
-          echo "path.txt: $([ -f node_modules/electron/path.txt ] && cat node_modules/electron/path.txt || echo MISSING)"
-          set -e
+          curl -sSL --retry 3 --max-time 180 -o /tmp/electron.zip \
+            "https://github.com/electron/electron/releases/download/v${VER}/${FILE}"
+          mkdir -p "$DEST/dist"
+          if command -v unzip >/dev/null 2>&1; then
+            unzip -q -o /tmp/electron.zip -d "$DEST/dist"
+          else
+            tar -xf /tmp/electron.zip -C "$DEST/dist"
+          fi
+          printf '%s' "$REL" > "$DEST/path.txt"
+          test -x "$DEST/dist/$REL" || test -f "$DEST/dist/$REL"
+          echo "Electron installed manually: $(cat "$DEST/path.txt")"
       - run: npm run test:e2e:build
         env:
           DEBUG: pw:browser*
