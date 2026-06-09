@@ -1,6 +1,6 @@
 import type { SystemScopeApi } from '@shared/contracts/systemScope'
-import { createIpcApi } from './createIpcApi'
-import { successResult } from './helpers'
+import { createIpcApi } from '../createIpcApi'
+import { successResult } from '../helpers'
 
 export interface E2EMockControls {
   setUpdateAvailable: (value: boolean) => void
@@ -271,7 +271,10 @@ export function createE2EMockApi(): {
         totalSize: 0,
         totalRecentGrowthBytes: 0,
         scannedAt: Date.now()
-      })
+      }),
+    findOrphanedLaunchAgents: () => successResult([]),
+    removeOrphanedLaunchAgents: () =>
+      successResult({ removedCount: 0, failedCount: 0, removedPaths: [], errors: [] })
   } satisfies Partial<SystemScopeApi>)
 
   return {

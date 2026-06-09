@@ -117,7 +117,9 @@ const EXPECTED_API_KEYS: (keyof SystemScopeApi)[] = [
   'cleanDevToolItems',
   'getDevToolsOverview',
   'getStartupItems',
-  'toggleStartupItem'
+  'toggleStartupItem',
+  'findOrphanedLaunchAgents',
+  'removeOrphanedLaunchAgents'
 ]
 
 const LISTENER_KEYS: (keyof SystemScopeApi)[] = [

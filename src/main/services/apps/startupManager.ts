@@ -1,10 +1,11 @@
+import { shell } from 'electron'
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import { homedir, platform } from 'node:os'
 import { createHash } from 'node:crypto'
-import type { StartupItem, StartupToggleResult } from '@shared/types'
+import type { StartupItem, StartupToggleResult, OrphanedLaunchAgent, RemoveOrphanedResult } from '@shared/types'
 import { runExternalCommand, isExternalCommandError } from '@main/services/core/externalCommand'
-import { logInfo, logError, logDebug } from '@main/services/core/logging'
+import { logInfo, logWarn, logError, logDebug } from '@main/services/core/logging'
 
 export async function getStartupItems(): Promise<StartupItem[]> {
   const p = platform()
@@ -34,6 +35,118 @@ export async function toggleStartupItem(id: string, enabled: boolean): Promise<S
     logError('startup-manager', 'Failed to toggle startup item', { id, error: err })
     return { id, enabled, success: false, error: message }
   }
+}
+
+// ── Orphaned LaunchAgents (macOS) ──
+//
+// A leftover LaunchAgent is a user plist in ~/Library/LaunchAgents whose target
+// executable no longer exists — typically left behind after an app is deleted, so it
+// fails silently at every login. We only flag the high-confidence case (an absolute
+// Program / first ProgramArguments path that's missing) to avoid false positives, and
+// only ever act on the user domain.
+
+const USER_LAUNCH_AGENTS_DIR = path.join(homedir(), 'Library', 'LaunchAgents')
+
+export async function findOrphanedLaunchAgents(): Promise<OrphanedLaunchAgent[]> {
+  if (platform() !== 'darwin') return []
+
+  const orphans: OrphanedLaunchAgent[] = []
+  let entries: string[]
+  try {
+    entries = await fs.readdir(USER_LAUNCH_AGENTS_DIR)
+  } catch {
+    return []
+  }
+
+  for (const entry of entries) {
+    if (!entry.endsWith('.plist')) continue
+    const plistPath = path.join(USER_LAUNCH_AGENTS_DIR, entry)
+    try {
+      const info = await parsePlist(plistPath)
+      const label = info.label || entry.replace('.plist', '')
+      // Apple-managed agents are off-limits.
+      if (label.startsWith('com.apple.')) continue
+
+      const executable = resolveLaunchAgentExecutable(info)
+      if (!executable) continue // can't determine the binary → never flag
+
+      try {
+        await fs.access(executable)
+        continue // executable exists → not orphaned
+      } catch {
+        // missing → orphaned
+      }
+
+      orphans.push({
+        id: createHash('sha256').update(plistPath).digest('hex').slice(0, 16),
+        label,
+        plistPath,
+        missingExecutable: executable,
+        scope: 'user',
+      })
+    } catch {
+      logDebug('startup-manager', 'Skipping unparseable plist during orphan scan', { path: plistPath })
+    }
+  }
+
+  logInfo('startup-manager', 'Orphaned LaunchAgent scan completed', { count: orphans.length })
+  return orphans
+}
+
+/** Resolve the absolute executable a LaunchAgent points at, or null when it can't be determined safely. */
+function resolveLaunchAgentExecutable(info: PlistInfo): string | null {
+  let candidate = info.program ?? info.programArguments?.[0]
+  if (!candidate) return null
+  if (candidate.startsWith('~')) {
+    candidate = path.join(homedir(), candidate.slice(1))
+  }
+  // Only absolute paths are confidently checkable; bare commands resolve via PATH.
+  if (!candidate.startsWith('/')) return null
+  return candidate
+}
+
+export async function removeOrphanedLaunchAgents(ids: string[]): Promise<RemoveOrphanedResult> {
+  const result: RemoveOrphanedResult = { removedCount: 0, failedCount: 0, removedPaths: [], errors: [] }
+
+  // Re-scan and only act on ids that are still genuinely orphaned (containment).
+  const current = await findOrphanedLaunchAgents()
+  const byId = new Map(current.map((o) => [o.id, o]))
+
+  for (const id of ids) {
+    const orphan = byId.get(id)
+    if (!orphan) {
+      result.failedCount++
+      continue
+    }
+
+    // Defense in depth: only ever touch files directly inside ~/Library/LaunchAgents.
+    const resolved = path.resolve(orphan.plistPath)
+    if (path.dirname(resolved) !== USER_LAUNCH_AGENTS_DIR) {
+      result.failedCount++
+      result.errors.push(`${orphan.label}: outside user LaunchAgents directory`)
+      logWarn('startup-manager', 'Rejected orphan removal outside user LaunchAgents', { path: resolved })
+      continue
+    }
+
+    try {
+      // Best-effort unload so launchd stops referencing it; ignore failures.
+      await runExternalCommand('launchctl', ['unload', resolved], { timeout: 5000 }).catch(() => {})
+      await shell.trashItem(resolved)
+      result.removedCount++
+      result.removedPaths.push(resolved)
+    } catch (err) {
+      result.failedCount++
+      const message = err instanceof Error ? err.message : String(err)
+      result.errors.push(`${orphan.label}: ${message}`)
+      logError('startup-manager', 'Failed to remove orphaned LaunchAgent', { path: resolved, error: err })
+    }
+  }
+
+  logInfo('startup-manager', 'Orphaned LaunchAgent removal completed', {
+    removedCount: result.removedCount,
+    failedCount: result.failedCount,
+  })
+  return result
 }
 
 // ── macOS ──

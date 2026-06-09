@@ -57,6 +57,8 @@ import type {
   ToolCleanResult,
   StartupItem,
   StartupToggleResult,
+  OrphanedLaunchAgent,
+  RemoveOrphanedResult,
   ProjectMonitorSummary,
   DevToolsOverview,
   ProcessNetworkSnapshot
@@ -177,6 +179,8 @@ export interface SystemScopeApi {
 
   getStartupItems: () => Promise<AppResult<StartupItem[]>>
   toggleStartupItem: (id: string, enabled: boolean) => Promise<AppResult<StartupToggleResult>>
+  findOrphanedLaunchAgents: () => Promise<AppResult<OrphanedLaunchAgent[]>>
+  removeOrphanedLaunchAgents: (ids: string[]) => Promise<AppResult<RemoveOrphanedResult>>
 
   scanDevTools: () => Promise<AppResult<ToolIntegrationResult[]>>
   cleanDevToolItems: (paths: string[]) => Promise<AppResult<ToolCleanResult>>

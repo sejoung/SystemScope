@@ -14,7 +14,7 @@ vi.mock('../../src/preload/createIpcApi', () => ({
   createIpcApi: createIpcApiMock
 }))
 
-vi.mock('../../src/preload/createE2EMockApi', () => ({
+vi.mock('../../src/preload/__e2e__/createE2EMockApi', () => ({
   createE2EMockApi: createE2EMockApiMock
 }))
 

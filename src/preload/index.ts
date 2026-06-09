@@ -1,5 +1,5 @@
 import { contextBridge } from 'electron'
-import { createE2EMockApi } from './createE2EMockApi'
+import { createE2EMockApi } from './__e2e__/createE2EMockApi'
 import { createIpcApi } from './createIpcApi'
 
 const e2eMock = process.env.E2E_LIGHTWEIGHT === '1' ? createE2EMockApi() : null

@@ -12,7 +12,7 @@ import type { CleanupPreview, CleanupResult, CleanupInbox } from './automation'
 import type { WorkspaceProfile } from './profile'
 import { DASHBOARD_WIDGET_KEYS } from './profile'
 import type { ToolIntegrationResult, ToolCleanResult } from './toolIntegration'
-import type { StartupItem, StartupToggleResult } from './startup'
+import type { StartupItem, StartupToggleResult, OrphanedLaunchAgent } from './startup'
 import type { ProjectMonitorSummary } from './projectMonitor'
 import type { DevToolsOverview } from './devtools'
 
@@ -230,6 +230,16 @@ export function isStartupItemArray(data: unknown): data is StartupItem[] {
 /** StartupToggleResult */
 export function isStartupToggleResult(data: unknown): data is StartupToggleResult {
   return isObj(data) && typeof data.id === 'string' && typeof data.success === 'boolean'
+}
+
+/** OrphanedLaunchAgent */
+export function isOrphanedLaunchAgent(data: unknown): data is OrphanedLaunchAgent {
+  return isObj(data) && typeof data.id === 'string' && typeof data.plistPath === 'string' && typeof data.missingExecutable === 'string'
+}
+
+/** OrphanedLaunchAgent[] — first-element sampling */
+export function isOrphanedLaunchAgentArray(data: unknown): data is OrphanedLaunchAgent[] {
+  return Array.isArray(data) && (data.length === 0 || isOrphanedLaunchAgent(data[0]))
 }
 
 export function isProjectMonitorSummary(data: unknown): data is ProjectMonitorSummary {

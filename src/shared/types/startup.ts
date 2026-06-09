@@ -18,3 +18,19 @@ export interface StartupToggleResult {
   success: boolean
   error: string | null
 }
+
+/** A user LaunchAgent whose target executable no longer exists on disk (leftover from an uninstalled app). */
+export interface OrphanedLaunchAgent {
+  id: string
+  label: string
+  plistPath: string
+  missingExecutable: string
+  scope: StartupItemScope
+}
+
+export interface RemoveOrphanedResult {
+  removedCount: number
+  failedCount: number
+  removedPaths: string[]
+  errors: string[]
+}

@@ -9,6 +9,7 @@ import { PageTab } from "../components/ui/PageTab";
 import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
 import { StartupItemList } from "../features/startup/StartupItemList";
+import { OrphanedLaunchAgents } from "../features/startup/OrphanedLaunchAgents";
 
 type ActivityTab = "processes" | "ports" | "network" | "watch" | "startup";
 
@@ -127,7 +128,12 @@ export function ProcessPage() {
       {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts showConflictCenter={false} /></ErrorBoundary>}
       {tab === "network" && <ErrorBoundary title={tk("process.tab.network")}><ProcessNetworkPanel /></ErrorBoundary>}
       {tab === "watch" && <ErrorBoundary title={tk("process.tab.watch")}><PortWatch /></ErrorBoundary>}
-      {tab === "startup" && <ErrorBoundary title={tk("process.tab.startup")}><StartupItemList /></ErrorBoundary>}
+      {tab === "startup" && (
+        <ErrorBoundary title={tk("process.tab.startup")}>
+          <OrphanedLaunchAgents />
+          <StartupItemList />
+        </ErrorBoundary>
+      )}
     </div>
   );
 }

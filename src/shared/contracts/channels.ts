@@ -125,6 +125,8 @@ export const IPC_CHANNELS = {
   // 시작 프로그램
   STARTUP_GET_ALL: 'startup:getAll',
   STARTUP_TOGGLE: 'startup:toggle',
+  STARTUP_FIND_ORPHANS: 'startup:findOrphans',
+  STARTUP_REMOVE_ORPHANS: 'startup:removeOrphans',
 
   // 워크스페이스 프로필
   PROFILE_GET_ALL:    'profile:getAll',
