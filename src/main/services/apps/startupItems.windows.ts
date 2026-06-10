@@ -1,0 +1,110 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { homedir } from 'node:os'
+import type { StartupItem } from '@shared/types'
+import { runExternalCommand, isExternalCommandError } from '@main/services/core/externalCommand'
+import { logDebug } from '@main/services/core/logging'
+import { startupItemId } from './startupShared'
+
+const REG_TIMEOUT_MS = 10000
+
+export async function getWindowsStartupItems(): Promise<StartupItem[]> {
+  const items: StartupItem[] = []
+
+  // Registry: HKCU\...\Run
+  await scanWindowsRegistry('HKCU', items)
+  // Registry: HKLM\...\Run
+  await scanWindowsRegistry('HKLM', items)
+  // Startup folder
+  await scanWindowsStartupFolder(items)
+
+  return items
+}
+
+async function scanWindowsRegistry(hive: 'HKCU' | 'HKLM', items: StartupItem[]): Promise<void> {
+  const scope = hive === 'HKCU' ? 'user' : 'system'
+  const regPath = `${hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\Run`
+
+  try {
+    const { stdout } = await runExternalCommand('reg', ['query', regPath], { timeout: REG_TIMEOUT_MS })
+    const lines = stdout.split('\n').filter((l) => l.trim() && !l.trim().startsWith(regPath))
+
+    for (const line of lines) {
+      const match = line.trim().match(/^(\S+)\s+REG_SZ\s+(.+)$/)
+      if (!match) continue
+
+      const name = match[1]
+      const value = match[2].trim()
+
+      items.push({
+        id: startupItemId(`${regPath}\\${name}`),
+        name,
+        path: value,
+        type: 'registry_run',
+        scope,
+        enabled: true,
+        label: name,
+        description: value,
+      })
+    }
+  } catch (err) {
+    if (isExternalCommandError(err) && err.kind !== 'command_not_found') {
+      logDebug('startup-manager', `Failed to query registry: ${regPath}`, { error: err })
+    }
+  }
+}
+
+async function scanWindowsStartupFolder(items: StartupItem[]): Promise<void> {
+  const startupDir = path.join(
+    process.env.APPDATA || path.join(homedir(), 'AppData', 'Roaming'),
+    'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup'
+  )
+
+  try {
+    const entries = await fs.readdir(startupDir)
+    for (const entry of entries) {
+      if (entry.startsWith('.')) continue
+      const fullPath = path.join(startupDir, entry)
+      items.push({
+        id: startupItemId(fullPath),
+        name: entry.replace(/\.(lnk|url)$/i, ''),
+        path: fullPath,
+        type: 'startup_folder',
+        scope: 'user',
+        enabled: true,
+        label: entry,
+        description: fullPath,
+      })
+    }
+  } catch {
+    // Startup folder not accessible
+  }
+}
+
+export async function toggleWindowsItem(item: StartupItem, enabled: boolean): Promise<void> {
+  if (item.type === 'registry_run') {
+    const hive = item.scope === 'user' ? 'HKCU' : 'HKLM'
+    const regPath = `${hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\Run`
+
+    if (enabled) {
+      // Re-add the registry entry
+      await runExternalCommand('reg', ['add', regPath, '/v', item.name, '/t', 'REG_SZ', '/d', item.path, '/f'], { timeout: REG_TIMEOUT_MS })
+    } else {
+      // Remove the registry entry (backup to RunDisabled)
+      const disabledPath = `${hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\RunDisabled`
+      await runExternalCommand('reg', ['add', disabledPath, '/v', item.name, '/t', 'REG_SZ', '/d', item.path, '/f'], { timeout: REG_TIMEOUT_MS })
+      await runExternalCommand('reg', ['delete', regPath, '/v', item.name, '/f'], { timeout: REG_TIMEOUT_MS })
+    }
+  } else if (item.type === 'startup_folder') {
+    if (enabled) {
+      // Cannot re-enable a deleted shortcut — would need backup
+      throw new Error('Cannot re-enable startup folder items')
+    } else {
+      // Move to a disabled subfolder
+      const dir = path.dirname(item.path)
+      const disabledDir = path.join(dir, '_disabled')
+      await fs.mkdir(disabledDir, { recursive: true })
+      await fs.rename(item.path, path.join(disabledDir, path.basename(item.path)))
+    }
+  }
+}

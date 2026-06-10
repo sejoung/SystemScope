@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { OrphanedLaunchAgent, OrphanedLaunchAgentReason } from '@shared/types'
+import type { TranslationKey } from '@shared/i18n'
 import { isOrphanedLaunchAgentArray } from '@shared/types/guards'
 import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/ui/Toast'
@@ -78,6 +79,11 @@ export function OrphanedLaunchAgents() {
   // Nothing to surface (non-macOS, clean system, or still scanning the first time).
   if (orphans.length === 0) return null
 
+  const removingSystemItems = orphans.some((o) => selected.has(o.id) && o.scope === 'system')
+  const confirmMessage = removingSystemItems
+    ? `${tk('startup.orphans.confirm_message', { count: selected.size })} ${tk('startup.orphans.admin_required')}`
+    : tk('startup.orphans.confirm_message', { count: selected.size })
+
   return (
     <section style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -113,7 +119,7 @@ export function OrphanedLaunchAgents() {
                 </span>
               </div>
               <div style={metaStyle} title={o.missingExecutable}>
-                {tk(REASON_KEYS[o.reason] ?? 'startup.orphans.missing')}: {o.missingExecutable}
+                {tk(REASON_KEYS[o.reason])}: {o.missingExecutable}
               </div>
               <div style={pathStyle} title={o.plistPath}>{o.plistPath}</div>
             </div>
@@ -125,11 +131,7 @@ export function OrphanedLaunchAgents() {
         open={confirmOpen}
         tone="danger"
         title={tk('startup.orphans.confirm_title')}
-        message={
-          orphans.some((o) => selected.has(o.id) && o.scope === 'system')
-            ? `${tk('startup.orphans.confirm_message', { count: selected.size })} ${tk('startup.orphans.admin_required')}`
-            : tk('startup.orphans.confirm_message', { count: selected.size })
-        }
+        message={confirmMessage}
         confirmLabel={tk('startup.orphans.confirm_ok')}
         cancelLabel={tk('Cancel')}
         onConfirm={handleRemove}
@@ -139,11 +141,11 @@ export function OrphanedLaunchAgents() {
   )
 }
 
-const REASON_KEYS: Record<OrphanedLaunchAgentReason, 'startup.orphans.missing' | 'startup.orphans.broken_link' | 'startup.orphans.missing_app'> = {
+const REASON_KEYS = {
   missing_executable: 'startup.orphans.missing',
   broken_symlink: 'startup.orphans.broken_link',
   missing_app: 'startup.orphans.missing_app',
-}
+} as const satisfies Record<OrphanedLaunchAgentReason, TranslationKey>
 
 const cardStyle: React.CSSProperties = {
   border: '1px solid var(--accent-yellow)',

@@ -26,7 +26,9 @@ const LEFTOVER_SIZE_HYDRATE_CONCURRENCY = 2
 // as one app each. Folders that merely group independent apps (known collection
 // folders, or folders whose inner apps come from different vendors, like a
 // user-created "Games" folder) get their contents listed individually instead.
-const NESTED_APP_SCAN_DEPTH = 4
+
+/** How many nested folder levels to descend below a vendor folder when looking for .app bundles (nProtect needs 2: nProtect/V1/NOS/nosudt.app). */
+const MAX_FOLDER_DESCENT = 2
 const EPIC_GAMES_ROOT = '/Users/Shared/Epic Games'
 const APP_COLLECTION_FOLDERS = new Set(['Utilities', 'Setapp'])
 const FOLDER_METADATA_APP_LIMIT = 20
@@ -62,25 +64,8 @@ export async function listMacInstalledApps(): Promise<InstalledApp[]> {
 
       if (entry.name.endsWith('.app')) {
         apps.push(await buildMacAppEntry(entryPath, currentAppBundlePath))
-        continue
-      }
-
-      const bundlePaths: string[] = []
-      await collectMacAppBundles(entryPath, NESTED_APP_SCAN_DEPTH - 1, bundlePaths)
-      if (bundlePaths.length === 0) continue // no apps inside → not an app at all
-
-      const inner = await readInnerAppsMetadata(bundlePaths)
-      const vendors = new Set(inner.map((a) => bundleIdVendor(a.bundleId)).filter(Boolean))
-
-      // Apps from more than one vendor means this folder merely groups independent
-      // apps (e.g. a user-made "Games" folder) — trashing it as one unit would
-      // delete unrelated apps, so list the contents individually instead.
-      if (isAppCollectionFolder(entry.name) || vendors.size > 1) {
-        for (const appPath of bundlePaths) {
-          apps.push(await buildMacAppEntry(appPath, currentAppBundlePath))
-        }
       } else {
-        apps.push(buildMacFolderAppEntry(entryPath, entry.name, inner, currentAppBundlePath))
+        apps.push(...(await expandPlainFolder(entryPath, entry.name, currentAppBundlePath)))
       }
     }
   }
@@ -88,6 +73,29 @@ export async function listMacInstalledApps(): Promise<InstalledApp[]> {
   await collectEpicGamesInstalls(apps)
 
   return apps
+}
+
+/**
+ * Turn a non-.app folder into app entries: a vendor folder becomes one folder-unit
+ * entry, a collection of independent apps becomes one entry per inner app, and a
+ * folder without any .app inside becomes nothing.
+ */
+async function expandPlainFolder(folderPath: string, folderName: string, currentAppBundlePath: string | null): Promise<InstalledApp[]> {
+  const bundlePaths: string[] = []
+  await collectMacAppBundles(folderPath, MAX_FOLDER_DESCENT, bundlePaths)
+  if (bundlePaths.length === 0) return []
+
+  const innerApps = await readInnerAppsMetadata(bundlePaths)
+  const vendors = new Set(innerApps.map((a) => bundleIdVendor(a.bundleId)).filter(Boolean))
+
+  // Apps from more than one vendor means this folder merely groups independent
+  // apps (e.g. a user-made "Games" folder) — trashing it as one unit would
+  // delete unrelated apps, so list the contents individually instead.
+  if (isAppCollectionFolder(folderName) || vendors.size > 1) {
+    return Promise.all(bundlePaths.map((appPath) => buildMacAppEntry(appPath, currentAppBundlePath)))
+  }
+
+  return [buildMacFolderAppEntry(folderPath, folderName, innerApps, currentAppBundlePath)]
 }
 
 async function buildMacAppEntry(appPath: string, currentAppBundlePath: string | null): Promise<InstalledApp> {
@@ -126,7 +134,7 @@ async function readInnerAppsMetadata(bundlePaths: string[]): Promise<Array<{ nam
 function buildMacFolderAppEntry(
   folderPath: string,
   folderName: string,
-  inner: Array<{ name: string; bundleId?: string }>,
+  innerApps: Array<{ name: string; bundleId?: string }>,
   currentAppBundlePath: string | null
 ): InstalledApp {
   const containsCurrentApp = currentAppBundlePath !== null && currentAppBundlePath.startsWith(folderPath + path.sep)
@@ -135,20 +143,24 @@ function buildMacFolderAppEntry(
     id: folderPath,
     name: folderName,
     version: undefined,
-    publisher: inner[0]?.bundleId,
-    bundleId: inner[0]?.bundleId,
+    publisher: innerApps[0]?.bundleId,
+    bundleId: innerApps[0]?.bundleId,
     installLocation: path.dirname(folderPath),
     launchPath: folderPath,
     platform: 'mac',
     uninstallKind: 'trash_app',
     protected: containsCurrentApp,
     protectedReason: containsCurrentApp ? tk('main.apps.protected.system_app') : undefined,
-    containedApps: inner
+    containedApps: innerApps
   }
 }
 
-/** Collect .app bundles in `dir`, descending into plain folders up to `depth` levels (never into .app bundles). */
-async function collectMacAppBundles(dir: string, depth: number, found: string[]): Promise<void> {
+/**
+ * Collect .app bundles inside `dir`. `remainingDescents` is how many nested folder
+ * levels may still be entered below `dir` (0 = scan `dir` itself only); .app bundles
+ * are never descended into.
+ */
+async function collectMacAppBundles(dir: string, remainingDescents: number, found: string[]): Promise<void> {
   let entries
   try {
     entries = await fsp.readdir(dir, { withFileTypes: true })
@@ -161,8 +173,8 @@ async function collectMacAppBundles(dir: string, depth: number, found: string[])
     const fullPath = path.join(dir, entry.name)
     if (entry.name.endsWith('.app')) {
       found.push(fullPath)
-    } else if (depth > 1) {
-      await collectMacAppBundles(fullPath, depth - 1, found)
+    } else if (remainingDescents > 0) {
+      await collectMacAppBundles(fullPath, remainingDescents - 1, found)
     }
   }
 }
