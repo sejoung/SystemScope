@@ -5,6 +5,7 @@ import { isOrphanedLaunchAgentArray } from '@shared/types/guards'
 import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/ui/Toast'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { useStartupStore } from '../../stores/apps/useStartupStore'
 
 /**
  * Lists LaunchAgents/LaunchDaemons whose target no longer exists (leftovers from
@@ -15,6 +16,7 @@ import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 export function OrphanedLaunchAgents() {
   const { tk } = useI18n()
   const showToast = useToast((s) => s.show)
+  const fetchStartupItems = useStartupStore((s) => s.fetchItems)
   const [orphans, setOrphans] = useState<OrphanedLaunchAgent[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -66,6 +68,8 @@ export function OrphanedLaunchAgents() {
           showToast(tk('startup.orphans.removed', { count: removedCount }), 'success')
         }
         await scan()
+        // The startup-items list below shows the same plists — refresh it too.
+        if (removedCount > 0) void fetchStartupItems()
       } else {
         showToast(res.error?.message ?? tk('startup.orphans.remove_failed'), 'danger')
       }

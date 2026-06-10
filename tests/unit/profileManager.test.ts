@@ -38,7 +38,8 @@ import {
   deleteProfile,
   setActiveProfile,
   getEffectiveThresholds,
-  getEffectiveCleanupRules
+  getEffectiveCleanupRules,
+  setEffectiveCleanupRuleConfig
 } from '../../src/main/services/profile/profileManager'
 
 function createTestProfile(overrides?: Partial<WorkspaceProfile>): WorkspaceProfile {
@@ -221,6 +222,50 @@ describe('profileManager', () => {
         profiles: [createTestProfile()], activeProfileId: 'profile-1'
       }))
       expect(getEffectiveCleanupRules()[0].id).toBe('npm_cache')
+    })
+  })
+
+  describe('setEffectiveCleanupRuleConfig', () => {
+    it('should write to global automation rules when no active profile', () => {
+      setEffectiveCleanupRuleConfig({ id: 'npm_cache', enabled: false, minAgeDays: 30 })
+
+      expect(mockSetSettings).toHaveBeenCalledWith({
+        automation: expect.objectContaining({
+          rules: expect.arrayContaining([{ id: 'npm_cache', enabled: false, minAgeDays: 30 }])
+        })
+      })
+    })
+
+    it('should write to the active profile (where getEffectiveCleanupRules reads), not global settings', () => {
+      mockGetSettings.mockReturnValue(createMockSettings({
+        profiles: [createTestProfile()], activeProfileId: 'profile-1'
+      }))
+
+      setEffectiveCleanupRuleConfig({ id: 'npm_cache', enabled: false, minAgeDays: 14 })
+
+      expect(mockSetSettings).toHaveBeenCalledWith({
+        profiles: [expect.objectContaining({
+          id: 'profile-1',
+          cleanupRules: [{ id: 'npm_cache', enabled: false, minAgeDays: 14 }]
+        })]
+      })
+    })
+
+    it('should append a config the active profile has no entry for yet', () => {
+      mockGetSettings.mockReturnValue(createMockSettings({
+        profiles: [createTestProfile()], activeProfileId: 'profile-1'
+      }))
+
+      setEffectiveCleanupRuleConfig({ id: 'downloads_old_files', enabled: false, minAgeDays: 30 })
+
+      expect(mockSetSettings).toHaveBeenCalledWith({
+        profiles: [expect.objectContaining({
+          cleanupRules: [
+            { id: 'npm_cache', enabled: true, minAgeDays: 14 },
+            { id: 'downloads_old_files', enabled: false, minAgeDays: 30 }
+          ]
+        })]
+      })
     })
   })
 })

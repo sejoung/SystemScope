@@ -115,6 +115,42 @@ export function getEffectiveCleanupRules(): CleanupRuleConfig[] {
   return profile ? profile.cleanupRules : getSettings().automation.rules
 }
 
+/**
+ * Persist one rule config to wherever getEffectiveCleanupRules reads from:
+ * the active profile's cleanupRules when a profile is active, otherwise the
+ * global automation settings. Read and write must stay symmetric — writing
+ * globally while a profile is active would make the change invisible.
+ */
+export function setEffectiveCleanupRuleConfig(config: CleanupRuleConfig): void {
+  const settings = getSettings()
+  const profile = getActiveProfile()
+
+  if (profile) {
+    const profiles = settings.profiles.map((p) =>
+      p.id === profile.id ? { ...p, cleanupRules: upsertRuleConfig(p.cleanupRules, config) } : p
+    )
+    setSettings({ profiles })
+    return
+  }
+
+  setSettings({
+    automation: {
+      ...settings.automation,
+      rules: upsertRuleConfig(settings.automation.rules, config)
+    }
+  })
+}
+
+function upsertRuleConfig(rules: CleanupRuleConfig[], config: CleanupRuleConfig): CleanupRuleConfig[] {
+  const existingIndex = rules.findIndex((r) => r.id === config.id)
+  if (existingIndex >= 0) {
+    const next = [...rules]
+    next[existingIndex] = config
+    return next
+  }
+  return [...rules, config]
+}
+
 export function getEffectiveAutomationSchedule(): AutomationSchedule {
   const settings = getSettings()
   const profile = getActiveProfile()

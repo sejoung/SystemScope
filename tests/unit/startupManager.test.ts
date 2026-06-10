@@ -51,6 +51,8 @@ const PLISTS: Record<string, Record<string, unknown>> = {
   [`${USER_DIR}/com.bare.cmd.plist`]: { Label: 'com.bare.cmd', ProgramArguments: ['osascript', '-e', 'x'] },
   [`${USER_DIR}/com.nopgm.plist`]: { Label: 'com.nopgm', KeepAlive: true },
   [`${USER_DIR}/com.epic.launcher.plist`]: { Label: 'com.epic.launcher', ProgramArguments: ['open', '/Applications/Epic Games Launcher.app', '--args', '-silent'] },
+  // `open <app>` launcher whose app was uninstalled — the open target, not `open` itself, decides orphanhood.
+  [`${USER_DIR}/com.gonegame.launcher.plist`]: { Label: 'com.gonegame.launcher', ProgramArguments: ['open', '/Applications/Gone Game.app', '--args', '-silent'] },
   [`${SYS_DAEMONS_DIR}/com.gonecorp.daemon.plist`]: { Label: 'com.gonecorp.daemon', ProgramArguments: ['/Library/PrivilegedHelperTools/gonecorp'] },
   [`${SYS_DAEMONS_DIR}/com.alive.daemon.plist`]: { Label: 'com.alive.daemon', Program: '/usr/local/bin/live', AssociatedBundleIdentifiers: ['com.alive.App'] },
   // Executable still exists, but the app that owns it (per AssociatedBundleIdentifiers) was uninstalled.
@@ -70,7 +72,7 @@ const BROKEN_SYMLINK = `${SYS_AGENTS_DIR}/com.deleted.helper.plist`
 const SYMLINK_TARGET = '/Applications/Deleted.app/Contents/Resources/com.deleted.helper.plist'
 
 const DIR_ENTRIES: Record<string, string[]> = {
-  [USER_DIR]: ['com.gone.app.plist', 'com.live.app.plist', 'com.apple.thing.plist', 'com.bare.cmd.plist', 'com.nopgm.plist', 'com.epic.launcher.plist'],
+  [USER_DIR]: ['com.gone.app.plist', 'com.live.app.plist', 'com.apple.thing.plist', 'com.bare.cmd.plist', 'com.nopgm.plist', 'com.epic.launcher.plist', 'com.gonegame.launcher.plist'],
   [SYS_AGENTS_DIR]: ['com.deleted.helper.plist'],
   [SYS_DAEMONS_DIR]: [
     'com.gonecorp.daemon.plist',
@@ -86,6 +88,7 @@ const EXISTING_EXECUTABLES = new Set([
   '/usr/local/bin/live',
   '/Library/PrivilegedHelperTools/com.gonevendor.updater',
   '/Library/PrivilegedHelperTools/alive-helper',
+  '/Applications/Epic Games Launcher.app', // installed → its `open` launcher stays unflagged
 ])
 
 function errnoError(code: string): NodeJS.ErrnoException {
@@ -160,9 +163,16 @@ describe('orphaned launch agents', () => {
       'com.deleted.helper',
       'com.gone.app',
       'com.gonecorp.daemon',
+      'com.gonegame.launcher',
       'com.gonevendor.updater',
       'org.tool.helper',
     ])
+    // `open <app>` launcher: the missing target is the .app the plist opens, not `open` itself.
+    expect(orphans.find((o) => o.label === 'com.gonegame.launcher')).toMatchObject({
+      missingExecutable: '/Applications/Gone Game.app',
+      scope: 'user',
+      reason: 'missing_executable',
+    })
     expect(orphans.find((o) => o.label === 'com.gone.app')).toMatchObject({
       plistPath: `${USER_DIR}/com.gone.app.plist`,
       missingExecutable: '/Applications/Gone.app/Contents/MacOS/Gone',
@@ -220,7 +230,7 @@ describe('orphaned launch agents', () => {
 
     expect(orphans.find((o) => o.label === 'org.tool.helper')).toBeUndefined()
     // High-confidence detections are unaffected.
-    expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon'])
+    expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon', 'com.gonegame.launcher'])
   })
 
   it('does not flag missing-app candidates when Spotlight indexing is off (empty results even for the probe)', async () => {
@@ -232,7 +242,7 @@ describe('orphaned launch agents', () => {
     const { findOrphanedLaunchAgents } = await import('../../src/main/services/startup')
     const orphans = await findOrphanedLaunchAgents()
 
-    expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon'])
+    expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon', 'com.gonegame.launcher'])
   })
 
   it('unloads and trashes a confirmed user orphan, reporting the count', async () => {

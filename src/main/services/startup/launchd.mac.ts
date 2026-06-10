@@ -46,10 +46,20 @@ export async function parsePlist(plistPath: string): Promise<PlistInfo> {
   }
 }
 
-/** Resolve the absolute executable a launchd plist points at, or null when it can't be determined safely. */
+/** Resolve the absolute executable (or .app bundle) a launchd plist points at, or null when it can't be determined safely. */
 export function resolveLaunchAgentExecutable(info: PlistInfo): string | null {
-  let candidate = info.program ?? info.programArguments?.[0]
+  const args = info.programArguments ?? []
+  let candidate = info.program ?? args[0]
   if (!candidate) return null
+
+  // `open <path>` launchers (e.g. Epic Games) don't reference a binary directly —
+  // the real target is the first path argument, typically an .app bundle.
+  if (candidate === 'open' || candidate === '/usr/bin/open') {
+    const target = args.slice(1).find((a) => a.startsWith('/'))
+    if (!target) return null
+    candidate = target
+  }
+
   if (candidate.startsWith('~')) {
     candidate = path.join(homedir(), candidate.slice(1))
   }

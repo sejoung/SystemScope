@@ -10,12 +10,11 @@ import type {
   CleanupPreviewItem,
   CleanupResult
 } from '@shared/types'
-import { getSettings, setSettings } from '../../store/settingsStore'
 import { listDockerContainers, removeDockerContainers } from '@main/services/docker/dockerImages'
 import { recordEvent } from '@main/services/history/eventStore'
 import { logInfo, logWarn } from '@main/services/core/logging'
 import { getDirSize } from '../../utils/getDirSize'
-import { getEffectiveCleanupRules } from '@main/services/profile/profileManager'
+import { getEffectiveCleanupRules, setEffectiveCleanupRuleConfig } from '@main/services/profile/profileManager'
 
 const home = homedir()
 const isMac = platform() === 'darwin'
@@ -124,26 +123,11 @@ export function getCleanupRules(): CleanupRule[] {
 }
 
 /**
- * Update a single rule's config in settings.
+ * Update a single rule's config — written to the active profile when one is
+ * active (the same place getCleanupRules reads from), otherwise to settings.
  */
 export function setCleanupRuleConfig(config: CleanupRuleConfig): void {
-  const settings = getSettings()
-  const rules = [...settings.automation.rules]
-
-  const existingIndex = rules.findIndex((r) => r.id === config.id)
-  if (existingIndex >= 0) {
-    rules[existingIndex] = config
-  } else {
-    rules.push(config)
-  }
-
-  setSettings({
-    automation: {
-      ...settings.automation,
-      rules
-    }
-  })
-
+  setEffectiveCleanupRuleConfig(config)
   logInfo('cleanup-rules', 'Rule config updated', { ruleId: config.id, enabled: config.enabled, minAgeDays: config.minAgeDays })
 }
 
