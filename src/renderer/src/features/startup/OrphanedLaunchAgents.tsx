@@ -6,8 +6,9 @@ import { useToast } from '../../components/ui/Toast'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 
 /**
- * Lists user LaunchAgents whose target executable no longer exists (leftovers from
+ * Lists LaunchAgents/LaunchDaemons whose target no longer exists (leftovers from
  * uninstalled apps) and lets the user move the stale .plist files to the Trash.
+ * System-scope items trigger a single macOS administrator password prompt.
  * Renders nothing when there are none (e.g. non-macOS or a clean system).
  */
 export function OrphanedLaunchAgents() {
@@ -23,7 +24,9 @@ export function OrphanedLaunchAgents() {
       const res = await window.systemScope.findOrphanedLaunchAgents()
       if (res.ok && isOrphanedLaunchAgentArray(res.data)) {
         setOrphans(res.data)
-        setSelected(new Set(res.data.map((o) => o.id)))
+        // Pre-select only the high-confidence orphans; "associated app missing"
+        // entries are a heuristic, so the user opts in per item.
+        setSelected(new Set(res.data.filter((o) => o.reason !== 'missing_app').map((o) => o.id)))
       } else {
         setOrphans([])
       }
@@ -95,9 +98,20 @@ export function OrphanedLaunchAgents() {
               style={{ marginTop: 3 }}
             />
             <div style={{ minWidth: 0 }}>
-              <div style={labelStyle}>{o.label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                <div style={labelStyle}>{o.label}</div>
+                <span style={o.scope === 'system' ? systemBadgeStyle : userBadgeStyle}>
+                  {tk(o.scope === 'system' ? 'startup.orphans.scope_system' : 'startup.orphans.scope_user')}
+                </span>
+              </div>
               <div style={metaStyle} title={o.missingExecutable}>
-                {tk('startup.orphans.missing')}: {o.missingExecutable}
+                {tk(
+                  o.reason === 'broken_symlink'
+                    ? 'startup.orphans.broken_link'
+                    : o.reason === 'missing_app'
+                      ? 'startup.orphans.missing_app'
+                      : 'startup.orphans.missing'
+                )}: {o.missingExecutable}
               </div>
               <div style={pathStyle} title={o.plistPath}>{o.plistPath}</div>
             </div>
@@ -109,7 +123,11 @@ export function OrphanedLaunchAgents() {
         open={confirmOpen}
         tone="danger"
         title={tk('startup.orphans.confirm_title')}
-        message={tk('startup.orphans.confirm_message', { count: selected.size })}
+        message={
+          orphans.some((o) => selected.has(o.id) && o.scope === 'system')
+            ? `${tk('startup.orphans.confirm_message', { count: selected.size })} ${tk('startup.orphans.admin_required')}`
+            : tk('startup.orphans.confirm_message', { count: selected.size })
+        }
         confirmLabel={tk('startup.orphans.confirm_ok')}
         cancelLabel={tk('Cancel')}
         onConfirm={handleRemove}
@@ -131,6 +149,9 @@ const titleStyle: React.CSSProperties = { margin: 0, fontSize: 14, fontWeight: 7
 const descStyle: React.CSSProperties = { margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }
 const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8 }
 const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+const badgeBase: React.CSSProperties = { fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 999, flexShrink: 0, textTransform: 'uppercase' }
+const userBadgeStyle: React.CSSProperties = { ...badgeBase, color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+const systemBadgeStyle: React.CSSProperties = { ...badgeBase, color: 'var(--accent-yellow)', border: '1px solid var(--accent-yellow)' }
 const metaStyle: React.CSSProperties = { fontSize: 12, color: 'var(--accent-red)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'monospace' }
 const pathStyle: React.CSSProperties = { fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'monospace' }
 const trashBtnStyle: React.CSSProperties = {

@@ -20,6 +20,19 @@ const execFileAsync = promisify(execFile)
 const leftoverSizeCache = new Map<string, number>()
 const LEFTOVER_SIZE_HYDRATE_CONCURRENCY = 2
 
+// Vendors nest apps in plain folders under /Applications (e.g. "CLIP STUDIO 1.5",
+// "nProtect/..."). The folder is the real uninstall unit — trashing just the inner
+// .app would leave the rest of the vendor folder behind — so such folders are listed
+// as one app each. Folders that merely group independent apps are the exception and
+// get their contents listed individually instead.
+const NESTED_APP_SCAN_DEPTH = 4
+const EPIC_GAMES_ROOT = '/Users/Shared/Epic Games'
+const APP_COLLECTION_FOLDERS = new Set(['Utilities', 'Setapp'])
+
+function isAppCollectionFolder(name: string): boolean {
+  return APP_COLLECTION_FOLDERS.has(name) || name.endsWith('.localized')
+}
+
 export async function listMacInstalledApps(): Promise<InstalledApp[]> {
   const roots = ['/Applications', path.join(homedir(), 'Applications')]
   const currentAppBundlePath = getCurrentMacAppBundlePath()
@@ -34,28 +47,129 @@ export async function listMacInstalledApps(): Promise<InstalledApp[]> {
     }
 
     for (const entry of entries) {
-      if (!entry.isDirectory() || !entry.name.endsWith('.app')) continue
-      const appPath = path.join(root, entry.name)
-      const metadata = await readMacAppMetadata(appPath)
-      const protectedApp = appPath.startsWith('/System/Applications') || appPath === currentAppBundlePath
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+      const entryPath = path.join(root, entry.name)
 
-      apps.push({
-        id: appPath,
-        name: metadata.name,
-        version: metadata.version,
-        publisher: metadata.bundleId,
-        bundleId: metadata.bundleId,
-        installLocation: root,
-        launchPath: appPath,
-        platform: 'mac',
-        uninstallKind: 'trash_app',
-        protected: protectedApp,
-        protectedReason: protectedApp ? tk('main.apps.protected.system_app') : undefined
-      })
+      if (entry.name.endsWith('.app')) {
+        apps.push(await buildMacAppEntry(entryPath, currentAppBundlePath))
+      } else if (isAppCollectionFolder(entry.name)) {
+        // A folder of independent apps — list each one on its own.
+        const bundlePaths: string[] = []
+        await collectMacAppBundles(entryPath, NESTED_APP_SCAN_DEPTH - 1, bundlePaths)
+        for (const appPath of bundlePaths) {
+          apps.push(await buildMacAppEntry(appPath, currentAppBundlePath))
+        }
+      } else {
+        // A vendor folder — one entry for the whole folder if it contains any app.
+        const folderEntry = await buildMacFolderAppEntry(entryPath, entry.name, currentAppBundlePath)
+        if (folderEntry) apps.push(folderEntry)
+      }
     }
   }
 
+  await collectEpicGamesInstalls(apps)
+
   return apps
+}
+
+async function buildMacAppEntry(appPath: string, currentAppBundlePath: string | null): Promise<InstalledApp> {
+  const metadata = await readMacAppMetadata(appPath)
+  const protectedApp = appPath.startsWith('/System/Applications') || appPath === currentAppBundlePath
+
+  return {
+    id: appPath,
+    name: metadata.name,
+    version: metadata.version,
+    publisher: metadata.bundleId,
+    bundleId: metadata.bundleId,
+    installLocation: path.dirname(appPath),
+    launchPath: appPath,
+    platform: 'mac',
+    uninstallKind: 'trash_app',
+    protected: protectedApp,
+    protectedReason: protectedApp ? tk('main.apps.protected.system_app') : undefined
+  }
+}
+
+/** One entry representing a vendor folder (trashed as a whole), or null when it contains no app. */
+async function buildMacFolderAppEntry(
+  folderPath: string,
+  folderName: string,
+  currentAppBundlePath: string | null
+): Promise<InstalledApp | null> {
+  const bundlePaths: string[] = []
+  await collectMacAppBundles(folderPath, NESTED_APP_SCAN_DEPTH - 1, bundlePaths)
+  if (bundlePaths.length === 0) return null
+
+  // Borrow version/bundle id from the first inner app; the name stays the folder's.
+  const metadata = await readMacAppMetadata(bundlePaths[0])
+  const containsCurrentApp = currentAppBundlePath !== null && currentAppBundlePath.startsWith(folderPath + path.sep)
+
+  return {
+    id: folderPath,
+    name: folderName,
+    version: metadata.version,
+    publisher: metadata.bundleId,
+    bundleId: metadata.bundleId,
+    installLocation: path.dirname(folderPath),
+    launchPath: folderPath,
+    platform: 'mac',
+    uninstallKind: 'trash_app',
+    protected: containsCurrentApp,
+    protectedReason: containsCurrentApp ? tk('main.apps.protected.system_app') : undefined
+  }
+}
+
+/** Collect .app bundles in `dir`, descending into plain folders up to `depth` levels (never into .app bundles). */
+async function collectMacAppBundles(dir: string, depth: number, found: string[]): Promise<void> {
+  let entries
+  try {
+    entries = await fsp.readdir(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    const fullPath = path.join(dir, entry.name)
+    if (entry.name.endsWith('.app')) {
+      found.push(fullPath)
+    } else if (depth > 1) {
+      await collectMacAppBundles(fullPath, depth - 1, found)
+    }
+  }
+}
+
+/**
+ * Epic Games installs (Unreal Engine, games) live in /Users/Shared/Epic Games as plain
+ * folders with the .app buried deep inside; the folder itself is the uninstall unit,
+ * so each top-level folder is listed as one app and trashed as a whole.
+ */
+async function collectEpicGamesInstalls(apps: InstalledApp[]): Promise<void> {
+  let entries
+  try {
+    entries = await fsp.readdir(EPIC_GAMES_ROOT, { withFileTypes: true })
+  } catch {
+    return
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    const folderPath = path.join(EPIC_GAMES_ROOT, entry.name)
+    const ueMatch = /^UE_(.+)$/.exec(entry.name)
+
+    apps.push({
+      id: folderPath,
+      name: ueMatch ? `Unreal Engine ${ueMatch[1]}` : entry.name,
+      version: ueMatch?.[1],
+      publisher: 'Epic Games',
+      installLocation: EPIC_GAMES_ROOT,
+      launchPath: folderPath,
+      platform: 'mac',
+      uninstallKind: 'trash_app',
+      protected: false
+    })
+  }
 }
 
 async function readMacAppMetadata(appPath: string): Promise<{ name: string; version?: string; bundleId?: string }> {
