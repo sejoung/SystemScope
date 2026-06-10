@@ -15,6 +15,7 @@ import { recordEvent } from '@main/services/history/eventStore'
 import { logInfo, logWarn } from '@main/services/core/logging'
 import { getDirSize } from '../../utils/getDirSize'
 import { getEffectiveCleanupRules, setEffectiveCleanupRuleConfig } from '@main/services/profile/profileManager'
+import { adminMoveToTrash } from '@main/services/core/adminShell.mac'
 
 const home = homedir()
 const isMac = platform() === 'darwin'
@@ -242,18 +243,44 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
     }
   }
 
+  // Items trashItem couldn't move although they still exist — typically root-owned
+  // dirs an installer left in the user's home (e.g. ~/Library/Logs/Wondershare).
+  const adminRetry: Array<{ path: string; size: number }> = []
+
   for (const filePath of fileSystemPaths) {
+    let size = 0
     try {
       const stat = await fs.stat(filePath)
-      const size = stat.isDirectory() ? await getDirSize(filePath) : stat.size
+      size = stat.isDirectory() ? await getDirSize(filePath) : stat.size
 
       await shell.trashItem(filePath)
       deletedCount++
       deletedSize += size
     } catch (err) {
+      const stillPresent = await fs.lstat(filePath).then(() => true).catch(() => false)
+      if (isMac && stillPresent) {
+        adminRetry.push({ path: filePath, size })
+        logWarn('cleanup-rules', 'Trash failed, will retry with administrator privileges', { path: filePath, error: err })
+      } else {
+        failedCount++
+        failedPaths.push(filePath)
+        logWarn('cleanup-rules', 'Failed to move item to trash', { path: filePath, error: err })
+      }
+    }
+  }
+
+  if (adminRetry.length > 0) {
+    // One macOS password prompt for the whole batch.
+    const { moved, failed } = await adminMoveToTrash(adminRetry.map((i) => i.path))
+    const sizeByPath = new Map(adminRetry.map((i) => [i.path, i.size]))
+    for (const movedPath of moved) {
+      deletedCount++
+      deletedSize += sizeByPath.get(movedPath) ?? 0
+    }
+    for (const failedPath of failed) {
       failedCount++
-      failedPaths.push(filePath)
-      logWarn('cleanup-rules', 'Failed to move item to trash', { path: filePath, error: err })
+      failedPaths.push(failedPath)
+      logWarn('cleanup-rules', 'Failed to move item to trash even with administrator privileges', { path: failedPath })
     }
   }
 

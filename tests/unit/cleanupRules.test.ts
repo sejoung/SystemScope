@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_SETTINGS } from '../../src/main/store/settingsSchema'
 
 const statMock = vi.hoisted(() => vi.fn())
+const lstatMock = vi.hoisted(() => vi.fn())
 const accessMock = vi.hoisted(() => vi.fn())
 const readdirMock = vi.hoisted(() => vi.fn())
 const trashItemMock = vi.hoisted(() => vi.fn())
+const adminMoveToTrashMock = vi.hoisted(() => vi.fn())
 const getSettingsMock = vi.hoisted(() => vi.fn())
 const setSettingsMock = vi.hoisted(() => vi.fn())
 const listDockerContainersMock = vi.hoisted(() => vi.fn())
@@ -16,8 +18,21 @@ const getDirSizeMock = vi.hoisted(() => vi.fn())
 
 vi.mock('node:fs/promises', () => ({
   stat: statMock,
+  lstat: lstatMock,
   access: accessMock,
   readdir: readdirMock
+}))
+
+vi.mock('node:os', () => ({
+  homedir: () => '/Users/test',
+  platform: () => 'darwin',
+  tmpdir: () => '/tmp'
+}))
+
+vi.mock('../../src/main/services/core/adminShell.mac', () => ({
+  adminMoveToTrash: adminMoveToTrashMock,
+  shellQuote: (v: string) => v,
+  runAdminShellScript: vi.fn()
 }))
 
 vi.mock('electron', () => ({
@@ -53,9 +68,11 @@ describe('cleanupRules', () => {
   beforeEach(() => {
     vi.resetModules()
     statMock.mockReset()
+    lstatMock.mockReset()
     accessMock.mockReset()
     readdirMock.mockReset()
     trashItemMock.mockReset()
+    adminMoveToTrashMock.mockReset()
     getSettingsMock.mockReset()
     setSettingsMock.mockReset()
     listDockerContainersMock.mockReset()
@@ -129,6 +146,50 @@ describe('cleanupRules', () => {
     expect(getDirSizeMock).toHaveBeenCalledWith('/tmp/cache-dir')
     expect(trashItemMock).toHaveBeenCalledWith('/tmp/cache-dir')
     expect(result.deletedSize).toBe(8192)
+  })
+
+  it('retries permission-blocked items through one admin prompt and counts them as deleted', async () => {
+    const blockedPath = '/Users/test/Library/Logs/Wondershare'
+    statMock.mockResolvedValue({ isDirectory: () => true, size: 0 })
+    getDirSizeMock.mockResolvedValue(4096)
+    trashItemMock.mockRejectedValue(new Error('permission denied'))
+    lstatMock.mockResolvedValue({}) // still on disk after the failed trash → permission problem
+    adminMoveToTrashMock.mockResolvedValue({ moved: [blockedPath], failed: [] })
+
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanup/cleanupRules')
+    __setPreviewedTargetsForTests([blockedPath])
+    const result = await executeCleanup([blockedPath])
+
+    expect(adminMoveToTrashMock).toHaveBeenCalledWith([blockedPath])
+    expect(result).toMatchObject({ deletedCount: 1, deletedSize: 4096, failedCount: 0 })
+  })
+
+  it('reports items as failed when the admin retry does not move them (e.g. prompt canceled)', async () => {
+    const blockedPath = '/Users/test/Library/Caches/RootDependence'
+    statMock.mockResolvedValue({ isDirectory: () => false, size: 100 })
+    trashItemMock.mockRejectedValue(new Error('permission denied'))
+    lstatMock.mockResolvedValue({})
+    adminMoveToTrashMock.mockResolvedValue({ moved: [], failed: [blockedPath] })
+
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanup/cleanupRules')
+    __setPreviewedTargetsForTests([blockedPath])
+    const result = await executeCleanup([blockedPath])
+
+    expect(result).toMatchObject({ deletedCount: 0, failedCount: 1 })
+    expect(result.failedPaths).toContain(blockedPath)
+  })
+
+  it('does not invoke the admin prompt for items that already vanished', async () => {
+    const gonePath = '/Users/test/Library/Caches/AlreadyGone'
+    statMock.mockRejectedValue(new Error('ENOENT'))
+    lstatMock.mockRejectedValue(new Error('ENOENT')) // gone — nothing to retry as admin
+
+    const { executeCleanup, __setPreviewedTargetsForTests } = await import('../../src/main/services/cleanup/cleanupRules')
+    __setPreviewedTargetsForTests([gonePath])
+    const result = await executeCleanup([gonePath])
+
+    expect(adminMoveToTrashMock).not.toHaveBeenCalled()
+    expect(result).toMatchObject({ deletedCount: 0, failedCount: 1 })
   })
 
   it('should reject targets that were not part of the last preview', async () => {

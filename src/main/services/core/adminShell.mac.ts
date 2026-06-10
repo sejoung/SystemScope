@@ -1,3 +1,7 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { homedir } from 'node:os'
+import { createHash } from 'node:crypto'
 import { runExternalCommand } from '@main/services/core/externalCommand'
 
 /** Generous: the prompt waits on the user typing their password. */
@@ -33,4 +37,40 @@ export async function runAdminShellScript(script: string): Promise<void> {
     }
     throw err
   }
+}
+
+/**
+ * Move root-owned (or otherwise permission-blocked) items to the user's Trash through
+ * one administrator password prompt. Ownership is handed back to the user so the Trash
+ * can be inspected/emptied without further prompts. The shell ignores per-line failures,
+ * so success is verified per item by checking the path actually left its directory.
+ */
+export async function adminMoveToTrash(targets: string[]): Promise<{ moved: string[]; failed: string[] }> {
+  const trashDir = path.join(homedir(), '.Trash')
+  const uid = process.getuid?.() ?? 0
+  const gid = process.getgid?.() ?? 0
+
+  const lines = targets.flatMap((target) => {
+    // Path-derived suffix keeps same-named items from different directories from colliding.
+    const suffix = createHash('sha256').update(target).digest('hex').slice(0, 8)
+    const trashPath = path.join(trashDir, `${path.basename(target)}.${suffix}`)
+    return [
+      `mv -f ${shellQuote(target)} ${shellQuote(trashPath)}`,
+      `chown -R ${uid}:${gid} ${shellQuote(trashPath)} 2>/dev/null || true`,
+    ]
+  })
+
+  try {
+    await runAdminShellScript(lines.join('\n'))
+  } catch {
+    // Canceled or failed — per-item verification below decides what actually moved.
+  }
+
+  const moved: string[] = []
+  const failed: string[] = []
+  for (const target of targets) {
+    const stillPresent = await fs.lstat(target).then(() => true).catch(() => false)
+    ;(stillPresent ? failed : moved).push(target)
+  }
+  return { moved, failed }
 }
