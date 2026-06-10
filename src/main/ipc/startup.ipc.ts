@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
-import { getStartupItems, toggleStartupItem, findOrphanedLaunchAgents, removeOrphanedLaunchAgents } from '@main/services/apps'
+import { getStartupItems, toggleStartupItem, findOrphanedLaunchAgents, removeOrphanedLaunchAgents } from '@main/services/startup'
 import { logInfoAction, logErrorAction } from '@main/services/core'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 

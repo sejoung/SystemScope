@@ -4,7 +4,7 @@ import { homedir } from 'node:os'
 import type { StartupItem } from '@shared/types'
 import { runExternalCommand, isExternalCommandError } from '@main/services/core/externalCommand'
 import { logDebug } from '@main/services/core/logging'
-import { startupItemId } from './startupShared'
+import { startupItemId } from './startupItemId'
 
 const REG_TIMEOUT_MS = 10000
 

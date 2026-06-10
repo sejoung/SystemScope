@@ -4,10 +4,10 @@ import { tmpdir } from 'node:os'
 import type { StartupItem } from '@shared/types'
 import { runExternalCommand } from '@main/services/core/externalCommand'
 import { logDebug } from '@main/services/core/logging'
-import { runWithConcurrency } from './installedAppsShared'
-import { startupItemId } from './startupShared'
-import { shellQuote, runAdminShellScript } from './adminShell.mac'
-import { mdfindBundlePaths } from './spotlight.mac'
+import { runWithConcurrency } from '@main/services/core/runWithConcurrency'
+import { shellQuote, runAdminShellScript } from '@main/services/core/adminShell.mac'
+import { mdfindBundlePaths } from '@main/services/core/spotlight.mac'
+import { startupItemId } from './startupItemId'
 import {
   LAUNCHD_SCAN_LOCATIONS,
   LAUNCHCTL_TIMEOUT_MS,

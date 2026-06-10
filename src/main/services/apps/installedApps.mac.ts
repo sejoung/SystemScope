@@ -8,12 +8,12 @@ import type { AppLeftoverDataItem, AppRelatedDataItem, InstalledApp } from '@sha
 import { logDebug } from '@main/services/core/logging'
 import { tk } from '../../i18n'
 import { getDirSize } from '../../utils/getDirSize'
+import { runWithConcurrency } from '@main/services/core/runWithConcurrency'
 import {
   createRelatedDataItem,
   dedupeByPath,
   dedupeLeftoverByPath,
-  applyCachedLeftoverSizes,
-  runWithConcurrency
+  applyCachedLeftoverSizes
 } from './installedAppsShared'
 
 const execFileAsync = promisify(execFile)

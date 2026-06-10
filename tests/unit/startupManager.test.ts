@@ -153,7 +153,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('flags missing-executable plists across user and system dirs, plus broken symlinks', async () => {
-    const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const { findOrphanedLaunchAgents } = await import('../../src/main/services/startup')
     const orphans = await findOrphanedLaunchAgents()
 
     expect(orphans.map((o) => o.label).sort()).toEqual([
@@ -203,7 +203,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('never flags executables whose absence cannot be confirmed (EACCES is not ENOENT)', async () => {
-    const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const { findOrphanedLaunchAgents } = await import('../../src/main/services/startup')
     const orphans = await findOrphanedLaunchAgents()
 
     expect(orphans.find((o) => o.label === 'com.locked.daemon')).toBeUndefined()
@@ -215,7 +215,7 @@ describe('orphaned launch agents', () => {
       return baseRun(cmd, args)
     })
 
-    const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const { findOrphanedLaunchAgents } = await import('../../src/main/services/startup')
     const orphans = await findOrphanedLaunchAgents()
 
     expect(orphans.find((o) => o.label === 'org.tool.helper')).toBeUndefined()
@@ -229,14 +229,14 @@ describe('orphaned launch agents', () => {
       return baseRun(cmd, args)
     })
 
-    const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const { findOrphanedLaunchAgents } = await import('../../src/main/services/startup')
     const orphans = await findOrphanedLaunchAgents()
 
     expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon'])
   })
 
   it('unloads and trashes a confirmed user orphan, reporting the count', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const orphans = await mod.findOrphanedLaunchAgents()
     const id = orphans.find((o) => o.label === 'com.gone.app')!.id
 
@@ -249,7 +249,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('removes system orphans through a single osascript admin prompt', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const orphans = await mod.findOrphanedLaunchAgents()
     const systemOrphans = orphans.filter((o) => o.scope === 'system')
 
@@ -274,7 +274,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('reports items still present after the admin script as failed (no blind success)', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const orphans = await mod.findOrphanedLaunchAgents()
     const systemIds = orphans.filter((o) => o.scope === 'system').map((o) => o.id)
 
@@ -293,7 +293,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('reports all system orphans as failed when the admin prompt is canceled', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const orphans = await mod.findOrphanedLaunchAgents()
     const systemIds = orphans.filter((o) => o.scope === 'system').map((o) => o.id)
 
@@ -309,7 +309,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('derives friendly display names like macOS System Settings does', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const items = await mod.getStartupItems()
     const byLabel = (label: string) => items.find((i) => i.label === label)!
 
@@ -324,7 +324,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('toggles a system daemon through the admin prompt instead of writing next to the plist', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const items = await mod.getStartupItems()
     const daemon = items.find((i) => i.label === 'com.alive.daemon')!
 
@@ -342,7 +342,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('still toggles user agents in place without an admin prompt', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const items = await mod.getStartupItems()
     const agent = items.find((i) => i.label === 'com.live.app')!
 
@@ -355,7 +355,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('refuses to toggle a symlinked plist (writing through it would modify the app bundle)', async () => {
-    const mod = await import('../../src/main/services/apps/startupManager')
+    const mod = await import('../../src/main/services/startup')
     const orphans = await mod.findOrphanedLaunchAgents()
     const id = orphans.find((o) => o.plistPath === BROKEN_SYMLINK)!.id
 
@@ -367,7 +367,7 @@ describe('orphaned launch agents', () => {
   })
 
   it('rejects ids that are not currently orphaned (no trashing)', async () => {
-    const { removeOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const { removeOrphanedLaunchAgents } = await import('../../src/main/services/startup')
     const result = await removeOrphanedLaunchAgents(['deadbeefdeadbeef'])
 
     expect(trashMock).not.toHaveBeenCalled()
