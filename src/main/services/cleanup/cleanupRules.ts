@@ -26,6 +26,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Old Downloads',
     description: 'Files in Downloads folder older than the configured threshold',
     category: 'downloads',
+    safetyLevel: 'caution',
     targetPaths: [path.join(home, 'Downloads')]
   },
   {
@@ -33,6 +34,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Xcode DerivedData',
     description: 'Xcode build cache that can be safely regenerated',
     category: 'dev_tools',
+    safetyLevel: 'safe',
     targetPaths: isMac ? [path.join(home, 'Library/Developer/Xcode/DerivedData')] : []
   },
   {
@@ -40,6 +42,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Xcode Archives',
     description: 'Old Xcode archive builds',
     category: 'dev_tools',
+    safetyLevel: 'risky',
     targetPaths: isMac ? [path.join(home, 'Library/Developer/Xcode/Archives')] : []
   },
   {
@@ -47,6 +50,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'npm Cache',
     description: 'npm package download cache',
     category: 'package_managers',
+    safetyLevel: 'safe',
     targetPaths: [path.join(home, isMac ? '.npm/_cacache' : 'AppData/Local/npm-cache/_cacache')]
   },
   {
@@ -54,6 +58,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'pnpm Cache',
     description: 'pnpm content-addressable store cache',
     category: 'package_managers',
+    safetyLevel: 'safe',
     targetPaths: [path.join(home, isMac ? 'Library/pnpm/store' : 'AppData/Local/pnpm/store')]
   },
   {
@@ -61,6 +66,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Yarn Cache',
     description: 'Yarn package cache',
     category: 'package_managers',
+    safetyLevel: 'safe',
     targetPaths: [path.join(home, isMac ? 'Library/Caches/Yarn' : 'AppData/Local/Yarn/Cache')]
   },
   {
@@ -68,6 +74,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Docker Stopped Containers',
     description: 'Docker containers that are no longer running',
     category: 'docker',
+    safetyLevel: 'safe',
     targetPaths: [] // handled via Docker CLI, not filesystem
   },
   {
@@ -75,6 +82,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Old Log Files',
     description: 'System and application log files',
     category: 'system',
+    safetyLevel: 'safe',
     targetPaths: isMac ? [path.join(home, 'Library/Logs')] : [path.join(home, 'AppData/Local/Temp')]
   },
   {
@@ -82,6 +90,7 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
     name: 'Temporary Files',
     description: 'Temporary files and caches',
     category: 'system',
+    safetyLevel: 'safe',
     targetPaths: isMac ? [path.join(home, 'Library/Caches')] : [path.join(home, 'AppData/Local/Temp')]
   }
 ]

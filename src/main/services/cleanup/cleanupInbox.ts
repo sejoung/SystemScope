@@ -62,16 +62,17 @@ export async function getCleanupInbox(): Promise<CleanupInbox> {
     .filter((item) => !dismissedPaths.has(item.path))
     .map((item) => {
       const rule = ruleMap.get(item.rule)
-      const category = rule?.category ?? 'system'
       return {
         id: randomUUID(),
         ruleId: item.rule,
         ruleName: rule?.name ?? item.rule,
-        category,
+        category: rule?.category ?? 'system',
         path: item.path,
         size: item.size,
         modifiedAt: item.modifiedAt,
-        safetyLevel: determineSafety(category),
+        // Per-rule safety: e.g. DerivedData is regenerable (safe) while Archives
+        // are not (risky), even though both are dev_tools.
+        safetyLevel: rule?.safetyLevel ?? 'caution',
         reason: buildReason(item, rule)
       }
     })
@@ -95,21 +96,6 @@ export async function dismissInboxItem(itemPath: string): Promise<void> {
     logInfo('cleanup-inbox', `Dismissed item: ${itemPath}`)
   } catch (err) {
     logError('cleanup-inbox', 'Failed to persist dismissed item', err)
-  }
-}
-
-function determineSafety(category: string): 'safe' | 'caution' | 'risky' {
-  switch (category) {
-    case 'package_managers':
-    case 'docker':
-    case 'system':
-      return 'safe'
-    case 'downloads':
-      return 'caution'
-    case 'dev_tools':
-      return 'risky'
-    default:
-      return 'caution'
   }
 }
 

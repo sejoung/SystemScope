@@ -192,6 +192,17 @@ describe('cleanupRules', () => {
     expect(result).toMatchObject({ deletedCount: 0, failedCount: 1 })
   })
 
+  it('assigns per-rule safety levels (DerivedData regenerable → safe, Archives → risky)', async () => {
+    const { getCleanupRules } = await import('../../src/main/services/cleanup/cleanupRules')
+    const rules = getCleanupRules()
+    const byId = (id: string) => rules.find((r) => r.id === id)!
+
+    expect(byId('xcode_derived_data').safetyLevel).toBe('safe')
+    expect(byId('xcode_archives').safetyLevel).toBe('risky')
+    expect(byId('downloads_old_files').safetyLevel).toBe('caution')
+    expect(byId('npm_cache').safetyLevel).toBe('safe')
+  })
+
   it('should reject targets that were not part of the last preview', async () => {
     statMock.mockResolvedValue({ isDirectory: () => false, size: 100 })
     trashItemMock.mockResolvedValue(undefined)

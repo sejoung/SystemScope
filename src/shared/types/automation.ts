@@ -9,6 +9,8 @@ export type CleanupRuleId =
   | 'old_logs'
   | 'temp_files'
 
+export type CleanupSafetyLevel = 'safe' | 'caution' | 'risky'
+
 export interface CleanupRule {
   id: CleanupRuleId
   name: string
@@ -19,6 +21,8 @@ export interface CleanupRule {
   minAgeDays: number
   /** Paths this rule scans (resolved at runtime) */
   targetPaths: string[]
+  /** How safe deleting this rule's matches is — drives the inbox badge and Approve All eligibility. */
+  safetyLevel: CleanupSafetyLevel
 }
 
 export interface CleanupPreviewItem {
@@ -56,7 +60,7 @@ export interface CleanupInboxItem {
   path: string
   size: number
   modifiedAt: number
-  safetyLevel: 'safe' | 'caution' | 'risky'
+  safetyLevel: CleanupSafetyLevel
   reason: string
 }
 
