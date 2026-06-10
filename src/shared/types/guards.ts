@@ -234,7 +234,15 @@ export function isStartupToggleResult(data: unknown): data is StartupToggleResul
 
 /** OrphanedLaunchAgent */
 export function isOrphanedLaunchAgent(data: unknown): data is OrphanedLaunchAgent {
-  return isObj(data) && typeof data.id === 'string' && typeof data.plistPath === 'string' && typeof data.missingExecutable === 'string'
+  return (
+    isObj(data) &&
+    typeof data.id === 'string' &&
+    typeof data.plistPath === 'string' &&
+    typeof data.missingExecutable === 'string' &&
+    typeof data.scope === 'string' &&
+    typeof data.kind === 'string' &&
+    typeof data.reason === 'string'
+  )
 }
 
 /** OrphanedLaunchAgent[] — first-element sampling */

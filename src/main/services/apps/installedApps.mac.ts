@@ -23,14 +23,24 @@ const LEFTOVER_SIZE_HYDRATE_CONCURRENCY = 2
 // Vendors nest apps in plain folders under /Applications (e.g. "CLIP STUDIO 1.5",
 // "nProtect/..."). The folder is the real uninstall unit — trashing just the inner
 // .app would leave the rest of the vendor folder behind — so such folders are listed
-// as one app each. Folders that merely group independent apps are the exception and
-// get their contents listed individually instead.
+// as one app each. Folders that merely group independent apps (known collection
+// folders, or folders whose inner apps come from different vendors, like a
+// user-created "Games" folder) get their contents listed individually instead.
 const NESTED_APP_SCAN_DEPTH = 4
 const EPIC_GAMES_ROOT = '/Users/Shared/Epic Games'
 const APP_COLLECTION_FOLDERS = new Set(['Utilities', 'Setapp'])
+const FOLDER_METADATA_APP_LIMIT = 20
 
 function isAppCollectionFolder(name: string): boolean {
   return APP_COLLECTION_FOLDERS.has(name) || name.endsWith('.localized')
+}
+
+/** "com.celsys.clipstudiopaint" → "com.celsys"; undefined when the id is missing or not reverse-DNS. */
+function bundleIdVendor(bundleId: string | undefined): string | undefined {
+  if (!bundleId) return undefined
+  const segments = bundleId.split('.')
+  if (segments.length < 3) return undefined
+  return `${segments[0]}.${segments[1]}`.toLowerCase()
 }
 
 export async function listMacInstalledApps(): Promise<InstalledApp[]> {
@@ -52,17 +62,25 @@ export async function listMacInstalledApps(): Promise<InstalledApp[]> {
 
       if (entry.name.endsWith('.app')) {
         apps.push(await buildMacAppEntry(entryPath, currentAppBundlePath))
-      } else if (isAppCollectionFolder(entry.name)) {
-        // A folder of independent apps — list each one on its own.
-        const bundlePaths: string[] = []
-        await collectMacAppBundles(entryPath, NESTED_APP_SCAN_DEPTH - 1, bundlePaths)
+        continue
+      }
+
+      const bundlePaths: string[] = []
+      await collectMacAppBundles(entryPath, NESTED_APP_SCAN_DEPTH - 1, bundlePaths)
+      if (bundlePaths.length === 0) continue // no apps inside → not an app at all
+
+      const inner = await readInnerAppsMetadata(bundlePaths)
+      const vendors = new Set(inner.map((a) => bundleIdVendor(a.bundleId)).filter(Boolean))
+
+      // Apps from more than one vendor means this folder merely groups independent
+      // apps (e.g. a user-made "Games" folder) — trashing it as one unit would
+      // delete unrelated apps, so list the contents individually instead.
+      if (isAppCollectionFolder(entry.name) || vendors.size > 1) {
         for (const appPath of bundlePaths) {
           apps.push(await buildMacAppEntry(appPath, currentAppBundlePath))
         }
       } else {
-        // A vendor folder — one entry for the whole folder if it contains any app.
-        const folderEntry = await buildMacFolderAppEntry(entryPath, entry.name, currentAppBundlePath)
-        if (folderEntry) apps.push(folderEntry)
+        apps.push(buildMacFolderAppEntry(entryPath, entry.name, inner, currentAppBundlePath))
       }
     }
   }
@@ -91,32 +109,41 @@ async function buildMacAppEntry(appPath: string, currentAppBundlePath: string | 
   }
 }
 
-/** One entry representing a vendor folder (trashed as a whole), or null when it contains no app. */
-async function buildMacFolderAppEntry(
+async function readInnerAppsMetadata(bundlePaths: string[]): Promise<Array<{ name: string; bundleId?: string }>> {
+  return Promise.all(
+    bundlePaths.slice(0, FOLDER_METADATA_APP_LIMIT).map(async (appPath) => ({
+      name: path.basename(appPath, '.app'),
+      bundleId: await readMacPlistValue(path.join(appPath, 'Contents', 'Info.plist'), 'CFBundleIdentifier')
+    }))
+  )
+}
+
+/**
+ * One entry representing a vendor folder, trashed as a whole. Every inner app's
+ * name/bundleId is kept in containedApps so leftover-data detection and related-data
+ * cleanup still recognize those apps as installed / belonging to this entry.
+ */
+function buildMacFolderAppEntry(
   folderPath: string,
   folderName: string,
+  inner: Array<{ name: string; bundleId?: string }>,
   currentAppBundlePath: string | null
-): Promise<InstalledApp | null> {
-  const bundlePaths: string[] = []
-  await collectMacAppBundles(folderPath, NESTED_APP_SCAN_DEPTH - 1, bundlePaths)
-  if (bundlePaths.length === 0) return null
-
-  // Borrow version/bundle id from the first inner app; the name stays the folder's.
-  const metadata = await readMacAppMetadata(bundlePaths[0])
+): InstalledApp {
   const containsCurrentApp = currentAppBundlePath !== null && currentAppBundlePath.startsWith(folderPath + path.sep)
 
   return {
     id: folderPath,
     name: folderName,
-    version: metadata.version,
-    publisher: metadata.bundleId,
-    bundleId: metadata.bundleId,
+    version: undefined,
+    publisher: inner[0]?.bundleId,
+    bundleId: inner[0]?.bundleId,
     installLocation: path.dirname(folderPath),
     launchPath: folderPath,
     platform: 'mac',
     uninstallKind: 'trash_app',
     protected: containsCurrentApp,
-    protectedReason: containsCurrentApp ? tk('main.apps.protected.system_app') : undefined
+    protectedReason: containsCurrentApp ? tk('main.apps.protected.system_app') : undefined,
+    containedApps: inner
   }
 }
 
@@ -176,8 +203,10 @@ async function readMacAppMetadata(appPath: string): Promise<{ name: string; vers
   const fallbackName = path.basename(appPath, '.app')
   const plistPath = path.join(appPath, 'Contents', 'Info.plist')
 
-  const version = await readMacPlistValue(plistPath, 'CFBundleShortVersionString')
-  const bundleId = await readMacPlistValue(plistPath, 'CFBundleIdentifier')
+  const [version, bundleId] = await Promise.all([
+    readMacPlistValue(plistPath, 'CFBundleShortVersionString'),
+    readMacPlistValue(plistPath, 'CFBundleIdentifier')
+  ])
 
   if (!version && !bundleId) {
     logDebug('apps', 'macOS app metadata unavailable, using bundle name fallback', { appPath })
@@ -222,11 +251,19 @@ export async function moveMacAppToTrashWithFinder(appPath: string): Promise<void
 }
 
 export function getMacRelatedDataCandidates(
-  target: Pick<InstalledApp, 'name' | 'bundleId'>,
+  target: Pick<InstalledApp, 'name' | 'bundleId' | 'containedApps'>,
   homeDir: string
 ): AppRelatedDataItem[] {
   const libraryRoot = path.join(homeDir, 'Library')
-  const candidateNames = [...new Set([target.bundleId, target.name].filter(Boolean) as string[])]
+  // Folder-based entries carry their inner apps — removing the folder removes those
+  // apps, so their data dirs are related data of this entry too.
+  const contained = target.containedApps ?? []
+  const candidateNames = [
+    ...new Set(
+      [target.bundleId, target.name, ...contained.map((a) => a.name), ...contained.map((a) => a.bundleId)].filter(Boolean) as string[]
+    )
+  ]
+  const candidateBundleIds = [...new Set([target.bundleId, ...contained.map((a) => a.bundleId)].filter(Boolean) as string[])]
   const candidates: AppRelatedDataItem[] = []
 
   for (const name of candidateNames) {
@@ -237,11 +274,11 @@ export function getMacRelatedDataCandidates(
     )
   }
 
-  if (target.bundleId) {
+  for (const bundleId of candidateBundleIds) {
     candidates.push(
-      createRelatedDataItem(path.join(libraryRoot, 'Preferences', `${target.bundleId}.plist`), 'Preferences', 'mac:preferences'),
-      createRelatedDataItem(path.join(libraryRoot, 'Saved Application State', `${target.bundleId}.savedState`), 'Saved State', 'mac:saved-state'),
-      createRelatedDataItem(path.join(libraryRoot, 'Containers', target.bundleId), 'Container', 'mac:container')
+      createRelatedDataItem(path.join(libraryRoot, 'Preferences', `${bundleId}.plist`), 'Preferences', 'mac:preferences'),
+      createRelatedDataItem(path.join(libraryRoot, 'Saved Application State', `${bundleId}.savedState`), 'Saved State', 'mac:saved-state'),
+      createRelatedDataItem(path.join(libraryRoot, 'Containers', bundleId), 'Container', 'mac:container')
     )
   }
 
@@ -250,8 +287,14 @@ export function getMacRelatedDataCandidates(
 
 export async function listMacLeftoverAppData(installedApps: InstalledApp[]): Promise<AppLeftoverDataItem[]> {
   leftoverSizeCache.clear()
-  const knownNames = new Set(installedApps.map((a) => a.name.toLowerCase()))
-  const knownBundleIds = new Set(installedApps.map((a) => a.bundleId?.toLowerCase()).filter(Boolean))
+  // Folder-based entries (vendor folders, Epic Games) list their inner apps in
+  // containedApps — those apps are installed too, so their data is not leftover.
+  const knownNames = new Set(
+    installedApps.flatMap((a) => [a.name.toLowerCase(), ...(a.containedApps?.map((c) => c.name.toLowerCase()) ?? [])])
+  )
+  const knownBundleIds = new Set(
+    installedApps.flatMap((a) => [a.bundleId?.toLowerCase(), ...(a.containedApps?.map((c) => c.bundleId?.toLowerCase()) ?? [])]).filter(Boolean)
+  )
   const homeDir = homedir()
   const specs = [
     { root: path.join(homeDir, 'Library', 'Application Support'), type: 'dir', label: 'Application Support', source: 'mac:application-support' },

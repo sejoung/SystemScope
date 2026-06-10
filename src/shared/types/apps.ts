@@ -17,6 +17,8 @@ export interface InstalledApp {
   uninstallKind: InstalledAppUninstallKind
   protected: boolean
   protectedReason?: string
+  /** For folder-based entries (vendor folders, Epic Games): the apps bundled inside, used for leftover/related-data matching. */
+  containedApps?: Array<{ name: string; bundleId?: string }>
 }
 
 export interface AppRelatedDataItem {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { OrphanedLaunchAgent } from '@shared/types'
+import type { OrphanedLaunchAgent, OrphanedLaunchAgentReason } from '@shared/types'
 import { isOrphanedLaunchAgentArray } from '@shared/types/guards'
 import { useI18n } from '../../i18n/useI18n'
 import { useToast } from '../../components/ui/Toast'
@@ -55,7 +55,15 @@ export function OrphanedLaunchAgents() {
     try {
       const res = await window.systemScope.removeOrphanedLaunchAgents([...selected])
       if (res.ok) {
-        showToast(tk('startup.orphans.removed', { count: res.data.removedCount }), 'success')
+        const { removedCount, failedCount, errors } = res.data
+        if (failedCount > 0) {
+          showToast(
+            tk('startup.orphans.remove_partial', { removed: removedCount, failed: failedCount, error: errors[0] ?? '' }),
+            'danger'
+          )
+        } else {
+          showToast(tk('startup.orphans.removed', { count: removedCount }), 'success')
+        }
         await scan()
       } else {
         showToast(res.error?.message ?? tk('startup.orphans.remove_failed'), 'danger')
@@ -105,13 +113,7 @@ export function OrphanedLaunchAgents() {
                 </span>
               </div>
               <div style={metaStyle} title={o.missingExecutable}>
-                {tk(
-                  o.reason === 'broken_symlink'
-                    ? 'startup.orphans.broken_link'
-                    : o.reason === 'missing_app'
-                      ? 'startup.orphans.missing_app'
-                      : 'startup.orphans.missing'
-                )}: {o.missingExecutable}
+                {tk(REASON_KEYS[o.reason] ?? 'startup.orphans.missing')}: {o.missingExecutable}
               </div>
               <div style={pathStyle} title={o.plistPath}>{o.plistPath}</div>
             </div>
@@ -135,6 +137,12 @@ export function OrphanedLaunchAgents() {
       />
     </section>
   )
+}
+
+const REASON_KEYS: Record<OrphanedLaunchAgentReason, 'startup.orphans.missing' | 'startup.orphans.broken_link' | 'startup.orphans.missing_app'> = {
+  missing_executable: 'startup.orphans.missing',
+  broken_symlink: 'startup.orphans.broken_link',
+  missing_app: 'startup.orphans.missing_app',
 }
 
 const cardStyle: React.CSSProperties = {

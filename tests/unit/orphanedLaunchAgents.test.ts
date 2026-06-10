@@ -59,8 +59,12 @@ const PLISTS: Record<string, Record<string, unknown>> = {
   [`${SYS_DAEMONS_DIR}/com.gonevendor.updater.plist`]: { Label: 'com.gonevendor.updater', ProgramArguments: ['/Library/PrivilegedHelperTools/com.gonevendor.updater'] },
   // Same helper-location pattern but the vendor still has an installed app → must stay unflagged.
   [`${SYS_DAEMONS_DIR}/com.alive.helperd.plist`]: { Label: 'com.alive.helperd', ProgramArguments: ['/Library/PrivilegedHelperTools/alive-helper'] },
+  // Executable unreadable (EACCES) — absence cannot be confirmed → must stay unflagged.
+  [`${SYS_DAEMONS_DIR}/com.locked.daemon.plist`]: { Label: 'com.locked.daemon', ProgramArguments: ['/protected/bin/tool'] },
 }
 const INSTALLED_BUNDLE_IDS = new Set(['com.alive.App'])
+const SPOTLIGHT_PROBE_ID = 'com.apple.finder'
+
 // /Library/LaunchAgents holds a symlink into an app bundle that was deleted (broken link).
 const BROKEN_SYMLINK = `${SYS_AGENTS_DIR}/com.deleted.helper.plist`
 const SYMLINK_TARGET = '/Applications/Deleted.app/Contents/Resources/com.deleted.helper.plist'
@@ -68,7 +72,14 @@ const SYMLINK_TARGET = '/Applications/Deleted.app/Contents/Resources/com.deleted
 const DIR_ENTRIES: Record<string, string[]> = {
   [USER_DIR]: ['com.gone.app.plist', 'com.live.app.plist', 'com.apple.thing.plist', 'com.bare.cmd.plist', 'com.nopgm.plist', 'com.epic.launcher.plist'],
   [SYS_AGENTS_DIR]: ['com.deleted.helper.plist'],
-  [SYS_DAEMONS_DIR]: ['com.gonecorp.daemon.plist', 'com.alive.daemon.plist', 'org.tool.helper.plist', 'com.gonevendor.updater.plist', 'com.alive.helperd.plist'],
+  [SYS_DAEMONS_DIR]: [
+    'com.gonecorp.daemon.plist',
+    'com.alive.daemon.plist',
+    'org.tool.helper.plist',
+    'com.gonevendor.updater.plist',
+    'com.alive.helperd.plist',
+    'com.locked.daemon.plist',
+  ],
 }
 
 const EXISTING_EXECUTABLES = new Set([
@@ -76,6 +87,36 @@ const EXISTING_EXECUTABLES = new Set([
   '/Library/PrivilegedHelperTools/com.gonevendor.updater',
   '/Library/PrivilegedHelperTools/alive-helper',
 ])
+
+function errnoError(code: string): NodeJS.ErrnoException {
+  const err = new Error(code) as NodeJS.ErrnoException
+  err.code = code
+  return err
+}
+
+/** Paths "moved to Trash" by the mocked admin script — lstat reports them gone afterwards. */
+let movedToTrash: Set<string>
+
+async function baseRun(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+  if (cmd === 'plutil') {
+    const plistPath = args[args.length - 1]
+    return { stdout: JSON.stringify(PLISTS[plistPath] ?? {}), stderr: '' }
+  }
+  if (cmd === 'mdfind') {
+    const target = /"([^"]+)"/.exec(args[args.length - 1])?.[1] ?? ''
+    if (target === SPOTLIGHT_PROBE_ID) return { stdout: '/System/Library/CoreServices/Finder.app\n', stderr: '' }
+    const installed = target.endsWith('.*')
+      ? [...INSTALLED_BUNDLE_IDS].some((id) => id.startsWith(target.slice(0, -1)))
+      : INSTALLED_BUNDLE_IDS.has(target)
+    return { stdout: installed ? '/Applications/Alive.app\n' : '', stderr: '' }
+  }
+  if (cmd === 'osascript') {
+    const script = args[args.length - 1]
+    for (const match of script.matchAll(/mv -f '([^']+)'/g)) movedToTrash.add(match[1])
+    return { stdout: '', stderr: '' }
+  }
+  return { stdout: '', stderr: '' } // launchctl
+}
 
 describe('orphaned launch agents', () => {
   beforeEach(() => {
@@ -88,35 +129,27 @@ describe('orphaned launch agents', () => {
     writeFileMock.mockReset()
     runMock.mockReset()
     trashMock.mockReset()
-    writeFileMock.mockResolvedValue(undefined)
+    movedToTrash = new Set()
 
     readdirMock.mockImplementation(async (dir: string) => {
       const entries = DIR_ENTRIES[dir]
-      if (!entries) throw new Error('ENOENT')
+      if (!entries) throw errnoError('ENOENT')
       return entries
     })
-    lstatMock.mockImplementation(async (p: string) => ({ isSymbolicLink: () => p === BROKEN_SYMLINK }))
+    lstatMock.mockImplementation(async (p: string) => {
+      if (movedToTrash.has(p)) throw errnoError('ENOENT')
+      return { isSymbolicLink: () => p === BROKEN_SYMLINK }
+    })
     readlinkMock.mockResolvedValue(SYMLINK_TARGET)
     accessMock.mockImplementation(async (p: string) => {
       if (EXISTING_EXECUTABLES.has(p)) return
-      throw new Error('ENOENT') // covers missing executables and the broken symlink plist
+      if (p.startsWith('/protected/')) throw errnoError('EACCES')
+      throw errnoError('ENOENT')
     })
-    runMock.mockImplementation(async (cmd: string, args: string[]) => {
-      if (cmd === 'plutil') {
-        const plistPath = args[args.length - 1]
-        return { stdout: JSON.stringify(PLISTS[plistPath] ?? {}), stderr: '' }
-      }
-      if (cmd === 'mdfind') {
-        const target = /"([^"]+)"/.exec(args[args.length - 1])?.[1] ?? ''
-        const installed = target.endsWith('.*')
-          ? [...INSTALLED_BUNDLE_IDS].some((id) => id.startsWith(target.slice(0, -1)))
-          : INSTALLED_BUNDLE_IDS.has(target)
-        return { stdout: installed ? '/Applications/Alive.app\n' : '', stderr: '' }
-      }
-      return { stdout: '', stderr: '' } // launchctl / osascript
-    })
+    runMock.mockImplementation(baseRun)
     trashMock.mockResolvedValue(undefined)
     unlinkMock.mockResolvedValue(undefined)
+    writeFileMock.mockResolvedValue(undefined)
   })
 
   it('flags missing-executable plists across user and system dirs, plus broken symlinks', async () => {
@@ -169,14 +202,17 @@ describe('orphaned launch agents', () => {
     })
   })
 
+  it('never flags executables whose absence cannot be confirmed (EACCES is not ENOENT)', async () => {
+    const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const orphans = await findOrphanedLaunchAgents()
+
+    expect(orphans.find((o) => o.label === 'com.locked.daemon')).toBeUndefined()
+  })
+
   it('does not flag missing-app candidates when mdfind is unavailable', async () => {
     runMock.mockImplementation(async (cmd: string, args: string[]) => {
-      if (cmd === 'plutil') {
-        const plistPath = args[args.length - 1]
-        return { stdout: JSON.stringify(PLISTS[plistPath] ?? {}), stderr: '' }
-      }
       if (cmd === 'mdfind') throw new Error('command_not_found')
-      return { stdout: '', stderr: '' }
+      return baseRun(cmd, args)
     })
 
     const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
@@ -184,6 +220,18 @@ describe('orphaned launch agents', () => {
 
     expect(orphans.find((o) => o.label === 'org.tool.helper')).toBeUndefined()
     // High-confidence detections are unaffected.
+    expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon'])
+  })
+
+  it('does not flag missing-app candidates when Spotlight indexing is off (empty results even for the probe)', async () => {
+    runMock.mockImplementation(async (cmd: string, args: string[]) => {
+      if (cmd === 'mdfind') return { stdout: '', stderr: '' } // index off: everything comes back empty
+      return baseRun(cmd, args)
+    })
+
+    const { findOrphanedLaunchAgents } = await import('../../src/main/services/apps/startupManager')
+    const orphans = await findOrphanedLaunchAgents()
+
     expect(orphans.map((o) => o.label).sort()).toEqual(['com.deleted.helper', 'com.gone.app', 'com.gonecorp.daemon'])
   })
 
@@ -203,9 +251,9 @@ describe('orphaned launch agents', () => {
   it('removes system orphans through a single osascript admin prompt', async () => {
     const mod = await import('../../src/main/services/apps/startupManager')
     const orphans = await mod.findOrphanedLaunchAgents()
-    const systemIds = orphans.filter((o) => o.scope === 'system').map((o) => o.id)
+    const systemOrphans = orphans.filter((o) => o.scope === 'system')
 
-    const result = await mod.removeOrphanedLaunchAgents(systemIds)
+    const result = await mod.removeOrphanedLaunchAgents(systemOrphans.map((o) => o.id))
 
     const osascriptCalls = runMock.mock.calls.filter(([cmd]) => cmd === 'osascript')
     expect(osascriptCalls).toHaveLength(1) // one auth prompt for the whole batch
@@ -216,8 +264,32 @@ describe('orphaned launch agents', () => {
     expect(script).toContain(`${SYS_DAEMONS_DIR}/com.gonecorp.daemon.plist`)
     expect(script).toContain(`${SYS_DAEMONS_DIR}/org.tool.helper.plist`) // missing-app orphans are removable too
     expect(script).toContain('launchctl bootout system') // daemons get booted out first
+    expect(script).toContain('launchctl bootout gui/') // ...and so do system-located agents, in the gui session
+    // Trash names are suffixed with the per-path id, so same-named plists can't collide.
+    for (const orphan of systemOrphans) {
+      expect(script).toContain(`/Users/test/.Trash/${orphan.label.replace(/'/g, '')}.${orphan.id}.plist`)
+    }
     expect(trashMock).not.toHaveBeenCalled() // root-owned files never go through shell.trashItem
     expect(result).toMatchObject({ removedCount: 4, failedCount: 0 })
+  })
+
+  it('reports items still present after the admin script as failed (no blind success)', async () => {
+    const mod = await import('../../src/main/services/apps/startupManager')
+    const orphans = await mod.findOrphanedLaunchAgents()
+    const systemIds = orphans.filter((o) => o.scope === 'system').map((o) => o.id)
+
+    const stuckPath = `${SYS_DAEMONS_DIR}/com.gonecorp.daemon.plist`
+    runMock.mockImplementation(async (cmd: string, args: string[]) => {
+      const result = await baseRun(cmd, args)
+      if (cmd === 'osascript') movedToTrash.delete(stuckPath) // this mv silently failed
+      return result
+    })
+
+    const result = await mod.removeOrphanedLaunchAgents(systemIds)
+
+    expect(result).toMatchObject({ removedCount: 3, failedCount: 1 })
+    expect(result.removedPaths).not.toContain(stuckPath)
+    expect(result.errors.some((e) => e.includes('com.gonecorp.daemon'))).toBe(true)
   })
 
   it('reports all system orphans as failed when the admin prompt is canceled', async () => {
@@ -226,19 +298,14 @@ describe('orphaned launch agents', () => {
     const systemIds = orphans.filter((o) => o.scope === 'system').map((o) => o.id)
 
     runMock.mockImplementation(async (cmd: string, args: string[]) => {
-      if (cmd === 'plutil') {
-        const plistPath = args[args.length - 1]
-        return { stdout: JSON.stringify(PLISTS[plistPath] ?? {}), stderr: '' }
-      }
-      if (cmd === 'mdfind') return { stdout: '', stderr: '' }
       if (cmd === 'osascript') throw new Error('execution error: User canceled. (-128)')
-      return { stdout: '', stderr: '' }
+      return baseRun(cmd, args)
     })
 
     const result = await mod.removeOrphanedLaunchAgents(systemIds)
 
     expect(result).toMatchObject({ removedCount: 0, failedCount: 4 })
-    expect(result.errors.every((e) => e.includes('administrator authorization canceled'))).toBe(true)
+    expect(result.errors.every((e) => /canceled/i.test(e))).toBe(true)
   })
 
   it('derives friendly display names like macOS System Settings does', async () => {
@@ -285,6 +352,18 @@ describe('orphaned launch agents', () => {
     expect(writeFileMock.mock.calls[0][0]).toBe(`${agent.path}.tmp.json`)
     expect(runMock.mock.calls.filter(([cmd]) => cmd === 'osascript')).toHaveLength(0)
     expect(runMock).toHaveBeenCalledWith('launchctl', ['unload', agent.path], expect.anything())
+  })
+
+  it('refuses to toggle a symlinked plist (writing through it would modify the app bundle)', async () => {
+    const mod = await import('../../src/main/services/apps/startupManager')
+    const orphans = await mod.findOrphanedLaunchAgents()
+    const id = orphans.find((o) => o.plistPath === BROKEN_SYMLINK)!.id
+
+    const result = await mod.toggleStartupItem(id, false)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/link into its app bundle/)
+    expect(writeFileMock).not.toHaveBeenCalled()
   })
 
   it('rejects ids that are not currently orphaned (no trashing)', async () => {

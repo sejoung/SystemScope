@@ -1362,6 +1362,7 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "startup.orphans.trash_selected": "{count}개 휴지통으로",
   "startup.orphans.removed": "잔여 로그인 항목 {count}개를 휴지통으로 옮겼습니다.",
   "startup.orphans.remove_failed": "잔여 로그인 항목 제거에 실패했습니다.",
+  "startup.orphans.remove_partial": "{removed}개 이동, {failed}개 실패. {error}",
   "startup.orphans.confirm_title": "잔여 로그인 항목을 휴지통으로 옮길까요?",
   "startup.orphans.confirm_message": "잔여 로그인 에이전트 {count}개를 휴지통으로 옮깁니다. 참조하던 앱은 이미 없습니다.",
   "startup.orphans.confirm_ok": "휴지통으로 이동",

@@ -1360,6 +1360,7 @@ export const EN_MESSAGES = {
   "startup.orphans.trash_selected": "Move {count} to Trash",
   "startup.orphans.removed": "Moved {count} leftover login item(s) to Trash.",
   "startup.orphans.remove_failed": "Failed to remove leftover login items.",
+  "startup.orphans.remove_partial": "Moved {removed} item(s); {failed} failed. {error}",
   "startup.orphans.confirm_title": "Move leftover login items to Trash?",
   "startup.orphans.confirm_message": "{count} leftover login agent(s) will be moved to the Trash. The apps they referenced are already gone.",
   "startup.orphans.confirm_ok": "Move to Trash",
