@@ -468,7 +468,11 @@ function registerDuplicateTrashTargets(groups: DuplicateGroup[], rootPath: strin
   const now = Date.now()
   const result = groups.map((group) => ({
     ...group,
-    files: group.files.map((file) => {
+    files: group.files.map((file, index) => {
+      if (index === 0) {
+        return file
+      }
+
       const deletionKey = randomUUID()
       registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope: 'duplicate', createdAt: now })
       return { ...file, deletionKey }

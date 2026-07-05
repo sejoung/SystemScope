@@ -16,6 +16,11 @@ const logInfoMock = vi.hoisted(() => vi.fn())
 const logWarnMock = vi.hoisted(() => vi.fn())
 const getDirSizeMock = vi.hoisted(() => vi.fn())
 
+const dirEntry = (name: string) => ({
+  name,
+  isDirectory: () => false
+})
+
 vi.mock('node:fs/promises', () => ({
   stat: statMock,
   lstat: lstatMock,
@@ -216,5 +221,38 @@ describe('cleanupRules', () => {
     expect(trashItemMock).not.toHaveBeenCalledWith('/etc/passwd')
     expect(result.failedCount).toBe(1)
     expect(result.failedPaths).toContain('/etc/passwd')
+  })
+
+  it('keeps earlier preview targets valid when another preview runs before execution', async () => {
+    let phase = 1
+    readdirMock.mockImplementation(async (targetPath: string) => {
+      if (phase === 1 && targetPath === '/Users/test/Downloads') {
+        return [dirEntry('first.tmp')]
+      }
+      if (phase === 2 && targetPath === '/Users/test/Library/Caches') {
+        return [dirEntry('second.tmp')]
+      }
+      return []
+    })
+    statMock.mockImplementation(async (targetPath: string) => ({
+      isDirectory: () => false,
+      size: targetPath.includes('first.tmp') ? 100 : 200,
+      mtimeMs: 0
+    }))
+    trashItemMock.mockResolvedValue(undefined)
+
+    const { previewCleanup, executeCleanup } = await import('../../src/main/services/cleanup/cleanupRules')
+    await previewCleanup()
+    phase = 2
+    await previewCleanup()
+
+    const result = await executeCleanup([
+      '/Users/test/Downloads/first.tmp',
+      '/Users/test/Library/Caches/second.tmp'
+    ])
+
+    expect(trashItemMock).toHaveBeenCalledWith('/Users/test/Downloads/first.tmp')
+    expect(trashItemMock).toHaveBeenCalledWith('/Users/test/Library/Caches/second.tmp')
+    expect(result).toMatchObject({ deletedCount: 2, failedCount: 0, deletedSize: 300 })
   })
 })

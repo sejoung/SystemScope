@@ -97,17 +97,21 @@ const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const DOCKER_CONTAINER_PREFIX = 'docker:container:'
+const PREVIEW_TARGET_TTL_MS = 30 * 60 * 1000
 
 /**
- * Targets surfaced by the most recent previewCleanup() run. executeCleanup only
- * acts on entries present here, so a compromised/buggy renderer cannot ask us to
- * trash arbitrary filesystem paths it never saw in a preview.
+ * Targets surfaced by recent previewCleanup() runs. executeCleanup only acts on
+ * entries present here, so a compromised/buggy renderer cannot ask us to trash
+ * arbitrary filesystem paths it never saw in a preview. Keep a short-lived union
+ * instead of a single last-preview set so inbox refreshes or automation previews
+ * do not invalidate an already-open cleanup confirmation dialog.
  */
-let previewedTargets = new Set<string>()
+let previewedTargets = new Map<string, number>()
 
 /** Test-only: seed the set of targets executeCleanup is allowed to act on. */
 export function __setPreviewedTargetsForTests(targets: string[]): void {
-  previewedTargets = new Set(targets)
+  const expiresAt = Date.now() + PREVIEW_TARGET_TTL_MS
+  previewedTargets = new Map(targets.map((target) => [target, expiresAt]))
 }
 
 /**
@@ -190,7 +194,7 @@ export async function previewCleanup(): Promise<CleanupPreview> {
 
   const totalSize = allItems.reduce((sum, item) => sum + item.size, 0)
 
-  previewedTargets = new Set(allItems.map((item) => item.path))
+  registerPreviewedTargets(allItems.map((item) => item.path))
 
   logInfo('cleanup-rules', 'Cleanup preview completed', {
     totalItems: allItems.length,
@@ -210,6 +214,8 @@ export async function previewCleanup(): Promise<CleanupPreview> {
  * Execute cleanup: move each path to trash.
  */
 export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
+  prunePreviewedTargets()
+
   let deletedCount = 0
   let deletedSize = 0
   let failedCount = 0
@@ -218,7 +224,7 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
   const fileSystemPaths: string[] = []
 
   for (const target of paths) {
-    // Containment: only act on targets that the most recent preview produced.
+    // Containment: only act on targets that a recent preview produced.
     // Anything else (e.g. an arbitrary path injected by a compromised renderer)
     // is rejected outright instead of being trashed.
     if (!previewedTargets.has(target)) {
@@ -322,6 +328,23 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
   })
 
   return result
+}
+
+function registerPreviewedTargets(targets: string[]): void {
+  prunePreviewedTargets()
+  const expiresAt = Date.now() + PREVIEW_TARGET_TTL_MS
+  for (const target of targets) {
+    previewedTargets.set(target, expiresAt)
+  }
+}
+
+function prunePreviewedTargets(): void {
+  const now = Date.now()
+  for (const [target, expiresAt] of previewedTargets) {
+    if (expiresAt <= now) {
+      previewedTargets.delete(target)
+    }
+  }
 }
 
 /**

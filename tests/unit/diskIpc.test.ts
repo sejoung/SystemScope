@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '../../src/shared/contracts/channels'
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>())
 const access = vi.hoisted(() => vi.fn())
+const findDuplicatesMock = vi.hoisted(() => vi.fn())
 const registerShellPath = vi.hoisted(() => vi.fn())
 
 vi.mock('electron', () => ({
@@ -39,7 +40,7 @@ vi.mock('../../src/main/services/disk/userSpace', () => ({
 
 vi.mock('../../src/main/services/disk/diskInsights', () => ({
   findRecentGrowth: vi.fn(),
-  findDuplicates: vi.fn()
+  findDuplicates: findDuplicatesMock
 }))
 
 vi.mock('../../src/main/services/disk/growthAnalyzer', () => ({
@@ -84,6 +85,7 @@ describe('registerDiskIpc', () => {
     vi.resetModules()
     handlers.clear()
     access.mockReset()
+    findDuplicatesMock.mockReset()
     registerShellPath.mockReset()
   })
 
@@ -101,5 +103,36 @@ describe('registerDiskIpc', () => {
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('PERMISSION_DENIED')
     expect(registerShellPath).not.toHaveBeenCalled()
+  })
+
+  it('does not issue a deletion key for the kept duplicate file', async () => {
+    access.mockResolvedValue(undefined)
+    findDuplicatesMock.mockResolvedValue([
+      {
+        hash: 'same-content',
+        size: 100,
+        totalWaste: 100,
+        files: [
+          { name: 'keep.bin', path: '/tmp/keep.bin', modified: 1 },
+          { name: 'copy.bin', path: '/tmp/copy.bin', modified: 2 }
+        ]
+      }
+    ])
+
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    registerDiskIpc()
+
+    const handler = handlers.get(IPC_CHANNELS.DISK_FIND_DUPLICATES)
+    expect(handler).toBeTypeOf('function')
+
+    const result = await handler?.({}, '/tmp', 100) as {
+      ok: boolean
+      data?: Array<{ files: Array<{ path: string; deletionKey?: string }> }>
+    }
+
+    expect(result.ok).toBe(true)
+    expect(result.data?.[0]?.files[0]).toMatchObject({ path: '/tmp/keep.bin' })
+    expect(result.data?.[0]?.files[0]?.deletionKey).toBeUndefined()
+    expect(result.data?.[0]?.files[1]?.deletionKey).toEqual(expect.any(String))
   })
 })
