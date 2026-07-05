@@ -476,6 +476,18 @@ export const KO_MESSAGES: Record<TranslationKey, string> = {
   "main.alert.message.disk_usage": "디스크 {mount} 사용률 {usage}%",
   "main.alert.message.memory_usage": "메모리 사용률 {usage}%",
   "main.alert.message.gpu_memory_usage": "GPU 메모리 사용률 {usage}%",
+  "main.alert.duration.seconds": "{count}초",
+  "main.alert.duration.minutes": "{count}분",
+  "main.alert.message.cpu_sustained":
+    "CPU 사용률이 {duration} 동안 높게 유지됨: 현재 {usage}%, 최대 {peak}%. 상위 프로세스를 확인하세요.",
+  "main.alert.message.memory_sustained":
+    "메모리 압박이 {duration} 동안 지속됨: 현재 {usage}%, 최대 {peak}%. 무거운 앱이나 메모리 사용 프로세스를 확인하세요.",
+  "main.alert.message.gpu_memory_sustained":
+    "GPU 메모리가 {duration} 동안 높게 유지됨: 현재 {usage}%, 최대 {peak}%. GPU 작업을 확인하세요.",
+  "main.alert.message.disk_low_space_warning":
+    "디스크 {mount} 여유 공간 부족: {available} 남음, {usage}% 사용 중. 정리 후보를 확인하세요.",
+  "main.alert.message.disk_low_space_critical":
+    "디스크 {mount} 여유 공간 위험: {available} 남음, {usage}% 사용 중. 오류 방지를 위해 공간을 확보하세요.",
   "main.app.error.invalid_unsaved_payload":
     "유효하지 않은 unsaved settings payload입니다.",
   "shutdown.cleaning_up": "백그라운드 서비스를 정리하는 중...",

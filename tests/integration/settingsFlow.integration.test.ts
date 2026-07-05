@@ -157,10 +157,10 @@ describe('settings flow integration', () => {
         drives: [{
           fs: '/dev/disk1s1',
           type: 'apfs',
-          size: 100,
-          used: 72,
-          available: 28,
-          usage: 72,
+          size: 200_000_000_000,
+          used: 150_000_000_000,
+          available: 50_000_000_000,
+          usage: 75,
           mount: '/',
           purgeable: null,
           realUsage: null

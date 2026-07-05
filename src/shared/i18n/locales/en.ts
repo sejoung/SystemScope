@@ -479,6 +479,18 @@ export const EN_MESSAGES = {
   "main.alert.message.disk_usage": "Disk {mount} usage {usage}%",
   "main.alert.message.memory_usage": "Memory usage {usage}%",
   "main.alert.message.gpu_memory_usage": "GPU memory usage {usage}%",
+  "main.alert.duration.seconds": "{count}s",
+  "main.alert.duration.minutes": "{count}m",
+  "main.alert.message.cpu_sustained":
+    "CPU has stayed high for {duration}: current {usage}%, peak {peak}%. Check the top processes.",
+  "main.alert.message.memory_sustained":
+    "Memory pressure has persisted for {duration}: current {usage}%, peak {peak}%. Close heavy apps or inspect memory consumers.",
+  "main.alert.message.gpu_memory_sustained":
+    "GPU memory has stayed high for {duration}: current {usage}%, peak {peak}%. Check GPU-heavy workloads.",
+  "main.alert.message.disk_low_space_warning":
+    "Disk {mount} is running low: {available} free, {usage}% used. Review cleanup candidates.",
+  "main.alert.message.disk_low_space_critical":
+    "Disk {mount} is critically low: {available} free, {usage}% used. Free space now to avoid failures.",
   "main.app.error.invalid_unsaved_payload": "Invalid unsaved settings payload.",
   "shutdown.cleaning_up": "Cleaning up background services...",
   "shutdown.cancelling_jobs": "Cancelling running jobs...",
