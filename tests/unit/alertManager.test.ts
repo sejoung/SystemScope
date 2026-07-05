@@ -7,6 +7,7 @@ function makeStats(overrides: Partial<{
   memorySwapUsed: number
   diskUsage: number
   diskSize: number
+  diskMount: string
   gpuMemUsed: number
   gpuMemTotal: number
 }>): SystemStats {
@@ -16,6 +17,7 @@ function makeStats(overrides: Partial<{
     memorySwapUsed = 0,
     diskUsage = 50,
     diskSize = 500_000_000_000,
+    diskMount = '/',
     gpuMemUsed = 0,
     gpuMemTotal = 0
   } = overrides
@@ -54,7 +56,7 @@ function makeStats(overrides: Partial<{
         used: (diskUsage / 100) * diskSize,
         available: ((100 - diskUsage) / 100) * diskSize,
         usage: diskUsage,
-        mount: '/',
+        mount: diskMount,
         purgeable: null,
         realUsage: null
       }]
@@ -112,6 +114,18 @@ describe('AlertManager', () => {
     expect(alerts[0].type).toBe('disk')
     expect(alerts[0].severity).toBe('warning')
     expect(alerts[0].message).toContain('running low')
+  })
+
+  it('should ignore macOS auxiliary system volumes with tiny capacity', async () => {
+    const { checkAlerts } = await import('../../src/main/services/alerts/alertManager')
+    for (const diskMount of ['/System/Volumes/iSCPreboot', '/System/Volumes/Hardware', '/System/Volumes/xarts']) {
+      const alerts = checkAlerts(makeStats({
+        diskMount,
+        diskUsage: 1.2,
+        diskSize: 486_000_000
+      }))
+      expect(alerts, diskMount).toHaveLength(0)
+    }
   })
 
   it('should fire critical alert when disk usage exceeds critical threshold', async () => {

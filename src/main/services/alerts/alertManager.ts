@@ -186,11 +186,15 @@ function getGpuSignal(gpuUsage: number): ResourceSignal | null {
 }
 
 function getDiskSignal(drive: SystemStats['disk']['drives'][number]): ResourceSignal | null {
+  if (isNonActionableSystemVolume(drive.mount)) {
+    return null
+  }
+
   const usage = roundPercent(drive.realUsage ?? drive.usage)
   const available = drive.available
   const key = `disk:${drive.mount}`
-  const critical = usage >= thresholds.diskCritical || available <= DISK_CRITICAL_AVAILABLE_BYTES
-  const warning = (usage >= thresholds.diskWarning && available <= DISK_WARNING_AVAILABLE_BYTES) || available <= DISK_CRITICAL_AVAILABLE_BYTES * 2.5
+  const critical = usage >= thresholds.diskCritical || (usage >= thresholds.diskWarning && available <= DISK_CRITICAL_AVAILABLE_BYTES)
+  const warning = usage >= thresholds.diskWarning && available <= DISK_WARNING_AVAILABLE_BYTES
 
   if (critical) {
     return {
@@ -222,6 +226,14 @@ function getDiskSignal(drive: SystemStats['disk']['drives'][number]): ResourceSi
   }
   updateRecovery(key, usage, thresholds.diskWarning - 10)
   return null
+}
+
+function isNonActionableSystemVolume(mount: string): boolean {
+  if (!mount.startsWith('/System/Volumes/')) {
+    return false
+  }
+
+  return mount !== '/System/Volumes/Data'
 }
 
 function evaluateSustainedSignal(key: string, signal: ResourceSignal | null, currentValue: number, recoveryThreshold: number): Alert | null {
