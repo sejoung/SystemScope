@@ -1,7 +1,7 @@
-import { ipcMain } from 'electron'
+import { ipcMain, shell } from 'electron'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
-import { getStartupItems, toggleStartupItem, findOrphanedLaunchAgents, removeOrphanedLaunchAgents } from '@main/services/startup'
+import { getStartupItems, getStartupItemsWithSystemSettings, toggleStartupItem, findOrphanedLaunchAgents, removeOrphanedLaunchAgents } from '@main/services/startup'
 import { logInfoAction, logErrorAction } from '@main/services/core'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
 
@@ -15,6 +15,31 @@ export function registerStartupIpc(): void {
     } catch (err) {
       logErrorAction('startup-ipc', 'startup.getAll', withRequestMeta(requestMeta, { error: err }))
       return failure('UNKNOWN_ERROR', 'Failed to get startup items')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.STARTUP_SCAN_BTM, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    try {
+      const items = await getStartupItemsWithSystemSettings()
+      logInfoAction('startup-ipc', 'startup.scanBtm', withRequestMeta(requestMeta, { count: items.length }))
+      return success(items)
+    } catch (err) {
+      // Most common failure: the user dismissed the macOS authorization dialog.
+      logErrorAction('startup-ipc', 'startup.scanBtm', withRequestMeta(requestMeta, { error: err }))
+      return failure('PERMISSION_DENIED', 'Failed to read System Settings login items')
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.STARTUP_OPEN_SETTINGS, async (_event, metaArg?: IpcRequestMetaArg) => {
+    const requestMeta = getRequestMeta(metaArg)
+    try {
+      await shell.openExternal('x-apple.systempreferences:com.apple.LoginItems-Settings.extension')
+      logInfoAction('startup-ipc', 'startup.openSettings', withRequestMeta(requestMeta))
+      return success(true)
+    } catch (err) {
+      logErrorAction('startup-ipc', 'startup.openSettings', withRequestMeta(requestMeta, { error: err }))
+      return failure('UNKNOWN_ERROR', 'Failed to open System Settings')
     }
   })
 

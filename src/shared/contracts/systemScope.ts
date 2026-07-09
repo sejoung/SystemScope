@@ -178,9 +178,11 @@ export interface SystemScopeApi {
   getSessionSnapshotDiff: (id1: string, id2: string) => Promise<AppResult<SnapshotDiff>>
 
   getStartupItems: () => Promise<AppResult<StartupItem[]>>
+  scanStartupItemsWithSystemSettings: () => Promise<AppResult<StartupItem[]>>
   toggleStartupItem: (id: string, enabled: boolean) => Promise<AppResult<StartupToggleResult>>
   findOrphanedLaunchAgents: () => Promise<AppResult<OrphanedLaunchAgent[]>>
   removeOrphanedLaunchAgents: (ids: string[]) => Promise<AppResult<RemoveOrphanedResult>>
+  openLoginItemsSettings: () => Promise<AppResult<boolean>>
 
   scanDevTools: () => Promise<AppResult<ToolIntegrationResult[]>>
   cleanDevToolItems: (paths: string[]) => Promise<AppResult<ToolCleanResult>>

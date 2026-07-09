@@ -17,12 +17,17 @@ const SCOPE_COLORS: Record<string, string> = {
   system: 'var(--accent-yellow)',
 }
 
+const IS_MAC = typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
+
 export function StartupItemList() {
   const { tk } = useI18n()
   const items = useStartupStore((s) => s.items)
   const loading = useStartupStore((s) => s.loading)
   const error = useStartupStore((s) => s.error)
+  const btmScanning = useStartupStore((s) => s.btmScanning)
+  const btmLoaded = useStartupStore((s) => s.btmLoaded)
   const fetchItems = useStartupStore((s) => s.fetchItems)
+  const scanSystemSettingsItems = useStartupStore((s) => s.scanSystemSettingsItems)
   const toggleItem = useStartupStore((s) => s.toggleItem)
   const showToast = useToast((s) => s.show)
   const [search, setSearch] = useState('')
@@ -36,6 +41,19 @@ export function StartupItemList() {
     } else {
       showToast(tk('Failed to toggle startup item.'), 'danger')
     }
+  }
+
+  const handleBtmScan = async () => {
+    const ok = await scanSystemSettingsItems()
+    if (ok) {
+      showToast(tk('startup.btm.loaded'))
+    } else {
+      showToast(tk('startup.btm.failed'), 'danger')
+    }
+  }
+
+  const handleOpenSettings = () => {
+    void window.systemScope.openLoginItemsSettings()
   }
 
   const filteredItems = useMemo(() => {
@@ -104,13 +122,36 @@ export function StartupItemList() {
               : tk('startup.search_no_results', { query: search })}
           </span>
         )}
+        {IS_MAC && (
+          <button
+            type="button"
+            onClick={() => void handleBtmScan()}
+            disabled={btmScanning}
+            title={tk('startup.btm.admin_hint')}
+            style={{
+              padding: '7px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+              border: '1px solid var(--border)', cursor: btmScanning ? 'default' : 'pointer',
+              backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)',
+              opacity: btmScanning ? 0.6 : 1, marginLeft: 'auto',
+            }}
+          >
+            {btmScanning ? tk('Loading...') : btmLoaded ? tk('startup.btm.rescan') : tk('startup.btm.scan')}
+          </button>
+        )}
       </div>
+      {IS_MAC && !btmLoaded && (
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
+          {tk('startup.btm.admin_hint')}
+        </p>
+      )}
 
       {userItems.length > 0 && (
-        <ItemGroup title={tk('User')} items={userItems} onToggle={handleToggle} />
+        <ItemGroup title={tk('User')} items={userItems} onToggle={handleToggle}
+          onOpenSettings={handleOpenSettings} settingsLabel={tk('startup.btm.open_settings')} settingsHint={tk('startup.btm.managed_hint')} />
       )}
       {systemItems.length > 0 && (
-        <ItemGroup title={tk('System')} items={systemItems} onToggle={handleToggle} />
+        <ItemGroup title={tk('System')} items={systemItems} onToggle={handleToggle}
+          onOpenSettings={handleOpenSettings} settingsLabel={tk('startup.btm.open_settings')} settingsHint={tk('startup.btm.managed_hint')} />
       )}
       {filteredItems.length === 0 && search.trim() && (
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>
@@ -132,7 +173,14 @@ const searchInputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-function ItemGroup({ title, items, onToggle }: { title: string; items: StartupItem[]; onToggle: (item: StartupItem) => void }) {
+function ItemGroup({ title, items, onToggle, onOpenSettings, settingsLabel, settingsHint }: {
+  title: string
+  items: StartupItem[]
+  onToggle: (item: StartupItem) => void
+  onOpenSettings: () => void
+  settingsLabel: string
+  settingsHint: string
+}) {
   return (
     <div>
       <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }}>
@@ -163,17 +211,31 @@ function ItemGroup({ title, items, onToggle }: { title: string; items: StartupIt
                 </div>
               )}
             </div>
-            <button
-              onClick={() => onToggle(item)}
-              style={{
-                padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                border: '1px solid var(--border)', cursor: 'pointer', flexShrink: 0, marginLeft: 8,
-                backgroundColor: item.enabled ? 'var(--bg-card)' : 'color-mix(in srgb, var(--accent-green) 15%, var(--bg-card))',
-                color: item.enabled ? 'var(--text-secondary)' : 'var(--accent-green)',
-              }}
-            >
-              {item.enabled ? 'Disable' : 'Enable'}
-            </button>
+            {item.managedBySystemSettings ? (
+              <button
+                onClick={onOpenSettings}
+                title={settingsHint}
+                style={{
+                  padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                  border: '1px solid var(--border)', cursor: 'pointer', flexShrink: 0, marginLeft: 8,
+                  backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)',
+                }}
+              >
+                {settingsLabel}
+              </button>
+            ) : (
+              <button
+                onClick={() => onToggle(item)}
+                style={{
+                  padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                  border: '1px solid var(--border)', cursor: 'pointer', flexShrink: 0, marginLeft: 8,
+                  backgroundColor: item.enabled ? 'var(--bg-card)' : 'color-mix(in srgb, var(--accent-green) 15%, var(--bg-card))',
+                  color: item.enabled ? 'var(--text-secondary)' : 'var(--accent-green)',
+                }}
+              >
+                {item.enabled ? 'Disable' : 'Enable'}
+              </button>
+            )}
           </div>
         ))}
       </div>

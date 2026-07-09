@@ -10,6 +10,13 @@ export interface StartupItem {
   enabled: boolean
   label: string | null
   description: string | null
+  /**
+   * True for macOS items that exist only in the Background Task Management database
+   * (System Settings > Login Items & Extensions) — login-item helpers, app-embedded
+   * SMAppService agents, and "Open at Login" apps. macOS offers no public API to
+   * toggle another app's BTM item, so these are listed but not toggleable here.
+   */
+  managedBySystemSettings?: boolean
 }
 
 export interface StartupToggleResult {

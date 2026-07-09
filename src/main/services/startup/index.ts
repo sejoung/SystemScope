@@ -7,8 +7,10 @@ import { getWindowsStartupItems, toggleWindowsItem } from './startupItems.window
 // Platform dispatch for the startup-items feature. The real work lives in:
 //   startupItems.mac.ts     — launchd listing, friendly names, toggling
 //   startupItems.windows.ts — registry/startup-folder listing and toggling
+//   btm.mac.ts              — System Settings (BTM) items and their on/off state
 //   launchdOrphans.mac.ts   — leftover-plist detection and removal
 export { findOrphanedLaunchAgents, removeOrphanedLaunchAgents } from './launchdOrphans.mac'
+import { getMacStartupItemsWithBtm } from './btm.mac'
 
 export async function getStartupItems(): Promise<StartupItem[]> {
   const p = platform()
@@ -17,8 +19,24 @@ export async function getStartupItems(): Promise<StartupItem[]> {
   return []
 }
 
+/**
+ * Like getStartupItems, but on macOS also reads the Background Task Management
+ * database so the list matches System Settings. Reading it prompts for admin
+ * authorization, so this only runs on explicit user request.
+ */
+export async function getStartupItemsWithSystemSettings(): Promise<StartupItem[]> {
+  if (platform() !== 'darwin') return getStartupItems()
+  return getMacStartupItemsWithBtm()
+}
+
 export async function toggleStartupItem(id: string, enabled: boolean): Promise<StartupToggleResult> {
   const p = platform()
+
+  // BTM-only items (System Settings login items, embedded helpers) have no public
+  // toggle API — only the owning app or System Settings itself can change them.
+  if (id.startsWith('btm:')) {
+    return { id, enabled, success: false, error: 'This item is managed in macOS System Settings' }
+  }
 
   // On macOS the id is derived from the plist path, so the item can be located
   // directly without re-parsing every plist (and re-running Spotlight lookups).

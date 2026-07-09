@@ -191,8 +191,12 @@ export function createIpcApi(): SystemScopeApi {
 
     getStartupItems: () =>
       invokeWithRequestId(IPC_CHANNELS.STARTUP_GET_ALL),
+    scanStartupItemsWithSystemSettings: () =>
+      invokeWithRequestId(IPC_CHANNELS.STARTUP_SCAN_BTM),
     toggleStartupItem: (id: string, enabled: boolean) =>
       invokeWithRequestId(IPC_CHANNELS.STARTUP_TOGGLE, id, enabled),
+    openLoginItemsSettings: () =>
+      invokeWithRequestId(IPC_CHANNELS.STARTUP_OPEN_SETTINGS),
     findOrphanedLaunchAgents: () =>
       invokeWithRequestId(IPC_CHANNELS.STARTUP_FIND_ORPHANS),
     removeOrphanedLaunchAgents: (ids: string[]) =>
