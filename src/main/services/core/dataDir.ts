@@ -21,10 +21,18 @@ function getLegacyMetricsFilePath(): string {
 }
 
 function getEventsFilePath(): string {
+  return path.join(getDataDir(), 'events.ndjson')
+}
+
+function getLegacyEventsFilePath(): string {
   return path.join(getDataDir(), 'events.json')
 }
 
 function getAlertHistoryFilePath(): string {
+  return path.join(getDataDir(), 'alert-history.ndjson')
+}
+
+function getLegacyAlertHistoryFilePath(): string {
   return path.join(getDataDir(), 'alert-history.json')
 }
 
@@ -44,4 +52,4 @@ function getLegacyProjectMonitorFilePath(): string {
   return path.join(getDataDir(), 'project-monitor.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getLegacyMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath, getLegacyProjectMonitorFilePath }
+export { getDataDir, ensureDataDir, getMetricsFilePath, getLegacyMetricsFilePath, getEventsFilePath, getLegacyEventsFilePath, getAlertHistoryFilePath, getLegacyAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath, getLegacyProjectMonitorFilePath }

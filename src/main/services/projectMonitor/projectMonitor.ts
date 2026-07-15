@@ -46,6 +46,7 @@ function getStore(): AppendOnlyLogStore<ProjectMonitorEntry> {
 
 export async function getProjectMonitorSummary(): Promise<ProjectMonitorSummary> {
   const entries = await getStore().load()
+  const histories = buildWorkspaceHistoryIndex(entries)
   const activeProfile = getActiveProfile()
   const workspacePaths = activeProfile?.workspacePaths ?? []
   if (workspacePaths.length === 0) {
@@ -59,7 +60,10 @@ export async function getProjectMonitorSummary(): Promise<ProjectMonitorSummary>
 
   registerShellPaths(workspacePaths, 'descendant')
   const nextWorkspaces = await Promise.all(
-    workspacePaths.map(async (workspacePath) => summarizeWorkspace(workspacePath, entries))
+    workspacePaths.map(async (workspacePath) => {
+      const resolvedPath = path.resolve(workspacePath)
+      return summarizeWorkspace(resolvedPath, histories.get(resolvedPath) ?? [])
+    })
   )
 
   const stalePaths = nextWorkspaces
@@ -140,12 +144,8 @@ async function runScheduledRefresh(): Promise<void> {
 
 async function summarizeWorkspace(workspacePath: string, entries: ProjectMonitorEntry[]): Promise<ProjectMonitorWorkspace> {
   const resolvedPath = path.resolve(workspacePath)
-  const workspaceEntries = entries
-    .filter((entry) => path.resolve(entry.path) === resolvedPath)
-    .sort((left, right) => right.scannedAt - left.scannedAt)
-
-  const latest = workspaceEntries[0] ?? null
-  const previous = workspaceEntries[1] ?? null
+  const latest = entries[0] ?? null
+  const previous = entries[1] ?? null
   const exists = await pathExists(resolvedPath)
 
   return {
@@ -157,7 +157,7 @@ async function summarizeWorkspace(workspacePath: string, entries: ProjectMonitor
     recentGrowthBytes: latest && previous ? Math.max(0, latest.size - previous.size) : 0,
     lastScannedAt: latest?.scannedAt ?? null,
     topCategories: latest?.categories ?? [],
-    history: workspaceEntries
+    history: entries
       .slice(0, 5)
       .map((entry) => ({ scannedAt: entry.scannedAt, size: entry.size }))
       .reverse()
@@ -225,10 +225,10 @@ async function pathExists(targetPath: string): Promise<boolean> {
 
 async function emitWorkspaceGrowthEvents(entries: ProjectMonitorEntry[]): Promise<void> {
   const historicalEntries = await getStore().load()
+  const histories = buildWorkspaceHistoryIndex(historicalEntries)
   for (const entry of entries) {
-    const previous = historicalEntries
-      .filter((item) => path.resolve(item.path) === path.resolve(entry.path) && item.scannedAt < entry.scannedAt)
-      .sort((left, right) => right.scannedAt - left.scannedAt)[0]
+    const history = histories.get(path.resolve(entry.path)) ?? []
+    const previous = history.find((item) => item.scannedAt < entry.scannedAt)
 
     if (!previous) continue
     const growthBytes = Math.max(0, entry.size - previous.size)
@@ -247,4 +247,18 @@ async function emitWorkspaceGrowthEvents(entries: ProjectMonitorEntry[]): Promis
       }
     )
   }
+}
+
+function buildWorkspaceHistoryIndex(entries: ProjectMonitorEntry[]): Map<string, ProjectMonitorEntry[]> {
+  const histories = new Map<string, ProjectMonitorEntry[]>()
+  for (const entry of entries) {
+    const resolvedPath = path.resolve(entry.path)
+    const history = histories.get(resolvedPath)
+    if (history) history.push(entry)
+    else histories.set(resolvedPath, [entry])
+  }
+  for (const history of histories.values()) {
+    history.sort((left, right) => right.scannedAt - left.scannedAt)
+  }
+  return histories
 }

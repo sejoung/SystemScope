@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { PersistentStore } from '@main/services/core/persistentStore'
-import { getAlertHistoryFilePath } from '@main/services/core/dataDir'
+import { AppendOnlyLogStore } from '@main/services/core/appendOnlyLogStore'
+import { getAlertHistoryFilePath, getLegacyAlertHistoryFilePath } from '@main/services/core/dataDir'
 import { logError, logInfo } from '@main/services/core/logging'
 import type { AlertHistoryEntry, AlertPattern, AlertIntelligence } from '@shared/types'
 
-const SCHEMA_VERSION = 1
 const MAX_ENTRIES = 2000
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 const RETENTION_DAYS = 30
@@ -13,20 +12,28 @@ const PATTERN_PERIOD_MS = 24 * 60 * 60 * 1000 // 24h
 const PATTERN_MIN_COUNT = 2
 const DEFAULT_HISTORY_LIMIT = 50
 
-let store: PersistentStore<AlertHistoryEntry> | null = null
+let store: AppendOnlyLogStore<AlertHistoryEntry> | null = null
 const activeAlertMap = new Map<string, AlertHistoryEntry>() // key: alert type
 
 export async function initAlertHistory(): Promise<void> {
-  store = new PersistentStore<AlertHistoryEntry>({
+  store = new AppendOnlyLogStore<AlertHistoryEntry>({
     filePath: getAlertHistoryFilePath(),
-    schemaVersion: SCHEMA_VERSION,
+    legacyFilePath: getLegacyAlertHistoryFilePath(),
     maxEntries: MAX_ENTRIES,
     maxAgeMs: RETENTION_DAYS * MS_PER_DAY,
-    getTimestamp: (entry) => entry.firedAt
+    getTimestamp: (entry) => entry.firedAt,
+    logScope: 'alert-history',
+    normalizeEntries: deduplicateAlertUpdates
   })
 
   await store.load()
   logInfo('alert-history', 'Alert history initialized', { retentionDays: RETENTION_DAYS })
+}
+
+function deduplicateAlertUpdates(entries: AlertHistoryEntry[]): AlertHistoryEntry[] {
+  const latestById = new Map<string, AlertHistoryEntry>()
+  for (const entry of entries) latestById.set(entry.id, entry)
+  return Array.from(latestById.values())
 }
 
 export function stopAlertHistory(): void {

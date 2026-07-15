@@ -1,10 +1,12 @@
-import { lookup } from 'geoip-country'
+type GeoIpLookup = typeof import('geoip-country')['lookup']
 
 const MAX_CACHE_ENTRIES = 4096
 const cache = new Map<string, string | null>()
+let lookupPromise: Promise<GeoIpLookup> | null = null
 
 export function __resetGeoIpCacheForTests(): void {
   cache.clear()
+  lookupPromise = null
 }
 
 const SKIP_PREFIXES = ['127.', '169.254.', 'fe80:', 'fe80::']
@@ -28,7 +30,12 @@ function shouldSkip(ip: string): boolean {
   return false
 }
 
-function lookupOne(ip: string): string | null {
+async function getLookup(): Promise<GeoIpLookup> {
+  lookupPromise ??= import('geoip-country').then((module) => module.lookup)
+  return lookupPromise
+}
+
+function lookupOne(ip: string, lookup: GeoIpLookup): string | null {
   if (cache.has(ip)) return cache.get(ip) ?? null
   if (shouldSkip(ip)) {
     setCache(ip, null)
@@ -47,6 +54,15 @@ function lookupOne(ip: string): string | null {
 
 export async function resolveCountries(ips: string[]): Promise<Record<string, string | null>> {
   const unique = Array.from(new Set(ips))
-  const entries = unique.map((ip) => [ip, lookupOne(ip)] as const)
+  const uncachedPublicIps = unique.filter((ip) => !cache.has(ip) && !shouldSkip(ip))
+  const lookup = uncachedPublicIps.length > 0 ? await getLookup() : null
+  const entries = unique.map((ip) => {
+    if (cache.has(ip)) return [ip, cache.get(ip) ?? null] as const
+    if (shouldSkip(ip) || !lookup) {
+      setCache(ip, null)
+      return [ip, null] as const
+    }
+    return [ip, lookupOne(ip, lookup)] as const
+  })
   return Object.fromEntries(entries)
 }

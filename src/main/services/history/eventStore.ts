@@ -1,26 +1,26 @@
 import { randomUUID } from 'node:crypto'
-import { PersistentStore } from '@main/services/core/persistentStore'
-import { getEventsFilePath } from '@main/services/core/dataDir'
+import { AppendOnlyLogStore } from '@main/services/core/appendOnlyLogStore'
+import { getEventsFilePath, getLegacyEventsFilePath } from '@main/services/core/dataDir'
 import { getSettings } from '../../store/settingsStore'
 import { logError, logInfo } from '@main/services/core/logging'
 import type { SystemEvent, SystemEventCategory, SystemEventSeverity, EventQueryOptions } from '@shared/types'
 
-const SCHEMA_VERSION = 1
 const MAX_EVENTS = 5000
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-let store: PersistentStore<SystemEvent> | null = null
+let store: AppendOnlyLogStore<SystemEvent> | null = null
 
 export async function initEventStore(): Promise<void> {
   const settings = getSettings()
   const retentionDays = settings.history.eventsRetentionDays
 
-  store = new PersistentStore<SystemEvent>({
+  store = new AppendOnlyLogStore<SystemEvent>({
     filePath: getEventsFilePath(),
-    schemaVersion: SCHEMA_VERSION,
+    legacyFilePath: getLegacyEventsFilePath(),
     maxEntries: MAX_EVENTS,
     maxAgeMs: retentionDays * MS_PER_DAY,
-    getTimestamp: (entry) => entry.ts
+    getTimestamp: (entry) => entry.ts,
+    logScope: 'event-store'
   })
 
   await store.load()

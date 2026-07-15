@@ -4,6 +4,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import type { MetricPoint } from '../../src/shared/types/metric'
 import { MetricLogStore } from '../../src/main/services/history/metricLogStore'
+import { AppendOnlyLogStore } from '../../src/main/services/core/appendOnlyLogStore'
 
 const roots: string[] = []
 
@@ -61,5 +62,24 @@ describe('MetricLogStore', () => {
     await expect(store.load()).resolves.toEqual([point(now, 2)])
     await expect(fs.readFile(paths.filePath, 'utf-8')).resolves.toContain(`"cpu":2`)
     await expect(fs.access(paths.legacyPath)).rejects.toThrow()
+  })
+
+  it('supports normalized updates and clearing without JSON rewrites', async () => {
+    const paths = await createPaths()
+    const store = new AppendOnlyLogStore<{ id: string; timestamp: number; value: number }>({
+      filePath: paths.filePath,
+      legacyFilePath: paths.legacyPath,
+      getTimestamp: (entry) => entry.timestamp,
+      logScope: 'test-log',
+      normalizeEntries: (entries) => Array.from(new Map(entries.map((entry) => [entry.id, entry])).values()),
+    })
+
+    await store.append({ id: 'one', timestamp: 1, value: 1 })
+    await store.append({ id: 'one', timestamp: 2, value: 2 })
+    expect(await store.load()).toEqual([{ id: 'one', timestamp: 2, value: 2 }])
+
+    await store.clear()
+    expect(await store.load()).toEqual([])
+    expect(await fs.readFile(paths.filePath, 'utf-8')).toBe('')
   })
 })

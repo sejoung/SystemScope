@@ -15,6 +15,8 @@ export interface AppendOnlyLogStoreOptions<T> {
   maxEntries?: number
   getTimestamp: (entry: T) => number
   logScope: string
+  parseLegacyEntries?: (raw: string) => T[] | null
+  normalizeEntries?: (entries: T[]) => T[]
 }
 
 /** Append-only NDJSON persistence with bounded retention and legacy JSON migration. */
@@ -59,6 +61,24 @@ export class AppendOnlyLogStore<T> {
 
   async flush(): Promise<void> {
     await this.writeQueue
+  }
+
+  async clear(): Promise<void> {
+    await this.load()
+    this.writeQueue = this.writeQueue.catch(() => undefined).then(async () => {
+      this.entries = []
+      await this.compact()
+    })
+    return this.writeQueue
+  }
+
+  async replaceAll(entries: T[]): Promise<void> {
+    await this.load()
+    this.writeQueue = this.writeQueue.catch(() => undefined).then(async () => {
+      this.entries = [...entries]
+      await this.compact()
+    })
+    return this.writeQueue
   }
 
   private async loadFromDisk(): Promise<void> {
@@ -111,6 +131,9 @@ export class AppendOnlyLogStore<T> {
   private async readLegacyFile(): Promise<T[]> {
     try {
       const raw = await fsp.readFile(this.options.legacyFilePath, 'utf-8')
+      if (this.options.parseLegacyEntries) {
+        return (this.options.parseLegacyEntries(raw) ?? []).filter((entry) => this.isValidEntry(entry))
+      }
       const parsed = JSON.parse(raw) as LegacyStore<T>
       return Array.isArray(parsed.entries) ? parsed.entries.filter((entry) => this.isValidEntry(entry)) : []
     } catch (error) {
@@ -128,7 +151,7 @@ export class AppendOnlyLogStore<T> {
   }
 
   private getRetainedEntries(): T[] {
-    let retained = this.entries
+    let retained = this.options.normalizeEntries?.([...this.entries]) ?? this.entries
     if (this.options.maxAgeMs !== undefined) {
       const cutoff = Date.now() - this.options.maxAgeMs
       retained = retained.filter((entry) => this.options.getTimestamp(entry) >= cutoff)
@@ -140,7 +163,10 @@ export class AppendOnlyLogStore<T> {
   }
 
   private shouldCompact(now: number): boolean {
-    if (this.options.maxEntries !== undefined && this.entries.length > this.options.maxEntries) return true
+    if (this.options.maxEntries !== undefined) {
+      const compactionSlack = Math.min(256, Math.max(32, Math.ceil(this.options.maxEntries * 0.1)))
+      if (this.entries.length > this.options.maxEntries + compactionSlack) return true
+    }
     if (now - this.lastCompactedAt < COMPACTION_INTERVAL_MS || this.options.maxAgeMs === undefined) return false
     return (this.entries[0] ? this.options.getTimestamp(this.entries[0]) : now) < now - this.options.maxAgeMs
   }

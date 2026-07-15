@@ -1,9 +1,9 @@
 import { app } from 'electron'
 import * as fs from 'node:fs'
-import * as fsp from 'node:fs/promises'
 import * as path from 'node:path'
 import { logError, logWarn } from '@main/services/core/logging'
 import { getSettings } from '../../store/settingsStore'
+import { AppendOnlyLogStore } from '@main/services/core/appendOnlyLogStore'
 
 export interface FolderSnapshot {
   name: string
@@ -25,14 +25,19 @@ interface SnapshotData {
 const MIN_RETENTION_SNAPSHOTS = 168 // 60분 기준 7일치
 const RETENTION_WINDOW_MINUTES = 7 * 24 * 60
 let saveQueue: Promise<void> = Promise.resolve()
-let cachedSnapshots: Snapshot[] | null = null
-let cachedSnapshotFile: string | null = null
+let snapshotStore: AppendOnlyLogStore<Snapshot> | null = null
+let snapshotStoreKey: string | null = null
+let legacyValidation: Promise<void> | null = null
 
 function getSnapshotDir(): string {
   return path.join(app.getPath('userData'), 'snapshots')
 }
 
 function getSnapshotFile(): string {
+  return path.join(getSnapshotDir(), 'growth.ndjson')
+}
+
+function getLegacySnapshotFile(): string {
   return path.join(getSnapshotDir(), 'growth.json')
 }
 
@@ -44,67 +49,22 @@ export function ensureSnapshotDir(): void {
 }
 
 export async function loadSnapshots(): Promise<Snapshot[]> {
-  const filePath = getSnapshotFile()
-  if (cachedSnapshots && cachedSnapshotFile === filePath) return cachedSnapshots
-  cachedSnapshotFile = filePath
-  try {
-    try {
-      await fsp.access(filePath)
-    } catch {
-      cachedSnapshots = []
-      return cachedSnapshots
-    }
-    const raw = await fsp.readFile(filePath, 'utf-8')
-    const data = parseSnapshotData(raw)
-    if (!data) {
-      logWarn('snapshot-store', 'Invalid snapshot file detected, backing it up and starting fresh')
-      backupCorruptSnapshotFile(filePath)
-      cachedSnapshots = []
-      return cachedSnapshots
-    }
-    cachedSnapshots = data.snapshots
-    return cachedSnapshots
-  } catch (err) {
-    logWarn('snapshot-store', 'Failed to load snapshots, starting fresh', err)
-    backupCorruptSnapshotFile(filePath)
-    cachedSnapshots = []
-    return cachedSnapshots
-  }
+  const store = await getSnapshotStore()
+  return store.load()
 }
 
 export function saveSnapshot(snapshot: Snapshot): Promise<void> {
   saveQueue = saveQueue.catch(() => undefined).then(async () => {
-    const dir = getSnapshotDir()
-    const filePath = getSnapshotFile()
-    const tempPath = getTempSnapshotFile(filePath)
-
-    // 동시에 여러 저장 요청이 와도 한 번에 하나씩 순서대로 처리한다.
-    await fsp.mkdir(dir, { recursive: true })
-
+    const store = await getSnapshotStore()
     const loaded = await loadSnapshots()
     const latest = loaded[loaded.length - 1]
-    if (latest && areSnapshotsEquivalent(latest, snapshot)) {
-      return
-    }
-    const updated = [...loaded, snapshot]
-
-    const maxSnapshots = getMaxSnapshots()
-    const trimmed = updated.length > maxSnapshots
-      ? updated.slice(updated.length - maxSnapshots)
-      : updated
-
-    cachedSnapshots = trimmed
-
-    const data: SnapshotData = { version: 1, snapshots: trimmed }
+    if (latest && areSnapshotsEquivalent(latest, snapshot)) return
 
     try {
-      await fsp.writeFile(tempPath, JSON.stringify(data, null, 2), { encoding: 'utf-8', mode: 0o600 })
-      await fsp.rename(tempPath, filePath)
+      await store.append(snapshot)
     } catch (err) {
       logError('snapshot-store', 'Failed to save snapshot', err)
       throw err
-    } finally {
-      await fsp.rm(tempPath, { force: true }).catch(() => undefined)
     }
   })
 
@@ -164,6 +124,35 @@ function backupCorruptSnapshotFile(filePath: string): void {
   }
 }
 
-function getTempSnapshotFile(filePath: string): string {
-  return `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}.tmp`
+async function getSnapshotStore(): Promise<AppendOnlyLogStore<Snapshot>> {
+  const filePath = getSnapshotFile()
+  const maxEntries = getMaxSnapshots()
+  const storeKey = `${filePath}:${maxEntries}`
+  if (!snapshotStore || snapshotStoreKey !== storeKey) {
+    snapshotStoreKey = storeKey
+    legacyValidation = validateLegacySnapshotFile(getLegacySnapshotFile())
+    snapshotStore = new AppendOnlyLogStore<Snapshot>({
+      filePath,
+      legacyFilePath: getLegacySnapshotFile(),
+      maxEntries,
+      getTimestamp: (snapshot) => snapshot.timestamp,
+      logScope: 'snapshot-store',
+      parseLegacyEntries: (raw) => parseSnapshotData(raw)?.snapshots ?? null
+    })
+  }
+  await legacyValidation
+  return snapshotStore
+}
+
+async function validateLegacySnapshotFile(filePath: string): Promise<void> {
+  if (!fs.existsSync(filePath)) return
+  try {
+    const raw = await fs.promises.readFile(filePath, 'utf-8')
+    if (parseSnapshotData(raw)) return
+    logWarn('snapshot-store', 'Invalid snapshot file detected, backing it up and starting fresh')
+    backupCorruptSnapshotFile(filePath)
+  } catch (error) {
+    logWarn('snapshot-store', 'Failed to validate legacy snapshots, backing them up', error)
+    backupCorruptSnapshotFile(filePath)
+  }
 }

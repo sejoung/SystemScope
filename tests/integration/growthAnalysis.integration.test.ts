@@ -162,4 +162,23 @@ describe('growth analysis integration', () => {
     expect(result.totalAdded).toBe(0)
     expect(result.folders[0]?.growthRate).toBe(0)
   })
+
+  it('limits concurrent top-level folder scans', async () => {
+    let activeScans = 0
+    let maxActiveScans = 0
+    execFileMock.mockImplementation((_cmd, args, _options, callback) => {
+      activeScans += 1
+      maxActiveScans = Math.max(maxActiveScans, activeScans)
+      setTimeout(() => {
+        activeScans -= 1
+        const pathArg = (args as string[])[1] ?? '/Users/test/unknown'
+        callback(null, `256\t${pathArg}\n`, '')
+      }, 2)
+    })
+
+    const { takeSnapshot } = await import('../../src/main/services/disk/growthAnalyzer')
+    await takeSnapshot()
+
+    expect(maxActiveScans).toBeLessThanOrEqual(3)
+  })
 })

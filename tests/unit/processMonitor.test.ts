@@ -147,6 +147,7 @@ describe('processMonitor process caching', () => {
     expect(topCpu.map((entry) => entry.pid)).toEqual([2, 3])
     expect(topMemory.map((entry) => entry.pid)).toEqual([3, 1])
     expect(all.map((entry) => entry.pid)).toEqual([2, 3, 1])
+    expect(snapshot.topCpuProcesses.map((entry) => entry.pid)).toEqual([2, 3])
     expect(snapshot.topMemoryProcesses.map((entry) => entry.pid)).toEqual([3, 1])
   })
 

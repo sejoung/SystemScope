@@ -133,12 +133,12 @@ export async function getProcessSnapshot(limit: number = 10): Promise<ProcessSna
     .filter((processInfo) => processInfo.cpu > 0 || processInfo.memRss > 0)
     .map((p) => toProcessInfo(p, ctx))
 
-  const byCpu = mapped.slice().sort((left, right) => right.cpu - left.cpu)
+  const topCpuProcesses = selectTopProcesses(mapped, limit, (processInfo) => processInfo.cpu)
   const topMemoryProcesses = selectTopProcesses(mapped, limit, (processInfo) => processInfo.memory)
 
   return {
-    allProcesses: byCpu,
-    topCpuProcesses: byCpu.slice(0, limit),
+    allProcesses: mapped,
+    topCpuProcesses,
     topMemoryProcesses
   }
 }

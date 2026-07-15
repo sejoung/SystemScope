@@ -135,6 +135,22 @@ describe('snapshotStore', () => {
     expect(snapshots.map((snapshot: { timestamp: number }) => snapshot.timestamp)).toEqual([1, 2])
   })
 
+  it('should migrate legacy JSON and append subsequent snapshots as NDJSON', async () => {
+    const snapshotDir = path.join(tempRoot, 'snapshots')
+    await fs.mkdir(snapshotDir, { recursive: true })
+    await fs.writeFile(path.join(snapshotDir, 'growth.json'), JSON.stringify({
+      version: 1,
+      snapshots: [{ timestamp: 1, folders: [], totalSize: 0 }]
+    }))
+
+    expect(await loadSnapshots()).toHaveLength(1)
+    await saveSnapshot({ timestamp: 2, folders: [{ name: 'Documents', path: '/Documents', size: 1 }], totalSize: 1 })
+
+    const lines = (await fs.readFile(path.join(snapshotDir, 'growth.ndjson'), 'utf-8')).trim().split('\n')
+    expect(lines).toHaveLength(2)
+    await expect(fs.access(path.join(snapshotDir, 'growth.json'))).rejects.toThrow()
+  })
+
   it('should retain enough snapshots to cover seven days for shorter intervals', () => {
     state.snapshotIntervalMin = 15
 

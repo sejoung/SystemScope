@@ -6,12 +6,16 @@ import { saveSnapshot, loadSnapshots, type Snapshot, type FolderSnapshot } from 
 import { logError, logInfo } from '@main/services/core/logging'
 import { getDirSize } from '../../utils/getDirSize'
 import { tk } from '../../i18n'
+import { runWithConcurrency } from '@main/services/core/runWithConcurrency'
 
 const PERIODS: Record<string, number> = {
   '1h': 60 * 60 * 1000,
   '24h': 24 * 60 * 60 * 1000,
   '7d': 7 * 24 * 60 * 60 * 1000
 }
+
+const FOLDER_SCAN_CONCURRENCY = 3
+const FOLDER_TIMEOUT_MS = 30_000
 
 function getTargetFolders(home: string): { name: string; path: string }[] {
   if (platform() === 'darwin') {
@@ -47,16 +51,16 @@ async function doTakeSnapshot(): Promise<Snapshot> {
   const home = homedir()
   const targets = getTargetFolders(home)
 
-  const FOLDER_TIMEOUT = 30_000
-  const results = await Promise.all(targets.map(async (target) => {
+  const results: Array<FolderSnapshot | null> = Array(targets.length).fill(null)
+  await runWithConcurrency(targets.map((target, index) => ({ target, index })), FOLDER_SCAN_CONCURRENCY, async ({ target, index }) => {
     try {
       await fs.access(target.path)
-      const size = await withTimeout(getDirSize(target.path), FOLDER_TIMEOUT, 'timeout')
-      return { name: target.name, path: target.path, size }
+      const size = await withTimeout(getDirSize(target.path), FOLDER_TIMEOUT_MS, 'timeout')
+      results[index] = { name: target.name, path: target.path, size }
     } catch {
-      return null
+      results[index] = null
     }
-  }))
+  })
   const folders: FolderSnapshot[] = results.filter((r): r is FolderSnapshot => r !== null)
 
   const snapshot: Snapshot = {
