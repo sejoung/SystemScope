@@ -1,25 +1,7 @@
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import type React from "react";
-import type {
-  AppRelatedDataItem,
-  InstalledApp,
-} from "@shared/types";
-import type { TranslateFn } from "@shared/i18n";
-import { isInstalledAppArray, isAppRelatedDataArray, isAppRemovalResult } from "@shared/types";
-import { useToast } from "../../components/ui/Toast";
-import { useI18n } from "../../i18n/useI18n";
-import { useSearchFilter } from "../../hooks/useSearchFilter";
+import { Fragment } from "react";
 import { StatusMessage } from "../../components/ui/StatusMessage";
 import { CopyableValue } from "../../components/ui/CopyableValue";
 import {
-  CompactMetaItem,
   compactActionsStyle,
   compactCardHeaderStyle,
   compactCardStyle,
@@ -28,8 +10,6 @@ import {
   compactMetaGridStyle,
   compactStatusSpacingStyle,
 } from "../../components/ui/CompactPrimitives";
-import { useContainerWidth } from "../../hooks/useContainerWidth";
-import { isCompactWidth, RESPONSIVE_WIDTH } from "../../hooks/useResponsiveLayout";
 import {
   type PlatformFilter,
   Badge,
@@ -38,10 +18,6 @@ import {
   actionsStyle,
   badgeCountStyle,
   btnStyle,
-  detailsBodyTextStyle,
-  detailsHeaderStyle,
-  detailsMetaStyle,
-  detailsTitleStyle,
   headerStyle,
   infoBarStyle,
   infoLabelStyle,
@@ -50,9 +26,6 @@ import {
   monoCellStyle,
   openBtn,
   protectedBadgeStyle,
-  relatedEmptyStyle,
-  relatedItemStyle,
-  relatedPanelStyle,
   rowStyle,
   secondaryBtnStyle,
   secondaryButtonStyle,
@@ -67,177 +40,12 @@ import {
   titleStyle,
 } from "./appsShared";
 
-export function shouldUseInstalledAppsCompactLayout(width: number): boolean {
-  return isCompactWidth(width, RESPONSIVE_WIDTH.installedAppsCompact);
-}
+export { shouldUseInstalledAppsCompactLayout } from "./useInstalledAppsModel";
+import { useInstalledAppsModel } from "./useInstalledAppsModel";
+import { CompactMeta, compactLocationBlockStyle, compactTitleStyle, renderRelatedDataPanel } from "./InstalledAppRelatedPanel";
 
 export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
-  const showToast = useToast((s) => s.show);
-  const { tk } = useI18n();
-  const isWindows = navigator.userAgent.includes("Windows");
-  const [containerRef, containerWidth] = useContainerWidth(1200);
-
-  const [apps, setApps] = useState<InstalledApp[]>([]);
-  const [loadError, setLoadError] = useState<string | undefined>();
-  const [refreshing, setRefreshing] = useState(false);
-  const search = useSearchFilter();
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
-  const [busyAppId, setBusyAppId] = useState<string | null>(null);
-  const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
-  const [relatedLoadingAppId, setRelatedLoadingAppId] = useState<string | null>(null);
-  const [relatedDataByAppId, setRelatedDataByAppId] = useState<Record<string, AppRelatedDataItem[]>>({});
-  const [selectedRelatedIdsByAppId, setSelectedRelatedIdsByAppId] = useState<Record<string, string[]>>({});
-  const [pendingUninstallIds, setPendingUninstallIds] = useState<string[]>([]);
-  const uninstallRefreshTimersRef = useRef<number[]>([]);
-
-  const loadApps = useCallback(async () => {
-    const res = await window.systemScope.listInstalledApps();
-    if (!res.ok) {
-      const message = res.error?.message ?? tk("apps.error.load_installed");
-      setLoadError(message);
-      showToast(message);
-      return;
-    }
-    if (isInstalledAppArray(res.data)) {
-      const items = res.data;
-      setApps(items);
-      setLoadError(undefined);
-      setPendingUninstallIds((current) =>
-        current.filter((id) => items.some((app) => app.id === id)),
-      );
-    }
-  }, [showToast, tk]);
-
-  useEffect(() => {
-    void loadApps();
-  }, [loadApps, refreshToken]);
-
-  useEffect(() => {
-    return () => {
-      for (const timerId of uninstallRefreshTimersRef.current) {
-        window.clearTimeout(timerId);
-      }
-      uninstallRefreshTimersRef.current = [];
-    };
-  }, []);
-
-  const filteredApps = useMemo(
-    () =>
-      apps
-        .filter((app) => !pendingUninstallIds.includes(app.id))
-        .filter((app) => {
-          const q = search.applied.trim().toLowerCase();
-          if (platformFilter !== "all" && app.platform !== platformFilter) return false;
-          if (!q) return true;
-          return [app.name, app.version, app.publisher, app.installLocation]
-            .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(q));
-        })
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [apps, platformFilter, search.applied, pendingUninstallIds],
-  );
-  const compactLayout = shouldUseInstalledAppsCompactLayout(containerWidth);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadApps();
-    setRefreshing(false);
-  };
-
-  const handleUninstall = async (app: InstalledApp) => {
-    setBusyAppId(app.id);
-    const res = await window.systemScope.uninstallApp({
-      appId: app.id,
-      relatedDataIds: selectedRelatedIdsByAppId[app.id] ?? [],
-    });
-    setBusyAppId(null);
-
-    if (!res.ok) {
-      showToast(res.error?.message ?? tk("apps.error.uninstall_start"));
-      return;
-    }
-
-    if (!res.data || !isAppRemovalResult(res.data)) return;
-    const result = res.data;
-    if (result.cancelled) return;
-
-    showToast(
-      result.message
-        ? tk(result.message)
-        : result.completed
-          ? tk("apps.toast.removed") + " — " + tk("apps.toast.removed_restore_hint")
-          : tk("apps.toast.uninstaller_started"),
-    );
-
-    if (
-      !result.completed &&
-      app.platform === "windows" &&
-      result.action === "uninstaller"
-    ) {
-      setPendingUninstallIds((current) =>
-        current.includes(app.id) ? current : [...current, app.id],
-      );
-      setApps((current) => current.filter((entry) => entry.id !== app.id));
-      for (const delay of [1500, 5000, 15000]) {
-        const timerId = window.setTimeout(() => {
-          void loadApps();
-        }, delay);
-        uninstallRefreshTimersRef.current.push(timerId);
-      }
-    }
-
-    await loadApps();
-  };
-
-  const handleToggleRelatedData = async (app: InstalledApp) => {
-    if (expandedAppId === app.id) {
-      setExpandedAppId(null);
-      return;
-    }
-
-    setExpandedAppId(app.id);
-    if (relatedDataByAppId[app.id]) return;
-
-    setRelatedLoadingAppId(app.id);
-    const res = await window.systemScope.getAppRelatedData(app.id);
-    setRelatedLoadingAppId(null);
-
-    if (!res.ok) {
-      showToast(res.error?.message ?? tk("apps.error.load_related"));
-      return;
-    }
-
-    if (!res.data || !isAppRelatedDataArray(res.data)) return;
-    const items = res.data;
-    setRelatedDataByAppId((current) => ({ ...current, [app.id]: items }));
-    setSelectedRelatedIdsByAppId((current) => ({
-      ...current,
-      [app.id]: items.map((item) => item.id),
-    }));
-  };
-
-  const handleToggleRelatedId = (appId: string, itemId: string) => {
-    setSelectedRelatedIdsByAppId((current) => {
-      const selected = new Set(current[appId] ?? []);
-      if (selected.has(itemId)) selected.delete(itemId);
-      else selected.add(itemId);
-      return { ...current, [appId]: [...selected] };
-    });
-  };
-
-  const handleOpenLocation = async (appId: string) => {
-    const res = await window.systemScope.openAppLocation(appId);
-    if (!res.ok) {
-      showToast(res.error?.message ?? tk("apps.error.open_location"));
-    }
-  };
-
-  const handleOpenSystemSettings = async () => {
-    const res = await window.systemScope.openSystemUninstallSettings();
-    if (!res.ok) {
-      showToast(res.error?.message ?? tk("apps.error.open_system_settings"));
-    }
-  };
+  const { tk, isWindows, containerRef, apps, loadError, refreshing, search, platformFilter, setPlatformFilter, busyAppId, expandedAppId, relatedLoadingAppId, relatedDataByAppId, selectedRelatedIdsByAppId, filteredApps, compactLayout, handleRefresh, handleUninstall, handleToggleRelatedData, handleToggleRelatedId, handleOpenLocation, handleOpenSystemSettings } = useInstalledAppsModel(refreshToken)
 
   return (
     <section style={sectionStyle} ref={containerRef}>
@@ -497,74 +305,3 @@ export function InstalledApps({ refreshToken }: { refreshToken?: number }) {
     </section>
   );
 }
-
-function CompactMeta({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return <CompactMetaItem label={label} value={value} mono={mono} />;
-}
-
-function renderRelatedDataPanel({
-  entry,
-  tk,
-  relatedLoadingAppId,
-  relatedDataByAppId,
-  selectedRelatedIdsByAppId,
-  handleToggleRelatedId,
-}: {
-  entry: InstalledApp;
-  tk: TranslateFn;
-  relatedLoadingAppId: string | null;
-  relatedDataByAppId: Record<string, AppRelatedDataItem[]>;
-  selectedRelatedIdsByAppId: Record<string, string[]>;
-  handleToggleRelatedId: (appId: string, itemId: string) => void;
-}) {
-  return (
-    <div style={relatedPanelStyle}>
-      <div style={detailsHeaderStyle}>
-        <div>
-          <div style={detailsTitleStyle}>{tk("apps.related.title")}</div>
-          <div style={detailsBodyTextStyle}>{tk("apps.related.description")}</div>
-        </div>
-        <div style={detailsMetaStyle}>
-          {tk("common.selected", { count: (selectedRelatedIdsByAppId[entry.id] ?? []).length })}
-        </div>
-      </div>
-      {relatedLoadingAppId === entry.id ? (
-        <div style={relatedEmptyStyle}>{tk("apps.related.loading")}</div>
-      ) : (relatedDataByAppId[entry.id] ?? []).length === 0 ? (
-        <div style={relatedEmptyStyle}>{tk("apps.related.empty")}</div>
-      ) : (
-        <div style={{ display: "grid", gap: "8px" }}>
-          {(relatedDataByAppId[entry.id] ?? []).map((item) => {
-            const checked = (selectedRelatedIdsByAppId[entry.id] ?? []).includes(item.id);
-            return (
-              <label key={item.id} style={relatedItemStyle}>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => handleToggleRelatedId(entry.id, item.id)}
-                />
-                <div style={{ display: "grid", gap: "3px" }}>
-                  <span style={detailsTitleStyle}>{item.label}</span>
-                  <div style={detailsBodyTextStyle}>
-                    <CopyableValue value={item.path} fontSize="12px" color="var(--text-muted)" multiline />
-                  </div>
-                </div>
-              </label>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-const compactTitleStyle: React.CSSProperties = {
-  fontSize: "15px",
-  fontWeight: 700,
-  color: "var(--text-primary)",
-};
-
-const compactLocationBlockStyle: React.CSSProperties = {
-  display: "grid",
-  gap: "6px",
-};

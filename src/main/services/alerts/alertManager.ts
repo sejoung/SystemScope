@@ -5,6 +5,7 @@ import { ALERT_COOLDOWN_MS, MAX_ACTIVE_ALERTS } from '@shared/constants/threshol
 import { formatBytes } from '@shared/utils/formatBytes'
 import { tk } from '../../i18n'
 import { onAlertFired, onAlertResolved } from './alertHistory'
+import { getCpuSignal, getGpuSignal, getMemorySignal, type ResourceSignal } from './alertSignals'
 
 let thresholds: AlertThresholds = { ...DEFAULT_THRESHOLDS }
 const activeAlerts: Map<string, Alert> = new Map()
@@ -14,7 +15,6 @@ const activeAlertIdsByKey = new Map<string, string>()
 const alertKeysById = new Map<string, string>()
 
 const SUSTAINED_WARNING_MS = 60_000
-const SUSTAINED_CRITICAL_MS = 30_000
 const RESOURCE_RECOVERY_MS = 60_000
 const DISK_WARNING_AVAILABLE_BYTES = 50 * 1024 * 1024 * 1024
 const DISK_CRITICAL_AVAILABLE_BYTES = 10 * 1024 * 1024 * 1024
@@ -24,16 +24,6 @@ interface ResourceState {
   firstBreachedAt: number
   maxValue: number
   recoveryStartedAt: number | null
-}
-
-interface ResourceSignal {
-  key: string
-  type: AlertType
-  severity: AlertSeverity
-  value: number
-  threshold: number
-  message: string
-  sustainedMs?: number
 }
 
 const resourceStates = new Map<string, ResourceState>()
@@ -74,7 +64,7 @@ export function checkAlerts(stats: SystemStats): Alert[] {
   const newAlerts: Alert[] = []
 
   // CPU 알림
-  const cpuAlert = evaluateSustainedSignal('cpu', getCpuSignal(stats), stats.cpu.usage, thresholds.cpuWarning - 10)
+  const cpuAlert = evaluateSustainedSignal('cpu', getCpuSignal(stats, thresholds), stats.cpu.usage, thresholds.cpuWarning - 10)
   if (cpuAlert) newAlerts.push(cpuAlert)
 
   // 디스크 알림 — macOS에서는 purgeable 제외한 realUsage 기준으로 판단
@@ -84,105 +74,19 @@ export function checkAlerts(stats: SystemStats): Alert[] {
   }
 
   // 메모리 알림
-  const memoryAlert = evaluateSustainedSignal('memory', getMemorySignal(stats), stats.memory.usage, thresholds.memoryWarning - 10)
+  const memoryAlert = evaluateSustainedSignal('memory', getMemorySignal(stats, thresholds), stats.memory.usage, thresholds.memoryWarning - 10)
   if (memoryAlert) newAlerts.push(memoryAlert)
 
   // GPU 메모리 알림
   if (stats.gpu.available && stats.gpu.memoryTotal && stats.gpu.memoryUsed) {
     const gpuUsage = Math.round((stats.gpu.memoryUsed / stats.gpu.memoryTotal) * 10000) / 100
-    const gpuAlert = evaluateSustainedSignal('gpu', getGpuSignal(gpuUsage), gpuUsage, thresholds.gpuMemoryWarning - 10)
+    const gpuAlert = evaluateSustainedSignal('gpu', getGpuSignal(gpuUsage, thresholds), gpuUsage, thresholds.gpuMemoryWarning - 10)
     if (gpuAlert) newAlerts.push(gpuAlert)
   } else {
     updateRecovery('gpu', 0, thresholds.gpuMemoryWarning - 10)
   }
 
   return newAlerts
-}
-
-function getCpuSignal(stats: SystemStats): ResourceSignal | null {
-  const usage = roundPercent(stats.cpu.usage)
-  if (usage >= thresholds.cpuCritical) {
-    return {
-      key: 'cpu',
-      type: 'cpu',
-      severity: 'critical',
-      value: usage,
-      threshold: thresholds.cpuCritical,
-      sustainedMs: SUSTAINED_CRITICAL_MS,
-      message: ''
-    }
-  }
-  if (usage >= thresholds.cpuWarning) {
-    return {
-      key: 'cpu',
-      type: 'cpu',
-      severity: 'warning',
-      value: usage,
-      threshold: thresholds.cpuWarning,
-      sustainedMs: SUSTAINED_WARNING_MS,
-      message: ''
-    }
-  }
-  return null
-}
-
-function getMemorySignal(stats: SystemStats): ResourceSignal | null {
-  const usage = roundPercent(stats.memory.usage)
-  const availableRatio = stats.memory.total > 0 ? stats.memory.available / stats.memory.total : 1
-  const swapActive = stats.memory.swapTotal > 0 && stats.memory.swapUsed > 0
-  const warningPressure = usage >= thresholds.memoryWarning && (availableRatio <= 0.15 || swapActive)
-  const criticalPressure = usage >= thresholds.memoryCritical || (availableRatio <= 0.05 && swapActive)
-
-  if (criticalPressure) {
-    return {
-      key: 'memory',
-      type: 'memory',
-      severity: 'critical',
-      value: usage,
-      threshold: thresholds.memoryCritical,
-      sustainedMs: SUSTAINED_CRITICAL_MS,
-      message: ''
-    }
-  }
-  if (warningPressure) {
-    return {
-      key: 'memory',
-      type: 'memory',
-      severity: 'warning',
-      value: usage,
-      threshold: thresholds.memoryWarning,
-      sustainedMs: SUSTAINED_WARNING_MS,
-      message: ''
-    }
-  }
-  return null
-}
-
-function getGpuSignal(gpuUsage: number): ResourceSignal | null {
-  const usage = roundPercent(gpuUsage)
-  if (usage >= thresholds.gpuMemoryCritical) {
-    return {
-      key: 'gpu',
-      type: 'gpu',
-      severity: 'critical',
-      value: usage,
-      threshold: thresholds.gpuMemoryCritical,
-      sustainedMs: SUSTAINED_CRITICAL_MS,
-      message: ''
-    }
-  }
-  if (usage >= thresholds.gpuMemoryWarning) {
-    return {
-      key: 'gpu',
-      type: 'gpu',
-      severity: 'warning',
-      value: usage,
-      threshold: thresholds.gpuMemoryWarning,
-      sustainedMs: SUSTAINED_WARNING_MS,
-      message: ''
-    }
-  }
-  return null
 }
 
 function getDiskSignal(drive: SystemStats['disk']['drives'][number]): ResourceSignal | null {

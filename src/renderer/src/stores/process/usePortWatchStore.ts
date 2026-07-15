@@ -8,14 +8,14 @@ export interface WatchEntry {
   scope: 'local' | 'remote' | 'all'
 }
 
-interface WatchStatus {
+export interface WatchStatus {
   id: string
   matched: boolean
   matches: PortInfo[]
   lastChecked: number
 }
 
-interface HistoryEntry {
+export interface HistoryEntry {
   timestamp: number
   watchId: string
   pattern: string

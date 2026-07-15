@@ -71,465 +71,197 @@ vi.mock("../../src/main/services/core/externalCommand", () => ({
 
 describe("registerProcessIpc", () => {
   beforeEach(() => {
-    vi.resetModules();
-    handlers.clear();
-    logErrorAction.mockReset();
-    logWarnAction.mockReset();
-    logInfoAction.mockReset();
-    logProductMetric.mockReset();
-    getNetworkPorts.mockReset();
-    getProcessByPid.mockReset();
-    getProcessDescendants.mockReset();
-    getProcessDescendants.mockResolvedValue([]);
-    showMessageBox.mockReset();
-    getFocusedWindow.mockReset();
-    getAllWindows.mockReset();
-    getAppName.mockReset();
-    getAppPath.mockReset();
-    runExternalCommand.mockReset();
-    getProcessNetworkUsage.mockReset();
-    resolveHostnames.mockReset();
-    resolveCountries.mockReset();
+      vi.resetModules();
+      handlers.clear();
+      logErrorAction.mockReset();
+      logWarnAction.mockReset();
+      logInfoAction.mockReset();
+      logProductMetric.mockReset();
+      getNetworkPorts.mockReset();
+      getProcessByPid.mockReset();
+      getProcessDescendants.mockReset();
+      getProcessDescendants.mockResolvedValue([]);
+      showMessageBox.mockReset();
+      getFocusedWindow.mockReset();
+      getAllWindows.mockReset();
+      getAppName.mockReset();
+      getAppPath.mockReset();
+      runExternalCommand.mockReset();
+      getProcessNetworkUsage.mockReset();
+      resolveHostnames.mockReset();
+      resolveCountries.mockReset();
 
-    getFocusedWindow.mockReturnValue(null);
-    getAllWindows.mockReturnValue([]);
-    getAppName.mockReturnValue("SystemScope");
-    getAppPath.mockImplementation((name: string) => {
-      if (name === "exe")
-        return "/Applications/SystemScope.app/Contents/MacOS/SystemScope";
-      return "/tmp";
+      getFocusedWindow.mockReturnValue(null);
+      getAllWindows.mockReturnValue([]);
+      getAppName.mockReturnValue("SystemScope");
+      getAppPath.mockImplementation((name: string) => {
+        if (name === "exe")
+          return "/Applications/SystemScope.app/Contents/MacOS/SystemScope";
+        return "/tmp";
+      });
     });
-  });
 
   it("should return ports through PROCESS_GET_PORTS", async () => {
-    getNetworkPorts.mockResolvedValue([
-      { localPort: "3000", localPortNum: 3000 },
-    ]);
+      getNetworkPorts.mockResolvedValue([
+        { localPort: "3000", localPortNum: 3000 },
+      ]);
 
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
+      const { registerProcessIpc } =
+        await import("../../src/main/ipc/process.ipc");
+      registerProcessIpc();
 
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_PORTS);
-    expect(handler).toBeTypeOf("function");
+      const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_PORTS);
+      expect(handler).toBeTypeOf("function");
 
-    const result = (await handler?.({}, undefined)) as {
-      ok: boolean;
-      data?: unknown[];
-    };
-    expect(result.ok).toBe(true);
-    expect(result.data).toEqual([{ localPort: "3000", localPortNum: 3000 }]);
-  });
+      const result = (await handler?.({}, undefined)) as {
+        ok: boolean;
+        data?: unknown[];
+      };
+      expect(result.ok).toBe(true);
+      expect(result.data).toEqual([{ localPort: "3000", localPortNum: 3000 }]);
+    });
 
   it("should return failure when getNetworkPorts throws", async () => {
-    getNetworkPorts.mockRejectedValue(new Error("boom"));
+      getNetworkPorts.mockRejectedValue(new Error("boom"));
 
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
+      const { registerProcessIpc } =
+        await import("../../src/main/ipc/process.ipc");
+      registerProcessIpc();
 
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_PORTS);
-    expect(handler).toBeTypeOf("function");
+      const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_PORTS);
+      expect(handler).toBeTypeOf("function");
 
-    const result = (await handler?.({}, undefined)) as {
-      ok: boolean;
-      error?: { code: string };
-    };
-    expect(result.ok).toBe(false);
-    expect(result.error?.code).toBe("UNKNOWN_ERROR");
-    expect(logErrorAction).toHaveBeenCalled();
-  });
+      const result = (await handler?.({}, undefined)) as {
+        ok: boolean;
+        error?: { code: string };
+      };
+      expect(result.ok).toBe(false);
+      expect(result.error?.code).toBe("UNKNOWN_ERROR");
+      expect(logErrorAction).toHaveBeenCalled();
+    });
 
   it("should kill a process after confirmation", async () => {
-    const target = {
-      pid: 4321,
-      name: "node",
-      command: "/usr/bin/node",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    };
-    getProcessByPid.mockResolvedValue(target);
-    showMessageBox.mockResolvedValue({ response: 1 });
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
-
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    expect(handler).toBeTypeOf("function");
-
-    const result = (await handler?.(
-      {},
-      { pid: 4321, reason: "Activity > Processes" },
-    )) as { ok: boolean; data?: { killed: boolean; cancelled: boolean } };
-    expect(result.ok).toBe(true);
-    expect(result.data).toEqual({
-      pid: 4321,
-      name: "node",
-      killed: true,
-      cancelled: false,
-      killedPids: [4321],
-    });
-    expect(showMessageBox).toHaveBeenCalled();
-    expect(killSpy).toHaveBeenCalledWith(4321, "SIGKILL");
-    expect(logInfoAction).toHaveBeenCalled();
-    killSpy.mockRestore();
-  });
-
-  it("should kill the whole process tree when tree=true (Unix)", async () => {
-    const target = {
-      pid: 1000,
-      name: "npm",
-      command: "npm run dev",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    };
-    const descendants = [
-      { pid: 1001, name: "node", command: "node vite", cpu: 0, memory: 0, memoryBytes: 0 },
-      { pid: 1002, name: "esbuild", command: "esbuild", cpu: 0, memory: 0, memoryBytes: 0 },
-    ];
-    getProcessByPid.mockResolvedValue(target);
-    getProcessDescendants.mockResolvedValue(descendants);
-    showMessageBox.mockResolvedValue({ response: 1 });
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
-
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: "darwin" });
-
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    const result = (await handler?.(
-      {},
-      { pid: 1000, tree: true },
-    )) as { ok: boolean; data?: { killedPids: number[] } };
-
-    expect(result.ok).toBe(true);
-    expect(result.data?.killedPids).toEqual([1000, 1001, 1002]);
-    // descendants killed deepest-first, then root
-    expect(killSpy.mock.calls).toEqual([
-      [1002, "SIGKILL"],
-      [1001, "SIGKILL"],
-      [1000, "SIGKILL"],
-    ]);
-
-    killSpy.mockRestore();
-    Object.defineProperty(process, "platform", { value: originalPlatform });
-  });
-
-  it("should use taskkill /T /F for tree kill on Windows", async () => {
-    const target = {
-      pid: 2000,
-      name: "node.exe",
-      command: "C:\\node.exe",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    };
-    getProcessByPid.mockResolvedValue(target);
-    getProcessDescendants.mockResolvedValue([
-      { pid: 2001, name: "child.exe", command: "C:\\child.exe", cpu: 0, memory: 0, memoryBytes: 0 },
-    ]);
-    showMessageBox.mockResolvedValue({ response: 1 });
-    runExternalCommand.mockResolvedValue({ stdout: "", stderr: "" });
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
-
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: "win32" });
-
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    const result = (await handler?.({}, { pid: 2000, tree: true })) as {
-      ok: boolean;
-      data?: { killedPids: number[] };
-    };
-
-    expect(result.ok).toBe(true);
-    expect(result.data?.killedPids).toEqual([2000, 2001]);
-    expect(killSpy).not.toHaveBeenCalled();
-    expect(runExternalCommand).toHaveBeenCalledWith(
-      "taskkill",
-      ["/PID", "2000", "/T", "/F"],
-      { windowsHide: true },
-    );
-
-    killSpy.mockRestore();
-    Object.defineProperty(process, "platform", { value: originalPlatform });
-  });
-
-  it("should abort tree kill when a descendant is protected", async () => {
-    const target = {
-      pid: 3000,
-      name: "user-shell",
-      command: "/bin/zsh",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    };
-    getProcessByPid.mockResolvedValue(target);
-    getProcessDescendants.mockResolvedValue([
-      {
-        pid: 3001,
-        name: "SystemScope Helper",
-        command: "/Applications/SystemScope.app/Contents/MacOS/SystemScope",
+      const target = {
+        pid: 4321,
+        name: "node",
+        command: "/usr/bin/node",
         cpu: 0,
         memory: 0,
         memoryBytes: 0,
-      },
-    ]);
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
+      };
+      getProcessByPid.mockResolvedValue(target);
+      showMessageBox.mockResolvedValue({ response: 1 });
+      const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
 
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
+      const { registerProcessIpc } =
+        await import("../../src/main/ipc/process.ipc");
+      registerProcessIpc();
 
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    const result = (await handler?.({}, { pid: 3000, tree: true })) as {
-      ok: boolean;
-      error?: { code: string };
-    };
+      const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
+      expect(handler).toBeTypeOf("function");
 
-    expect(result.ok).toBe(false);
-    expect(result.error?.code).toBe("PERMISSION_DENIED");
-    expect(showMessageBox).not.toHaveBeenCalled();
-    expect(killSpy).not.toHaveBeenCalled();
-    killSpy.mockRestore();
-  });
-
-  it("should include PID, command, reason, and warning text in the kill confirmation dialog", async () => {
-    const target = {
-      pid: 4321,
-      name: "node",
-      command: "/usr/bin/node server.js",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    };
-    getProcessByPid.mockResolvedValue(target);
-    showMessageBox.mockResolvedValue({ response: 0 });
-
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    const { tk } = await import("../../src/main/i18n");
-    registerProcessIpc();
-
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    await handler?.({}, { pid: 4321, reason: "Activity > Ports" });
-
-    expect(showMessageBox).toHaveBeenCalledTimes(1);
-    const [, dialogOptions] = showMessageBox.mock.calls[0] as [
-      unknown,
-      { detail: string; message: string },
-    ];
-    expect(dialogOptions.message).toContain("node");
-    expect(dialogOptions.detail).toContain("PID: 4321");
-    expect(dialogOptions.detail).toContain("Command: /usr/bin/node server.js");
-    expect(dialogOptions.detail).toContain("Reason: Activity > Ports");
-    expect(dialogOptions.detail).toContain(tk("main.process.confirm.warning"));
-  });
-
-  it("should return cancelled result when user aborts kill", async () => {
-    getProcessByPid.mockResolvedValue({
-      pid: 4321,
-      name: "node",
-      command: "/usr/bin/node",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    });
-    showMessageBox.mockResolvedValue({ response: 0 });
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
-
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    expect(handler).toBeTypeOf("function");
-
-    const result = (await handler?.({}, { pid: 4321 })) as {
-      ok: boolean;
-      data?: { killed: boolean; cancelled: boolean };
-    };
-    expect(result.ok).toBe(true);
-    expect(result.data).toEqual({
-      pid: 4321,
-      name: "node",
-      killed: false,
-      cancelled: true,
-      killedPids: [],
-    });
-    expect(killSpy).not.toHaveBeenCalled();
-    expect(logInfoAction).toHaveBeenCalled();
-    killSpy.mockRestore();
-  });
-
-  it("should block protected app processes", async () => {
-    getProcessByPid.mockResolvedValue({
-      pid: 1234,
-      name: "SystemScope Helper",
-      command: "/Applications/SystemScope.app/Contents/MacOS/SystemScope",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
+      const result = (await handler?.(
+        {},
+        { pid: 4321, reason: "Activity > Processes" },
+      )) as { ok: boolean; data?: { killed: boolean; cancelled: boolean } };
+      expect(result.ok).toBe(true);
+      expect(result.data).toEqual({
+        pid: 4321,
+        name: "node",
+        killed: true,
+        cancelled: false,
+        killedPids: [4321],
+      });
+      expect(showMessageBox).toHaveBeenCalled();
+      expect(killSpy).toHaveBeenCalledWith(4321, "SIGKILL");
+      expect(logInfoAction).toHaveBeenCalled();
+      killSpy.mockRestore();
     });
 
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
+  it("should kill the whole process tree when tree=true (Unix)", async () => {
+      const target = {
+        pid: 1000,
+        name: "npm",
+        command: "npm run dev",
+        cpu: 0,
+        memory: 0,
+        memoryBytes: 0,
+      };
+      const descendants = [
+        { pid: 1001, name: "node", command: "node vite", cpu: 0, memory: 0, memoryBytes: 0 },
+        { pid: 1002, name: "esbuild", command: "esbuild", cpu: 0, memory: 0, memoryBytes: 0 },
+      ];
+      getProcessByPid.mockResolvedValue(target);
+      getProcessDescendants.mockResolvedValue(descendants);
+      showMessageBox.mockResolvedValue({ response: 1 });
+      const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
 
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    expect(handler).toBeTypeOf("function");
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, "platform", { value: "darwin" });
 
-    const result = (await handler?.({}, { pid: 1234 })) as {
-      ok: boolean;
-      error?: { code: string };
-    };
-    expect(result.ok).toBe(false);
-    expect(result.error?.code).toBe("PERMISSION_DENIED");
-    expect(killSpy).not.toHaveBeenCalled();
-    expect(logWarnAction).toHaveBeenCalled();
-    killSpy.mockRestore();
-  });
+      const { registerProcessIpc } =
+        await import("../../src/main/ipc/process.ipc");
+      registerProcessIpc();
 
-  it("should fall back to taskkill on Windows when process.kill returns EPERM", async () => {
-    const target = {
-      pid: 4321,
-      name: "node",
-      command: "C:\\node.exe",
-      cpu: 0,
-      memory: 0,
-      memoryBytes: 0,
-    };
-    getProcessByPid.mockResolvedValue(target);
-    showMessageBox.mockResolvedValue({ response: 1 });
-    getAppPath.mockImplementation((name: string) => {
-      if (name === "exe")
-        return "C:\\Program Files\\SystemScope\\SystemScope.exe";
-      return "C:\\Temp";
+      const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
+      const result = (await handler?.(
+        {},
+        { pid: 1000, tree: true },
+      )) as { ok: boolean; data?: { killedPids: number[] } };
+
+      expect(result.ok).toBe(true);
+      expect(result.data?.killedPids).toEqual([1000, 1001, 1002]);
+      // descendants killed deepest-first, then root
+      expect(killSpy.mock.calls).toEqual([
+        [1002, "SIGKILL"],
+        [1001, "SIGKILL"],
+        [1000, "SIGKILL"],
+      ]);
+
+      killSpy.mockRestore();
+      Object.defineProperty(process, "platform", { value: originalPlatform });
     });
 
-    const originalPlatform = process.platform;
-    Object.defineProperty(process, "platform", { value: "win32" });
-    const killSpy = vi.spyOn(process, "kill").mockImplementation(() => {
-      const err = new Error("kill EPERM") as Error & { code?: string };
-      err.code = "EPERM";
-      throw err;
+  it("should use taskkill /T /F for tree kill on Windows", async () => {
+      const target = {
+        pid: 2000,
+        name: "node.exe",
+        command: "C:\\node.exe",
+        cpu: 0,
+        memory: 0,
+        memoryBytes: 0,
+      };
+      getProcessByPid.mockResolvedValue(target);
+      getProcessDescendants.mockResolvedValue([
+        { pid: 2001, name: "child.exe", command: "C:\\child.exe", cpu: 0, memory: 0, memoryBytes: 0 },
+      ]);
+      showMessageBox.mockResolvedValue({ response: 1 });
+      runExternalCommand.mockResolvedValue({ stdout: "", stderr: "" });
+      const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
+
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, "platform", { value: "win32" });
+
+      const { registerProcessIpc } =
+        await import("../../src/main/ipc/process.ipc");
+      registerProcessIpc();
+
+      const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
+      const result = (await handler?.({}, { pid: 2000, tree: true })) as {
+        ok: boolean;
+        data?: { killedPids: number[] };
+      };
+
+      expect(result.ok).toBe(true);
+      expect(result.data?.killedPids).toEqual([2000, 2001]);
+      expect(killSpy).not.toHaveBeenCalled();
+      expect(runExternalCommand).toHaveBeenCalledWith(
+        "taskkill",
+        ["/PID", "2000", "/T", "/F"],
+        { windowsHide: true },
+      );
+
+      killSpy.mockRestore();
+      Object.defineProperty(process, "platform", { value: originalPlatform });
     });
-    runExternalCommand.mockResolvedValue({ stdout: "", stderr: "" });
-
-    const { registerProcessIpc } =
-      await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
-    const result = (await handler?.({}, { pid: 4321 })) as {
-      ok: boolean;
-      data?: { killed: boolean };
-    };
-
-    expect(result.ok).toBe(true);
-    expect(result.data?.killed).toBe(true);
-    expect(runExternalCommand).toHaveBeenCalledWith(
-      "taskkill",
-      ["/PID", "4321", "/T", "/F"],
-      {
-        windowsHide: true,
-      },
-    );
-
-    killSpy.mockRestore();
-    Object.defineProperty(process, "platform", { value: originalPlatform });
-  });
-
-  it("PROCESS_GET_NETWORK_USAGE: returns success envelope with snapshot", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    getProcessNetworkUsage.mockResolvedValueOnce({
-      supported: true,
-      capturedAt: 123,
-      intervalSec: 2,
-      processes: [
-        { pid: 1, name: "a", rxBps: 10, txBps: 20, totalRxBytes: 100, totalTxBytes: 200 },
-      ],
-    });
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE)!;
-    const result = await handler({}) as { ok: boolean; data?: unknown };
-    expect(result.ok).toBe(true);
-    expect(result.data).toMatchObject({ supported: true, processes: [{ pid: 1 }] });
-  });
-
-  it("PROCESS_GET_NETWORK_USAGE: returns failure envelope when collector throws", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    getProcessNetworkUsage.mockRejectedValueOnce(new Error("nettop missing"));
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_GET_NETWORK_USAGE)!;
-    const result = await handler({}) as { ok: boolean };
-    expect(result.ok).toBe(false);
-  });
-
-  it("PROCESS_RESOLVE_HOSTNAMES: validates input as string array", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
-    const result = await handler({}, "not-an-array") as { ok: boolean };
-    expect(result.ok).toBe(false);
-    expect(resolveHostnames).not.toHaveBeenCalled();
-  });
-
-  it("PROCESS_RESOLVE_HOSTNAMES: returns success envelope with map", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    resolveHostnames.mockResolvedValueOnce({ "1.2.3.4": "host.example" });
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
-    const result = await handler({}, ["1.2.3.4"]) as { ok: boolean; data?: unknown };
-    expect(result.ok).toBe(true);
-    expect(result.data).toEqual({ "1.2.3.4": "host.example" });
-  });
-
-  it("PROCESS_RESOLVE_HOSTNAMES: returns failure when service throws", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    resolveHostnames.mockRejectedValueOnce(new Error("dns down"));
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_HOSTNAMES)!;
-    const result = await handler({}, ["1.2.3.4"]) as { ok: boolean };
-    expect(result.ok).toBe(false);
-  });
-
-  it("PROCESS_RESOLVE_COUNTRIES: validates input as string array", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES)!;
-    const result = await handler({}, "nope") as { ok: boolean };
-    expect(result.ok).toBe(false);
-    expect(resolveCountries).not.toHaveBeenCalled();
-  });
-
-  it("PROCESS_RESOLVE_COUNTRIES: returns success envelope", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    resolveCountries.mockResolvedValueOnce({ "8.8.8.8": "US" });
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES)!;
-    const result = await handler({}, ["8.8.8.8"]) as { ok: boolean; data?: unknown };
-    expect(result.ok).toBe(true);
-    expect(result.data).toEqual({ "8.8.8.8": "US" });
-  });
-
-  it("PROCESS_RESOLVE_COUNTRIES: returns failure when service throws", async () => {
-    const { registerProcessIpc } = await import("../../src/main/ipc/process.ipc");
-    registerProcessIpc();
-    resolveCountries.mockRejectedValueOnce(new Error("db missing"));
-    const handler = handlers.get(IPC_CHANNELS.PROCESS_RESOLVE_COUNTRIES)!;
-    const result = await handler({}, ["8.8.8.8"]) as { ok: boolean };
-    expect(result.ok).toBe(false);
-  });
-});
+})
