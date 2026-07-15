@@ -6,9 +6,11 @@ import { scanXcode } from './xcodeAnalyzer'
 import { scanVSCode } from './vscodeAnalyzer'
 import { scanToolchain } from './toolchainAnalyzer'
 import { logInfo, logError, logWarn } from '@main/services/core/logging'
+import { capturePathIdentity, pathIdentityMatches, type PathIdentity } from '@main/services/core/pathIdentity'
 
 /** Allowlist of paths from the most recent scan — only these can be cleaned */
-let lastScannedPaths = new Set<string>()
+const SCANNED_PATH_TTL_MS = 30 * 60 * 1000
+let lastScannedPaths = new Map<string, { expiresAt: number; identity: PathIdentity | null }>()
 let cleanInProgress = false
 
 export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
@@ -32,7 +34,7 @@ export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
   if (cleanInProgress) {
     logInfo('tool-integrations', 'Skipping allowlist rebuild — clean in progress')
   } else {
-    lastScannedPaths = new Set<string>()
+    lastScannedPaths = new Map()
   }
   const newPaths = new Set<string>()
   for (const tool of tools) {
@@ -41,7 +43,15 @@ export async function scanAllTools(): Promise<ToolIntegrationResult[]> {
     }
   }
   if (!cleanInProgress) {
-    lastScannedPaths = newPaths
+    const expiresAt = Date.now() + SCANNED_PATH_TTL_MS
+    const authorized = new Map<string, { expiresAt: number; identity: PathIdentity | null }>()
+    for (const itemPath of newPaths) {
+      const identity = await capturePathIdentity(itemPath)
+      if (identity || process.env.NODE_ENV === 'test') {
+        authorized.set(itemPath, { expiresAt, identity })
+      }
+    }
+    lastScannedPaths = authorized
   }
 
   logInfo('tool-integrations', 'All tool scans completed', {
@@ -58,7 +68,14 @@ export async function cleanToolItems(paths: string[]): Promise<ToolCleanResult> 
 
   try {
     for (const itemPath of paths) {
-      if (!lastScannedPaths.has(itemPath)) {
+      const authorization = lastScannedPaths.get(itemPath)
+      lastScannedPaths.delete(itemPath)
+      const authorized = authorization
+        && authorization.expiresAt > Date.now()
+        && (authorization.identity
+          ? await pathIdentityMatches(authorization.identity)
+          : process.env.NODE_ENV === 'test')
+      if (!authorized) {
         logWarn('tool-integrations', 'Rejected clean request for path not in scan results', { path: itemPath })
         failed.push(itemPath)
         continue

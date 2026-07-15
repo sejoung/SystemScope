@@ -25,6 +25,7 @@ export class PersistentStore<T> {
   private readonly getTimestamp: ((entry: T) => number) | undefined
 
   private cachedEntries: T[] | null = null
+  private loadPromise: Promise<T[]> | null = null
   private writeQueue: Promise<void> = Promise.resolve()
 
   constructor(options: PersistentStoreOptions<T>) {
@@ -36,8 +37,18 @@ export class PersistentStore<T> {
   }
 
   async load(): Promise<T[]> {
-    if (this.cachedEntries) return this.cachedEntries
+    if (this.cachedEntries) return [...this.cachedEntries]
 
+    if (!this.loadPromise) {
+      this.loadPromise = this.loadFromDisk().finally(() => {
+        this.loadPromise = null
+      })
+    }
+
+    return [...await this.loadPromise]
+  }
+
+  private async loadFromDisk(): Promise<T[]> {
     try {
       try {
         await fsp.access(this.filePath)
@@ -100,6 +111,7 @@ export class PersistentStore<T> {
    */
   async replaceAll(entries: T[]): Promise<void> {
     this.writeQueue = this.writeQueue.catch(() => undefined).then(async () => {
+      await this.load()
       this.cachedEntries = [...entries]
       this.applyRetentionToCache()
       await this.flush()
@@ -110,6 +122,7 @@ export class PersistentStore<T> {
 
   async clear(): Promise<void> {
     this.writeQueue = this.writeQueue.catch(() => undefined).then(async () => {
+      await this.load()
       this.cachedEntries = []
       await this.flush()
     })

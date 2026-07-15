@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { scanAllTools, cleanToolItems } from '@main/services/devtools'
 import { getDevToolsOverview } from '@main/services/devtools'

@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, dialog } from 'electron'
+import { BrowserWindow, dialog } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { failure, success } from '@shared/types'
 import type { AppRemovalResult, AppUninstallRequest } from '@shared/types'

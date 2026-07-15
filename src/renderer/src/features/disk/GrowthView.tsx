@@ -1,3 +1,4 @@
+import { btnStyle, summaryPillStyle, cardBodyStyle, placeholderBlockStyle, spinnerStyle, spinnerSpacerStyle, dashboardCardStyle, dashboardCardHeaderStyle, dashboardCardTitleStyle, dashboardCardActionsStyle, dashboardCardContentStyle } from './GrowthView.styles'
 import { useEffect } from 'react'
 import { formatBytes } from '../../utils/format'
 import { useDiskStore } from '../../stores/disk/useDiskStore'
@@ -299,84 +300,3 @@ function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: n
   )
 }
 
-const btnStyle: React.CSSProperties = {
-  padding: '4px 12px',
-  fontSize: '11px',
-  fontWeight: 600,
-  border: '1px solid color-mix(in srgb, var(--accent-yellow) 35%, var(--border))',
-  borderRadius: '6px',
-  background: 'color-mix(in srgb, var(--accent-yellow) 18%, var(--bg-card))',
-  color: 'var(--text-on-accent-strong)',
-  cursor: 'pointer'
-}
-
-const summaryPillStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-  padding: '4px 8px',
-  borderRadius: '999px',
-  border: '1px solid var(--border)',
-  background: 'var(--bg-card)'
-}
-
-const cardBodyStyle: React.CSSProperties = {
-  minHeight: '360px'
-}
-
-const placeholderBlockStyle: React.CSSProperties = {
-  background: 'var(--bg-primary)',
-  borderRadius: '8px'
-}
-
-const spinnerStyle: React.CSSProperties = {
-  width: '14px',
-  height: '14px',
-  border: '2px solid var(--accent-yellow)',
-  borderTop: '2px solid transparent',
-  borderRadius: '50%',
-  animation: 'spin 0.8s linear infinite'
-}
-
-const spinnerSpacerStyle: React.CSSProperties = {
-  width: '14px',
-  height: '14px',
-  flexShrink: 0
-}
-
-const dashboardCardStyle: React.CSSProperties = {
-  backgroundColor: 'var(--bg-card)',
-  borderRadius: 'var(--radius-lg)',
-  border: '1px solid var(--border)',
-  display: 'flex',
-  flexDirection: 'column'
-}
-
-const dashboardCardHeaderStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '12px',
-  padding: '12px 16px',
-  borderBottom: '1px solid var(--border)',
-  flexWrap: 'wrap'
-}
-
-const dashboardCardTitleStyle: React.CSSProperties = {
-  fontSize: '12px',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '0.05em',
-  color: 'var(--text-secondary)'
-}
-
-const dashboardCardActionsStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  flexWrap: 'wrap'
-}
-
-const dashboardCardContentStyle: React.CSSProperties = {
-  padding: '16px'
-}

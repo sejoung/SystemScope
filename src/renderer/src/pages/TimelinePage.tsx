@@ -1,3 +1,4 @@
+import { errorBoxStyle, emptyBoxStyle } from './TimelinePage.styles'
 import { useEffect, useState } from 'react'
 import { useTimelineStore } from '../stores/timeline/useTimelineStore'
 import { useEventStore } from '../stores/timeline/useEventStore'
@@ -14,24 +15,9 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToast } from '../components/ui/Toast'
 import { useI18n } from '../i18n/useI18n'
 import { isAlertIntelligence } from '@shared/types'
-import type { TimelineRange, AlertIntelligence } from '@shared/types'
-import type { SystemEventCategory } from '@shared/types'
+import type { AlertIntelligence } from '@shared/types'
 import { useContainerWidth } from '../hooks/useContainerWidth'
-
-const RANGE_OPTIONS: { value: TimelineRange; labelKey: 'timeline.range.24h' | 'timeline.range.7d' | 'timeline.range.30d' }[] = [
-  { value: '24h', labelKey: 'timeline.range.24h' },
-  { value: '7d', labelKey: 'timeline.range.7d' },
-  { value: '30d', labelKey: 'timeline.range.30d' },
-]
-
-const EVENT_FILTER_OPTIONS: { value: SystemEventCategory | null; labelKey: string }[] = [
-  { value: null, labelKey: 'timeline.events.filter.all' },
-  { value: 'alert', labelKey: 'timeline.events.filter.alert' },
-  { value: 'disk_cleanup', labelKey: 'timeline.events.filter.disk_cleanup' },
-  { value: 'docker_cleanup', labelKey: 'timeline.events.filter.docker_cleanup' },
-  { value: 'app_removal', labelKey: 'timeline.events.filter.app_removal' },
-  { value: 'system', labelKey: 'timeline.events.filter.system' },
-]
+import { EVENT_FILTER_OPTIONS, RANGE_OPTIONS } from './timelineOptions'
 
 export function TimelinePage() {
   const [containerRef, containerWidth] = useContainerWidth(1280)
@@ -323,23 +309,4 @@ export function TimelinePage() {
       />
     </div>
   )
-}
-
-const errorBoxStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '200px',
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-}
-
-const emptyBoxStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '120px',
-  color: 'var(--text-muted)',
-  fontSize: '13px',
 }

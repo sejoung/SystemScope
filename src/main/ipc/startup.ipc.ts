@@ -1,4 +1,5 @@
-import { ipcMain, shell } from 'electron'
+import { shell } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import { getStartupItems, getStartupItemsWithSystemSettings, toggleStartupItem, findOrphanedLaunchAgents, removeOrphanedLaunchAgents } from '@main/services/startup'

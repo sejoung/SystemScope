@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import type { ProcessNetworkSnapshot, ProcessNetworkUsage, PortInfo } from "@shared/types";
+import type { ProcessNetworkSnapshot, ProcessNetworkUsage } from "@shared/types";
 import { useI18n } from "../../i18n/useI18n";
 import { StatusMessage } from "../../components/ui/StatusMessage";
 import { usePidNetworkHistory } from "./usePidNetworkHistory";
 import { Sparkline } from "./Sparkline";
-import { peerLabel } from './peerLabel'
+import { ProcessNetworkExpandedRow as ExpandedRow } from './ProcessNetworkExpandedRow'
 
 type SortKey = "rxBps" | "txBps" | "totalRxBytes" | "totalTxBytes";
 
@@ -33,106 +33,6 @@ function nullLastDesc(a: number | null, b: number | null): number {
 
 function sortProcesses(list: ProcessNetworkUsage[], key: SortKey): ProcessNetworkUsage[] {
   return [...list].sort((a, b) => nullLastDesc(a[key], b[key]));
-}
-
-function countryToFlag(iso2: string | null | undefined): string {
-  if (!iso2 || iso2.length !== 2) return ''
-  const codePoints = iso2.toUpperCase().split('').map((c) => 0x1f1e6 - 65 + c.charCodeAt(0))
-  return String.fromCodePoint(...codePoints)
-}
-
-interface ExpandedRowProps {
-  pid: number;
-}
-
-function ExpandedRow({ pid }: ExpandedRowProps) {
-  const [ports, setPorts] = useState<PortInfo[] | null>(null);
-  const [hostnames, setHostnames] = useState<Record<string, string | null>>({});
-  const [countries, setCountries] = useState<Record<string, string | null>>({});
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    void (async () => {
-      const res = await window.systemScope.getNetworkPorts();
-      if (res.ok && res.data) {
-        const filtered = (res.data as PortInfo[]).filter((p) => p.pid === pid);
-        setPorts(filtered);
-        const peerIps = Array.from(
-          new Set(filtered.map((p) => p.peerAddress).filter((ip) => !!ip && ip !== '*'))
-        );
-        if (peerIps.length > 0) {
-          const dnsRes = await window.systemScope.resolveHostnames(peerIps);
-          if (dnsRes.ok && dnsRes.data) {
-            setHostnames(dnsRes.data as Record<string, string | null>);
-          }
-          const cRes = await window.systemScope.resolveCountries(peerIps);
-          if (cRes.ok && cRes.data) {
-            setCountries(cRes.data as Record<string, string | null>);
-          }
-        }
-      } else if (!res.ok) {
-        setError(res.error?.message ?? "Unable to fetch port information.");
-      }
-    })();
-  }, [pid]);
-
-  if (error) {
-    return (
-      <tr>
-        <td colSpan={6} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--accent-red)" }}>
-          {error}
-        </td>
-      </tr>
-    );
-  }
-
-  if (ports === null) {
-    return (
-      <tr>
-        <td colSpan={6} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--text-secondary)" }}>
-          Loading ports...
-        </td>
-      </tr>
-    );
-  }
-
-  if (ports.length === 0) {
-    return (
-      <tr>
-        <td colSpan={6} style={{ padding: "8px 12px", fontSize: "12px", color: "var(--text-secondary)" }}>
-          No ports found for this process.
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr>
-      <td colSpan={6} style={{ padding: "8px 12px 12px 12px", background: "var(--bg-subtle, var(--bg-card))" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-          {ports.map((p, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: "11px",
-                fontFamily: "var(--font-mono, monospace)",
-                padding: "2px 6px",
-                borderRadius: "var(--radius-sm, 4px)",
-                background: "var(--bg-tag, var(--border))",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {p.protocol} {p.localAddress}:{p.localPort} → {peerLabel(p.peerAddress, hostnames[p.peerAddress] ?? null)}{countries[p.peerAddress] ? (
-                <span style={{ fontFamily: '"Twemoji Country Flags", var(--font-mono, monospace)' }}>
-                  {' '}{countryToFlag(countries[p.peerAddress])} {countries[p.peerAddress]}
-                </span>
-              ) : null}:{p.peerPort} [{p.state}]
-            </span>
-          ))}
-        </div>
-      </td>
-    </tr>
-  );
 }
 
 export function ProcessNetworkPanel() {

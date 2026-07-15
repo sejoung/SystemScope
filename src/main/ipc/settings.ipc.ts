@@ -1,4 +1,5 @@
-import { ipcMain, dialog, shell, app, BrowserWindow } from 'electron'
+import { dialog, shell, app, BrowserWindow } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
 import { IPC_CHANNELS } from '@shared/contracts/channels'

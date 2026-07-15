@@ -17,7 +17,7 @@ vi.mock('../../src/main/store/settingsStore', () => ({
   })
 }))
 
-const { maskSensitivePaths } = await import('../../src/main/services/report/reportBuilder')
+const { maskSensitivePaths, maskSensitiveValue } = await import('../../src/main/services/report/reportBuilder')
 
 describe('reportBuilder', () => {
   describe('maskSensitivePaths', () => {
@@ -43,6 +43,20 @@ describe('reportBuilder', () => {
       const input = '/opt/data/file.txt'
       const result = maskSensitivePaths(input, '/Users/testuser', 'testuser')
       expect(result).toBe('/opt/data/file.txt')
+    })
+  })
+
+  it('masks sensitive strings recursively in structured report data', () => {
+    const input = {
+      mount: '/Users/testuser',
+      processes: [{ command: '/Users/testuser/project/node testuser' }],
+      untouched: 42
+    }
+
+    expect(maskSensitiveValue(input, '/Users/testuser', 'testuser')).toEqual({
+      mount: '~',
+      processes: [{ command: '~/project/node <user>' }],
+      untouched: 42
     })
   })
 })

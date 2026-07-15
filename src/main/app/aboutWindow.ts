@@ -1,7 +1,9 @@
 import { app, BrowserWindow } from 'electron'
 import * as fs from 'node:fs'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { getSettings } from '../store/settingsStore'
+import { secureRendererWindow } from './windowSecurity'
 
 let aboutWindow: BrowserWindow | null = null
 
@@ -23,6 +25,10 @@ export function openAboutWindow(): BrowserWindow {
   }
 
   const { theme } = getSettings()
+  const rendererFile = join(__dirname, '../renderer/index.html')
+  const rendererUrl = process.env.NODE_ENV === 'development' && process.env.ELECTRON_RENDERER_URL
+    ? process.env.ELECTRON_RENDERER_URL
+    : pathToFileURL(rendererFile).toString()
   aboutWindow = new BrowserWindow({
     width: 420,
     height: 520,
@@ -46,6 +52,8 @@ export function openAboutWindow(): BrowserWindow {
     }
   })
 
+  secureRendererWindow(aboutWindow, rendererUrl)
+
   aboutWindow.once('ready-to-show', () => {
     aboutWindow?.show()
   })
@@ -59,7 +67,7 @@ export function openAboutWindow(): BrowserWindow {
     url.searchParams.set('window', 'about')
     void aboutWindow.loadURL(url.toString())
   } else {
-    void aboutWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+    void aboutWindow.loadFile(rendererFile, {
       query: { window: 'about' }
     })
   }

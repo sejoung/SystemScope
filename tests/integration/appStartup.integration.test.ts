@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const whenReadyCallbacks = vi.hoisted(() => [] as Array<() => void>)
+const whenReadyCallbacks = vi.hoisted(() => [] as Array<() => void | Promise<void>>)
 const appEventHandlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => void>())
 const initializeRuntimeSettingsMock = vi.hoisted(() => vi.fn())
 const ensureSnapshotDirMock = vi.hoisted(() => vi.fn())
@@ -32,7 +32,7 @@ vi.mock('electron', () => ({
   app: {
     whenReady: () => {
       const thenChain = {
-        then: (callback: () => void) => {
+        then: (callback: () => void | Promise<void>) => {
           whenReadyCallbacks.push(callback)
           return { catch: vi.fn() }
         }
@@ -214,7 +214,7 @@ describe('app startup integration', () => {
 
     expect(whenReadyCallbacks).toHaveLength(1)
 
-    whenReadyCallbacks[0]()
+    await whenReadyCallbacks[0]()
 
     expect(initializeLoggingMock).toHaveBeenCalledTimes(1)
     expect(initializeShutdownHandlersMock).toHaveBeenCalledTimes(1)

@@ -39,17 +39,17 @@ if (!gotTheLock) {
   const STARTUP_UPDATE_CHECK_DELAY_MS = 8_000
   const STARTUP_TRAY_REFRESH_DELAY_MS = 5_000
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     initializeLogging()
     initializeShutdownHandlers()
     initializeRuntimeSettings()
     registerAllIpc()
-    void initEventStore()
-    void initMetricsStore()
-    void initDiagnosisAdvisor()
-    void initAlertHistory()
-    void initCleanupInbox()
-    initAutomationScheduler()
+    await initEventStore()
+    await Promise.all([
+      initMetricsStore(),
+      initAlertHistory(),
+      initCleanupInbox()
+    ])
     initProjectMonitor()
 
     if (!isE2ELightweight) {
@@ -68,6 +68,11 @@ if (!gotTheLock) {
     }
 
     const mainWindow = createMainWindow()
+
+    initAutomationScheduler()
+    void initDiagnosisAdvisor().catch((error) => {
+      logError('app', 'Diagnosis advisor initialization failed', error)
+    })
 
     app.on('activate', () => {
       if (!mainWindow.isDestroyed()) {

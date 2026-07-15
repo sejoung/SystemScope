@@ -12,18 +12,21 @@ export async function getWindowsStartupItems(): Promise<StartupItem[]> {
   const items: StartupItem[] = []
 
   // Registry: HKCU\...\Run
-  await scanWindowsRegistry('HKCU', items)
+  await scanWindowsRegistry('HKCU', items, true)
+  await scanWindowsRegistry('HKCU', items, false)
   // Registry: HKLM\...\Run
-  await scanWindowsRegistry('HKLM', items)
+  await scanWindowsRegistry('HKLM', items, true)
+  await scanWindowsRegistry('HKLM', items, false)
   // Startup folder
   await scanWindowsStartupFolder(items)
 
   return items
 }
 
-async function scanWindowsRegistry(hive: 'HKCU' | 'HKLM', items: StartupItem[]): Promise<void> {
+async function scanWindowsRegistry(hive: 'HKCU' | 'HKLM', items: StartupItem[], enabled: boolean): Promise<void> {
   const scope = hive === 'HKCU' ? 'user' : 'system'
-  const regPath = `${hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\Run`
+  const activePath = `${hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\Run`
+  const regPath = enabled ? activePath : `${activePath}Disabled`
 
   try {
     const { stdout } = await runExternalCommand('reg', ['query', regPath], { timeout: REG_TIMEOUT_MS })
@@ -37,12 +40,12 @@ async function scanWindowsRegistry(hive: 'HKCU' | 'HKLM', items: StartupItem[]):
       const value = match[2].trim()
 
       items.push({
-        id: startupItemId(`${regPath}\\${name}`),
+        id: startupItemId(`${activePath}\\${name}`),
         name,
         path: value,
         type: 'registry_run',
         scope,
-        enabled: true,
+        enabled,
         label: name,
         description: value,
       })
@@ -55,23 +58,33 @@ async function scanWindowsRegistry(hive: 'HKCU' | 'HKLM', items: StartupItem[]):
 }
 
 async function scanWindowsStartupFolder(items: StartupItem[]): Promise<void> {
-  const startupDir = path.join(
-    process.env.APPDATA || path.join(homedir(), 'AppData', 'Roaming'),
+  const startupDir = path.win32.join(
+    process.env.APPDATA || path.win32.join(homedir(), 'AppData', 'Roaming'),
     'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup'
   )
 
+  await scanStartupDirectory(startupDir, startupDir, true, items)
+  await scanStartupDirectory(path.win32.join(startupDir, '_disabled'), startupDir, false, items)
+}
+
+async function scanStartupDirectory(
+  scanDir: string,
+  activeDir: string,
+  enabled: boolean,
+  items: StartupItem[]
+): Promise<void> {
   try {
-    const entries = await fs.readdir(startupDir)
+    const entries = await fs.readdir(scanDir)
     for (const entry of entries) {
-      if (entry.startsWith('.')) continue
-      const fullPath = path.join(startupDir, entry)
+      if (entry.startsWith('.') || entry === '_disabled') continue
+      const fullPath = path.win32.join(scanDir, entry)
       items.push({
-        id: startupItemId(fullPath),
+        id: startupItemId(path.win32.join(activeDir, entry)),
         name: entry.replace(/\.(lnk|url)$/i, ''),
         path: fullPath,
         type: 'startup_folder',
         scope: 'user',
-        enabled: true,
+        enabled,
         label: entry,
         description: fullPath,
       })
@@ -89,6 +102,7 @@ export async function toggleWindowsItem(item: StartupItem, enabled: boolean): Pr
     if (enabled) {
       // Re-add the registry entry
       await runExternalCommand('reg', ['add', regPath, '/v', item.name, '/t', 'REG_SZ', '/d', item.path, '/f'], { timeout: REG_TIMEOUT_MS })
+      await runExternalCommand('reg', ['delete', `${regPath}Disabled`, '/v', item.name, '/f'], { timeout: REG_TIMEOUT_MS })
     } else {
       // Remove the registry entry (backup to RunDisabled)
       const disabledPath = `${hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\RunDisabled`
@@ -97,14 +111,15 @@ export async function toggleWindowsItem(item: StartupItem, enabled: boolean): Pr
     }
   } else if (item.type === 'startup_folder') {
     if (enabled) {
-      // Cannot re-enable a deleted shortcut — would need backup
-      throw new Error('Cannot re-enable startup folder items')
+      const disabledDir = path.win32.dirname(item.path)
+      const startupDir = path.win32.dirname(disabledDir)
+      await fs.rename(item.path, path.win32.join(startupDir, path.win32.basename(item.path)))
     } else {
       // Move to a disabled subfolder
-      const dir = path.dirname(item.path)
-      const disabledDir = path.join(dir, '_disabled')
+      const dir = path.win32.dirname(item.path)
+      const disabledDir = path.win32.join(dir, '_disabled')
       await fs.mkdir(disabledDir, { recursive: true })
-      await fs.rename(item.path, path.join(disabledDir, path.basename(item.path)))
+      await fs.rename(item.path, path.win32.join(disabledDir, path.win32.basename(item.path)))
     }
   }
 }

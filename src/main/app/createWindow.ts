@@ -1,9 +1,11 @@
 import { BrowserWindow, dialog } from 'electron'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { restoreWindowState, saveWindowState } from '../store/windowState'
 import { getSettings } from '../store/settingsStore'
 import { clearUnsavedSettingsState, getUnsavedSettingsState, setUnsavedSettingsState } from './rendererState'
 import { tk } from '../i18n'
+import { secureRendererWindow } from './windowSecurity'
 
 let forceQuit = false
 let bypassUnsavedSettingsPrompt = false
@@ -17,6 +19,8 @@ export function createMainWindow(): BrowserWindow {
   const { theme } = getSettings()
   const rendererUrl = process.env.ELECTRON_RENDERER_URL
   const isDevelopment = process.env.NODE_ENV === 'development' && Boolean(rendererUrl)
+  const rendererFile = join(__dirname, '../renderer/index.html')
+  const expectedRendererUrl = isDevelopment ? rendererUrl! : pathToFileURL(rendererFile).toString()
 
   const win = new BrowserWindow({
     width: saved?.width ?? 1440,
@@ -37,6 +41,8 @@ export function createMainWindow(): BrowserWindow {
       webSecurity: true
     }
   })
+
+  secureRendererWindow(win, expectedRendererUrl)
 
   win.once('ready-to-show', () => {
     if (saved?.isMaximized) {
@@ -122,7 +128,7 @@ export function createMainWindow(): BrowserWindow {
   if (isDevelopment) {
     win.loadURL(rendererUrl!)
   } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(rendererFile)
   }
 
   return win

@@ -45,6 +45,7 @@ describe('createMainWindow', () => {
     openDevTools: ReturnType<typeof vi.fn>
     closeDevTools: ReturnType<typeof vi.fn>
     isDevToolsOpened: ReturnType<typeof vi.fn>
+    setWindowOpenHandler: ReturnType<typeof vi.fn>
   }
 
   beforeEach(() => {
@@ -74,7 +75,8 @@ describe('createMainWindow', () => {
       }),
       openDevTools: vi.fn(),
       closeDevTools: vi.fn(),
-      isDevToolsOpened: vi.fn(() => false)
+      isDevToolsOpened: vi.fn(() => false),
+      setWindowOpenHandler: vi.fn()
     }
 
     browserWindowMock.mockImplementation(function mockBrowserWindow() {

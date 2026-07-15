@@ -1,4 +1,5 @@
-import { ipcMain, dialog, app, BrowserWindow } from 'electron'
+import { dialog, app, BrowserWindow } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import type { ProcessKillRequest, ProcessKillResult } from '@shared/types'
 import { getTopCpuProcesses, getTopMemoryProcesses, getAllProcesses, getNetworkPorts, getProcessByPid, getProcessDescendants, getProcessSnapshot } from '@main/services/process'

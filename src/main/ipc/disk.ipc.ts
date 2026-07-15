@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { BrowserWindow } from 'electron'; import { ipcMain } from './_shared/trustedIpc'
 import * as path from 'node:path'
 import * as fs from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'

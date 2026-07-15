@@ -23,6 +23,22 @@ export function maskSensitivePaths(text: string, homePath: string, username: str
   return result
 }
 
+export function maskSensitiveValue(value: unknown, homePath: string, username: string): unknown {
+  if (typeof value === 'string') {
+    return maskSensitivePaths(value, homePath, username)
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => maskSensitiveValue(entry, homePath, username))
+  }
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [key, maskSensitiveValue(entry, homePath, username)])
+  )
+}
+
 function maybeApplyMask(text: string, shouldMask: boolean): string {
   if (!shouldMask) return text
   return maskSensitivePaths(text, os.homedir(), os.userInfo().username)
@@ -120,12 +136,20 @@ export async function buildDiagnosticReport(options: ReportOptions): Promise<Dia
 
   logInfo('report-builder', 'Report built', { sectionCount: sections.length })
 
+  const reportSections = mask
+    ? sections.map((section) => ({
+        ...section,
+        content: maybeApplyMask(section.content, true),
+        data: maskSensitiveValue(section.data, os.homedir(), os.userInfo().username)
+      }))
+    : sections
+
   return {
     generatedAt: Date.now(),
     appVersion: app.getVersion(),
     platform: process.platform,
     arch: process.arch,
-    sections,
+    sections: reportSections,
   }
 }
 

@@ -21,7 +21,18 @@ if (isLightweight) {
   api = createIpcApi()
 }
 
-contextBridge.exposeInMainWorld('systemScope', api)
+const preloadLocation = (globalThis as { location?: { search?: string } }).location
+const isAboutWindow = Boolean(preloadLocation
+  && new URLSearchParams(preloadLocation.search ?? '').get('window') === 'about')
+const exposedApi = isAboutWindow
+  ? {
+      logRendererError: api.logRendererError,
+      getAboutInfo: api.getAboutInfo,
+      openHomepage: api.openHomepage
+    }
+  : api
+
+contextBridge.exposeInMainWorld('systemScope', exposedApi)
 contextBridge.exposeInMainWorld('__E2E_LIGHTWEIGHT', isLightweight)
 if (e2eControls) {
   contextBridge.exposeInMainWorld('__E2E_CONTROLS__', e2eControls)

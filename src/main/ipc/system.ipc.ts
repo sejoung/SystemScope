@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { BrowserWindow } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { SYSTEM_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
 import { getSystemStats } from '@main/services/system'

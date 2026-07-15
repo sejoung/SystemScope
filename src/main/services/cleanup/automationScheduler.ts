@@ -4,7 +4,6 @@ import { executeCleanup, previewCleanup } from './cleanupRules'
 import { getActiveProfile, getEffectiveAutomationSchedule } from '@main/services/profile/profileManager'
 import { recordEvent } from '@main/services/history/eventStore'
 import { logInfo, logWarn } from '@main/services/core/logging'
-import { refreshProjectMonitor } from '@main/services/projectMonitor/projectMonitor'
 
 const SAFE_AUTOMATION_RULE_IDS = new Set<CleanupRuleId>([
   'npm_cache',
@@ -44,10 +43,6 @@ export function stopAutomationScheduler(): void {
 }
 
 async function maybeRunAutomatedTasks(reason: 'startup' | 'interval'): Promise<void> {
-  await refreshProjectMonitor().catch((error) => {
-    logWarn('automation-scheduler', 'Project monitor refresh failed', { error, reason })
-  })
-
   const settings = getSettings()
   const schedule = getEffectiveAutomationSchedule()
   if (!schedule.enabled || schedule.frequency === 'manual') {

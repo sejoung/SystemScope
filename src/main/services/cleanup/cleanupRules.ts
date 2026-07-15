@@ -1,6 +1,5 @@
 import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
-import { platform, homedir } from 'node:os'
+import { platform } from 'node:os'
 import { shell } from 'electron'
 import type {
   CleanupRule,
@@ -10,93 +9,17 @@ import type {
   CleanupPreviewItem,
   CleanupResult
 } from '@shared/types'
-import { listDockerContainers, removeDockerContainers } from '@main/services/docker/dockerImages'
+import { removeDockerContainers } from '@main/services/docker/dockerImages'
 import { recordEvent } from '@main/services/history/eventStore'
 import { logInfo, logWarn } from '@main/services/core/logging'
 import { getDirSize } from '../../utils/getDirSize'
 import { getEffectiveCleanupRules, setEffectiveCleanupRuleConfig } from '@main/services/profile/profileManager'
 import { adminMoveToTrash } from '@main/services/core/adminShell.mac'
+import { capturePathIdentity, pathIdentityMatches, type PathIdentity } from '@main/services/core/pathIdentity'
+import { BUILT_IN_RULES } from './cleanupRuleCatalog'
+import { DOCKER_CONTAINER_PREFIX, getDockerContainerSizeMap, parseDockerContainerCleanupTarget, scanDockerStoppedContainers, scanFilesystemRule, toDockerContainerCleanupTarget } from './cleanupScanners'
 
-const home = homedir()
 const isMac = platform() === 'darwin'
-
-const BUILT_IN_RULES: Omit<CleanupRule, 'enabled' | 'minAgeDays'>[] = [
-  {
-    id: 'downloads_old_files',
-    name: 'Old Downloads',
-    description: 'Files in Downloads folder older than the configured threshold',
-    category: 'downloads',
-    safetyLevel: 'caution',
-    targetPaths: [path.join(home, 'Downloads')]
-  },
-  {
-    id: 'xcode_derived_data',
-    name: 'Xcode DerivedData',
-    description: 'Xcode build cache that can be safely regenerated',
-    category: 'dev_tools',
-    safetyLevel: 'safe',
-    targetPaths: isMac ? [path.join(home, 'Library/Developer/Xcode/DerivedData')] : []
-  },
-  {
-    id: 'xcode_archives',
-    name: 'Xcode Archives',
-    description: 'Old Xcode archive builds',
-    category: 'dev_tools',
-    safetyLevel: 'risky',
-    targetPaths: isMac ? [path.join(home, 'Library/Developer/Xcode/Archives')] : []
-  },
-  {
-    id: 'npm_cache',
-    name: 'npm Cache',
-    description: 'npm package download cache',
-    category: 'package_managers',
-    safetyLevel: 'safe',
-    targetPaths: [path.join(home, isMac ? '.npm/_cacache' : 'AppData/Local/npm-cache/_cacache')]
-  },
-  {
-    id: 'pnpm_cache',
-    name: 'pnpm Cache',
-    description: 'pnpm content-addressable store cache',
-    category: 'package_managers',
-    safetyLevel: 'safe',
-    targetPaths: [path.join(home, isMac ? 'Library/pnpm/store' : 'AppData/Local/pnpm/store')]
-  },
-  {
-    id: 'yarn_cache',
-    name: 'Yarn Cache',
-    description: 'Yarn package cache',
-    category: 'package_managers',
-    safetyLevel: 'safe',
-    targetPaths: [path.join(home, isMac ? 'Library/Caches/Yarn' : 'AppData/Local/Yarn/Cache')]
-  },
-  {
-    id: 'docker_stopped_containers',
-    name: 'Docker Stopped Containers',
-    description: 'Docker containers that are no longer running',
-    category: 'docker',
-    safetyLevel: 'safe',
-    targetPaths: [] // handled via Docker CLI, not filesystem
-  },
-  {
-    id: 'old_logs',
-    name: 'Old Log Files',
-    description: 'System and application log files',
-    category: 'system',
-    safetyLevel: 'safe',
-    targetPaths: isMac ? [path.join(home, 'Library/Logs')] : [path.join(home, 'AppData/Local/Temp')]
-  },
-  {
-    id: 'temp_files',
-    name: 'Temporary Files',
-    description: 'Temporary files and caches',
-    category: 'system',
-    safetyLevel: 'safe',
-    targetPaths: isMac ? [path.join(home, 'Library/Caches')] : [path.join(home, 'AppData/Local/Temp')]
-  }
-]
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-const DOCKER_CONTAINER_PREFIX = 'docker:container:'
 const PREVIEW_TARGET_TTL_MS = 30 * 60 * 1000
 
 /**
@@ -106,12 +29,22 @@ const PREVIEW_TARGET_TTL_MS = 30 * 60 * 1000
  * instead of a single last-preview set so inbox refreshes or automation previews
  * do not invalidate an already-open cleanup confirmation dialog.
  */
-let previewedTargets = new Map<string, number>()
+interface PreviewedTarget {
+  expiresAt: number
+  kind: 'docker' | 'filesystem'
+  identity: PathIdentity | null
+}
+
+let previewedTargets = new Map<string, PreviewedTarget>()
 
 /** Test-only: seed the set of targets executeCleanup is allowed to act on. */
 export function __setPreviewedTargetsForTests(targets: string[]): void {
   const expiresAt = Date.now() + PREVIEW_TARGET_TTL_MS
-  previewedTargets = new Map(targets.map((target) => [target, expiresAt]))
+  previewedTargets = new Map(targets.map((target) => [target, {
+    expiresAt,
+    kind: target.startsWith(DOCKER_CONTAINER_PREFIX) ? 'docker' : 'filesystem',
+    identity: null
+  }]))
 }
 
 /**
@@ -194,7 +127,7 @@ export async function previewCleanup(): Promise<CleanupPreview> {
 
   const totalSize = allItems.reduce((sum, item) => sum + item.size, 0)
 
-  registerPreviewedTargets(allItems.map((item) => item.path))
+  await registerPreviewedTargets(allItems.map((item) => item.path))
 
   logInfo('cleanup-rules', 'Cleanup preview completed', {
     totalItems: allItems.length,
@@ -227,16 +160,35 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
     // Containment: only act on targets that a recent preview produced.
     // Anything else (e.g. an arbitrary path injected by a compromised renderer)
     // is rejected outright instead of being trashed.
-    if (!previewedTargets.has(target)) {
+    const authorization = previewedTargets.get(target)
+    if (!authorization) {
       failedCount++
       failedPaths.push(target)
       logWarn('cleanup-rules', 'Rejected cleanup target not present in last preview', { path: target })
       continue
     }
 
+    previewedTargets.delete(target)
+
     const dockerContainerId = parseDockerContainerCleanupTarget(target)
     if (dockerContainerId) {
+      if (authorization.kind !== 'docker') {
+        failedCount++
+        failedPaths.push(target)
+        continue
+      }
       dockerContainerIds.push(dockerContainerId)
+      continue
+    }
+
+    const identityMatches = authorization.kind === 'filesystem'
+      && (authorization.identity
+        ? await pathIdentityMatches(authorization.identity)
+        : process.env.NODE_ENV === 'test')
+    if (!identityMatches) {
+      failedCount++
+      failedPaths.push(target)
+      logWarn('cleanup-rules', 'Rejected cleanup target because it changed after preview', { path: target })
       continue
     }
     fileSystemPaths.push(target)
@@ -330,112 +282,27 @@ export async function executeCleanup(paths: string[]): Promise<CleanupResult> {
   return result
 }
 
-function registerPreviewedTargets(targets: string[]): void {
+async function registerPreviewedTargets(targets: string[]): Promise<void> {
   prunePreviewedTargets()
   const expiresAt = Date.now() + PREVIEW_TARGET_TTL_MS
   for (const target of targets) {
-    previewedTargets.set(target, expiresAt)
+    const dockerId = parseDockerContainerCleanupTarget(target)
+    const identity = dockerId ? null : await capturePathIdentity(target)
+    if (dockerId || identity || process.env.NODE_ENV === 'test') {
+      previewedTargets.set(target, {
+        expiresAt,
+        kind: dockerId ? 'docker' : 'filesystem',
+        identity
+      })
+    }
   }
 }
 
 function prunePreviewedTargets(): void {
   const now = Date.now()
-  for (const [target, expiresAt] of previewedTargets) {
-    if (expiresAt <= now) {
+  for (const [target, authorization] of previewedTargets) {
+    if (authorization.expiresAt <= now) {
       previewedTargets.delete(target)
     }
   }
-}
-
-/**
- * Scan direct children of targetPaths for files older than minAgeDays.
- */
-async function scanFilesystemRule(rule: CleanupRule): Promise<CleanupPreviewItem[]> {
-  const items: CleanupPreviewItem[] = []
-  const cutoffMs = Date.now() - rule.minAgeDays * MS_PER_DAY
-
-  for (const targetPath of rule.targetPaths) {
-    try {
-      await fs.access(targetPath)
-    } catch {
-      // Path does not exist or is inaccessible — skip
-      continue
-    }
-
-    try {
-      const entries = await fs.readdir(targetPath, { withFileTypes: true })
-
-      for (const entry of entries) {
-        const fullPath = path.join(targetPath, entry.name)
-        try {
-          const stat = await fs.stat(fullPath)
-          const modifiedAt = stat.mtimeMs
-
-          if (modifiedAt < cutoffMs) {
-            const size = stat.isDirectory() ? await getDirSize(fullPath) : stat.size
-            items.push({
-              path: fullPath,
-              size,
-              modifiedAt,
-              rule: rule.id
-            })
-          }
-        } catch {
-          // Permission error or broken symlink — skip gracefully
-        }
-      }
-    } catch (err) {
-      logWarn('cleanup-rules', `Failed to read directory for rule ${rule.id}`, { path: targetPath, error: err })
-    }
-  }
-
-  return items
-}
-
-/**
- * Scan Docker for stopped containers via the Docker CLI.
- * If Docker is unavailable, returns an empty array gracefully.
- */
-async function scanDockerStoppedContainers(rule: CleanupRule): Promise<CleanupPreviewItem[]> {
-  try {
-    const result = await listDockerContainers()
-
-    if (result.status !== 'ready') {
-      logInfo('cleanup-rules', 'Docker not available for cleanup scan', { status: result.status })
-      return []
-    }
-
-    const stoppedContainers = result.containers.filter((c) => !c.running)
-    return stoppedContainers.map((container) => ({
-      path: toDockerContainerCleanupTarget(container.id),
-      size: container.sizeBytes,
-      modifiedAt: 0, // Docker containers don't have a direct mtime
-      rule: rule.id
-    }))
-  } catch (err) {
-    logWarn('cleanup-rules', 'Failed to scan Docker stopped containers', { error: err })
-    return []
-  }
-}
-
-async function getDockerContainerSizeMap(containerIds: string[]): Promise<Map<string, number>> {
-  const result = await listDockerContainers()
-  if (result.status !== 'ready') {
-    return new Map()
-  }
-
-  const targetIds = new Set(containerIds)
-  return new Map(
-    result.containers
-      .filter((container) => targetIds.has(container.id))
-      .map((container) => [container.id, container.sizeBytes] as const)
-  )
-}
-
-function parseDockerContainerCleanupTarget(value: string): string | null {
-  return value.startsWith(DOCKER_CONTAINER_PREFIX) ? value.slice(DOCKER_CONTAINER_PREFIX.length) : null
-}
-
-function toDockerContainerCleanupTarget(containerId: string): string {
-  return `${DOCKER_CONTAINER_PREFIX}${containerId}`
 }

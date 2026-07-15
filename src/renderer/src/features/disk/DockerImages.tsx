@@ -1,3 +1,4 @@
+import { thStyle, tdStyle, actionBtnStyle, rowStyle } from './DockerImages.styles'
 import { useEffect, useMemo, useState } from 'react'
 import { Accordion } from '../../components/ui/Accordion'
 import { useToast } from '../../components/ui/Toast'
@@ -305,36 +306,3 @@ function Badge({ text, color }: { text: string; color: string }) {
   )
 }
 
-const thStyle: React.CSSProperties = {
-  textAlign: 'left',
-  padding: '12px 8px',
-  color: 'var(--text-muted)',
-  fontWeight: 600,
-  fontSize: '12px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  whiteSpace: 'nowrap'
-}
-
-const tdStyle: React.CSSProperties = {
-  padding: '12px 8px',
-  color: 'var(--text-secondary)',
-  verticalAlign: 'top',
-  fontSize: '14px',
-  lineHeight: 1.4
-}
-
-const actionBtnStyle: React.CSSProperties = {
-  padding: '7px 12px',
-  fontSize: '12px',
-  fontWeight: 600,
-  border: 'none',
-  borderRadius: '6px',
-  background: 'var(--accent-cyan)',
-  color: 'var(--text-on-accent)',
-  cursor: 'pointer'
-}
-
-const rowStyle: React.CSSProperties = {
-  borderBottom: '1px solid var(--border)'
-}

@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain } from './_shared/trustedIpc'
 import { IPC_CHANNELS } from '@shared/contracts/channels'
 import { success, failure } from '@shared/types'
 import { saveSessionSnapshot, getSessionSnapshots, deleteSessionSnapshot, getSessionSnapshotDiff } from '@main/services/history'
