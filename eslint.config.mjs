@@ -3,6 +3,50 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 import unicorn from 'eslint-plugin-unicorn'
 
+const MAX_FILE_LINES = 300
+
+// Existing oversized modules are frozen at their current effective line count.
+// New modules are capped at MAX_FILE_LINES, and each entry must be removed as
+// its module is split below the global limit.
+const LEGACY_LINE_BUDGETS = {
+  'src/main/ipc/disk.ipc.ts': 438,
+  'src/main/ipc/docker.ipc.ts': 355,
+  'src/main/services/alerts/alertManager.ts': 377,
+  'src/main/services/apps/installedApps.mac.ts': 335,
+  'src/main/services/apps/installedApps.ts': 354,
+  'src/main/services/apps/installedApps.windows.ts': 323,
+  'src/main/services/cleanup/cleanupRules.ts': 354,
+  'src/main/services/devtools/devToolsOverview.ts': 1106,
+  'src/main/services/diagnosis/diagnosisAdvisor.ts': 389,
+  'src/main/services/docker/dockerImages.ts': 503,
+  'src/main/services/system/systemMonitor.ts': 325,
+  'src/renderer/src/components/layout/Sidebar.tsx': 309,
+  'src/renderer/src/features/apps/InstalledApps.tsx': 537,
+  'src/renderer/src/features/apps/LeftoverApps.tsx': 466,
+  'src/renderer/src/features/apps/RegistryApps.tsx': 393,
+  'src/renderer/src/features/cleanup/CleanupInboxView.tsx': 316,
+  'src/renderer/src/features/devtools/DevToolsOverviewSection.tsx': 722,
+  'src/renderer/src/features/diagnosis/DiagnosisCard.tsx': 344,
+  'src/renderer/src/features/disk/DockerImages.tsx': 324,
+  'src/renderer/src/features/disk/FileInsights.tsx': 453,
+  'src/renderer/src/features/disk/GrowthView.tsx': 351,
+  'src/renderer/src/features/disk/QuickScan.tsx': 420,
+  'src/renderer/src/features/disk/YourStorage.tsx': 344,
+  'src/renderer/src/features/docker/DockerContainers.tsx': 386,
+  'src/renderer/src/features/process/ListeningPorts.tsx': 1288,
+  'src/renderer/src/features/process/PortWatch.tsx': 338,
+  'src/renderer/src/features/process/PortWatchList.tsx': 500,
+  'src/renderer/src/features/process/ProcessNetworkPanel.tsx': 362,
+  'src/renderer/src/features/process/ProcessTable.tsx': 759,
+  'src/renderer/src/pages/SettingsPage.tsx': 1220,
+  'src/renderer/src/pages/TimelinePage.tsx': 317,
+  'tests/unit/devToolsOverview.test.ts': 692,
+  'tests/unit/processIpc.test.ts': 473,
+  'tests/unit/startupManager.test.ts': 314
+}
+
+const maxLinesRule = (max) => ['error', { max, skipBlankLines: true, skipComments: true }]
+
 export default tseslint.config(
   {
     ignores: ['dist/**', 'out/**', 'node_modules/**', 'coverage/**', 'playwright.config.d.ts']
@@ -52,7 +96,15 @@ export default tseslint.config(
       'no-self-compare': 'error',
       'no-throw-literal': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'max-lines': maxLinesRule(MAX_FILE_LINES),
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports', fixStyle: 'inline-type-imports', disallowTypeAnnotations: false }]
+    }
+  },
+  {
+    files: ['src/shared/i18n/locales/*.ts'],
+    rules: {
+      // Locale catalogs are declarative data, not executable modules with growing responsibilities.
+      'max-lines': 'off'
     }
   },
   {
@@ -60,5 +112,12 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn'
     }
-  }
+  },
+  ...Object.entries(LEGACY_LINE_BUDGETS).map(([file, max]) => ({
+    name: `legacy-line-budget:${file}`,
+    files: [file],
+    rules: {
+      'max-lines': maxLinesRule(max)
+    }
+  }))
 )

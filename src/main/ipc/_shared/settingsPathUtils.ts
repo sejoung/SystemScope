@@ -1,39 +1,4 @@
-import * as path from 'node:path'
-import * as fs from 'node:fs'
-
-export function isPathInsideParent(targetPath: string, parentPath: string): boolean {
-  // fs.realpathSync로 심볼릭 링크를 해석하여 실제 경로 기반으로 비교
-  // targetPath가 심볼릭 링크이고 realpathSync가 실패하면 경로를 거부한다
-  let realTarget: string
-  let realParent: string
-
-  try {
-    realTarget = fs.realpathSync(targetPath)
-  } catch {
-    // realpath 실패: 경로가 존재하는데 실패했다면 깨진 심볼릭 링크 → 거부
-    try {
-      fs.lstatSync(targetPath)
-      return false
-    } catch {
-      // 경로 자체가 존재하지 않음 → resolve로 대체
-      realTarget = path.resolve(targetPath)
-    }
-  }
-
-  try {
-    realParent = fs.realpathSync(parentPath)
-  } catch {
-    realParent = path.resolve(parentPath)
-  }
-  const relative = path.relative(realParent, realTarget)
-  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))
-}
-
-export function isPathInsideAnyParent(targetPath: string, parentPaths: Array<string | undefined | null>): boolean {
-  return parentPaths
-    .filter((parentPath): parentPath is string => typeof parentPath === 'string' && parentPath.length > 0)
-    .some((parentPath) => isPathInsideParent(targetPath, parentPath))
-}
+export { isPathInsideAnyParent, isPathInsideParent } from '../../utils/pathSafety'
 
 export function didShellOpenPathFail(result: string): boolean {
   return result.trim().length > 0
