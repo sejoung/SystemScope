@@ -32,6 +32,7 @@ vi.mock('../../src/main/services/history/eventStore', () => ({ recordEvent: vi.f
 
 describe('project monitor performance guards', () => {
   beforeEach(() => {
+    vi.useRealTimers()
     vi.resetModules()
     appendBatch.mockReset()
     getActiveProfile.mockReset()
@@ -65,5 +66,25 @@ describe('project monitor performance guards', () => {
     expect(maxActiveWorkspaceScans).toBeLessThanOrEqual(3)
     expect(scannedRoots.sort()).toEqual([...workspacePaths, '/workspace/queued'].sort())
     expect(appendBatch).toHaveBeenCalledTimes(2)
+  })
+
+  it('builds ordered workspace history from repeated scans', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(100)
+    getActiveProfile.mockReturnValue({ workspacePaths: ['/workspace/project'] })
+    let scanSize = 100
+    getDirSizeEstimate.mockImplementation(async (_targetPath: string, depth: number) => depth === 3 ? scanSize : 0)
+    const { getProjectMonitorSummary, refreshProjectMonitor } = await import('../../src/main/services/projectMonitor/projectMonitor')
+
+    await refreshProjectMonitor()
+    scanSize = 250
+    vi.setSystemTime(200)
+    await refreshProjectMonitor()
+    const summary = await getProjectMonitorSummary()
+
+    expect(summary.workspaces).toHaveLength(1)
+    expect(summary.workspaces[0]).toMatchObject({ currentSize: 250, previousSize: 100, recentGrowthBytes: 150 })
+    expect(summary.workspaces[0].history.map((entry) => entry.size)).toEqual([100, 250])
+    vi.useRealTimers()
   })
 })

@@ -6,8 +6,9 @@ export async function runWithConcurrency<T>(
 ): Promise<void> {
   if (items.length === 0) return
 
+  const limit = Math.max(1, Math.floor(concurrency))
   let currentIndex = 0
-  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (currentIndex < items.length) {
       const index = currentIndex
       currentIndex += 1

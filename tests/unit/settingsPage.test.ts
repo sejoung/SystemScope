@@ -6,6 +6,7 @@ import {
   formatUpdateCheckedAt,
   shouldUseSettingsPageCompactLayout,
 } from "../../src/renderer/src/pages/SettingsPage";
+import { findInvalidThresholdLabels } from '../../src/renderer/src/pages/settings/settingsValidation'
 
 describe("SettingsPage save timing note", () => {
   it("should render the save-required badge copy", () => {
@@ -25,4 +26,14 @@ describe("SettingsPage save timing note", () => {
     expect(shouldUseSettingsPageCompactLayout(919)).toBe(true);
     expect(shouldUseSettingsPageCompactLayout(920)).toBe(false);
   });
+
+  it('reports every threshold group whose warning is not below critical', () => {
+    const labels = { cpu: 'CPU', disk: 'Disk', memory: 'Memory', gpuMemory: 'GPU' }
+    expect(findInvalidThresholdLabels({
+      cpuWarning: 90, cpuCritical: 90,
+      diskWarning: 91, diskCritical: 90,
+      memoryWarning: 80, memoryCritical: 90,
+      gpuMemoryWarning: 70, gpuMemoryCritical: 95,
+    }, labels)).toEqual(['CPU', 'Disk'])
+  })
 });

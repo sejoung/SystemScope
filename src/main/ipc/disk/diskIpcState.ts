@@ -20,7 +20,7 @@ const scanCacheMap = new Map<string, ScanCacheEntry>()
 const registeredTrashTargets = new Map<string, { path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate'; createdAt: number }>()
 
 export function getScanCache(folderPath: string): ScanCacheEntry | null {
-  const entry = scanCacheMap.get(folderPath)
+  const entry = scanCacheMap.get(path.resolve(folderPath))
   if (!entry) return null
   if ((Date.now() - entry.timestamp) >= SCAN_CACHE_TTL_MS) {
     scanCacheMap.delete(folderPath)
@@ -55,8 +55,9 @@ function clearTrashTargetsForScope(rootPath: string, scope: 'large' | 'old' | 'd
 }
 
 export function clearTrashTargetsForRootPath(rootPath: string): void {
+  const resolvedRootPath = path.resolve(rootPath)
   for (const [itemId, target] of registeredTrashTargets) {
-    if (target.rootPath === rootPath) {
+    if (target.rootPath === resolvedRootPath) {
       registeredTrashTargets.delete(itemId)
     }
   }
@@ -82,11 +83,12 @@ export function registerLargeFileTrashTargets(
   rootPath: string,
   scope: 'large' | 'old'
 ): LargeFile[] {
-  clearTrashTargetsForScope(rootPath, scope)
+  const resolvedRootPath = path.resolve(rootPath)
+  clearTrashTargetsForScope(resolvedRootPath, scope)
   const now = Date.now()
   const result = files.map((file) => {
     const deletionKey = randomUUID()
-    registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope, createdAt: now })
+    registeredTrashTargets.set(deletionKey, { path: file.path, rootPath: resolvedRootPath, scope, createdAt: now })
     return { ...file, deletionKey }
   })
   enforceTrashTargetLimit()
@@ -94,7 +96,8 @@ export function registerLargeFileTrashTargets(
 }
 
 export function registerDuplicateTrashTargets(groups: DuplicateGroup[], rootPath: string): DuplicateGroup[] {
-  clearTrashTargetsForScope(rootPath, 'duplicate')
+  const resolvedRootPath = path.resolve(rootPath)
+  clearTrashTargetsForScope(resolvedRootPath, 'duplicate')
   const now = Date.now()
   const result = groups.map((group) => ({
     ...group,
@@ -104,7 +107,7 @@ export function registerDuplicateTrashTargets(groups: DuplicateGroup[], rootPath
       }
 
       const deletionKey = randomUUID()
-      registeredTrashTargets.set(deletionKey, { path: file.path, rootPath, scope: 'duplicate', createdAt: now })
+      registeredTrashTargets.set(deletionKey, { path: file.path, rootPath: resolvedRootPath, scope: 'duplicate', createdAt: now })
       return { ...file, deletionKey }
     })
   }))
@@ -112,8 +115,9 @@ export function registerDuplicateTrashTargets(groups: DuplicateGroup[], rootPath
   return result
 }
 
-export function invalidateScanCache(rootPath: string): void { scanCacheMap.delete(rootPath); clearTrashTargetsForRootPath(rootPath) }
+export function invalidateScanCache(rootPath: string): void { scanCacheMap.delete(path.resolve(rootPath)); clearTrashTargetsForRootPath(rootPath) }
 export function resolveTrashTargets(itemIds: string[]): Array<{ path: string; rootPath: string; scope: 'large' | 'old' | 'duplicate'; createdAt: number }> | null {
+  enforceTrashTargetLimit()
   const targets = itemIds.map((itemId) => registeredTrashTargets.get(itemId))
   return targets.some((target) => !target) ? null : targets.filter((target): target is NonNullable<typeof target> => Boolean(target))
 }

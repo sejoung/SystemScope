@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getCpuUsageTone,
   getCpuUsageToneLabel,
+  getProcessSortSummary,
   shouldUseProcessTableCompactLayout,
 } from '../../src/renderer/src/features/process/processTable'
 
@@ -27,4 +28,12 @@ describe("ProcessTable helpers", () => {
     expect(shouldUseProcessTableCompactLayout(979)).toBe(true);
     expect(shouldUseProcessTableCompactLayout(980)).toBe(false);
   });
+
+  it('describes every supported sort field and direction', () => {
+    const tk = (key: string) => key
+    expect(getProcessSortSummary('cpu', 'desc', tk).label).toContain('highest first')
+    expect(getProcessSortSummary('memory', 'asc', tk).label).toContain('lowest first')
+    expect(getProcessSortSummary('pid', 'desc', tk).label).toContain('highest first')
+    expect(getProcessSortSummary('name', 'asc', tk).label).toContain('A to Z')
+  })
 });

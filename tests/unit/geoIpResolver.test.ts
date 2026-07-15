@@ -53,4 +53,17 @@ describe('resolveCountries', () => {
     await resolveCountries(['1.1.1.1', '1.1.1.1', '1.1.1.1'])
     expect(lookup).toHaveBeenCalledTimes(1)
   })
+
+  it('evicts the oldest entry when the bounded cache is full', async () => {
+    lookup.mockReturnValue({ country: 'KR' })
+    const ips = Array.from({ length: 4097 }, (_, index) => `11.${Math.floor(index / 256)}.${index % 256}.1`)
+    await resolveCountries(ips)
+    lookup.mockClear()
+
+    await resolveCountries([ips[0]])
+    expect(lookup).toHaveBeenCalledOnce()
+    lookup.mockClear()
+    await resolveCountries([ips.at(-1)!])
+    expect(lookup).not.toHaveBeenCalled()
+  })
 })

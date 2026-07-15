@@ -181,4 +181,20 @@ describe('growth analysis integration', () => {
 
     expect(maxActiveScans).toBeLessThanOrEqual(3)
   })
+
+  it('shares one in-flight snapshot between concurrent callers', async () => {
+    execFileMock.mockImplementation((_cmd, args, _options, callback) => {
+      const pathArg = (args as string[])[1] ?? '/Users/test/unknown'
+      setTimeout(() => callback(null, `256\t${pathArg}\n`, ''), 2)
+    })
+    const { takeSnapshot } = await import('../../src/main/services/disk/growthAnalyzer')
+
+    const first = takeSnapshot()
+    const second = takeSnapshot()
+    expect(second).toBe(first)
+    await Promise.all([first, second])
+
+    expect(snapshotState.snapshots).toHaveLength(1)
+    expect(execFileMock.mock.calls.filter(([command]) => command === 'du')).toHaveLength(8)
+  })
 })

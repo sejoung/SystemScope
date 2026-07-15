@@ -6,10 +6,12 @@ import {
   filterPortsByState,
   formatEndpoint,
   getDisplayedPorts,
+  getPortConflicts,
   normalizePortState,
   shouldUseListeningPortsCompactLayout,
   sortPortsForDisplay,
 } from '../../src/renderer/src/features/process/listeningPorts'
+import { getExposure, isLoopbackAddress, suggestAlternativePort } from '../../src/renderer/src/features/process/listeningPorts/listeningPortUtils'
 import type { PortInfo } from "../../src/shared/types";
 
 describe("ListeningPorts helpers", () => {
@@ -246,4 +248,23 @@ describe("ListeningPorts helpers", () => {
     expect(shouldUseListeningPortsCompactLayout(1119)).toBe(true);
     expect(shouldUseListeningPortsCompactLayout(1120)).toBe(false);
   });
+
+  it('classifies loopback, wildcard, and specific interface exposure', () => {
+    expect(isLoopbackAddress(' ::1 ')).toBe(true)
+    expect(isLoopbackAddress('127.0.0.2')).toBe(false)
+    expect(getExposure('localhost').label).toBe('Loopback')
+    expect(getExposure('0.0.0.0').label).toBe('All Interfaces')
+    expect(getExposure('192.168.1.10').label).toBe('Specific Host')
+  })
+
+  it('finds common development port conflicts and skips occupied alternatives', () => {
+    const conflicts = getPortConflicts([
+      samplePorts[0],
+      { ...samplePorts[0], localPort: '3001', localPortNum: 3001, pid: 124 },
+      { ...samplePorts[0], localPort: '3002', localPortNum: 3002, pid: 125 },
+    ])
+    expect(conflicts[0]).toMatchObject({ port: 3000, pid: 123, recommendedPort: 3003 })
+    expect(conflicts[1]).toMatchObject({ port: 3001, pid: 124, recommendedPort: 3003 })
+    expect(suggestAlternativePort(8000, new Set([8001, 8002]))).toBe(8003)
+  })
 });

@@ -82,4 +82,34 @@ describe('MetricLogStore', () => {
     expect(await store.load()).toEqual([])
     expect(await fs.readFile(paths.filePath, 'utf-8')).toBe('')
   })
+
+  it('recovers valid records around malformed NDJSON lines and compacts the file', async () => {
+    const paths = await createPaths()
+    const now = Date.now()
+    await fs.writeFile(paths.filePath, [
+      JSON.stringify(point(now, 10)),
+      '{broken',
+      JSON.stringify(point(now + 1, 20)),
+      '',
+    ].join('\n'))
+    const store = new MetricLogStore(paths.filePath, paths.legacyPath, 60_000)
+
+    expect((await store.load()).map((entry) => entry.cpu)).toEqual([10, 20])
+    const lines = (await fs.readFile(paths.filePath, 'utf-8')).trim().split('\n')
+    expect(lines).toHaveLength(2)
+    expect(lines.every((line) => { JSON.parse(line); return true })).toBe(true)
+  })
+
+  it('serializes concurrent appends and atomically replaces all records', async () => {
+    const paths = await createPaths()
+    const store = new MetricLogStore(paths.filePath, paths.legacyPath, 60_000)
+    const now = Date.now()
+
+    await Promise.all(Array.from({ length: 20 }, (_, index) => store.append(point(now + index, index))))
+    expect(await store.load()).toHaveLength(20)
+
+    await store.replaceAll([point(now + 100, 99)])
+    expect((await store.load()).map((entry) => entry.cpu)).toEqual([99])
+    expect((await fs.readFile(paths.filePath, 'utf-8')).trim().split('\n')).toHaveLength(1)
+  })
 })

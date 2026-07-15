@@ -24,6 +24,8 @@ describe('timeline chart model', () => {
     expect(findClosestPointIndex(points, 17)).toBe(1)
     expect(findClosestPointIndex(points, 35)).toBe(2)
     expect(findClosestPointIndex(points, 50)).toBe(2)
+    expect(findClosestPointIndex(points, 15)).toBe(0)
+    expect(findClosestPointIndex([], 15)).toBe(-1)
   })
 
   it('maps alerts to their nearest metric point', () => {
@@ -31,5 +33,9 @@ describe('timeline chart model', () => {
     expect(buildAlertPoints(points, [{ ts: 18, type: 'cpu', severity: 'critical', message: 'hot' }])).toEqual([
       { ts: 20, cpu: 80, severity: 'critical', message: 'hot' },
     ])
+  })
+
+  it('returns no alert points when metrics are empty', () => {
+    expect(buildAlertPoints([], [{ ts: 18, type: 'cpu', severity: 'warning', message: 'ignored' }])).toEqual([])
   })
 })

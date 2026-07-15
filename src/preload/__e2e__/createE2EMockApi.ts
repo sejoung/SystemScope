@@ -1,6 +1,7 @@
 import type { SystemScopeApi } from '@shared/contracts/systemScope'
 import { createIpcApi } from '../createIpcApi'
 import { successResult } from '../helpers'
+import { createTimelineFixture } from './timelineFixture'
 
 export interface E2EMockControls {
   setUpdateAvailable: (value: boolean) => void
@@ -119,6 +120,7 @@ export function createE2EMockApi(): {
       command: '/usr/bin/node server.js'
     }
   ]
+  const timelinePoints = createTimelineFixture(Date.now())
 
   Object.assign(api, {
     getSettings: () =>
@@ -178,6 +180,22 @@ export function createE2EMockApi(): {
     getAllProcesses: () => successResult(mockProcesses),
     getTopCpuProcesses: () => successResult(mockProcesses),
     getTopMemoryProcesses: () => successResult(mockProcesses),
+    getTimelineData: (range) => successResult({
+      range,
+      points: timelinePoints,
+      alerts: [{ ts: timelinePoints[1].ts, type: 'cpu', severity: 'warning' as const, message: 'E2E CPU alert' }],
+    }),
+    getTimelinePointDetail: (timestamp) => {
+      const selected = timelinePoints.reduce((closest, point) =>
+        Math.abs(point.ts - timestamp) < Math.abs(closest.ts - timestamp) ? point : closest,
+      )
+      return successResult({ ...selected, topProcesses: [{ name: 'node', pid: 1001, cpu: 12.5, memory: 1.2 }] })
+    },
+    getEventHistory: () => successResult([]),
+    getRecentEvents: () => successResult([]),
+    clearEventHistory: () => successResult(0),
+    getAlertIntelligence: () => successResult({ activeAlerts: [], patterns: [], sustainedAlerts: [] }),
+    getSessionSnapshots: () => successResult([]),
     listInstalledApps: () =>
       successResult([
         {
