@@ -48,10 +48,12 @@ interface CacheEntry {
 
 const cache = new Map<number, CacheEntry>()
 let lastCapturedAt: number | null = null
+let pendingNetworkUsage: Promise<ProcessNetworkSnapshot> | null = null
 
 export function __resetCacheForTests(): void {
   cache.clear()
   lastCapturedAt = null
+  pendingNetworkUsage = null
 }
 
 export function computeSnapshot(rows: NettopRow[], capturedAt: number): ProcessNetworkSnapshot {
@@ -158,7 +160,7 @@ async function collectFromNetworkConnections(): Promise<ProcessNetworkSnapshot> 
   }
 }
 
-export async function getProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> {
+async function collectProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> {
   if (process.platform === 'darwin') {
     const { stdout } = await runExternalCommand('nettop', NETTOP_ARGS, { windowsHide: true })
     const rows = parseNettopOutput(stdout)
@@ -168,4 +170,14 @@ export async function getProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> 
     return collectFromNetworkConnections()
   }
   return { supported: false, capturedAt: Date.now(), intervalSec: null, processes: [] }
+}
+
+export function getProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> {
+  if (pendingNetworkUsage) return pendingNetworkUsage
+
+  const request = collectProcessNetworkUsage().finally(() => {
+    if (pendingNetworkUsage === request) pendingNetworkUsage = null
+  })
+  pendingNetworkUsage = request
+  return request
 }

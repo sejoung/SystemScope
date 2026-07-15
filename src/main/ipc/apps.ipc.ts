@@ -23,10 +23,10 @@ import { registerShellPaths } from '@main/services/devtools'
 import { recordEvent } from '@main/services/history'
 
 export function registerAppsIpc(): void {
-  ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async (_event, metaArg?: IpcRequestMetaArg) => {
+  ipcMain.handle(IPC_CHANNELS.APPS_LIST_INSTALLED, async (_event, forceRefresh = false, metaArg?: IpcRequestMetaArg) => {
     const requestMeta = getRequestMeta(metaArg)
     try {
-      const items = await listInstalledApps()
+      const items = await listInstalledApps(forceRefresh === true)
       logInfoAction('apps-ipc', 'installed.list', withRequestMeta(requestMeta, { count: items.length }))
       return success(items)
     } catch (error) {

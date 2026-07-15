@@ -40,6 +40,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - run: npm run bundle:size
 
   e2e:
     name: E2E (${{ matrix.os }})

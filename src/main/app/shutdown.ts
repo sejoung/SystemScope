@@ -6,7 +6,7 @@ import { destroyTray } from './tray'
 import { cancelAllJobs, getActiveJobCount } from '../jobs/jobManager'
 import { stopSnapshotScheduler, waitForPendingSnapshot } from '@main/services/disk'
 import { flushLoggingWrites, logError, logInfo, shutdownLogging } from '@main/services/core'
-import { stopEventStore } from '@main/services/history'
+import { flushMetricsStore, stopEventStore } from '@main/services/history'
 import { stopAlertHistory } from '@main/services/alerts'
 import { tk } from '../i18n'
 
@@ -82,6 +82,7 @@ async function doGracefulShutdown(reason: string): Promise<void> {
   const snapshotFlushed = await waitForPendingSnapshot()
   broadcastShutdownState('cleaning_up', tk('shutdown.cleaning_up'))
   stopEventStore()
+  await flushMetricsStore()
   stopAlertHistory()
   destroyTray()
 

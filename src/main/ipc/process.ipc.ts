@@ -7,7 +7,7 @@ import { getProcessNetworkUsage } from '@main/services/process'
 import { resolveHostnames } from '@main/services/process'
 import { resolveCountries } from '@main/services/process'
 import { success, failure } from '@shared/types'
-import { logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '@main/services/core'
+import { logDebug, logErrorAction, logInfoAction, logProductMetric, logWarnAction } from '@main/services/core'
 import { runExternalCommand } from '@main/services/core'
 import { tk } from '../i18n'
 import { getRequestMeta, isValidStringArray, withRequestMeta, type IpcRequestMetaArg } from './_shared/requestContext'
@@ -62,7 +62,7 @@ export function registerProcessIpc(): void {
     }
     try {
       const snapshot = await getProcessSnapshot(limit)
-      logInfoAction('process-ipc', 'processes.snapshot.get', withRequestMeta(requestMeta, {
+      logDebug('process-ipc', 'Process snapshot collected', withRequestMeta(requestMeta, {
         limit,
         allCount: snapshot.allProcesses.length
       }))
@@ -91,7 +91,7 @@ export function registerProcessIpc(): void {
     const requestMeta = getRequestMeta(metaArg)
     try {
       const snapshot = await getProcessNetworkUsage()
-      logInfoAction('process-ipc', 'network.usage.get', withRequestMeta(requestMeta, {
+      logDebug('process-ipc', 'Process network usage collected', withRequestMeta(requestMeta, {
         supported: snapshot.supported,
         count: snapshot.processes.length,
       }))

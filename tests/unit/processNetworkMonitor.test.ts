@@ -163,6 +163,22 @@ describe('getProcessNetworkUsage', () => {
       { pid: 42, name: 'foo', rxBps: null, txBps: null, totalRxBytes: 10, totalTxBytes: 20 },
     ])
   })
+
+  it('shares one in-flight nettop collection across concurrent callers', async () => {
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+    let resolveCommand: ((value: { stdout: string; stderr: string }) => void) | undefined
+    vi.mocked(runExternalCommand).mockReturnValueOnce(new Promise((resolve) => {
+      resolveCommand = resolve
+    }))
+
+    const first = getProcessNetworkUsage()
+    const second = getProcessNetworkUsage()
+    expect(runExternalCommand).toHaveBeenCalledTimes(1)
+
+    resolveCommand?.({ stdout: '12:00:00.000 foo.42 10 20\n', stderr: '' })
+    await expect(Promise.all([first, second])).resolves.toHaveLength(2)
+    expect(runExternalCommand).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('getProcessNetworkUsage on win32', () => {

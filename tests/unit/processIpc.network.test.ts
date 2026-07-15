@@ -7,6 +7,7 @@ const handlers = vi.hoisted(
 const logErrorAction = vi.hoisted(() => vi.fn());
 const logWarnAction = vi.hoisted(() => vi.fn());
 const logInfoAction = vi.hoisted(() => vi.fn());
+const logDebug = vi.hoisted(() => vi.fn());
 const logProductMetric = vi.hoisted(() => vi.fn());
 const getNetworkPorts = vi.hoisted(() => vi.fn());
 const getProcessByPid = vi.hoisted(() => vi.fn());
@@ -46,6 +47,7 @@ vi.mock("electron", () => ({
 }));
 
 vi.mock("../../src/main/services/core/logging", () => ({
+  logDebug,
   logErrorAction,
   logWarnAction,
   logInfoAction,
@@ -76,6 +78,7 @@ describe("registerProcessIpc", () => {
       logErrorAction.mockReset();
       logWarnAction.mockReset();
       logInfoAction.mockReset();
+      logDebug.mockReset();
       logProductMetric.mockReset();
       getNetworkPorts.mockReset();
       getProcessByPid.mockReset();

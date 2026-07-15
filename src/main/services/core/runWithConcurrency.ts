@@ -17,3 +17,37 @@ export async function runWithConcurrency<T>(
 
   await Promise.all(runners)
 }
+
+export type ConcurrencyLimiter = <T>(task: () => Promise<T>) => Promise<T>
+
+/** Share one concurrency budget across nested async work such as recursive scans. */
+export function createConcurrencyLimiter(concurrency: number): ConcurrencyLimiter {
+  const limit = Math.max(1, Math.floor(concurrency))
+  let activeCount = 0
+  const waiters: Array<() => void> = []
+
+  const acquire = async (): Promise<void> => {
+    if (activeCount < limit) {
+      activeCount += 1
+      return
+    }
+    await new Promise<void>((resolve) => {
+      waiters.push(resolve)
+    })
+    activeCount += 1
+  }
+
+  const release = (): void => {
+    activeCount -= 1
+    waiters.shift()?.()
+  }
+
+  return async <T>(task: () => Promise<T>): Promise<T> => {
+    await acquire()
+    try {
+      return await task()
+    } finally {
+      release()
+    }
+  }
+}

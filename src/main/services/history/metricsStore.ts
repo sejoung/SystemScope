@@ -1,16 +1,17 @@
-import { PersistentStore } from '@main/services/core/persistentStore'
-import { getMetricsFilePath, ensureDataDir } from '@main/services/core/dataDir'
+import { getLegacyMetricsFilePath, getMetricsFilePath, ensureDataDir } from '@main/services/core/dataDir'
 import { getSystemStats } from '@main/services/system/systemMonitor'
 import { getTopCpuProcesses } from '@main/services/process/processMonitor'
 import { getSettings } from '../../store/settingsStore'
 import { logInfo, logWarn, logError } from '@main/services/core/logging'
 import type { MetricPoint, MetricPointDetail, TimelineRange, TimelineData, TimelineAlert } from '@shared/types/metric'
+import { MetricLogStore } from './metricLogStore'
 
-const SCHEMA_VERSION = 1
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
-let store: PersistentStore<MetricPoint> | null = null
-let collectionTimer: ReturnType<typeof setInterval> | null = null
+let store: MetricLogStore | null = null
+let collectionTimer: ReturnType<typeof setTimeout> | null = null
+let collectionInFlight: Promise<void> | null = null
+let collectionIntervalMs = 60_000
 
 export async function initMetricsStore(): Promise<void> {
   const { history } = getSettings()
@@ -18,22 +19,15 @@ export async function initMetricsStore(): Promise<void> {
 
   await ensureDataDir()
 
-  store = new PersistentStore<MetricPoint>({
-    filePath: getMetricsFilePath(),
-    schemaVersion: SCHEMA_VERSION,
-    maxAgeMs,
-    getTimestamp: (entry) => entry.ts
-  })
+  store = new MetricLogStore(getMetricsFilePath(), getLegacyMetricsFilePath(), maxAgeMs)
 
   await store.load()
 
-  const intervalMs = history.metricsIntervalSec * 1000
+  collectionIntervalMs = history.metricsIntervalSec * 1000
   if (collectionTimer) {
-    clearInterval(collectionTimer)
+    clearTimeout(collectionTimer)
   }
-  collectionTimer = setInterval(() => {
-    void collectAndStore()
-  }, intervalMs)
+  scheduleNextCollection()
 
   logInfo('metrics-store', 'Metrics store initialized', {
     intervalSec: history.metricsIntervalSec,
@@ -43,11 +37,15 @@ export async function initMetricsStore(): Promise<void> {
 
 export function stopMetricsStore(): void {
   if (collectionTimer) {
-    clearInterval(collectionTimer)
+    clearTimeout(collectionTimer)
     collectionTimer = null
   }
-  store = null
   logInfo('metrics-store', 'Metrics store stopped')
+}
+
+export async function flushMetricsStore(): Promise<void> {
+  await collectionInFlight
+  await store?.flush()
 }
 
 export async function collectMetricPoint(): Promise<MetricPoint> {
@@ -159,14 +157,25 @@ export async function getPointDetail(timestamp: number): Promise<MetricPointDeta
 // ── Internal helpers ──
 
 async function collectAndStore(): Promise<void> {
-  if (!store) return
+  const currentStore = store
+  if (!currentStore) return
 
   try {
     const point = await collectMetricPoint()
-    await store.append(point)
+    await currentStore.append(point)
   } catch (err) {
     logError('metrics-store', 'Failed to collect metric point', { error: err })
   }
+}
+
+function scheduleNextCollection(): void {
+  collectionTimer = setTimeout(() => {
+    collectionInFlight = collectAndStore().finally(() => {
+      collectionInFlight = null
+      if (collectionTimer) scheduleNextCollection()
+    })
+  }, collectionIntervalMs)
+  collectionTimer.unref?.()
 }
 
 function downsample(points: MetricPoint[], bucketMs: number): MetricPoint[] {

@@ -97,8 +97,8 @@ export function createIpcApi(): SystemScopeApi {
       tree?: boolean;
     }) => invokeWithRequestId(IPC_CHANNELS.PROCESS_KILL, request),
 
-    listInstalledApps: () =>
-      invokeWithRequestId(IPC_CHANNELS.APPS_LIST_INSTALLED),
+    listInstalledApps: (forceRefresh = false) =>
+      invokeWithRequestId(IPC_CHANNELS.APPS_LIST_INSTALLED, forceRefresh),
     getAppRelatedData: (appId: string) =>
       invokeWithRequestId(IPC_CHANNELS.APPS_GET_RELATED_DATA, appId),
     listLeftoverAppData: () =>

@@ -16,7 +16,7 @@ vi.mock('electron', () => ({
   app: { getPath: () => '/Applications/SystemScope.app/Contents/MacOS/SystemScope' },
 }))
 
-// `defaults read <plist> <key>` answers from BUNDLE_IDS/VERSIONS; unknown keys reject,
+// `plutil` answers from the metadata fixture; unknown plists reject,
 // so apps without mocked metadata fall back to the bundle name.
 vi.mock('node:child_process', async () => {
   const { promisify } = await import('node:util')
@@ -25,10 +25,18 @@ vi.mock('node:child_process', async () => {
     cb(new Error('callback execFile unused in tests'))
   }) as unknown as Record<symbol, unknown>
   execFile[promisify.custom] = async (cmd: string, cmdArgs: string[]) => {
-    if (cmd === 'defaults' && cmdArgs[0] === 'read') {
-      const value = DEFAULTS_VALUES[`${cmdArgs[1]}|${cmdArgs[2]}`]
-      if (value === undefined) throw new Error('does not exist')
-      return { stdout: `${value}\n`, stderr: '' }
+    if (cmd === 'plutil') {
+      const plistPath = cmdArgs[cmdArgs.length - 1]
+      const bundleId = DEFAULTS_VALUES[`${plistPath}|CFBundleIdentifier`]
+      const version = DEFAULTS_VALUES[`${plistPath}|CFBundleShortVersionString`]
+      if (bundleId === undefined && version === undefined) throw new Error('does not exist')
+      return {
+        stdout: JSON.stringify({
+          ...(bundleId === undefined ? {} : { CFBundleIdentifier: bundleId }),
+          ...(version === undefined ? {} : { CFBundleShortVersionString: version }),
+        }),
+        stderr: '',
+      }
     }
     return { stdout: '', stderr: '' }
   }

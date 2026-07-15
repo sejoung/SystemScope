@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { app } from 'electron'
 import type { InstalledApp } from '@shared/types'
 import { logDebug } from '@main/services/core/logging'
+import { createConcurrencyLimiter, runWithConcurrency } from '@main/services/core/runWithConcurrency'
 import { tk } from '../../i18n'
 
 const execFileAsync = promisify(execFile)
@@ -22,6 +23,8 @@ const MAX_FOLDER_DESCENT = 2
 const EPIC_GAMES_ROOT = '/Users/Shared/Epic Games'
 const APP_COLLECTION_FOLDERS = new Set(['Utilities', 'Setapp'])
 const FOLDER_METADATA_APP_LIMIT = 20
+const APP_DISCOVERY_CONCURRENCY = 6
+const metadataLimit = createConcurrencyLimiter(8)
 
 function isAppCollectionFolder(name: string): boolean {
   return APP_COLLECTION_FOLDERS.has(name) || name.endsWith('.localized')
@@ -48,16 +51,18 @@ export async function listMacInstalledApps(): Promise<InstalledApp[]> {
       continue
     }
 
-    for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    const candidates = entries.filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    const discovered: InstalledApp[][] = Array.from({ length: candidates.length }, () => [])
+    await runWithConcurrency(candidates.map((entry, index) => ({ entry, index })), APP_DISCOVERY_CONCURRENCY, async ({ entry, index }) => {
       const entryPath = path.join(root, entry.name)
 
       if (entry.name.endsWith('.app')) {
-        apps.push(await buildMacAppEntry(entryPath, currentAppBundlePath))
+        discovered[index] = [await buildMacAppEntry(entryPath, currentAppBundlePath)]
       } else {
-        apps.push(...(await expandPlainFolder(entryPath, entry.name, currentAppBundlePath)))
+        discovered[index] = await expandPlainFolder(entryPath, entry.name, currentAppBundlePath)
       }
-    }
+    })
+    apps.push(...discovered.flat())
   }
 
   await collectEpicGamesInstalls(apps)
@@ -108,12 +113,13 @@ async function buildMacAppEntry(appPath: string, currentAppBundlePath: string | 
 }
 
 async function readInnerAppsMetadata(bundlePaths: string[]): Promise<Array<{ name: string; bundleId?: string }>> {
-  return Promise.all(
-    bundlePaths.slice(0, FOLDER_METADATA_APP_LIMIT).map(async (appPath) => ({
-      name: path.basename(appPath, '.app'),
-      bundleId: await readMacPlistValue(path.join(appPath, 'Contents', 'Info.plist'), 'CFBundleIdentifier')
-    }))
-  )
+  const limitedPaths = bundlePaths.slice(0, FOLDER_METADATA_APP_LIMIT)
+  const results: Array<{ name: string; bundleId?: string }> = Array(limitedPaths.length)
+  await runWithConcurrency(limitedPaths.map((appPath, index) => ({ appPath, index })), APP_DISCOVERY_CONCURRENCY, async ({ appPath, index }) => {
+    const metadata = await readMacPlistMetadata(path.join(appPath, 'Contents', 'Info.plist'))
+    results[index] = { name: path.basename(appPath, '.app'), bundleId: metadata.bundleId }
+  })
+  return results
 }
 
 /**
@@ -205,10 +211,7 @@ async function readMacAppMetadata(appPath: string): Promise<{ name: string; vers
   const fallbackName = path.basename(appPath, '.app')
   const plistPath = path.join(appPath, 'Contents', 'Info.plist')
 
-  const [version, bundleId] = await Promise.all([
-    readMacPlistValue(plistPath, 'CFBundleShortVersionString'),
-    readMacPlistValue(plistPath, 'CFBundleIdentifier')
-  ])
+  const { version, bundleId } = await readMacPlistMetadata(plistPath)
 
   if (!version && !bundleId) {
     logDebug('apps', 'macOS app metadata unavailable, using bundle name fallback', { appPath })
@@ -229,13 +232,16 @@ function getCurrentMacAppBundlePath(): string | null {
   return parts.slice(0, appIndex + 1).join(path.sep)
 }
 
-async function readMacPlistValue(plistPath: string, key: string): Promise<string | undefined> {
+async function readMacPlistMetadata(plistPath: string): Promise<{ version?: string; bundleId?: string }> {
   try {
-    const { stdout } = await execFileAsync('defaults', ['read', plistPath, key])
-    const value = stdout.trim()
-    return value || undefined
+    const { stdout } = await metadataLimit(() => execFileAsync('plutil', ['-convert', 'json', '-o', '-', plistPath]))
+    const parsed = JSON.parse(stdout) as Record<string, unknown>
+    return {
+      version: typeof parsed.CFBundleShortVersionString === 'string' ? parsed.CFBundleShortVersionString : undefined,
+      bundleId: typeof parsed.CFBundleIdentifier === 'string' ? parsed.CFBundleIdentifier : undefined
+    }
   } catch {
-    return undefined
+    return {}
   }
 }
 

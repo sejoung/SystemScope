@@ -13,6 +13,10 @@ async function ensureDataDir(): Promise<string> {
 }
 
 function getMetricsFilePath(): string {
+  return path.join(getDataDir(), 'metrics.ndjson')
+}
+
+function getLegacyMetricsFilePath(): string {
   return path.join(getDataDir(), 'metrics.json')
 }
 
@@ -36,4 +40,4 @@ function getProjectMonitorFilePath(): string {
   return path.join(getDataDir(), 'project-monitor.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath }
+export { getDataDir, ensureDataDir, getMetricsFilePath, getLegacyMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath }

@@ -38,6 +38,9 @@ import {
 
 const execFileAsync = promisify(execFile)
 const installedAppsCache = new Map<string, InstalledApp>()
+const INSTALLED_APPS_CACHE_TTL_MS = 30_000
+let installedAppsCachedAt = 0
+let installedAppsRequest: Promise<InstalledApp[]> | null = null
 const leftoverAppDataCache = new Map<string, AppLeftoverDataItem>()
 const leftoverRegistryCache = new Map<string, AppLeftoverRegistryItem>()
 
@@ -55,7 +58,20 @@ export {
 
 // ─── Public API ───
 
-export async function listInstalledApps(): Promise<InstalledApp[]> {
+export function listInstalledApps(forceRefresh = false): Promise<InstalledApp[]> {
+  if (!forceRefresh && installedAppsCachedAt > 0 && Date.now() - installedAppsCachedAt < INSTALLED_APPS_CACHE_TTL_MS) {
+    return Promise.resolve([...installedAppsCache.values()].sort((a, b) => a.name.localeCompare(b.name)))
+  }
+  if (installedAppsRequest) return installedAppsRequest
+
+  const request = collectInstalledApps().finally(() => {
+    if (installedAppsRequest === request) installedAppsRequest = null
+  })
+  installedAppsRequest = request
+  return request
+}
+
+async function collectInstalledApps(): Promise<InstalledApp[]> {
   const apps = getPlatform() === 'darwin'
     ? await listMacInstalledApps()
     : getPlatform() === 'win32'
@@ -66,12 +82,13 @@ export async function listInstalledApps(): Promise<InstalledApp[]> {
   for (const entry of apps) {
     installedAppsCache.set(entry.id, entry)
   }
+  installedAppsCachedAt = Date.now()
 
   return apps.sort((a, b) => a.name.localeCompare(b.name))
 }
 
 async function getInstalledAppsSnapshot(): Promise<InstalledApp[]> {
-  if (installedAppsCache.size > 0) {
+  if (installedAppsCachedAt > 0) {
     return [...installedAppsCache.values()].sort((a, b) => a.name.localeCompare(b.name))
   }
 
@@ -267,6 +284,7 @@ export async function uninstallInstalledApp(request: AppUninstallRequest): Promi
     await trashPathWithFallback(target.launchPath)
     const relatedCleanup = await trashRelatedDataForApp(target, request.relatedDataIds ?? [])
     installedAppsCache.delete(request.appId)
+    installedAppsCachedAt = 0
     logInfo('apps', 'Moved macOS app bundle to trash', {
       appId: request.appId,
       name: target.name,

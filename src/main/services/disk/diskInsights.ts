@@ -3,6 +3,11 @@ import { createReadStream } from 'node:fs'
 import * as path from 'node:path'
 import * as crypto from 'node:crypto'
 import type { RecentGrowthEntry, DuplicateGroup } from '@shared/types'
+import { createConcurrencyLimiter, runWithConcurrency, type ConcurrencyLimiter } from '@main/services/core/runWithConcurrency'
+
+const WALK_CONCURRENCY = 12
+const SAMPLE_HASH_CONCURRENCY = 4
+const FULL_HASH_CONCURRENCY = 2
 
 export async function findRecentGrowth(
   folderPath: string,
@@ -11,8 +16,9 @@ export async function findRecentGrowth(
 ): Promise<RecentGrowthEntry[]> {
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
   const results = new Map<string, RecentGrowthEntry>()
+  const ioLimit = createConcurrencyLimiter(WALK_CONCURRENCY)
 
-  await walkForGrowth(folderPath, cutoff, results, 0, 4, signal)
+  await walkForGrowth(folderPath, cutoff, results, 0, 4, ioLimit, signal)
 
   return Array.from(results.values())
     .filter((e) => e.recentSize > 0)
@@ -26,6 +32,7 @@ async function walkForGrowth(
   results: Map<string, RecentGrowthEntry>,
   depth: number,
   maxDepth: number,
+  ioLimit: ConcurrencyLimiter,
   signal?: AbortSignal
 ): Promise<{ totalSize: number; recentSize: number; recentFiles: number }> {
   if (signal?.aborted) throw new Error('Cancelled')
@@ -36,27 +43,27 @@ async function walkForGrowth(
 
   let entries
   try {
-    entries = await fs.readdir(dirPath, { withFileTypes: true })
+    entries = await ioLimit(() => fs.readdir(dirPath, { withFileTypes: true }))
   } catch {
     return { totalSize: 0, recentSize: 0, recentFiles: 0 }
   }
 
-  for (const entry of entries) {
+  await runWithConcurrency(entries, WALK_CONCURRENCY, async (entry) => {
     if (signal?.aborted) throw new Error('Cancelled')
     const fullPath = path.join(dirPath, entry.name)
 
     try {
-      if (entry.isSymbolicLink()) continue
+      if (entry.isSymbolicLink()) return
 
       if (entry.isFile()) {
-        const stat = await fs.stat(fullPath)
+        const stat = await ioLimit(() => fs.stat(fullPath))
         totalSize += stat.size
         if (stat.mtimeMs >= cutoff) {
           recentSize += stat.size
           recentFiles++
         }
       } else if (entry.isDirectory() && depth < maxDepth) {
-        const sub = await walkForGrowth(fullPath, cutoff, results, depth + 1, maxDepth, signal)
+        const sub = await walkForGrowth(fullPath, cutoff, results, depth + 1, maxDepth, ioLimit, signal)
         totalSize += sub.totalSize
 
         // depth 1 기준으로 결과 집계 (홈 바로 아래 폴더별)
@@ -75,9 +82,10 @@ async function walkForGrowth(
         }
       }
     } catch {
+      if (signal?.aborted) throw new Error('Cancelled')
       // skip inaccessible
     }
-  }
+  })
 
   return { totalSize, recentSize, recentFiles }
 }
@@ -91,7 +99,8 @@ export async function findDuplicates(
 ): Promise<DuplicateGroup[]> {
   // 1단계: 파일 크기별 그룹핑 (빠름)
   const sizeMap = new Map<number, { name: string; path: string; modified: number }[]>()
-  await collectFilesBySize(folderPath, sizeMap, minSize, 0, 5, signal)
+  const ioLimit = createConcurrencyLimiter(WALK_CONCURRENCY)
+  await collectFilesBySize(folderPath, sizeMap, minSize, 0, 5, ioLimit, signal)
 
   // 같은 크기 파일이 2개 이상인 것만 후보
   const candidates: { name: string; path: string; modified: number; size: number }[] = []
@@ -108,7 +117,7 @@ export async function findDuplicates(
   // 2단계: 샘플 해시로 추가 후보 축소
   const sampleHashMap = new Map<string, { name: string; path: string; modified: number; size: number }[]>()
 
-  for (const file of candidates) {
+  await runWithConcurrency(candidates, SAMPLE_HASH_CONCURRENCY, async (file) => {
     if (signal?.aborted) throw new Error('Cancelled')
     try {
       const hash = await hashFileSample(file.path, file.size, signal)
@@ -117,28 +126,30 @@ export async function findDuplicates(
       group.push(file)
       sampleHashMap.set(key, group)
     } catch {
+      if (signal?.aborted) throw new Error('Cancelled')
       // skip unreadable
     }
-  }
+  })
 
   // 3단계: 전체 해시로 최종 확정
   const hashMap = new Map<string, { name: string; path: string; modified: number; size: number }[]>()
-  for (const [sizeAndSampleHash, files] of sampleHashMap) {
-    if (files.length < 2) continue
-
-    for (const file of files) {
+  const fullHashLimit = createConcurrencyLimiter(FULL_HASH_CONCURRENCY)
+  const sampleGroups = Array.from(sampleHashMap.entries()).filter(([, files]) => files.length >= 2)
+  await runWithConcurrency(sampleGroups, FULL_HASH_CONCURRENCY, async ([sizeAndSampleHash, files]) => {
+    await runWithConcurrency(files, FULL_HASH_CONCURRENCY, async (file) => {
       if (signal?.aborted) throw new Error('Cancelled')
       try {
-        const fullHash = await hashFileFull(file.path, signal)
+        const fullHash = await fullHashLimit(() => hashFileFull(file.path, signal))
         const key = `${sizeAndSampleHash}:${fullHash}`
         const group = hashMap.get(key) ?? []
         group.push(file)
         hashMap.set(key, group)
       } catch {
+        if (signal?.aborted) throw new Error('Cancelled')
         // skip unreadable
       }
-    }
-  }
+    })
+  })
 
   // 2개 이상인 최종 확정 그룹만 반환
   const results: DuplicateGroup[] = []
@@ -164,6 +175,7 @@ async function collectFilesBySize(
   minSize: number,
   depth: number,
   maxDepth: number,
+  ioLimit: ConcurrencyLimiter,
   signal?: AbortSignal
 ): Promise<void> {
   if (signal?.aborted) throw new Error('Cancelled')
@@ -171,32 +183,33 @@ async function collectFilesBySize(
 
   let entries
   try {
-    entries = await fs.readdir(dirPath, { withFileTypes: true })
+    entries = await ioLimit(() => fs.readdir(dirPath, { withFileTypes: true }))
   } catch {
     return
   }
 
-  for (const entry of entries) {
+  await runWithConcurrency(entries, WALK_CONCURRENCY, async (entry) => {
     if (signal?.aborted) throw new Error('Cancelled')
     const fullPath = path.join(dirPath, entry.name)
 
     try {
-      if (entry.isSymbolicLink()) continue
+      if (entry.isSymbolicLink()) return
 
       if (entry.isFile()) {
-        const stat = await fs.stat(fullPath)
+        const stat = await ioLimit(() => fs.stat(fullPath))
         if (stat.size >= minSize) {
           const group = sizeMap.get(stat.size) ?? []
           group.push({ name: entry.name, path: fullPath, modified: stat.mtimeMs })
           sizeMap.set(stat.size, group)
         }
       } else if (entry.isDirectory()) {
-        await collectFilesBySize(fullPath, sizeMap, minSize, depth + 1, maxDepth, signal)
+        await collectFilesBySize(fullPath, sizeMap, minSize, depth + 1, maxDepth, ioLimit, signal)
       }
     } catch {
+      if (signal?.aborted) throw new Error('Cancelled')
       // skip
     }
-  }
+  })
 }
 
 // 빠른 후보 축소용 샘플 해시

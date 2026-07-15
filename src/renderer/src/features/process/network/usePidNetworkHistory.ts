@@ -38,10 +38,8 @@ export function reduceHistory(
       map.set(proc.pid, entry)
     }
     entry.missingTicks = 0
-    entry.samples = [
-      ...entry.samples,
-      { rxBps: proc.rxBps ?? 0, txBps: proc.txBps ?? 0 },
-    ].slice(-MAX_SAMPLES)
+    entry.samples.push({ rxBps: proc.rxBps ?? 0, txBps: proc.txBps ?? 0 })
+    if (entry.samples.length > MAX_SAMPLES) entry.samples.shift()
   }
 
   for (const [pid, entry] of map) {

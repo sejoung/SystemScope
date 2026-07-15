@@ -28,11 +28,11 @@ export function ProcessNetworkExpandedRow({ pid }: { pid: number }) {
 
   if (error || ports === null || ports.length === 0) {
     const text = error ?? (ports === null ? 'Loading ports...' : 'No ports found for this process.')
-    return <tr><td colSpan={6} style={{ padding: '8px 12px', fontSize: '12px', color: error ? 'var(--accent-red)' : 'var(--text-secondary)' }}>{text}</td></tr>
+    return <div style={{ padding: '8px 12px', fontSize: '12px', color: error ? 'var(--accent-red)' : 'var(--text-secondary)' }}>{text}</div>
   }
-  return <tr><td colSpan={6} style={{ padding: '8px 12px 12px', background: 'var(--bg-subtle, var(--bg-card))' }}>
+  return <div style={{ padding: '8px 12px 12px', background: 'var(--bg-subtle, var(--bg-card))' }}>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>{ports.map((port, index) => <span key={index} style={{ fontSize: '11px', fontFamily: 'var(--font-mono, monospace)', padding: '2px 6px', borderRadius: 'var(--radius-sm, 4px)', background: 'var(--bg-tag, var(--border))', color: 'var(--text-secondary)' }}>
       {port.protocol} {port.localAddress}:{port.localPort} → {peerLabel(port.peerAddress, hostnames[port.peerAddress] ?? null)}{countries[port.peerAddress] ? <span style={{ fontFamily: '"Twemoji Country Flags", var(--font-mono, monospace)' }}> {countryToFlag(countries[port.peerAddress])} {countries[port.peerAddress]}</span> : null}:{port.peerPort} [{port.state}]
     </span>)}</div>
-  </td></tr>
+  </div>
 }

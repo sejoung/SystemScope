@@ -29,8 +29,8 @@ export function useInstalledAppsModel(refreshToken?: number) {
   const [pendingUninstallIds, setPendingUninstallIds] = useState<string[]>([]);
   const uninstallRefreshTimersRef = useRef<number[]>([]);
 
-  const loadApps = useCallback(async () => {
-    const res = await window.systemScope.listInstalledApps();
+  const loadApps = useCallback(async (forceRefresh = false) => {
+    const res = await window.systemScope.listInstalledApps(forceRefresh);
     if (!res.ok) {
       const message = res.error?.message ?? tk("apps.error.load_installed");
       setLoadError(message);
@@ -80,7 +80,7 @@ export function useInstalledAppsModel(refreshToken?: number) {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadApps();
+    await loadApps(true);
     setRefreshing(false);
   };
 
@@ -120,13 +120,13 @@ export function useInstalledAppsModel(refreshToken?: number) {
       setApps((current) => current.filter((entry) => entry.id !== app.id));
       for (const delay of [1500, 5000, 15000]) {
         const timerId = window.setTimeout(() => {
-          void loadApps();
+          void loadApps(true);
         }, delay);
         uninstallRefreshTimersRef.current.push(timerId);
       }
     }
 
-    await loadApps();
+    await loadApps(true);
   };
 
   const handleToggleRelatedData = async (app: InstalledApp) => {

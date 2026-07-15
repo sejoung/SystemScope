@@ -1,22 +1,16 @@
-import { useCallback, useEffect } from 'react'
+import { Suspense, useCallback, useEffect } from 'react'
 import { Layout } from './components/layout/Layout'
 import { ToastContainer } from './components/ui/Toast'
+import { PageLoading } from './components/ui/PageLoading'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
+import { ShutdownOverlay } from './components/layout/ShutdownOverlay'
 import { useSettingsStore } from './stores/settings/useSettingsStore'
 import { useProcessStore } from './stores/process/useProcessStore'
 import { useSystemStore } from './stores/system/useSystemStore'
 import { useAlertStore } from './stores/alerts/useAlertStore'
 import { useInterval } from './hooks/useInterval'
 import { useIpcListener } from './hooks/useIpc'
-import { DashboardPage } from './pages/DashboardPage'
-import { TimelinePage } from './pages/TimelinePage'
-import { DiskAnalysisPage } from './pages/DiskAnalysisPage'
-import { DockerPage } from './pages/DockerPage'
-import { CleanupPage } from './pages/CleanupPage'
-import { ProcessPage } from './pages/ProcessPage'
-import { DevToolsPage } from './pages/DevToolsPage'
-import { AppsPage } from './pages/AppsPage'
-import { SettingsPage } from './pages/SettingsPage'
+import { AppsPage, CleanupPage, DashboardPage, DevToolsPage, DiskAnalysisPage, DockerPage, ProcessPage, SettingsPage, TimelinePage } from './pages/lazyPages'
 import type { ShutdownState } from '@shared/types'
 import { isSystemStats, isAlertArray, isShutdownState, isUpdateInfo, isUpdateStatus, isProcessSnapshot } from '@shared/types'
 import { PROCESS_UPDATE_INTERVAL_MS } from '@shared/constants/intervals'
@@ -244,15 +238,17 @@ function App() {
           message={tk('app.error_boundary.message')}
           resetKey={currentPage}
         >
-          {currentPage === 'dashboard' && <DashboardPage />}
-          {currentPage === 'timeline' && <TimelinePage />}
-          {currentPage === 'disk' && <DiskAnalysisPage />}
-          {currentPage === 'docker' && <DockerPage />}
-          {currentPage === 'cleanup' && <CleanupPage />}
-          {currentPage === 'process' && <ProcessPage />}
-          {currentPage === 'devtools' && <DevToolsPage />}
-          {currentPage === 'apps' && <AppsPage />}
-          {currentPage === 'settings' && <SettingsPage />}
+          <Suspense fallback={<PageLoading />}>
+            {currentPage === 'dashboard' && <DashboardPage />}
+            {currentPage === 'timeline' && <TimelinePage />}
+            {currentPage === 'disk' && <DiskAnalysisPage />}
+            {currentPage === 'docker' && <DockerPage />}
+            {currentPage === 'cleanup' && <CleanupPage />}
+            {currentPage === 'process' && <ProcessPage />}
+            {currentPage === 'devtools' && <DevToolsPage />}
+            {currentPage === 'apps' && <AppsPage />}
+            {currentPage === 'settings' && <SettingsPage />}
+          </Suspense>
         </ErrorBoundary>
       </Layout>
       {shutdownState && <ShutdownOverlay state={shutdownState} title={tk('app.shutdown.title')} />}
@@ -262,48 +258,3 @@ function App() {
 }
 
 export default App
-
-function ShutdownOverlay({ state, title }: { state: ShutdownState; title: string }) {
-  return (
-    <div style={overlayStyle}>
-      <div style={overlayCardStyle}>
-        <div style={spinnerStyle} />
-        <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</div>
-        <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{state.message}</div>
-      </div>
-    </div>
-  )
-}
-
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  background: 'rgba(15, 23, 42, 0.46)',
-  backdropFilter: 'blur(8px)',
-  zIndex: 9999
-}
-
-const overlayCardStyle: React.CSSProperties = {
-  minWidth: '280px',
-  maxWidth: '420px',
-  display: 'grid',
-  gap: '10px',
-  justifyItems: 'center',
-  padding: '24px 28px',
-  borderRadius: '16px',
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--shadow)'
-}
-
-const spinnerStyle: React.CSSProperties = {
-  width: '28px',
-  height: '28px',
-  borderRadius: '999px',
-  border: '3px solid color-mix(in srgb, var(--accent-blue) 22%, transparent)',
-  borderTopColor: 'var(--accent-blue)',
-  animation: 'systemscope-spin 0.9s linear infinite'
-}

@@ -122,7 +122,7 @@ export interface SystemScopeApi {
   resolveCountries: (ips: string[]) => Promise<AppResult<Record<string, string | null>>>
   killProcess: (request: ProcessKillRequest) => Promise<AppResult<ProcessKillResult>>
 
-  listInstalledApps: () => Promise<AppResult<InstalledApp[]>>
+  listInstalledApps: (forceRefresh?: boolean) => Promise<AppResult<InstalledApp[]>>
   getAppRelatedData: (appId: string) => Promise<AppResult<AppRelatedDataItem[]>>
   listLeftoverAppData: () => Promise<AppResult<AppLeftoverDataItem[]>>
   hydrateLeftoverAppDataSizes: (itemIds: string[]) => Promise<AppResult<AppLeftoverDataItem[]>>
