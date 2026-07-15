@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { DockerOverview } from "../features/docker/DockerOverview";
 import { DockerContainers } from "../features/docker/DockerContainers";
@@ -33,35 +33,38 @@ export function DockerPage() {
   const tab = useSettingsStore((s) => s.dockerTab);
   const setDockerTab = useSettingsStore((s) => s.setDockerTab);
   const compactLayout = shouldUseDockerPageCompactLayout(containerWidth);
+  const dockerCheckInFlight = useRef<Promise<void> | null>(null);
 
   const handleChanged = useCallback(() => setRefreshToken((prev) => prev + 1), []);
 
-  const checkDocker = useCallback(async () => {
-    setAvailability("checking");
-    const res = await window.systemScope.listDockerContainers();
-    if (!res.ok) {
-      setAvailability("daemon_unavailable");
-      setStatusMessage(res.error?.message ?? null);
-      return;
-    }
-    if (!res.data) {
-      setAvailability("daemon_unavailable");
-      setStatusMessage(null);
-      return;
-    }
-    if (!isDockerContainersScanResult(res.data)) {
-      setAvailability("daemon_unavailable");
-      setStatusMessage(null);
-      return;
-    }
-    const data = res.data;
-    if (data.status !== "ready") {
-      setAvailability(data.status);
-      setStatusMessage(data.message);
-      return;
-    }
-    setAvailability("ready");
-    setStatusMessage(null);
+  const checkDocker = useCallback((): Promise<void> => {
+    if (dockerCheckInFlight.current) return dockerCheckInFlight.current;
+    const request = (async () => {
+      try {
+        setAvailability("checking");
+        const res = await window.systemScope.listDockerContainers();
+        if (!res.ok || !res.data || !isDockerContainersScanResult(res.data)) {
+          setAvailability("daemon_unavailable");
+          setStatusMessage(res.ok ? null : (res.error?.message ?? null));
+          return;
+        }
+        const data = res.data;
+        if (data.status !== "ready") {
+          setAvailability(data.status);
+          setStatusMessage(data.message);
+          return;
+        }
+        setAvailability("ready");
+        setStatusMessage(null);
+      } catch (error) {
+        setAvailability("daemon_unavailable");
+        setStatusMessage(error instanceof Error ? error.message : null);
+      }
+    })().finally(() => {
+      if (dockerCheckInFlight.current === request) dockerCheckInFlight.current = null;
+    });
+    dockerCheckInFlight.current = request;
+    return request;
   }, []);
 
   useEffect(() => {

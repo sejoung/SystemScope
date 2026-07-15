@@ -37,7 +37,11 @@ function getSessionSnapshotsFilePath(): string {
 }
 
 function getProjectMonitorFilePath(): string {
+  return path.join(getDataDir(), 'project-monitor.ndjson')
+}
+
+function getLegacyProjectMonitorFilePath(): string {
   return path.join(getDataDir(), 'project-monitor.json')
 }
 
-export { getDataDir, ensureDataDir, getMetricsFilePath, getLegacyMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath }
+export { getDataDir, ensureDataDir, getMetricsFilePath, getLegacyMetricsFilePath, getEventsFilePath, getAlertHistoryFilePath, getCleanupInboxFilePath, getSessionSnapshotsFilePath, getProjectMonitorFilePath, getLegacyProjectMonitorFilePath }

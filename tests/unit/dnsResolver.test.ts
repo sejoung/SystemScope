@@ -68,4 +68,39 @@ describe('resolveHostnames', () => {
       '3.3.3.3': null,
     })
   })
+
+  it('shares an in-flight lookup for the same IP across callers', async () => {
+    let resolveLookup: ((names: string[]) => void) | undefined
+    reverse.mockReturnValue(new Promise((resolve) => {
+      resolveLookup = resolve
+    }))
+
+    const first = resolveHostnames(['4.4.4.4'])
+    const second = resolveHostnames(['4.4.4.4'])
+    await vi.waitFor(() => expect(reverse).toHaveBeenCalledTimes(1))
+    resolveLookup?.(['shared.example'])
+
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      { '4.4.4.4': 'shared.example' },
+      { '4.4.4.4': 'shared.example' },
+    ])
+  })
+
+  it('limits concurrent reverse DNS operations', async () => {
+    let active = 0
+    let maxActive = 0
+    reverse.mockImplementation(async (ip: string) => {
+      active += 1
+      maxActive = Math.max(maxActive, active)
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2)
+      })
+      active -= 1
+      return [`${ip}.example`]
+    })
+
+    const ips = Array.from({ length: 30 }, (_, index) => `10.0.0.${index + 1}`)
+    await resolveHostnames(ips)
+    expect(maxActive).toBeLessThanOrEqual(12)
+  })
 })

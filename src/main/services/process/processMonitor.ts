@@ -69,6 +69,27 @@ interface ProcessContext {
   descendantCounts: Map<number, number>
 }
 
+function selectTopProcesses(
+  processes: ProcessInfo[],
+  limit: number,
+  score: (processInfo: ProcessInfo) => number
+): ProcessInfo[] {
+  if (limit <= 0) return []
+  const selected: ProcessInfo[] = []
+  for (const processInfo of processes) {
+    let low = 0
+    let high = selected.length
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2)
+      if (score(selected[middle]) >= score(processInfo)) low = middle + 1
+      else high = middle
+    }
+    selected.splice(low, 0, processInfo)
+    if (selected.length > limit) selected.pop()
+  }
+  return selected
+}
+
 function buildProcessContext(
   list: si.Systeminformation.ProcessesProcessData[]
 ): ProcessContext {
@@ -113,12 +134,12 @@ export async function getProcessSnapshot(limit: number = 10): Promise<ProcessSna
     .map((p) => toProcessInfo(p, ctx))
 
   const byCpu = mapped.slice().sort((left, right) => right.cpu - left.cpu)
-  const byMemory = mapped.slice().sort((left, right) => right.memory - left.memory)
+  const topMemoryProcesses = selectTopProcesses(mapped, limit, (processInfo) => processInfo.memory)
 
   return {
     allProcesses: byCpu,
     topCpuProcesses: byCpu.slice(0, limit),
-    topMemoryProcesses: byMemory.slice(0, limit)
+    topMemoryProcesses
   }
 }
 

@@ -2,8 +2,6 @@ import { btnStyle, summaryPillStyle, cardBodyStyle, placeholderBlockStyle, spinn
 import { useEffect } from 'react'
 import { formatBytes } from '../../utils/format'
 import { useDiskStore } from '../../stores/disk/useDiskStore'
-import { useContainerWidth } from '../../hooks/useContainerWidth'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import type { GrowthFolder } from '@shared/types'
 import { useI18n } from '../../i18n/useI18n'
 
@@ -24,7 +22,6 @@ export function GrowthView() {
   const period = useDiskStore((s) => s.growthViewPeriod)
   const setPeriod = useDiskStore((s) => s.setGrowthViewPeriod)
   const fetchGrowthView = useDiskStore((s) => s.fetchGrowthView)
-  const [chartRef, chartWidth] = useContainerWidth(400)
 
   // 캐시 없으면 자동 fetch (YourStorage와 동일 패턴)
   useEffect(() => {
@@ -115,48 +112,11 @@ export function GrowthView() {
           {/* Top 5 Chart + List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* Bar Chart */}
-            <div ref={chartRef}>
+            <div>
               <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 {tk('disk.storage_growth.top', { count: Math.min(top5.length, 5) })}
               </div>
-              {chartWidth > 0 && (
-                <BarChart data={top5} layout="vertical" width={chartWidth} height={160} margin={{ left: 60, right: 10 }}>
-                  <XAxis
-                    type="number"
-                    axisLine={{ stroke: 'var(--chart-grid)' }}
-                    tickLine={{ stroke: 'var(--chart-grid)' }}
-                    tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
-                    tickFormatter={(v) => formatBytes(v)}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
-                    width={65}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'var(--chart-tooltip-bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      boxShadow: 'var(--chart-tooltip-shadow)',
-                      color: 'var(--text-primary)',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value) => {
-                      const numericValue = typeof value === 'number' ? value : 0
-                      return [`+${formatBytes(numericValue)}`, tk('disk.storage_growth.added')]
-                    }}
-                  />
-                  <Bar dataKey="addedSize" radius={[0, 4, 4, 0]}>
-                    {top5.map((folder, i) => (
-                      <Cell key={folder.path} fill={BAR_COLORS[i % BAR_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              )}
+              <GrowthBarChart folders={top5} />
             </div>
 
             {/* Detail List */}
@@ -175,6 +135,21 @@ export function GrowthView() {
       )}
     </DashboardCard>
   )
+}
+
+function GrowthBarChart({ folders }: { folders: GrowthFolder[] }) {
+  const maxAdded = folders[0]?.addedSize ?? 1
+  return <div style={{ display: 'grid', gap: '7px', minHeight: '150px', alignContent: 'center' }}>
+    {folders.map((folder, index) => (
+      <div key={folder.path} style={{ display: 'grid', gridTemplateColumns: '65px 1fr 68px', alignItems: 'center', gap: '8px' }} title={`+${formatBytes(folder.addedSize)}`}>
+        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{folder.name}</span>
+        <div style={{ height: '16px', borderRadius: '4px', background: 'var(--bg-primary)', overflow: 'hidden' }}>
+          <div style={{ width: `${Math.max(2, (folder.addedSize / maxAdded) * 100)}%`, height: '100%', borderRadius: '4px', background: BAR_COLORS[index % BAR_COLORS.length] }} />
+        </div>
+        <span style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'right' }}>+{formatBytes(folder.addedSize)}</span>
+      </div>
+    ))}
+  </div>
 }
 
 function DashboardCard({
@@ -299,4 +274,3 @@ function FolderRow({ folder, index, maxAdded }: { folder: GrowthFolder; index: n
     </div>
   )
 }
-

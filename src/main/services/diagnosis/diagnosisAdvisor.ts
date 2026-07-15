@@ -15,7 +15,9 @@ const CACHE_TTL_MS = 60_000
 
 let cachedSummary: DiagnosisSummary | null = null
 let cachedAt = 0
-let diagnosisTimer: ReturnType<typeof setInterval> | null = null
+let diagnosisTimer: ReturnType<typeof setTimeout> | null = null
+let diagnosisInFlight: Promise<DiagnosisSummary> | null = null
+let diagnosisRunning = false
 
 // ---------------------------------------------------------------------------
 // Rules
@@ -29,6 +31,9 @@ const rules: DiagnosisRule[] = [...systemDiagnosisRules, ...workspaceDiagnosisRu
 
 export async function initDiagnosisAdvisor(): Promise<void> {
   logInfo('diagnosis-advisor', 'Initializing diagnosis advisor')
+  if (diagnosisTimer) clearTimeout(diagnosisTimer)
+  diagnosisTimer = null
+  diagnosisRunning = true
 
   // Run initial diagnosis
   try {
@@ -37,23 +42,15 @@ export async function initDiagnosisAdvisor(): Promise<void> {
     logWarn('diagnosis-advisor', 'Initial diagnosis run failed', { error: err })
   }
 
-  // Start periodic diagnosis
-  const intervalMs = DEFAULT_INTERVAL_SEC * 1000
-  if (diagnosisTimer) {
-    clearInterval(diagnosisTimer)
-  }
-  diagnosisTimer = setInterval(() => {
-    void runDiagnosis().catch((err) => {
-      logWarn('diagnosis-advisor', 'Periodic diagnosis run failed', { error: err })
-    })
-  }, intervalMs)
+  scheduleNextDiagnosis()
 
   logInfo('diagnosis-advisor', 'Diagnosis advisor started', { intervalSec: DEFAULT_INTERVAL_SEC })
 }
 
 export function stopDiagnosisAdvisor(): void {
+  diagnosisRunning = false
   if (diagnosisTimer) {
-    clearInterval(diagnosisTimer)
+    clearTimeout(diagnosisTimer)
     diagnosisTimer = null
   }
   logInfo('diagnosis-advisor', 'Diagnosis advisor stopped')
@@ -71,7 +68,16 @@ export async function getDiagnosisSummary(): Promise<DiagnosisSummary> {
 // Internal
 // ---------------------------------------------------------------------------
 
-async function runDiagnosis(): Promise<DiagnosisSummary> {
+function runDiagnosis(): Promise<DiagnosisSummary> {
+  if (diagnosisInFlight) return diagnosisInFlight
+  const request = collectDiagnosis().finally(() => {
+    if (diagnosisInFlight === request) diagnosisInFlight = null
+  })
+  diagnosisInFlight = request
+  return request
+}
+
+async function collectDiagnosis(): Promise<DiagnosisSummary> {
   const results: DiagnosisResult[] = []
 
   const evaluations = await Promise.allSettled(
@@ -106,4 +112,17 @@ async function runDiagnosis(): Promise<DiagnosisSummary> {
 
   logInfo('diagnosis-advisor', 'Diagnosis completed', { resultCount: results.length })
   return summary
+}
+
+function scheduleNextDiagnosis(): void {
+  if (!diagnosisRunning) return
+  if (diagnosisTimer) clearTimeout(diagnosisTimer)
+  diagnosisTimer = setTimeout(() => {
+    void runDiagnosis().catch((error) => {
+      logWarn('diagnosis-advisor', 'Periodic diagnosis run failed', { error })
+    }).finally(() => {
+      scheduleNextDiagnosis()
+    })
+  }, DEFAULT_INTERVAL_SEC * 1000)
+  diagnosisTimer.unref?.()
 }

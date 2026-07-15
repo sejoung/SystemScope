@@ -1,13 +1,14 @@
 import * as path from 'node:path'
 import * as fs from 'node:fs/promises'
 import type { ProjectMonitorSummary, ProjectMonitorWorkspace, ProjectMonitorCategoryStat } from '@shared/types'
-import { PersistentStore } from '@main/services/core/persistentStore'
-import { getProjectMonitorFilePath } from '@main/services/core/dataDir'
+import { AppendOnlyLogStore } from '@main/services/core/appendOnlyLogStore'
+import { getLegacyProjectMonitorFilePath, getProjectMonitorFilePath } from '@main/services/core/dataDir'
 import { getActiveProfile } from '@main/services/profile/profileManager'
 import { getDirSizeEstimate } from '../../utils/getDirSize'
 import { logInfo, logWarn } from '@main/services/core/logging'
 import { registerShellPaths } from '@main/services/devtools/shellPathRegistry'
 import { recordEvent } from '@main/services/history/eventStore'
+import { runWithConcurrency } from '@main/services/core/runWithConcurrency'
 
 interface ProjectMonitorEntry {
   path: string
@@ -16,24 +17,28 @@ interface ProjectMonitorEntry {
   categories: ProjectMonitorCategoryStat[]
 }
 
-const PROJECT_MONITOR_SCHEMA_VERSION = 1
 const PROJECT_MONITOR_MAX_ENTRIES = 2000
 const PROJECT_MONITOR_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 const PROJECT_MONITOR_REFRESH_MS = 30 * 60 * 1000
 const PROJECT_MONITOR_STALE_MS = 60 * 60 * 1000
 const PROJECT_MONITOR_GROWTH_ALERT_BYTES = 1024 * 1024 * 1024
+const PROJECT_SCAN_CONCURRENCY = 3
 
-let projectMonitorStore: PersistentStore<ProjectMonitorEntry> | null = null
-let projectMonitorTimer: ReturnType<typeof setInterval> | null = null
+let projectMonitorStore: AppendOnlyLogStore<ProjectMonitorEntry> | null = null
+let projectMonitorTimer: ReturnType<typeof setTimeout> | null = null
+let projectMonitorRunning = false
+let refreshInFlight: Promise<void> | null = null
+const queuedRefreshPaths = new Set<string>()
 
-function getStore(): PersistentStore<ProjectMonitorEntry> {
+function getStore(): AppendOnlyLogStore<ProjectMonitorEntry> {
   if (!projectMonitorStore) {
-    projectMonitorStore = new PersistentStore<ProjectMonitorEntry>({
+    projectMonitorStore = new AppendOnlyLogStore<ProjectMonitorEntry>({
       filePath: getProjectMonitorFilePath(),
-      schemaVersion: PROJECT_MONITOR_SCHEMA_VERSION,
+      legacyFilePath: getLegacyProjectMonitorFilePath(),
       maxEntries: PROJECT_MONITOR_MAX_ENTRIES,
       maxAgeMs: PROJECT_MONITOR_MAX_AGE_MS,
-      getTimestamp: (entry) => entry.scannedAt
+      getTimestamp: (entry) => entry.scannedAt,
+      logScope: 'project-monitor-store'
     })
   }
   return projectMonitorStore
@@ -74,15 +79,33 @@ export async function getProjectMonitorSummary(): Promise<ProjectMonitorSummary>
   }
 }
 
-export async function refreshProjectMonitor(pathsOverride?: string[]): Promise<void> {
+export function refreshProjectMonitor(pathsOverride?: string[]): Promise<void> {
   const activeProfile = getActiveProfile()
   const workspacePaths = pathsOverride ?? activeProfile?.workspacePaths ?? []
-  if (workspacePaths.length === 0) {
-    return
-  }
+  for (const workspacePath of workspacePaths) queuedRefreshPaths.add(path.resolve(workspacePath))
+  if (queuedRefreshPaths.size === 0) return Promise.resolve()
+  if (refreshInFlight) return refreshInFlight
 
-  const uniquePaths = Array.from(new Set(workspacePaths.map((workspacePath) => path.resolve(workspacePath))))
-  const entries = await Promise.all(uniquePaths.map(scanWorkspace))
+  const request = drainRefreshQueue().finally(() => {
+    if (refreshInFlight === request) refreshInFlight = null
+  })
+  refreshInFlight = request
+  return request
+}
+
+async function drainRefreshQueue(): Promise<void> {
+  while (queuedRefreshPaths.size > 0) {
+    const uniquePaths = Array.from(queuedRefreshPaths)
+    queuedRefreshPaths.clear()
+    await scanAndStoreWorkspaces(uniquePaths)
+  }
+}
+
+async function scanAndStoreWorkspaces(uniquePaths: string[]): Promise<void> {
+  const entries: ProjectMonitorEntry[] = Array(uniquePaths.length)
+  await runWithConcurrency(uniquePaths.map((workspacePath, index) => ({ workspacePath, index })), PROJECT_SCAN_CONCURRENCY, async ({ workspacePath, index }) => {
+    entries[index] = await scanWorkspace(workspacePath)
+  })
   await getStore().appendBatch(entries)
   registerShellPaths(uniquePaths, 'descendant')
   await emitWorkspaceGrowthEvents(entries)
@@ -90,26 +113,29 @@ export async function refreshProjectMonitor(pathsOverride?: string[]): Promise<v
 }
 
 export function initProjectMonitor(): void {
-  if (projectMonitorTimer) {
-    clearInterval(projectMonitorTimer)
-  }
-
-  void refreshProjectMonitor().catch((error) => {
-    logWarn('project-monitor', 'Initial project monitoring scan failed', { error })
-  })
-
-  projectMonitorTimer = setInterval(() => {
-    void refreshProjectMonitor().catch((error) => {
-      logWarn('project-monitor', 'Scheduled project monitoring scan failed', { error })
-    })
-  }, PROJECT_MONITOR_REFRESH_MS)
+  stopProjectMonitor()
+  projectMonitorRunning = true
+  void runScheduledRefresh()
 }
 
 export function stopProjectMonitor(): void {
+  projectMonitorRunning = false
   if (projectMonitorTimer) {
-    clearInterval(projectMonitorTimer)
+    clearTimeout(projectMonitorTimer)
     projectMonitorTimer = null
   }
+}
+
+async function runScheduledRefresh(): Promise<void> {
+  try {
+    await refreshProjectMonitor()
+  } catch (error) {
+    logWarn('project-monitor', 'Scheduled project monitoring scan failed', { error })
+  }
+  if (!projectMonitorRunning) return
+  if (projectMonitorTimer) clearTimeout(projectMonitorTimer)
+  projectMonitorTimer = setTimeout(() => { void runScheduledRefresh() }, PROJECT_MONITOR_REFRESH_MS)
+  projectMonitorTimer.unref?.()
 }
 
 async function summarizeWorkspace(workspacePath: string, entries: ProjectMonitorEntry[]): Promise<ProjectMonitorWorkspace> {

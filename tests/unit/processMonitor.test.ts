@@ -124,12 +124,13 @@ describe('processMonitor process caching', () => {
       resolveProcesses = resolve
     }))
 
-    const { getAllProcesses, getTopCpuProcesses, getTopMemoryProcesses } = await import('../../src/main/services/process/processMonitor')
+    const { getAllProcesses, getProcessSnapshot, getTopCpuProcesses, getTopMemoryProcesses } = await import('../../src/main/services/process/processMonitor')
 
     const pending = Promise.all([
       getAllProcesses(),
       getTopCpuProcesses(2),
-      getTopMemoryProcesses(2)
+      getTopMemoryProcesses(2),
+      getProcessSnapshot(2)
     ])
 
     expect(processes).toHaveBeenCalledTimes(1)
@@ -142,10 +143,11 @@ describe('processMonitor process caching', () => {
       list: sampleList
     } as Systeminformation.ProcessesData)
 
-    const [all, topCpu, topMemory] = await pending
+    const [all, topCpu, topMemory, snapshot] = await pending
     expect(topCpu.map((entry) => entry.pid)).toEqual([2, 3])
     expect(topMemory.map((entry) => entry.pid)).toEqual([3, 1])
     expect(all.map((entry) => entry.pid)).toEqual([2, 3, 1])
+    expect(snapshot.topMemoryProcesses.map((entry) => entry.pid)).toEqual([3, 1])
   })
 
   it('populates ppid, parentName, and transitive descendantCount', async () => {

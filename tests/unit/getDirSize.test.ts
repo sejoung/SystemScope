@@ -89,4 +89,24 @@ describe('getDirSize', () => {
     const { getDirSizeEstimate } = await import('../../src/main/utils/getDirSize')
     await expect(getDirSizeEstimate('/root', 1)).resolves.toBe(100)
   })
+
+  it('limits concurrent file metadata reads', async () => {
+    const files = Array.from({ length: 40 }, (_, index) => file(`${index}.txt`))
+    readdir.mockResolvedValue(files)
+    let active = 0
+    let maxActive = 0
+    stat.mockImplementation(async () => {
+      active += 1
+      maxActive = Math.max(maxActive, active)
+      await new Promise((resolve) => {
+        setTimeout(resolve, 2)
+      })
+      active -= 1
+      return { size: 1 }
+    })
+    const { getDirSize } = await import('../../src/main/utils/getDirSize')
+
+    await expect(getDirSize('/root')).resolves.toBe(40)
+    expect(maxActive).toBeLessThanOrEqual(16)
+  })
 })

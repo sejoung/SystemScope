@@ -3,6 +3,10 @@ import * as path from 'node:path'
 import { platform } from 'node:os'
 import { isExternalCommandError, runExternalCommand } from '@main/services/core/externalCommand'
 import { logDebug } from '@main/services/core/logging'
+import { createConcurrencyLimiter, runWithConcurrency } from '@main/services/core/runWithConcurrency'
+
+const DIRECTORY_IO_CONCURRENCY = 16
+const directoryIoLimit = createConcurrencyLimiter(DIRECTORY_IO_CONCURRENCY)
 
 /** 플랫폼에 따라 최적의 방법으로 디렉토리 크기를 측정 */
 export async function getDirSize(dirPath: string): Promise<number> {
@@ -52,24 +56,24 @@ export async function getDirSizeRecursive(
 ): Promise<number> {
   let total = 0
   try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true })
-    const promises = entries.map(async (entry) => {
+    const entries = await directoryIoLimit(() => fs.readdir(dirPath, { withFileTypes: true }))
+    const sizes = new Array<number>(entries.length).fill(0)
+    await runWithConcurrency(entries.map((entry, index) => ({ entry, index })), DIRECTORY_IO_CONCURRENCY, async ({ entry, index }) => {
       const fullPath = path.join(dirPath, entry.name)
       try {
-        if (entry.isSymbolicLink()) return 0
+        if (entry.isSymbolicLink()) return
         if (entry.isFile()) {
-          const stat = await fs.stat(fullPath)
-          return stat.size
+          const stat = await directoryIoLimit(() => fs.stat(fullPath))
+          sizes[index] = stat.size
+          return
         }
         if (entry.isDirectory() && depth < maxDepth) {
-          return getDirSizeRecursive(fullPath, maxDepth, depth + 1)
+          sizes[index] = await getDirSizeRecursive(fullPath, maxDepth, depth + 1)
         }
       } catch {
         // 접근 불가 항목 건너뜀
       }
-      return 0
     })
-    const sizes = await Promise.all(promises)
     total = sizes.reduce((a, b) => a + b, 0)
   } catch {
     // 접근 불가 디렉토리 건너뜀
