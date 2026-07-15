@@ -53,7 +53,6 @@ export function createE2EMockApi(): {
     cpu: {
       usage: 12,
       cores: [8, 10, 12, 9],
-      temperature: null,
       model: 'E2E CPU',
       speed: 3.2
     },

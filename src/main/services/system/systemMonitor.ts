@@ -9,10 +9,6 @@ let lastGpuStats: GpuInfo | null = null
 let lastGpuFetchTime = 0
 let pendingGpuStats: Promise<GpuInfo> | null = null
 const GPU_CACHE_TTL = 5 * 1000
-let lastCpuTemperature: number | null = null
-let lastCpuTemperatureFetchTime = 0
-let pendingCpuTemperature: Promise<number | null> | null = null
-const CPU_TEMPERATURE_CACHE_TTL = 5 * 1000
 
 let lastDiskStats: DriveInfo[] | null = null
 let lastDiskFetchTime = 0
@@ -91,12 +87,9 @@ export async function getSystemStats(): Promise<SystemStats> {
     const cpu: CpuInfo = {
       usage: Math.round(cpuLoad.currentLoad * 100) / 100,
       cores: cpuLoad.cpus.map((c) => Math.round(c.load * 100) / 100),
-      temperature: null,
       model: `${cpuInfo.manufacturer} ${cpuInfo.brand}`,
       speed: cpuInfo.speed
     }
-
-    cpu.temperature = await getCachedCpuTemperature()
 
     // macOS: mem.used에는 파일 캐시(inactive)가 포함되어 항상 높은 값을 보여줌
     // 실제 메모리 사용률 = (total - available) / total
@@ -285,33 +278,6 @@ async function getCachedGpuInfo(): Promise<GpuInfo> {
     })
 
   return pendingGpuStats
-}
-
-async function getCachedCpuTemperature(): Promise<number | null> {
-  const now = Date.now()
-  if (now - lastCpuTemperatureFetchTime < CPU_TEMPERATURE_CACHE_TTL) {
-    return lastCpuTemperature
-  }
-  if (pendingCpuTemperature) {
-    return pendingCpuTemperature
-  }
-
-  pendingCpuTemperature = si.cpuTemperature()
-    .then((temp) => {
-      lastCpuTemperature = temp.main !== null ? Math.round(temp.main * 10) / 10 : null
-      lastCpuTemperatureFetchTime = Date.now()
-      return lastCpuTemperature
-    })
-    .catch((err) => {
-      logDebug('system-monitor', 'CPU temperature information is unavailable', { error: err })
-      lastCpuTemperatureFetchTime = Date.now()
-      return lastCpuTemperature
-    })
-    .finally(() => {
-      pendingCpuTemperature = null
-    })
-
-  return pendingCpuTemperature
 }
 
 function logWindowsGpuDiagnostics(

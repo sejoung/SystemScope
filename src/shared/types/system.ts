@@ -1,7 +1,6 @@
 export interface CpuInfo {
   usage: number
   cores: number[]
-  temperature: number | null
   model: string
   speed: number
 }

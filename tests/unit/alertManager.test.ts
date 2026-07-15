@@ -22,7 +22,7 @@ function makeStats(overrides: Partial<{
     gpuMemTotal = 0
   } = overrides
   return {
-    cpu: { usage: cpuUsage, cores: [cpuUsage], temperature: null, model: 'Test CPU', speed: 3.0 },
+    cpu: { usage: cpuUsage, cores: [cpuUsage], model: 'Test CPU', speed: 3.0 },
     memory: {
       total: 16_000_000_000,
       used: (memoryUsage / 100) * 16_000_000_000,

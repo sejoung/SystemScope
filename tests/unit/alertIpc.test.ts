@@ -35,7 +35,7 @@ describe('registerAlertIpc', () => {
     registerAlertIpc()
 
     checkAlerts({
-      cpu: { usage: 20, cores: [20], temperature: null, model: 'CPU', speed: 3.2 },
+      cpu: { usage: 20, cores: [20], model: 'CPU', speed: 3.2 },
       memory: {
         total: 16_000_000_000,
         used: 2_000_000_000,

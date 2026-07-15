@@ -127,7 +127,7 @@ describe('settings flow integration', () => {
     expect(getResult.ok).toBe(true)
     expect(getResult.data).toEqual(payload)
     const alerts = checkAlerts({
-      cpu: { usage: 10, cores: [10], temperature: null, model: 'Test CPU', speed: 3.0 },
+      cpu: { usage: 10, cores: [10], model: 'Test CPU', speed: 3.0 },
       memory: {
         total: 16_000_000_000,
         used: 2_000_000_000,

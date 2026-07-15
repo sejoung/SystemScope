@@ -62,7 +62,6 @@ export function CpuWidget() {
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
             {tk('monitoring.cpu.cores', { count: cpu.cores.length, speed: cpu.speed })}
-            {cpu.temperature !== null && ` / ${cpu.temperature}°C`}
           </div>
           {cpu.cores.length > 8 && (
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
