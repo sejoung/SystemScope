@@ -6,7 +6,7 @@ import { useI18n } from "../../i18n/useI18n";
 import {
   PortConflictCenterPanel,
   getPortConflicts,
-} from "../process/ListeningPorts";
+} from '../process/listeningPorts'
 import type { PortInfo, ProcessKillResult } from "@shared/types";
 
 export function PortConflictCenterCard() {

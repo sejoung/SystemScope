@@ -5,7 +5,7 @@ import {
   DockerOpenButton,
   DockerQuickActions,
   OverviewRefreshButton,
-} from '../../src/renderer/src/features/devtools/DevToolsOverviewSection'
+} from '../../src/renderer/src/features/devtools/overview'
 
 describe('DevToolsOverviewSection UI helpers', () => {
   it('renders the refresh action for the overview toolbar', () => {

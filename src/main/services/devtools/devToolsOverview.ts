@@ -2,14 +2,14 @@ import * as path from 'node:path'
 import type { DevToolsOverview } from '@shared/types'
 import { getAllProcesses, getNetworkPorts } from '@main/services/process/processMonitor'
 import { getActiveProfile } from '@main/services/profile/profileManager'
-import { collectEnvironmentChecks } from './devEnvironmentChecks'
-import { collectDockerInsight, resetDevToolsOverviewCacheForTest } from './devDockerInsight'
-import { collectWorkspaceInsight } from './devWorkspaceInsight'
-import { annotateWorkspaceServerUsage, detectDevServers } from './devServerDetection'
+import { collectEnvironmentChecks } from './overview/devEnvironmentChecks'
+import { collectDockerInsight, resetDevToolsOverviewCacheForTest } from './overview/devDockerInsight'
+import { collectWorkspaceInsight } from './overview/devWorkspaceInsight'
+import { annotateWorkspaceServerUsage, detectDevServers } from './overview/devServerDetection'
 
-export { resetDevToolsOverviewCacheForTest } from './devDockerInsight'
-export { findWorkspacePythonInterpreter } from './devWorkspacePython'
-export { summarizeGitStatusLines, detectDevServers, detectDevServerKind } from './devServerDetection'
+export { resetDevToolsOverviewCacheForTest } from './overview/devDockerInsight'
+export { findWorkspacePythonInterpreter } from './overview/devWorkspacePython'
+export { summarizeGitStatusLines, detectDevServers, detectDevServerKind } from './overview/devServerDetection'
 
 export async function getDevToolsOverview(options?: { forceRefresh?: boolean }): Promise<DevToolsOverview> {
   if (options?.forceRefresh) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PortInfo } from '../../src/shared/types'
-import { formatPortAddress, matchWatchPorts, parseWatchPattern } from '../../src/renderer/src/features/process/portWatchUtils'
+import { formatPortAddress, matchWatchPorts, parseWatchPattern } from '../../src/renderer/src/features/process/portWatch/portWatchUtils'
 
 const SAMPLE_PORTS: PortInfo[] = [
   {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { peerLabel } from '../../src/renderer/src/features/process/peerLabel'
+import { peerLabel } from '../../src/renderer/src/features/process/network/peerLabel'
 
 describe('peerLabel', () => {
   it('maps Google 1e100 PTRs to "Google"', () => {

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useProcessStore } from "../stores/process/useProcessStore";
-import { ProcessTable } from "../features/process/ProcessTable";
-import { ListeningPorts } from "../features/process/ListeningPorts";
-import { ProcessNetworkPanel } from "../features/process/ProcessNetworkPanel";
-import { PortWatch } from "../features/process/PortWatch";
+import { ProcessTable } from '../features/process/processTable'
+import { ListeningPorts } from '../features/process/listeningPorts'
+import { ProcessNetworkPanel } from '../features/process/network'
+import { PortWatch } from '../features/process/portWatch'
 import { PageLoading } from "../components/ui/PageLoading";
 import { PageTab } from "../components/ui/PageTab";
 import { ErrorBoundary } from "../components/layout/ErrorBoundary";

@@ -1,3 +1,29 @@
+const publicEntryFolders = [
+  ['main-ipc-disk', 'src/main/ipc/disk'],
+  ['main-ipc-docker', 'src/main/ipc/docker'],
+  ['renderer-apps-installed', 'src/renderer/src/features/apps/installed'],
+  ['renderer-apps-leftover', 'src/renderer/src/features/apps/leftover'],
+  ['renderer-apps-registry', 'src/renderer/src/features/apps/registry'],
+  ['renderer-devtools-overview', 'src/renderer/src/features/devtools/overview'],
+  ['renderer-process-listening-ports', 'src/renderer/src/features/process/listeningPorts'],
+  ['renderer-process-network', 'src/renderer/src/features/process/network'],
+  ['renderer-process-port-watch', 'src/renderer/src/features/process/portWatch'],
+  ['renderer-process-table', 'src/renderer/src/features/process/processTable'],
+  ['shared-locale-en', 'src/shared/i18n/locales/en'],
+  ['shared-locale-ko', 'src/shared/i18n/locales/ko']
+]
+
+const publicEntryRules = publicEntryFolders.map(([name, folder]) => ({
+  name: `${name}-uses-public-entry`,
+  severity: 'error',
+  comment: `Modules outside ${folder} must import its index.ts public entry.`,
+  from: { pathNot: `^${folder}/` },
+  to: {
+    path: `^${folder}/`,
+    pathNot: `^${folder}/index\\.[cm]?[jt]sx?$`
+  }
+}))
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -56,6 +82,25 @@ module.exports = {
       comment: 'Features are composed by pages and cannot import pages.',
       from: { path: '^src/renderer/src/features/' },
       to: { path: '^src/renderer/src/pages/' }
+    },
+    ...publicEntryRules,
+    {
+      name: 'settings-internals-use-page-facade',
+      severity: 'error',
+      comment: 'Settings internals are private to the settings folder and SettingsPage facade.',
+      from: {
+        pathNot: '^src/renderer/src/pages/(?:settings/|SettingsPage\\.tsx$)'
+      },
+      to: { path: '^src/renderer/src/pages/settings/' }
+    },
+    {
+      name: 'devtools-overview-internals-use-service-facade',
+      severity: 'error',
+      comment: 'DevTools overview internals are private to the overview folder and devToolsOverview facade.',
+      from: {
+        pathNot: '^src/main/services/devtools/(?:overview/|devToolsOverview\\.ts$)'
+      },
+      to: { path: '^src/main/services/devtools/overview/' }
     },
     {
       name: 'no-unresolvable-project-imports',

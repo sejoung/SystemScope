@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldUsePortWatchCompactLayout } from "../../src/renderer/src/features/process/PortWatch";
+import { shouldUsePortWatchCompactLayout } from '../../src/renderer/src/features/process/portWatch'
 
 describe("PortWatch layout helpers", () => {
   it("switches port watch to compact layout below the width threshold", () => {

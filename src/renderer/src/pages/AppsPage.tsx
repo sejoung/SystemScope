@@ -2,9 +2,9 @@ import { useState } from "react";
 import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
 import { useSettingsStore } from "../stores/settings/useSettingsStore";
-import { InstalledApps } from "../features/apps/InstalledApps";
-import { LeftoverApps } from "../features/apps/LeftoverApps";
-import { RegistryApps } from "../features/apps/RegistryApps";
+import { InstalledApps } from '../features/apps/installed'
+import { LeftoverApps } from '../features/apps/leftover'
+import { RegistryApps } from '../features/apps/registry'
 import {
   type AppsTab,
   PageTab,

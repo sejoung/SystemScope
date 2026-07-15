@@ -4,9 +4,9 @@ import {
   getConfidenceColor,
   getConfidenceLabel,
 } from "../../src/renderer/src/features/apps/appsShared";
-import { shouldUseInstalledAppsCompactLayout } from "../../src/renderer/src/features/apps/InstalledApps";
-import { shouldUseLeftoverAppsCompactLayout } from "../../src/renderer/src/features/apps/LeftoverApps";
-import { shouldUseRegistryAppsCompactLayout } from "../../src/renderer/src/features/apps/RegistryApps";
+import { shouldUseInstalledAppsCompactLayout } from '../../src/renderer/src/features/apps/installed'
+import { shouldUseLeftoverAppsCompactLayout } from '../../src/renderer/src/features/apps/leftover'
+import { shouldUseRegistryAppsCompactLayout } from '../../src/renderer/src/features/apps/registry'
 
 describe("AppsPage helpers", () => {
   it("maps confidence levels to localized labels", () => {

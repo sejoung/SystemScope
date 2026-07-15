@@ -9,7 +9,7 @@ import {
   normalizePortState,
   shouldUseListeningPortsCompactLayout,
   sortPortsForDisplay,
-} from "../../src/renderer/src/features/process/ListeningPorts";
+} from '../../src/renderer/src/features/process/listeningPorts'
 import type { PortInfo } from "../../src/shared/types";
 
 describe("ListeningPorts helpers", () => {

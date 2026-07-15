@@ -102,7 +102,7 @@ describe('docker disk IPC', () => {
   it('should return docker images scan result', async () => {
     listDockerImages.mockResolvedValue({ status: 'ready', images: [], message: 'Docker 이미지가 없습니다.' })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_IMAGES)
@@ -120,7 +120,7 @@ describe('docker disk IPC', () => {
       message: 'Docker is not installed. Install Docker Desktop or Docker Engine and try again.'
     })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_IMAGES)
@@ -143,7 +143,7 @@ describe('docker disk IPC', () => {
       ]
     })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_IMAGES)
@@ -161,7 +161,7 @@ describe('docker disk IPC', () => {
       message: 'Docker is installed but not currently running. Start Docker Desktop or Docker Engine and try again.'
     })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_IMAGES)
@@ -184,7 +184,7 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     removeDockerImages.mockResolvedValue({ deletedIds: ['sha256:a'], failCount: 0, errors: [], cancelled: false })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_IMAGES)
@@ -199,7 +199,7 @@ describe('docker disk IPC', () => {
   it('should return docker containers scan result', async () => {
     listDockerContainers.mockResolvedValue({ status: 'ready', containers: [], message: '정리할 Docker 컨테이너가 없습니다.' })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_CONTAINERS)
@@ -219,7 +219,7 @@ describe('docker disk IPC', () => {
       ]
     })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS)
@@ -241,7 +241,7 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     removeDockerContainers.mockResolvedValue({ deletedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_CONTAINERS)
@@ -264,7 +264,7 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     stopDockerContainers.mockResolvedValue({ affectedIds: ['container:a'], failCount: 0, errors: [], cancelled: false })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_STOP_CONTAINERS)
@@ -279,7 +279,7 @@ describe('docker disk IPC', () => {
   it('should return docker volumes scan result', async () => {
     listDockerVolumes.mockResolvedValue({ status: 'ready', volumes: [], message: 'Docker 볼륨이 없습니다.' })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_LIST_VOLUMES)
@@ -297,7 +297,7 @@ describe('docker disk IPC', () => {
       volumes: [{ name: 'pgdata', driver: 'local', mountpoint: '/tmp/pgdata', inUse: true, containers: ['db'] }]
     })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_REMOVE_VOLUMES)
@@ -317,7 +317,7 @@ describe('docker disk IPC', () => {
     showMessageBox.mockResolvedValue({ response: 1 })
     pruneDockerBuildCache.mockResolvedValue({ reclaimedBytes: 800, reclaimedLabel: '800 B', cancelled: false })
 
-    const { registerDockerIpc } = await import('../../src/main/ipc/docker.ipc')
+    const { registerDockerIpc } = await import('../../src/main/ipc/docker/docker.ipc')
     registerDockerIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DOCKER_PRUNE_BUILD_CACHE)

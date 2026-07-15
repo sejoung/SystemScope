@@ -92,7 +92,7 @@ describe('registerDiskIpc', () => {
   it('does not register shell access for unreadable scan targets', async () => {
     access.mockRejectedValue(new Error('access denied'))
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk/disk.ipc')
     registerDiskIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DISK_SCAN_FOLDER)
@@ -119,7 +119,7 @@ describe('registerDiskIpc', () => {
       }
     ])
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk/disk.ipc')
     registerDiskIpc()
 
     const handler = handlers.get(IPC_CHANNELS.DISK_FIND_DUPLICATES)

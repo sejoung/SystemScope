@@ -119,7 +119,7 @@ describe('disk scan flow integration', () => {
     findLargeFilesMock.mockReturnValue([{ name: 'large.zip', path: '/Users/test/Downloads/large.zip', size: 200, modified: 1 }])
     getExtensionBreakdownMock.mockReturnValue([{ extension: '.zip', totalSize: 200, count: 1 }])
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk/disk.ipc')
     registerDiskIpc()
 
     const scanHandler = handlers.get(IPC_CHANNELS.DISK_SCAN_FOLDER)
@@ -205,7 +205,7 @@ describe('disk scan flow integration', () => {
       .mockReturnValueOnce([{ name: 'before.zip', path: '/Users/test/Downloads/before.zip', size: 200, modified: 1 }])
       .mockReturnValueOnce([{ name: 'after.zip', path: '/Users/test/Downloads/after.zip', size: 120, modified: 2 }])
 
-    const { registerDiskIpc } = await import('../../src/main/ipc/disk.ipc')
+    const { registerDiskIpc } = await import('../../src/main/ipc/disk/disk.ipc')
     registerDiskIpc()
 
     const largeFilesHandler = handlers.get(IPC_CHANNELS.DISK_GET_LARGE_FILES)

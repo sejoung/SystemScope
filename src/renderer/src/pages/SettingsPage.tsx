@@ -1,10 +1,10 @@
-import { btnStyle, changedBadgeStyle, validationListStyle } from "./SettingsPrimitives";
-import { SettingsGeneralSections } from "./SettingsGeneralSections";
-import { SettingsSystemSections } from "./SettingsSystemSections";
-export { SaveTimingNote, formatUpdateCheckedAt } from "./SettingsPrimitives";
+import { btnStyle, changedBadgeStyle, validationListStyle } from './settings/SettingsPrimitives'
+import { SettingsGeneralSections } from './settings/SettingsGeneralSections'
+import { SettingsSystemSections } from './settings/SettingsSystemSections'
+export { SaveTimingNote, formatUpdateCheckedAt } from './settings/SettingsPrimitives'
 
-export { shouldUseSettingsPageCompactLayout } from "./useSettingsPageModel";
-import { useSettingsPageModel } from "./useSettingsPageModel";
+export { shouldUseSettingsPageCompactLayout } from './settings/useSettingsPageModel'
+import { useSettingsPageModel } from './settings/useSettingsPageModel'
 
 export function SettingsPage() {
   const model = useSettingsPageModel()

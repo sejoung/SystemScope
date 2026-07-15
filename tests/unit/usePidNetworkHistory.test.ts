@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   reduceHistory,
   type MutableHistory,
-} from '../../src/renderer/src/features/process/usePidNetworkHistory'
+} from '../../src/renderer/src/features/process/network/usePidNetworkHistory'
 import type { ProcessNetworkSnapshot } from '@shared/types'
 
 // NOTE: @testing-library/react is not a devDependency of this project (vitest

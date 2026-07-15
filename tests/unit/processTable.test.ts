@@ -3,7 +3,7 @@ import {
   getCpuUsageTone,
   getCpuUsageToneLabel,
   shouldUseProcessTableCompactLayout,
-} from "../../src/renderer/src/features/process/ProcessTable";
+} from '../../src/renderer/src/features/process/processTable'
 
 describe("ProcessTable helpers", () => {
   it("classifies CPU usage into readable severity groups", () => {
