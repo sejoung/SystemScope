@@ -63,6 +63,15 @@ function App() {
 
   useEffect(() => {
     if (isE2ELightweight) {
+      void window.systemScope.getProcessSnapshot(10).then((response) => {
+        if (response.ok && isProcessSnapshot(response.data)) {
+          setProcessSnapshot(
+            response.data.allProcesses,
+            response.data.topCpuProcesses,
+            response.data.topMemoryProcesses
+          )
+        }
+      })
       setBootstrapped(true)
       return
     }
@@ -104,7 +113,7 @@ function App() {
     }).catch((error) => {
       void reportRendererError('app-bootstrap', 'Failed to load update status', { error })
     })
-  }, [applyUpdateStatus, isE2ELightweight, setAlerts, showToast])
+  }, [applyUpdateStatus, isE2ELightweight, setAlerts, setProcessSnapshot, showToast])
 
   useEffect(() => {
     document.body.dataset.e2eReady = bootstrapped ? '1' : '0'

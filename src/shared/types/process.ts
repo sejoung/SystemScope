@@ -5,8 +5,15 @@ export interface ProcessInfo {
   descendantCount: number
   name: string
   cpu: number
+  cpuAverage5m: number | null
+  cpuPeak5m: number | null
+  cpuObservedMs: number
   memory: number
   memoryBytes: number
+  startedAt: number | null
+  uptimeMs: number | null
+  state: string
+  user: string
   command: string
 }
 
@@ -40,6 +47,7 @@ export interface ProcessKillResult {
   pid: number
   name: string
   killed: boolean
+  forced: boolean
   cancelled: boolean
   killedPids: number[]
 }

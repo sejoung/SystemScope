@@ -187,9 +187,10 @@ export function registerProcessIpc(): void {
         type: 'warning',
         buttons: [
           tk('main.process.confirm.cancel'),
-          isTreeWithChildren ? tk('main.process.confirm.kill_tree') : tk('main.process.confirm.kill')
+          isTreeWithChildren ? tk('main.process.confirm.kill_tree') : tk('main.process.confirm.kill'),
+          isTreeWithChildren ? tk('main.process.confirm.force_kill_tree') : tk('main.process.confirm.force_kill')
         ],
-        defaultId: 0,
+        defaultId: 1,
         cancelId: 0,
         title: isTreeWithChildren ? tk('main.process.confirm.tree_title') : tk('main.process.confirm.title'),
         message: isTreeWithChildren
@@ -205,6 +206,7 @@ export function registerProcessIpc(): void {
           pid: target.pid,
           name: target.name,
           killed: false,
+          forced: false,
           cancelled: true,
           killedPids: []
         }
@@ -236,19 +238,21 @@ export function registerProcessIpc(): void {
         descendantPids = freshDescendants.filter((d) => shownPids.has(d.pid)).map((d) => d.pid)
       }
 
-      await terminateProcess(confirmedTarget.pid, tree, descendantPids)
+      const forced = confirm.response === 2
+      await terminateProcess(confirmedTarget.pid, tree, descendantPids, forced)
       const killedPids = [confirmedTarget.pid, ...descendantPids]
       logInfoAction('process-ipc', 'process.kill', withRequestMeta(requestMeta, {
-        pid: confirmedTarget.pid, name: confirmedTarget.name, tree, killedCount: killedPids.length
+        pid: confirmedTarget.pid, name: confirmedTarget.name, tree, forced, killedCount: killedPids.length
       }))
       logProductMetric('process-ipc', 'process.kill', 'succeeded', withRequestMeta(requestMeta, {
-        pid: confirmedTarget.pid, name: confirmedTarget.name, tree, killedCount: killedPids.length
+        pid: confirmedTarget.pid, name: confirmedTarget.name, tree, forced, killedCount: killedPids.length
       }))
 
       const result: ProcessKillResult = {
         pid: confirmedTarget.pid,
         name: confirmedTarget.name,
         killed: true,
+        forced,
         cancelled: false,
         killedPids
       }
@@ -261,52 +265,37 @@ export function registerProcessIpc(): void {
   })
 }
 
-async function terminateProcess(rootPid: number, tree: boolean, descendantPids: number[]): Promise<void> {
-  if (process.platform === 'win32' && tree) {
-    // taskkill /T natively handles the whole tree; skip Node's process.kill
-    await runExternalCommand('taskkill', ['/PID', String(rootPid), '/T', '/F'], { windowsHide: true })
+async function terminateProcess(
+  rootPid: number,
+  tree: boolean,
+  descendantPids: number[],
+  forced: boolean
+): Promise<void> {
+  if (process.platform === 'win32') {
+    const args = ['/PID', String(rootPid)]
+    if (tree) args.push('/T')
+    if (forced) args.push('/F')
+    await runExternalCommand('taskkill', args, { windowsHide: true })
     return
   }
 
+  const signal: NodeJS.Signals = forced ? 'SIGKILL' : 'SIGTERM'
   if (tree) {
-    // Unix: kill descendants deepest-first so they don't get reparented to init
+    // Unix: signal descendants deepest-first so they don't get reparented to init.
     for (const pid of [...descendantPids].reverse()) {
       try {
-        process.kill(pid, 'SIGKILL')
+        process.kill(pid, signal)
       } catch {
         // ignore — descendant may have already exited
       }
     }
   }
 
-  try {
-    process.kill(rootPid, 'SIGKILL')
-    return
-  } catch (error) {
-    if (!shouldFallbackToTaskkill(error)) {
-      throw error
-    }
-  }
-
-  await runExternalCommand('taskkill', ['/PID', String(rootPid), '/T', '/F'], {
-    windowsHide: true
-  })
-}
-
-function shouldFallbackToTaskkill(error: unknown): boolean {
-  if (process.platform !== 'win32') {
-    return false
-  }
-
-  const code = typeof error === 'object' && error !== null && 'code' in error
-    ? (error as { code?: string }).code
-    : undefined
-
-  return code === 'EPERM' || code === 'EACCES'
+  process.kill(rootPid, signal)
 }
 
 function isProtectedProcess(target: { pid: number; name: string; command: string }): boolean {
-  if (target.pid === process.pid) return true
+  if (target.pid <= 1 || target.pid === process.pid) return true
 
   const appName = app.getName().toLowerCase()
   const exePath = app.getPath('exe').toLowerCase()

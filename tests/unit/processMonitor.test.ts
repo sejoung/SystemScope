@@ -184,4 +184,93 @@ describe('processMonitor process caching', () => {
     expect(byPid.get(400)?.parentName).toBe('node')
     expect(byPid.get(100)?.parentName).toBeNull() // ppid <= 1, treated as system root
   })
+
+  it('keeps zero-resource zombies and exposes runtime, state, and user', async () => {
+    vi.useFakeTimers()
+    try {
+      const now = new Date('2026-07-27T12:00:00')
+      vi.setSystemTime(now)
+      processes.mockResolvedValue({
+        all: 1,
+        running: 0,
+        blocked: 0,
+        sleeping: 0,
+        unknown: 1,
+        list: [{
+          pid: 700,
+          parentPid: 600,
+          name: 'defunct-worker',
+          cpu: 0,
+          mem: 0,
+          memRss: 0,
+          started: '2026-07-19 12:00:00',
+          state: 'zombie',
+          user: 'developer',
+          command: 'defunct-worker'
+        }]
+      } as Systeminformation.ProcessesData)
+
+      const { getAllProcesses } = await import('../../src/main/services/process/processMonitor')
+      const all = await getAllProcesses()
+
+      expect(all).toHaveLength(1)
+      expect(all[0]).toMatchObject({
+        pid: 700,
+        state: 'zombie',
+        user: 'developer',
+        uptimeMs: 8 * 24 * 60 * 60 * 1000
+      })
+      expect(all[0].startedAt).toBe(new Date('2026-07-19T12:00:00').getTime())
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('calculates a rolling CPU average only for the same process identity', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-07-27T12:00:00'))
+      const row = {
+        pid: 800,
+        parentPid: 1,
+        name: 'flyweight',
+        cpu: 20,
+        mem: 1,
+        memRss: 100,
+        started: '2026-07-27 10:00:00',
+        state: 'running',
+        user: 'developer',
+        command: 'flyweight serve'
+      }
+      processes.mockResolvedValue({
+        all: 1,
+        running: 1,
+        blocked: 0,
+        sleeping: 0,
+        unknown: 0,
+        list: [row]
+      } as Systeminformation.ProcessesData)
+
+      const { getAllProcesses } = await import('../../src/main/services/process/processMonitor')
+      await getAllProcesses()
+
+      vi.setSystemTime(new Date('2026-07-27T12:01:01'))
+      row.cpu = 80
+      const second = await getAllProcesses()
+
+      expect(second[0].cpuAverage5m).toBe(50)
+      expect(second[0].cpuPeak5m).toBe(80)
+      expect(second[0].cpuObservedMs).toBe(61_000)
+
+      vi.setSystemTime(new Date('2026-07-27T12:01:02'))
+      row.started = '2026-07-27 12:01:02'
+      row.cpu = 5
+      const recycled = await getAllProcesses()
+
+      expect(recycled[0].cpuAverage5m).toBe(5)
+      expect(recycled[0].cpuObservedMs).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

@@ -169,11 +169,12 @@ describe("registerProcessIpc", () => {
         pid: 4321,
         name: "node",
         killed: true,
+        forced: false,
         cancelled: false,
         killedPids: [4321],
       });
       expect(showMessageBox).toHaveBeenCalled();
-      expect(killSpy).toHaveBeenCalledWith(4321, "SIGKILL");
+      expect(killSpy).toHaveBeenCalledWith(4321, "SIGTERM");
       expect(logInfoAction).toHaveBeenCalled();
       killSpy.mockRestore();
     });
@@ -213,16 +214,16 @@ describe("registerProcessIpc", () => {
       expect(result.data?.killedPids).toEqual([1000, 1001, 1002]);
       // descendants killed deepest-first, then root
       expect(killSpy.mock.calls).toEqual([
-        [1002, "SIGKILL"],
-        [1001, "SIGKILL"],
-        [1000, "SIGKILL"],
+        [1002, "SIGTERM"],
+        [1001, "SIGTERM"],
+        [1000, "SIGTERM"],
       ]);
 
       killSpy.mockRestore();
       Object.defineProperty(process, "platform", { value: originalPlatform });
     });
 
-  it("should use taskkill /T /F for tree kill on Windows", async () => {
+  it("should use taskkill /T without force for a graceful tree termination on Windows", async () => {
       const target = {
         pid: 2000,
         name: "node.exe",
@@ -257,7 +258,7 @@ describe("registerProcessIpc", () => {
       expect(killSpy).not.toHaveBeenCalled();
       expect(runExternalCommand).toHaveBeenCalledWith(
         "taskkill",
-        ["/PID", "2000", "/T", "/F"],
+        ["/PID", "2000", "/T"],
         { windowsHide: true },
       );
 

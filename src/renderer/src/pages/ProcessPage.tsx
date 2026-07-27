@@ -10,13 +10,15 @@ import { ErrorBoundary } from "../components/layout/ErrorBoundary";
 import { useI18n } from "../i18n/useI18n";
 import { StartupItemList } from "../features/startup/StartupItemList";
 import { OrphanedLaunchAgents } from "../features/startup/OrphanedLaunchAgents";
+import { ProcessAnomalyPanel } from '../features/process/processAnomalies'
 
-type ActivityTab = "processes" | "ports" | "network" | "watch" | "startup";
+type ActivityTab = "processes" | "anomalies" | "ports" | "network" | "watch" | "startup";
 
 export function ProcessPage() {
   const allProcesses = useProcessStore((s) => s.allProcesses);
   const allProcessesLoaded = useProcessStore((s) => s.allProcessesLoaded);
   const [tab, setTab] = useState<ActivityTab>("processes");
+  const [inspectPid, setInspectPid] = useState<number | null>(null);
   const { tk } = useI18n();
 
   if (tab === "processes" && !allProcessesLoaded) {
@@ -70,9 +72,19 @@ export function ProcessPage() {
           <PageTab
             id="activity-processes"
             active={tab === "processes"}
-            onClick={() => setTab("processes")}
+            onClick={() => {
+              setInspectPid(null);
+              setTab("processes");
+            }}
           >
             {tk("process.tab.processes")}
+          </PageTab>
+          <PageTab
+            id="activity-anomalies"
+            active={tab === "anomalies"}
+            onClick={() => setTab("anomalies")}
+          >
+            {tk("process.tab.anomalies")}
           </PageTab>
           <PageTab
             id="activity-ports"
@@ -112,6 +124,8 @@ export function ProcessPage() {
         >
           {tab === "startup"
             ? tk("Manage startup programs that run when you log in.")
+            : tab === "anomalies"
+              ? tk("process.page.tab.anomalies_help")
             : tab === "processes"
             ? tk("process.page.tab.processes_help")
             : tab === "ports"
@@ -124,7 +138,18 @@ export function ProcessPage() {
         </div>
       </div>
 
-      {tab === "processes" && <ErrorBoundary title={tk("process.tab.processes")}><ProcessTable processes={allProcesses} /></ErrorBoundary>}
+      {tab === "processes" && <ErrorBoundary title={tk("process.tab.processes")}><ProcessTable processes={allProcesses} initialFocusPid={inspectPid} /></ErrorBoundary>}
+      {tab === "anomalies" && (
+        <ErrorBoundary title={tk("process.tab.anomalies")}>
+          <ProcessAnomalyPanel
+            processes={allProcesses}
+            onInspectProcess={(pid) => {
+              setInspectPid(pid);
+              setTab("processes");
+            }}
+          />
+        </ErrorBoundary>
+      )}
       {tab === "ports" && <ErrorBoundary title={tk("process.tab.ports")}><ListeningPorts showConflictCenter={false} /></ErrorBoundary>}
       {tab === "network" && <ErrorBoundary title={tk("process.tab.network")}><ProcessNetworkPanel /></ErrorBoundary>}
       {tab === "watch" && <ErrorBoundary title={tk("process.tab.watch")}><PortWatch /></ErrorBoundary>}

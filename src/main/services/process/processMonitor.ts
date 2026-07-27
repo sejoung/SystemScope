@@ -1,11 +1,20 @@
 import si from 'systeminformation'
 import path from 'node:path'
 import type { ProcessInfo, PortInfo, ProcessSnapshot } from '@shared/types'
+import { PROCESS_HISTORY_SAMPLE_INTERVAL_MS } from '@shared/constants/intervals'
+import { logWarn } from '@main/services/core/logging'
+import {
+  getProcessCpuStats,
+  isZombieProcessState,
+  parseProcessStartedAt,
+  recordProcessCpuSamples
+} from './processHistory'
 
 // si.processes() 중복 호출 방지를 위한 TTL 캐시 (500ms)
 const PROCESS_CACHE_TTL = 500
 let cachedProcesses: { data: si.Systeminformation.ProcessesData; timestamp: number } | null = null
 let pendingProcesses: Promise<si.Systeminformation.ProcessesData> | null = null
+let processHistoryTimer: ReturnType<typeof setInterval> | null = null
 
 async function getCachedProcesses(): Promise<si.Systeminformation.ProcessesData> {
   if (cachedProcesses && Date.now() - cachedProcesses.timestamp < PROCESS_CACHE_TTL) {
@@ -17,7 +26,9 @@ async function getCachedProcesses(): Promise<si.Systeminformation.ProcessesData>
 
   pendingProcesses = si.processes()
     .then((data) => {
-      cachedProcesses = { data, timestamp: Date.now() }
+      const timestamp = Date.now()
+      cachedProcesses = { data, timestamp }
+      recordProcessCpuSamples(data.list, timestamp)
       return data
     })
     .finally(() => {
@@ -25,6 +36,29 @@ async function getCachedProcesses(): Promise<si.Systeminformation.ProcessesData>
     })
 
   return pendingProcesses
+}
+
+export function startProcessHistoryMonitor(
+  intervalMs: number = PROCESS_HISTORY_SAMPLE_INTERVAL_MS
+): void {
+  stopProcessHistoryMonitor()
+
+  const sample = (): void => {
+    void getCachedProcesses().catch((error) => {
+      logWarn('process-monitor', 'Background process sample failed', { error })
+    })
+  }
+
+  sample()
+  processHistoryTimer = setInterval(sample, intervalMs)
+  processHistoryTimer.unref?.()
+}
+
+export function stopProcessHistoryMonitor(): void {
+  if (processHistoryTimer) {
+    clearInterval(processHistoryTimer)
+    processHistoryTimer = null
+  }
 }
 
 function buildPidNameMap(
@@ -121,7 +155,7 @@ export async function getAllProcesses(): Promise<ProcessInfo[]> {
   const data = await getCachedProcesses()
   const ctx = buildProcessContext(data.list)
   return [...data.list]
-    .filter((p) => p.cpu > 0 || p.memRss > 0)
+    .filter((p) => p.cpu > 0 || p.memRss > 0 || isZombieProcessState(p.state))
     .sort((a, b) => b.cpu - a.cpu)
     .map((p) => toProcessInfo(p, ctx))
 }
@@ -130,7 +164,11 @@ export async function getProcessSnapshot(limit: number = 10): Promise<ProcessSna
   const data = await getCachedProcesses()
   const ctx = buildProcessContext(data.list)
   const mapped = data.list
-    .filter((processInfo) => processInfo.cpu > 0 || processInfo.memRss > 0)
+    .filter((processInfo) =>
+      processInfo.cpu > 0
+      || processInfo.memRss > 0
+      || isZombieProcessState(processInfo.state)
+    )
     .map((p) => toProcessInfo(p, ctx))
 
   const topCpuProcesses = selectTopProcesses(mapped, limit, (processInfo) => processInfo.cpu)
@@ -219,6 +257,9 @@ function toProcessInfo(
   ctx: ProcessContext
 ): ProcessInfo {
   const ppid = p.parentPid
+  const now = Date.now()
+  const startedAt = parseProcessStartedAt(p.started, now)
+  const cpuStats = getProcessCpuStats(p)
   return {
     pid: p.pid,
     ppid,
@@ -226,8 +267,15 @@ function toProcessInfo(
     descendantCount: ctx.descendantCounts.get(p.pid) ?? 0,
     name: p.name,
     cpu: Math.round(p.cpu * 100) / 100,
+    cpuAverage5m: cpuStats.average,
+    cpuPeak5m: cpuStats.peak,
+    cpuObservedMs: cpuStats.observedMs,
     memory: Math.round(p.mem * 100) / 100,
     memoryBytes: p.memRss,
+    startedAt,
+    uptimeMs: startedAt === null ? null : Math.max(0, now - startedAt),
+    state: p.state || 'unknown',
+    user: p.user || '',
     command: p.command
   }
 }

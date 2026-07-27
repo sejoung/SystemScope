@@ -2,6 +2,8 @@ export const EN_MONITORING_MESSAGES = {
   "process.page.title": "Activity",
   "process.page.tab.processes_help":
     "Processes shows overall CPU and memory usage so you can identify heavy tasks first.",
+  "process.page.tab.anomalies_help":
+    "Review runtime, recent CPU trends, and process state together, then manually choose anything you want to terminate.",
   "process.page.tab.watch_help":
     "Watch keeps tracking specific ports or IP patterns over time and records connection changes.",
   "main.process.confirm.cancel": "Cancel",
@@ -49,6 +51,7 @@ export const EN_MONITORING_MESSAGES = {
   "process.top_resources.gpu_unavailable":
     "GPU monitoring unavailable on unified memory",
   "process.tab.processes": "Processes",
+  "process.tab.anomalies": "Anomalies",
   "process.tab.watch": "Watch",
   "process.port_finder.action": "Action",
   "process.table.search_placeholder": "Search name, PID, command...",
@@ -104,7 +107,7 @@ export const EN_MONITORING_MESSAGES = {
   "main.process.error.protected":
     "You cannot terminate the app itself or a protected process.",
   "main.process.confirm.warning":
-    "Process will be killed immediately (SIGKILL / -9) without cleanup. Unsaved data, pending writes, and child processes may be lost.",
+    "Terminate sends SIGTERM so the process can clean up. Force kill (SIGKILL / -9) can lose unsaved data, pending writes, and child processes.",
   "main.process.confirm.title": "Kill Process",
   "main.process.confirm.message": 'Do you want to terminate "{name}"?',
   "main.process.confirm.tree_title": "Kill Process Tree",
@@ -112,6 +115,8 @@ export const EN_MONITORING_MESSAGES = {
     'Kill "{name}" and {count} descendant process(es)?',
   "main.process.confirm.tree_descendants": "Descendants ({count}):",
   "main.process.confirm.kill_tree": "Kill Tree",
+  "main.process.confirm.force_kill": "Force Kill",
+  "main.process.confirm.force_kill_tree": "Force Kill Tree",
   "main.process.error.tree_protected":
     'Cannot kill tree: descendant "{name}" (PID {pid}) is a protected process.',
   "main.process.error.changed":
@@ -250,6 +255,39 @@ export const EN_MONITORING_MESSAGES = {
   "process.table.kill_sent": 'Killed "{name}" (PID {pid}).',
   "process.table.kill_tree_sent":
     'Killed "{name}" and {count} descendant process(es).',
+  "process.anomaly.title": "Process Anomalies",
+  "process.anomaly.description":
+    "Review long-running, high-CPU, and zombie processes in one place. A long runtime alone does not mean a process is unhealthy.",
+  "process.anomaly.manual_only":
+    "Automatic termination is disabled. Only a process you choose and approve in the confirmation dialog will be terminated.",
+  "process.anomaly.filter_label": "Process anomaly filters",
+  "process.anomaly.filter.all": "All ({count})",
+  "process.anomaly.filter.long": "Long-running ({count})",
+  "process.anomaly.filter.cpu": "CPU ({count})",
+  "process.anomaly.filter.zombie": "Zombie ({count})",
+  "process.anomaly.long_threshold": "Long-running threshold",
+  "process.anomaly.include_system": "Include system processes",
+  "process.anomaly.empty": "No processes match the current anomaly filters.",
+  "process.anomaly.system_badge": "SYSTEM",
+  "process.anomaly.badge.zombie": "Zombie",
+  "process.anomaly.badge.sustained_cpu": "Sustained high CPU",
+  "process.anomaly.badge.high_cpu": "High CPU now",
+  "process.anomaly.badge.long_running": "Long-running",
+  "process.anomaly.runtime": "Runtime",
+  "process.anomaly.cpu_now": "CPU now",
+  "process.anomaly.cpu_average": "5m average",
+  "process.anomaly.collecting": "Collecting",
+  "process.anomaly.state": "State",
+  "process.anomaly.user": "User",
+  "process.anomaly.review_terminate": "Review & terminate",
+  "process.anomaly.inspect_parent": "Inspect parent",
+  "process.anomaly.inspect_process": "Inspect process",
+  "process.anomaly.system_review_help":
+    "System-account processes cannot be terminated directly from this view. Inspect the command and parent in the full process list first.",
+  "process.anomaly.zombie_parent_help":
+    "A zombie cannot be terminated directly. Inspect the parent responsible for reaping its exit status.",
+  "process.anomaly.zombie_help":
+    "This process has already exited and cannot be killed directly. Inspect or restart its parent so the parent can reap the exit status.",
   "{count} conflicts": "{count} conflicts",
   "{count} workspaces tracked": "{count} workspaces tracked",
 } as const

@@ -2,6 +2,8 @@ export const KO_MONITORING_MESSAGES = {
   "process.page.title": "활동",
   "process.page.tab.processes_help":
     "Processes 탭은 전체 CPU와 메모리 사용량을 보여줘서 무거운 작업을 먼저 찾는 데 적합합니다.",
+  "process.page.tab.anomalies_help":
+    "실행 시간, 최근 CPU 추세, 프로세스 상태를 함께 확인하고 종료할 항목을 직접 검토할 수 있습니다.",
   "process.page.tab.watch_help":
     "Watch 탭은 특정 포트나 IP 패턴을 계속 추적하면서 연결 변화 이력을 기록합니다.",
   "main.process.confirm.cancel": "취소",
@@ -49,6 +51,7 @@ export const KO_MONITORING_MESSAGES = {
   "process.top_resources.gpu_unavailable":
     "통합 메모리 환경에서는 GPU 모니터링을 제공할 수 없습니다",
   "process.tab.processes": "프로세스",
+  "process.tab.anomalies": "이상 징후",
   "process.tab.watch": "감시",
   "process.port_finder.action": "작업",
   "process.table.search_placeholder": "이름, PID, 명령어 검색...",
@@ -103,7 +106,7 @@ export const KO_MONITORING_MESSAGES = {
   "main.process.error.protected":
     "앱 자신이나 보호된 프로세스는 종료할 수 없습니다.",
   "main.process.confirm.warning":
-    "정리 과정 없이 즉시 종료(SIGKILL / -9)됩니다. 저장되지 않은 데이터, 진행 중인 쓰기, 자식 프로세스가 손실될 수 있습니다.",
+    "정상 종료는 정리할 시간을 주는 SIGTERM을 보냅니다. 강제 종료(SIGKILL / -9)는 저장되지 않은 데이터, 진행 중인 쓰기, 자식 프로세스를 손실시킬 수 있습니다.",
   "main.process.confirm.title": "프로세스 종료",
   "main.process.confirm.message": '"{name}" 프로세스를 종료하시겠습니까?',
   "main.process.confirm.tree_title": "프로세스 트리 종료",
@@ -111,6 +114,8 @@ export const KO_MONITORING_MESSAGES = {
     '"{name}" 프로세스와 자손 {count}개를 모두 종료하시겠습니까?',
   "main.process.confirm.tree_descendants": "자손 프로세스 ({count}개):",
   "main.process.confirm.kill_tree": "트리 종료",
+  "main.process.confirm.force_kill": "강제 종료",
+  "main.process.confirm.force_kill_tree": "트리 강제 종료",
   "main.process.error.tree_protected":
     '트리 종료 불가: 자손 프로세스 "{name}" (PID {pid})은(는) 보호 대상입니다.',
   "main.process.error.changed":
@@ -249,6 +254,39 @@ export const KO_MONITORING_MESSAGES = {
   "process.table.kill_sent": '"{name}" (PID {pid}) 프로세스를 종료했습니다.',
   "process.table.kill_tree_sent":
     '"{name}" 및 자손 {count}개를 종료했습니다.',
+  "process.anomaly.title": "이상 프로세스",
+  "process.anomaly.description":
+    "장기 실행, 고CPU, 좀비 상태를 한곳에서 검토합니다. 실행 시간이 길다는 이유만으로 문제가 있는 것은 아닙니다.",
+  "process.anomaly.manual_only":
+    "자동 종료는 사용하지 않습니다. 종료 버튼을 누르고 확인 창에서 승인한 프로세스만 종료됩니다.",
+  "process.anomaly.filter_label": "이상 프로세스 필터",
+  "process.anomaly.filter.all": "전체 ({count})",
+  "process.anomaly.filter.long": "장기 실행 ({count})",
+  "process.anomaly.filter.cpu": "CPU ({count})",
+  "process.anomaly.filter.zombie": "좀비 ({count})",
+  "process.anomaly.long_threshold": "장기 실행 기준",
+  "process.anomaly.include_system": "시스템 프로세스 포함",
+  "process.anomaly.empty": "현재 조건에 해당하는 이상 프로세스가 없습니다.",
+  "process.anomaly.system_badge": "시스템",
+  "process.anomaly.badge.zombie": "좀비",
+  "process.anomaly.badge.sustained_cpu": "지속 고CPU",
+  "process.anomaly.badge.high_cpu": "현재 고CPU",
+  "process.anomaly.badge.long_running": "장기 실행",
+  "process.anomaly.runtime": "실행 시간",
+  "process.anomaly.cpu_now": "현재 CPU",
+  "process.anomaly.cpu_average": "최근 5분 평균",
+  "process.anomaly.collecting": "수집 중",
+  "process.anomaly.state": "상태",
+  "process.anomaly.user": "사용자",
+  "process.anomaly.review_terminate": "검토 후 종료",
+  "process.anomaly.inspect_parent": "부모 프로세스 보기",
+  "process.anomaly.inspect_process": "프로세스 보기",
+  "process.anomaly.system_review_help":
+    "시스템 계정 프로세스는 이 화면에서 바로 종료하지 않습니다. 전체 프로세스 화면에서 명령어와 부모를 먼저 확인하세요.",
+  "process.anomaly.zombie_parent_help":
+    "좀비는 직접 종료할 수 없으므로 상태를 회수해야 하는 부모 프로세스를 확인합니다.",
+  "process.anomaly.zombie_help":
+    "좀비 프로세스는 이미 실행을 마쳐 직접 종료할 수 없습니다. 부모 프로세스가 종료 상태를 회수하도록 부모를 점검하거나 재시작해야 합니다.",
   "{count} conflicts": "충돌 {count}건",
   "{count} workspaces tracked": "작업공간 {count}개 추적 중",
 } as const

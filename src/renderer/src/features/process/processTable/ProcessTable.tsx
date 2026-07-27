@@ -24,10 +24,11 @@ export { getCpuUsageTone, getCpuUsageToneLabel, getProcessSortSummary } from "./
 
 interface ProcessTableProps {
   processes: ProcessInfo[];
+  initialFocusPid?: number | null;
 }
 
-export function ProcessTable({ processes }: ProcessTableProps) {
-  const { tk, search, setSearch, focusPid, setFocusPid, sortField, containerRef, containerWidth, compactLayout, handleSort, filtered, sortIcon, getAriaSort, sortSummary, handleKill, Row, listHeight } = useProcessTableModel(processes)
+export function ProcessTable({ processes, initialFocusPid = null }: ProcessTableProps) {
+  const { tk, search, setSearch, focusPid, setFocusPid, sortField, containerRef, containerWidth, compactLayout, handleSort, filtered, sortIcon, getAriaSort, sortSummary, handleKill, Row, listHeight } = useProcessTableModel(processes, initialFocusPid)
 
   return (
     <section style={sectionStyle}>

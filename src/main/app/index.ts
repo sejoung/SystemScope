@@ -17,6 +17,7 @@ import { initAlertHistory, stopAlertHistory } from '@main/services/alerts'
 import { initCleanupInbox } from '@main/services/cleanup'
 import { initAutomationScheduler, stopAutomationScheduler } from '@main/services/cleanup'
 import { initProjectMonitor, stopProjectMonitor } from '@main/services/projectMonitor'
+import { startProcessHistoryMonitor, stopProcessHistoryMonitor } from '@main/services/process'
 
 const gotTheLock = app.requestSingleInstanceLock()
 
@@ -65,6 +66,7 @@ if (!gotTheLock) {
         initialDelayMs: STARTUP_TRAY_REFRESH_DELAY_MS
       })
       startJobPruner()
+      startProcessHistoryMonitor()
     }
 
     const mainWindow = createMainWindow()
@@ -95,6 +97,7 @@ if (!gotTheLock) {
     stopAlertHistory()
     stopAutomationScheduler()
     stopProjectMonitor()
+    stopProcessHistoryMonitor()
     if (!appReadyForQuit) {
       event.preventDefault()
       appReadyForQuit = true

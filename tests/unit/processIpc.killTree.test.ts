@@ -200,6 +200,7 @@ describe("registerProcessIpc", () => {
         pid: 4321,
         name: "node",
         killed: false,
+        forced: false,
         cancelled: true,
         killedPids: [],
       });
@@ -237,7 +238,7 @@ describe("registerProcessIpc", () => {
       killSpy.mockRestore();
     });
 
-  it("should fall back to taskkill on Windows when process.kill returns EPERM", async () => {
+  it("should use taskkill without force for a single graceful termination on Windows", async () => {
       const target = {
         pid: 4321,
         name: "node",
@@ -277,11 +278,46 @@ describe("registerProcessIpc", () => {
       expect(result.data?.killed).toBe(true);
       expect(runExternalCommand).toHaveBeenCalledWith(
         "taskkill",
-        ["/PID", "4321", "/T", "/F"],
+        ["/PID", "4321"],
         {
           windowsHide: true,
         },
       );
+      expect(killSpy).not.toHaveBeenCalled();
+
+      killSpy.mockRestore();
+      Object.defineProperty(process, "platform", { value: originalPlatform });
+    });
+
+  it("should send SIGKILL only when the user explicitly chooses force kill", async () => {
+      const target = {
+        pid: 4321,
+        name: "node",
+        command: "/usr/bin/node",
+        cpu: 0,
+        memory: 0,
+        memoryBytes: 0,
+      };
+      getProcessByPid.mockResolvedValue(target);
+      showMessageBox.mockResolvedValue({ response: 2 });
+      const killSpy = vi.spyOn(process, "kill").mockImplementation(() => true);
+
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, "platform", { value: "darwin" });
+
+      const { registerProcessIpc } =
+        await import("../../src/main/ipc/process.ipc");
+      registerProcessIpc();
+
+      const handler = handlers.get(IPC_CHANNELS.PROCESS_KILL);
+      const result = (await handler?.({}, { pid: 4321 })) as {
+        ok: boolean;
+        data?: { killed: boolean; forced: boolean };
+      };
+
+      expect(result.ok).toBe(true);
+      expect(result.data?.forced).toBe(true);
+      expect(killSpy).toHaveBeenCalledWith(4321, "SIGKILL");
 
       killSpy.mockRestore();
       Object.defineProperty(process, "platform", { value: originalPlatform });

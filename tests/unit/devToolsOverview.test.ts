@@ -40,6 +40,16 @@ import {
   summarizeGitStatusLines,
 } from '../../src/main/services/devtools/devToolsOverview'
 
+const PROCESS_RUNTIME_FIELDS = {
+  cpuAverage5m: null,
+  cpuPeak5m: null,
+  cpuObservedMs: 0,
+  startedAt: null,
+  uptimeMs: null,
+  state: 'running',
+  user: 'test',
+} as const
+
 describe('devToolsOverview helpers', () => {
   beforeEach(() => {
       resetDevToolsOverviewCacheForTest()
@@ -98,6 +108,7 @@ describe('devToolsOverview helpers', () => {
         localPortNum: 5173,
       }
       const processInfo: ProcessInfo = {
+        ...PROCESS_RUNTIME_FIELDS,
         pid: 300,
         name: 'node',
         ppid: 1,
@@ -125,6 +136,7 @@ describe('devToolsOverview helpers', () => {
         localPortNum: 8000,
       }
       const pythonProcess: ProcessInfo = {
+        ...PROCESS_RUNTIME_FIELDS,
         pid: 410,
         name: 'python',
         ppid: 1,
@@ -147,6 +159,7 @@ describe('devToolsOverview helpers', () => {
         localPortNum: 8080,
       }
       const jvmProcess: ProcessInfo = {
+        ...PROCESS_RUNTIME_FIELDS,
         pid: 510,
         name: 'java',
         ppid: 1,
@@ -175,6 +188,7 @@ describe('devToolsOverview helpers', () => {
         localPortNum: 3000,
       }
       const targetProcess: ProcessInfo = {
+        ...PROCESS_RUNTIME_FIELDS,
         pid: 610,
         name: 'api',
         ppid: 1,
@@ -186,6 +200,7 @@ describe('devToolsOverview helpers', () => {
         command: '/Users/test/work/rust-api/target/debug/api',
       }
       const trunkProcess: ProcessInfo = {
+        ...PROCESS_RUNTIME_FIELDS,
         pid: 611,
         name: 'cargo',
         ppid: 1,
@@ -217,6 +232,7 @@ describe('devToolsOverview helpers', () => {
       ]
       const processes: ProcessInfo[] = [
         {
+          ...PROCESS_RUNTIME_FIELDS,
           pid: 101,
           name: 'node',
           ppid: 1,

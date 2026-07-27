@@ -1,30 +1,33 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { RowComponentProps } from 'react-window'
-import type { ProcessInfo, ProcessKillResult } from '@shared/types'
+import type { ProcessInfo } from '@shared/types'
 import { formatBytes } from '../../../utils/format'
-import { useToast } from '../../../components/ui/Toast'
 import { useI18n } from '../../../i18n/useI18n'
 import { CopyableValue } from '../../../components/ui/CopyableValue'
 import { useContainerWidth } from '../../../hooks/useContainerWidth'
 import { isCompactWidth, RESPONSIVE_WIDTH } from '../../../hooks/useResponsiveLayout'
 import { actionCellStyle, cellStyle, cpuValueStyle, getCpuBadgeStyle, killBtnStyle, killTreeBtnStyle, metricCellStyle, parentChipStyle } from './ProcessTable.styles'
 import { getCpuUsageTone, getCpuUsageToneLabel, getProcessSortSummary, type SortDir, type SortField } from './processTableSort'
+import { useManualProcessTermination } from '../useManualProcessTermination'
 
 const ROW_HEIGHT = 56
 const LIST_HEIGHT = 520
 const GRID_TEMPLATE = '60px 1fr 100px 100px 184px'
 export function shouldUseProcessTableCompactLayout(width: number): boolean { return isCompactWidth(width, RESPONSIVE_WIDTH.processTableCompact) }
 
-export function useProcessTableModel(processes: ProcessInfo[]) {
-  const showToast = useToast((s) => s.show);
+export function useProcessTableModel(
+  processes: ProcessInfo[],
+  initialFocusPid: number | null = null,
+) {
   const { tk } = useI18n();
   const [search, setSearch] = useState("");
   // Exact-PID focus used by the "jump to parent" chip, so jumping to PID 123 doesn't
   // also surface 1234/5123 the way a substring text search would.
-  const [focusPid, setFocusPid] = useState<number | null>(null);
-  // PID currently being killed — used to disable the row's kill buttons so the
-  // non-blocking native confirm dialog can't be queued twice.
-  const [killingPid, setKillingPid] = useState<number | null>(null);
+  const [focusPid, setFocusPid] = useState<number | null>(initialFocusPid);
+  const {
+    terminatingPid: killingPid,
+    requestTermination,
+  } = useManualProcessTermination("Activity > Processes");
   const [sortField, setSortField] = useState<SortField>("cpu");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [containerRef, containerWidth] = useContainerWidth(720);
@@ -89,37 +92,7 @@ export function useProcessTableModel(processes: ProcessInfo[]) {
   const sortSummary = getProcessSortSummary(sortField, sortDir, tk);
 
   const handleKill = async (processInfo: ProcessInfo, tree: boolean) => {
-    if (killingPid !== null) return;
-    setKillingPid(processInfo.pid);
-    try {
-      const res = await window.systemScope.killProcess({
-        pid: processInfo.pid,
-        name: processInfo.name,
-        command: processInfo.command,
-        reason: "Activity > Processes",
-        tree,
-      });
-      if (!res.ok) {
-        showToast(res.error?.message ?? tk("process.table.kill_failed"));
-        return;
-      }
-
-      const result = res.data as ProcessKillResult;
-      if (result.cancelled) return;
-      if (result.killed) {
-        const descendants = result.killedPids.length - 1;
-        showToast(
-          descendants > 0
-            ? tk("process.table.kill_tree_sent", {
-                name: result.name,
-                count: descendants,
-              })
-            : tk("process.table.kill_sent", { name: result.name, pid: result.pid }),
-        );
-      }
-    } finally {
-      setKillingPid(null);
-    }
+    await requestTermination(processInfo, tree);
   };
 
   const Row = useCallback(

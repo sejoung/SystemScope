@@ -115,8 +115,11 @@ export function createE2EMockApi(): {
       descendantCount: 0,
       name: 'node',
       cpu: 12.5,
+      cpuAverage5m: 9.8, cpuPeak5m: 18.2, cpuObservedMs: 5 * 60 * 1000,
       memory: 120,
       memoryBytes: 120_000_000,
+      startedAt: Date.now() - 2 * 60 * 60 * 1000, uptimeMs: 2 * 60 * 60 * 1000,
+      state: 'sleeping', user: 'e2e',
       command: '/usr/bin/node server.js'
     }
   ]
@@ -180,6 +183,7 @@ export function createE2EMockApi(): {
     getAllProcesses: () => successResult(mockProcesses),
     getTopCpuProcesses: () => successResult(mockProcesses),
     getTopMemoryProcesses: () => successResult(mockProcesses),
+    getProcessSnapshot: () => successResult({ allProcesses: mockProcesses, topCpuProcesses: mockProcesses, topMemoryProcesses: mockProcesses }),
     getTimelineData: (range) => successResult({
       range,
       points: timelinePoints,
@@ -191,8 +195,7 @@ export function createE2EMockApi(): {
       )
       return successResult({ ...selected, topProcesses: [{ name: 'node', pid: 1001, cpu: 12.5, memory: 1.2 }] })
     },
-    getEventHistory: () => successResult([]),
-    getRecentEvents: () => successResult([]),
+    getEventHistory: () => successResult([]), getRecentEvents: () => successResult([]),
     clearEventHistory: () => successResult(0),
     getAlertIntelligence: () => successResult({ activeAlerts: [], patterns: [], sustainedAlerts: [] }),
     getSessionSnapshots: () => successResult([]),
