@@ -629,6 +629,32 @@
       color: #22170c;
     }
 
+    .notice-body a {
+      color: #7b4204;
+      font-weight: 600;
+    }
+
+    .notice-command {
+      display: block;
+      margin: 10px 0;
+      padding: 11px 13px;
+      border: 1px solid rgba(123, 66, 4, 0.22);
+      border-radius: 10px;
+      background: rgba(34, 23, 12, 0.92);
+      color: #fff8ef;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      user-select: all;
+    }
+
+    .notice-warning {
+      display: block;
+      margin-top: 8px;
+      color: #7b4204;
+    }
+
     .docs-section {
       padding: 0 0 68px;
       animation: riseIn 0.7s ease 0.34s both;
@@ -954,7 +980,7 @@
       download: 'Download',
       version: 'Version',
       macNoticeTitle: 'macOS Security Notice',
-      macNoticeBody: 'SystemScope is not signed with an Apple Developer certificate, so macOS may block it on first launch.<br><strong>1.</strong> Right-click the app and select <strong>Open</strong>, then click <strong>Open</strong> again.<br><strong>2.</strong> If still blocked, go to <strong>System Settings &gt; Privacy &amp; Security</strong>, scroll down and click <strong>Open Anyway</strong> next to the SystemScope message.<br>This is only required once.',
+      macNoticeBody: 'SystemScope is not signed with an Apple Developer certificate, so macOS may block it on first launch.<br><strong>1.</strong> Drag SystemScope to the <strong>Applications</strong> folder. Right-click the app, select <strong>Open</strong>, then click <strong>Open</strong> again.<br><strong>2.</strong> If still blocked, go to <strong>System Settings &gt; Privacy &amp; Security</strong>, scroll down and click <strong>Open Anyway</strong> next to the SystemScope message. The button appears only after a blocked launch attempt and remains available for about an hour.<br><strong>3. No Open Anyway button?</strong> Open Terminal and remove only the downloaded-app quarantine attribute:<code class="notice-command">xattr -dr com.apple.quarantine "/Applications/SystemScope.app"</code>Then launch SystemScope again.<span class="notice-warning"><strong>Important:</strong> Run this command only for SystemScope downloaded from this page or the <a href="https://github.com/sejoung/SystemScope/releases" target="_blank" rel="noopener noreferrer">official GitHub Releases page</a>.</span>This is only required once.',
       winNoticeTitle: 'Windows SmartScreen Notice',
       winNoticeBody: 'When you run SystemScope for the first time, Windows SmartScreen may show a warning. Click <strong>More info</strong>, then click <strong>Run anyway</strong> to proceed. This only appears on the first launch.',
       docs: [
@@ -982,7 +1008,7 @@
       download: '다운로드',
       version: '버전',
       macNoticeTitle: 'macOS 보안 안내',
-      macNoticeBody: 'SystemScope은 Apple 개발자 인증서로 서명되지 않아 처음 실행 시 macOS가 차단할 수 있습니다.<br><strong>1.</strong> 앱을 <strong>우클릭</strong> &gt; <strong>열기</strong>를 선택한 후 다시 <strong>열기</strong>를 클릭하세요.<br><strong>2.</strong> 그래도 안 되면 <strong>시스템 설정 &gt; 개인정보 보호 및 보안</strong>에서 SystemScope 옆의 <strong>확인 없이 열기</strong>를 클릭하세요.<br>최초 1회만 필요합니다.',
+      macNoticeBody: 'SystemScope는 Apple 개발자 인증서로 서명되지 않아 처음 실행 시 macOS가 차단할 수 있습니다.<br><strong>1.</strong> SystemScope을 <strong>응용 프로그램</strong> 폴더로 옮기세요. 앱을 <strong>우클릭</strong> &gt; <strong>열기</strong>로 실행한 후 다시 <strong>열기</strong>를 클릭하세요.<br><strong>2.</strong> 그래도 안 되면 <strong>시스템 설정 &gt; 개인정보 보호 및 보안</strong>에서 SystemScope 옆의 <strong>확인 없이 열기</strong>를 클릭하세요. 이 버튼은 앱 실행이 차단된 뒤 약 1시간 동안만 표시됩니다.<br><strong>3. 확인 없이 열기 버튼이 안 보이나요?</strong> 터미널을 열고 다운로드 격리 속성만 제거하는 아래 명령을 실행하세요.<code class="notice-command">xattr -dr com.apple.quarantine "/Applications/SystemScope.app"</code>그다음 SystemScope을 다시 실행하세요.<span class="notice-warning"><strong>주의:</strong> 이 페이지 또는 <a href="https://github.com/sejoung/SystemScope/releases" target="_blank" rel="noopener noreferrer">공식 GitHub Releases</a>에서 다운로드한 SystemScope에만 이 명령을 사용하세요.</span>최초 1회만 필요합니다.',
       winNoticeTitle: 'Windows SmartScreen 안내',
       winNoticeBody: '처음 실행 시 Windows SmartScreen 경고가 나타날 수 있습니다. <strong>추가 정보</strong>를 클릭한 후 <strong>실행</strong>을 누르면 됩니다. 최초 1회만 표시됩니다.',
       docs: [
