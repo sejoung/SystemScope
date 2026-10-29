@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue" alt="Platform" />
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License" />
-  <img src="https://img.shields.io/badge/electron-41-blueviolet" alt="Electron" />
+  <img src="https://img.shields.io/badge/electron-42-blueviolet" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61dafb" alt="React" />
   <a href="https://github.com/sejoung/SystemScope/actions/workflows/ci.yml">
     <img src="https://github.com/sejoung/SystemScope/actions/workflows/ci.yml/badge.svg" alt="CI" />
@@ -133,7 +133,7 @@ npm run test:watch
 npm run build
 npm run test:e2e    # Electron + Playwright E2E (builds with --mode e2e, then runs)
 npm run test:e2e:debug
-npm run check       # typecheck -> lint -> test -> build
+npm run check       # audit -> typecheck -> lint -> test -> build
 npm run check:macos # real macOS/Electron collection checks with isolated settings
 ```
 
@@ -170,7 +170,7 @@ tests/
 
 | Area | Tech |
 |------|------|
-| Framework | Electron 41, React 19 |
+| Framework | Electron 42, React 19 |
 | Language | TypeScript |
 | Build | Vite / electron-vite |
 | State | Zustand |

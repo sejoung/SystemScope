@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue" alt="Platform" />
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License" />
-  <img src="https://img.shields.io/badge/electron-41-blueviolet" alt="Electron" />
+  <img src="https://img.shields.io/badge/electron-42-blueviolet" alt="Electron" />
   <img src="https://img.shields.io/badge/react-19-61dafb" alt="React" />
   <a href="https://github.com/sejoung/SystemScope/actions/workflows/ci.yml">
     <img src="https://github.com/sejoung/SystemScope/actions/workflows/ci.yml/badge.svg" alt="CI" />
@@ -133,7 +133,7 @@ npm run test:watch
 npm run build
 npm run test:e2e    # Electron + Playwright E2E (--mode e2e로 빌드 후 실행)
 npm run test:e2e:debug
-npm run check       # typecheck -> lint -> test -> build
+npm run check       # audit -> typecheck -> lint -> test -> build
 npm run check:macos # 실제 macOS/Electron 수집 경로 검증 (사용자 설정과 분리)
 ```
 
@@ -170,7 +170,7 @@ tests/
 
 | 분류 | 기술 |
 |------|------|
-| 프레임워크 | Electron 41, React 19 |
+| 프레임워크 | Electron 42, React 19 |
 | 언어 | TypeScript |
 | 빌드 | Vite / electron-vite |
 | 상태 관리 | Zustand |

@@ -2,13 +2,5 @@
   "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
   "moderate": true,
   "report-type": "summary",
-  "allowlist": [
-    {
-      "GHSA-mh99-v99m-4gvg": {
-        "active": true,
-        "notes": "Development-only electron-builder paths require the legacy brace-expansion API; forcing 5.0.8 breaks minimatch at runtime. Remove after upstream consumers support brace-expansion 5.",
-        "expiry": "2026-10-31"
-      }
-    }
-  ]
+  "allowlist": []
 }

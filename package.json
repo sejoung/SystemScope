@@ -18,7 +18,7 @@
     "deps:check": "depcruise --config .dependency-cruiser.cjs src",
     "typecheck": "tsc -b",
     "bundle:size": "node scripts/check-renderer-bundle.mjs",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build && npm run bundle:size",
+    "check": "npm run audit:ci && npm run typecheck && npm run lint && npm test && npm run build && npm run bundle:size",
     "check:macos": "npm run build && node scripts/check-macos-runtime.mjs",
     "release:patch": "npm run check && npm version patch",
     "release:minor": "npm run check && npm version minor",
@@ -65,7 +65,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "audit-ci": "^7.1.0",
     "dependency-cruiser": "^18.1.0",
-    "electron": "^41.0.3",
+    "electron": "^42.11.18",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.1.0",
@@ -74,11 +74,11 @@
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1",
-    "vite": "^7.3.1",
-    "vitest": "^4.1.0"
+    "vite": "^7.3.7",
+    "vitest": "^4.1.12"
   },
   "overrides": {
-    "ip-address": "10.2.0"
+    "ip-address": "10.7.5"
   },
   "build": {
     "appId": "com.systemscope.app",
