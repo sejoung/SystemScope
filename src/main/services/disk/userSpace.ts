@@ -106,13 +106,15 @@ async function getDiskInfo(): Promise<{ total: number; available: number; purgea
 
   if (platform() === 'darwin') {
     try {
-      const { stdout } = await runExternalCommand('diskutil', ['info', '-plist', '/'])
+      const { stdout } = await runExternalCommand('/usr/sbin/diskutil', ['info', '-plist', '/'], { timeout: 5_000 })
       const sizeMatch = stdout.match(/<key>APFSContainerSize<\/key>\s*<integer>(\d+)<\/integer>/)
       const freeMatch = stdout.match(/<key>APFSContainerFree<\/key>\s*<integer>(\d+)<\/integer>/)
       if (sizeMatch && freeMatch) {
         const total = parseInt(sizeMatch[1], 10)
         const free = parseInt(freeMatch[1], 10)
-        return { total, available: free, purgeable: null }
+        if (total > 0 && free >= 0 && free <= total) {
+          return { total, available: free, purgeable: null }
+        }
       }
     } catch {
       if (!hasLoggedUserSpaceApfsFallback) {

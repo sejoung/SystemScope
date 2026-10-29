@@ -11,6 +11,10 @@ vi.mock('systeminformation', () => ({
   }
 }))
 
+vi.mock('../../src/main/services/process/networkConnections.mac', () => ({
+  getMacNetworkConnections: networkConnections,
+}))
+
 describe('processMonitor.getNetworkPorts', () => {
   beforeEach(() => {
     processes.mockReset()

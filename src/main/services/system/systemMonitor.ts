@@ -1,9 +1,10 @@
 import si from 'systeminformation'
 import { platform } from 'node:os'
-import type { SystemStats, CpuInfo, MemoryInfo, DriveInfo, DiskIoInfo, NetworkInfo } from '@shared/types'
+import type { SystemStats, CpuInfo, MemoryInfo, DriveInfo, DiskIoInfo } from '@shared/types'
 import { logDebug, logWarn } from '@main/services/core/logging'
 import { isExternalCommandError, runExternalCommand } from '@main/services/core/externalCommand'
 import { getCachedGpuInfo } from './gpuMonitor'
+import { getNetworkInfo } from './networkMonitor'
 let hasLoggedApfsContainerFallback = false
 
 let lastDiskStats: DriveInfo[] | null = null
@@ -45,22 +46,22 @@ export async function getSystemStats(): Promise<SystemStats> {
         const apfsInfo = platform() === 'darwin' ? await getApfsContainerInfo() : null
 
         drives = disks.map((d) => {
-          let purgeable: number | null = null
+          const purgeable: number | null = null
           let realUsage: number | null = null
 
           if (apfsInfo && d.mount === '/') {
             const containerUsed = apfsInfo.size - apfsInfo.free
-            purgeable = containerUsed - d.used
-            if (purgeable < 0) purgeable = 0
-            const realUsed = d.used
-            realUsage = Math.round((realUsed / apfsInfo.size) * 10000) / 100
+            // The sealed root volume excludes user data and other APFS volumes.
+            // Their space is occupied, not purgeable. diskutil does not report
+            // a reliable purgeable amount here, so leave it unknown.
+            realUsage = Math.round((containerUsed / apfsInfo.size) * 10000) / 100
           }
 
           return {
             fs: d.fs,
             type: d.type,
             size: apfsInfo && d.mount === '/' ? apfsInfo.size : d.size,
-            used: d.used,
+            used: apfsInfo && d.mount === '/' ? apfsInfo.size - apfsInfo.free : d.used,
             available: apfsInfo && d.mount === '/' ? apfsInfo.free : d.available,
             usage: apfsInfo && d.mount === '/'
               ? Math.round(((apfsInfo.size - apfsInfo.free) / apfsInfo.size) * 10000) / 100
@@ -180,51 +181,11 @@ async function getDiskIoInfo(): Promise<DiskIoInfo> {
   }
 }
 
-async function getNetworkInfo(): Promise<NetworkInfo> {
-  try {
-    const stats = await si.networkStats('*')
-    const activeStats = stats.filter((item) => item.operstate === 'up')
-    const source = activeStats.length > 0 ? activeStats : stats
-
-    return {
-      downloadBytesPerSecond: sanitizeRate(sumNumeric(source.map((item) => item.rx_sec))),
-      uploadBytesPerSecond: sanitizeRate(sumNumeric(source.map((item) => item.tx_sec))),
-      totalDownloadedBytes: sanitizeTotal(sumNumeric(source.map((item) => item.rx_bytes))),
-      totalUploadedBytes: sanitizeTotal(sumNumeric(source.map((item) => item.tx_bytes))),
-      interfaces: source.map((item) => item.iface).filter(Boolean)
-    }
-  } catch (err) {
-    logDebug('system-monitor', 'Network information is unavailable', { error: err })
-    return {
-      downloadBytesPerSecond: null,
-      uploadBytesPerSecond: null,
-      totalDownloadedBytes: null,
-      totalUploadedBytes: null,
-      interfaces: []
-    }
-  }
-}
-
 function sanitizeRate(value: number | null | undefined): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     return null
   }
   return Math.round(value * 100) / 100
-}
-
-function sanitizeTotal(value: number | null | undefined): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    return null
-  }
-  return Math.round(value)
-}
-
-function sumNumeric(values: Array<number | null | undefined>): number | null {
-  const numericValues = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
-  if (numericValues.length === 0) {
-    return null
-  }
-  return numericValues.reduce((sum, value) => sum + value, 0)
 }
 
 function extractPlistInteger(xml: string, key: string): number | null {
@@ -236,12 +197,12 @@ function extractPlistInteger(xml: string, key: string): number | null {
 // macOS APFS 컨테이너 정보 가져오기
 async function getApfsContainerInfo(): Promise<{ size: number; free: number } | null> {
   try {
-    const { stdout: plistXml } = await runExternalCommand('diskutil', ['info', '-plist', '/'])
+    const { stdout: plistXml } = await runExternalCommand('/usr/sbin/diskutil', ['info', '-plist', '/'], { timeout: 5_000 })
 
     const size = extractPlistInteger(plistXml, 'APFSContainerSize')
     const free = extractPlistInteger(plistXml, 'APFSContainerFree')
 
-    if (typeof size === 'number' && typeof free === 'number') {
+    if (size !== null && free !== null && size > 0 && free >= 0 && free <= size) {
       return { size, free }
     }
 

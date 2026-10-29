@@ -212,6 +212,10 @@ Monitors specific ports / IPs for connection state changes.
 macOS can report memory and disk usage in ways that look fuller than what users expect, so the app applies corrections.
 
 - Memory usage uses `(total - available) / total`
-- APFS root volume correction uses `diskutil` container information
-- Disk alerts use `realUsage` where available
+- APFS root capacity and usage use `diskutil` container information; space occupied by other volumes is not reported as purgeable
+- Disk alerts use the container usage percentage in `realUsage` where available
 - Apple Silicon GPU messaging explains unified-memory limitations
+- GPU collection errors and timeouts leave CPU, memory, and other system monitoring available
+- Network rates use differences between `netstat` interface counters, excluding loopback, duplicate address rows, and duplicate VPN/physical traffic. Interface changes and counter resets establish a fresh baseline
+- Per-process network usage uses `nettop` CSV output; the first sample establishes the rate baseline
+- Port discovery supports both modern macOS `process:pid` output and older PID columns, falling back to `lsof` when GUI-launched `netstat` omits TCP/UDP. Network and APFS external commands have a five-second timeout

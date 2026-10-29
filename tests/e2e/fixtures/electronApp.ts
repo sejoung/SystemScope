@@ -1,5 +1,7 @@
 import { test as base, _electron, type ElectronApplication, type Page } from '@playwright/test'
 import path from 'node:path'
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 
 type ElectronFixtures = {
   mainWindow: Page
@@ -20,9 +22,15 @@ export const test = base.extend<ElectronFixtures, ElectronWorkerFixtures>({
     async ({}, use) => {
       const stdoutChunks: string[] = []
       const stderrChunks: string[] = []
+      // Keep UI tests separate from the user's installed app and settings.
+      const testDir = await mkdtemp(path.join(tmpdir(), 'systemscope-e2e-'))
+      const userData = path.join(testDir, 'user-data')
+      await mkdir(userData)
+      const bootstrap = path.join(testDir, 'bootstrap.cjs')
+      await writeFile(bootstrap, `const { app } = require('electron'); app.setPath('userData', ${JSON.stringify(userData)}); require(${JSON.stringify(path.join(__dirname, '../../../out/main/index.js'))});`)
 
       const app = await _electron.launch({
-        args: [path.join(__dirname, '../../../out/main/index.js')],
+        args: [bootstrap],
         env: {
           ...process.env,
           NODE_ENV: 'test',
@@ -48,8 +56,12 @@ export const test = base.extend<ElectronFixtures, ElectronWorkerFixtures>({
         stderrChunks.push(chunk.toString())
       })
 
-      await use(app)
-      await app.close()
+      try {
+        await use(app)
+      } finally {
+        await app.close()
+        await rm(testDir, { recursive: true, force: true })
+      }
     },
     { scope: 'worker', timeout: 30_000 }
   ],

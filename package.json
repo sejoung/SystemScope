@@ -19,6 +19,7 @@
     "typecheck": "tsc -b",
     "bundle:size": "node scripts/check-renderer-bundle.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run build && npm run bundle:size",
+    "check:macos": "npm run build && node scripts/check-macos-runtime.mjs",
     "release:patch": "npm run check && npm version patch",
     "release:minor": "npm run check && npm version minor",
     "release:major": "npm run check && npm version major",
@@ -51,7 +52,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-window": "^2.2.7",
-    "systeminformation": "^5.31.5",
+    "systeminformation": "^5.33.18",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

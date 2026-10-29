@@ -160,6 +160,10 @@ async function loadLoginShellPathEntries(): Promise<string[]> {
 function getCommonExecutablePaths(): string[] {
   if (process.platform === 'darwin') {
     return [
+      '/usr/bin',
+      '/bin',
+      '/usr/sbin',
+      '/sbin',
       '/usr/local/bin',
       '/usr/local/sbin',
       '/opt/homebrew/bin',

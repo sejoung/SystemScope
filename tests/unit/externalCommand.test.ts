@@ -57,6 +57,7 @@ describe('ExternalCommandError', () => {
         expect(env.PATH).toContain(process.platform === 'darwin' ? '/opt/homebrew/bin' : '/usr/local/bin')
         if (process.platform === 'darwin') {
           expect(env.PATH).toContain('/Applications/Docker.app/Contents/Resources/bin')
+          expect(env.PATH?.split(':')).toEqual(expect.arrayContaining(['/usr/bin', '/bin', '/usr/sbin', '/sbin']))
         } else {
           expect(env.PATH).toContain('/usr/sbin')
         }

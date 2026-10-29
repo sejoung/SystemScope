@@ -15,25 +15,15 @@ export function parseNettopOutput(stdout: string): NettopRow[] {
     const line = rawLine.trim()
     if (!line) continue
 
-    // nettop output may be whitespace- or comma-separated depending on flags;
-    // normalize commas to whitespace before tokenizing.
-    const tokens = line.replace(/,/g, ' ').split(/\s+/).filter(Boolean)
-    if (tokens.length < 3) continue
-
-    const txStr = tokens[tokens.length - 1]
-    const rxStr = tokens[tokens.length - 2]
-    const rx = Number(rxStr)
-    const tx = Number(txStr)
-    if (!Number.isFinite(rx) || !Number.isFinite(tx)) continue
-
-    // Drop the leading `time` token; everything between time and the two byte
-    // counters is the name.pid (which itself may contain spaces).
-    const middle = tokens.slice(1, tokens.length - 2).join(' ')
-    const lastDot = middle.lastIndexOf('.')
-    if (lastDot < 0) continue
-    const name = middle.slice(0, lastDot)
-    const pid = Number(middle.slice(lastDot + 1))
-    if (!Number.isInteger(pid) || pid <= 0 || !name) continue
+    // Accept both logging formats, with or without a timestamp. Keep names
+    // intact (spaces, dots and commas are valid in a process name).
+    const match = /^(?:\d{1,2}:\d{2}:\d{2}(?:\.\d+)?[,\s]+)?(.+)\.(\d+)[,\s]+(\d+)[,\s]+(\d+),?$/.exec(line)
+    if (!match) continue
+    const name = match[1].trim()
+    const pid = Number(match[2])
+    const rx = Number(match[3])
+    const tx = Number(match[4])
+    if (!Number.isSafeInteger(pid) || pid <= 0 || !name || !Number.isSafeInteger(rx) || !Number.isSafeInteger(tx)) continue
 
     rows.push({ pid, name, totalRxBytes: rx, totalTxBytes: tx })
   }
@@ -41,6 +31,7 @@ export function parseNettopOutput(stdout: string): NettopRow[] {
 }
 
 interface CacheEntry {
+  name: string
   rxBytes: number
   txBytes: number
   capturedAt: number
@@ -69,7 +60,7 @@ export function computeSnapshot(rows: NettopRow[], capturedAt: number): ProcessN
 
     let rxBps: number | null = null
     let txBps: number | null = null
-    if (prev && intervalSec && intervalSec > 0) {
+    if (prev && prev.name === row.name && intervalSec && intervalSec > 0) {
       const dRx = row.totalRxBytes - prev.rxBytes
       const dTx = row.totalTxBytes - prev.txBytes
       if (dRx >= 0 && dTx >= 0) {
@@ -79,6 +70,7 @@ export function computeSnapshot(rows: NettopRow[], capturedAt: number): ProcessN
     }
 
     cache.set(row.pid, {
+      name: row.name,
       rxBytes: row.totalRxBytes,
       txBytes: row.totalTxBytes,
       capturedAt,
@@ -102,7 +94,7 @@ export function computeSnapshot(rows: NettopRow[], capturedAt: number): ProcessN
   return { supported: true, capturedAt, intervalSec, processes }
 }
 
-const NETTOP_ARGS = ['-P', '-x', '-J', 'bytes_in,bytes_out', '-l', '1']
+const NETTOP_ARGS = ['-P', '-x', '-n', '-J', 'bytes_in,bytes_out', '-L', '1']
 
 function basenameWithoutExt(processPath: string | undefined, pid: number): string {
   if (!processPath) return `PID ${pid}`
@@ -162,8 +154,16 @@ async function collectFromNetworkConnections(): Promise<ProcessNetworkSnapshot> 
 
 async function collectProcessNetworkUsage(): Promise<ProcessNetworkSnapshot> {
   if (process.platform === 'darwin') {
-    const { stdout } = await runExternalCommand('nettop', NETTOP_ARGS, { windowsHide: true })
+    const { stdout } = await runExternalCommand('/usr/bin/nettop', NETTOP_ARGS, {
+      windowsHide: true,
+      timeout: 5_000,
+      maxBuffer: 8 * 1024 * 1024,
+      env: { LC_ALL: 'C' },
+    })
     const rows = parseNettopOutput(stdout)
+    if (rows.length === 0 && stdout.trim() && !/^time[,\s]/m.test(stdout)) {
+      throw new Error('Unrecognized nettop output')
+    }
     return computeSnapshot(rows, Date.now())
   }
   if (process.platform === 'win32') {

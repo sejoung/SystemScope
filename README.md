@@ -134,6 +134,7 @@ npm run build
 npm run test:e2e    # Electron + Playwright E2E (builds with --mode e2e, then runs)
 npm run test:e2e:debug
 npm run check       # typecheck -> lint -> test -> build
+npm run check:macos # real macOS/Electron collection checks with isolated settings
 ```
 
 E2E tests build the app first, then launch it through Playwright.

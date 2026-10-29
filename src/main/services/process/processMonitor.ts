@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { ProcessInfo, PortInfo, ProcessSnapshot } from '@shared/types'
 import { PROCESS_HISTORY_SAMPLE_INTERVAL_MS } from '@shared/constants/intervals'
 import { logWarn } from '@main/services/core/logging'
+import { getMacNetworkConnections } from './networkConnections.mac'
 import {
   getProcessCpuStats,
   isZombieProcessState,
@@ -216,7 +217,13 @@ export async function getProcessDescendants(rootPid: number): Promise<ProcessInf
 }
 
 export async function getNetworkPorts(): Promise<PortInfo[]> {
-  const connections = await si.networkConnections()
+  const connections = process.platform === 'darwin'
+    ? await getMacNetworkConnections()
+    : await si.networkConnections()
+  // netstat's process label is truncated. Reuse the process cache for full names.
+  const names = process.platform === 'darwin'
+    ? await getCachedProcesses().then((data) => buildPidNameMap(data.list)).catch(() => new Map<number, string>())
+    : new Map<number, string>()
   return connections
     .filter((c) => c.localPort && c.pid > 0)
     .map((c) => {
@@ -229,7 +236,7 @@ export async function getNetworkPorts(): Promise<PortInfo[]> {
         peerPort: String(c.peerPort ?? '*'),
         state: c.state,
         pid: c.pid,
-        process: getProcessDisplayName(c.process, c.pid),
+        process: getProcessDisplayName(names.get(c.pid) || c.process, c.pid),
         localPortNum
       }
     })

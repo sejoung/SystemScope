@@ -134,6 +134,7 @@ npm run build
 npm run test:e2e    # Electron + Playwright E2E (--mode e2e로 빌드 후 실행)
 npm run test:e2e:debug
 npm run check       # typecheck -> lint -> test -> build
+npm run check:macos # 실제 macOS/Electron 수집 경로 검증 (사용자 설정과 분리)
 ```
 
 E2E 테스트는 앱을 먼저 build한 뒤 Playwright로 실행합니다.

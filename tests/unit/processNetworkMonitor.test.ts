@@ -58,6 +58,16 @@ describe('parseNettopOutput', () => {
       { pid: 593, name: 'apsd', totalRxBytes: 6643, totalTxBytes: 22478 },
     ])
   })
+
+  it('accepts timestamp-free CSV while preserving punctuation in process names', () => {
+    expect(parseNettopOutput('Helper, Inc.42,123,456,\n')).toEqual([
+      { pid: 42, name: 'Helper, Inc', totalRxBytes: 123, totalTxBytes: 456 },
+    ])
+  })
+
+  it('rejects negative, non-numeric and unsafe byte counters', () => {
+    expect(parseNettopOutput('foo.42,-1,2,\nfoo.42,NaN,2,\nfoo.42,9007199254740992,2,')).toEqual([])
+  })
 })
 
 describe('computeSnapshot', () => {
@@ -127,6 +137,13 @@ describe('computeSnapshot', () => {
     )
     expect(snap2.processes[0].rxBps).toBe(100)
   })
+
+  it('starts a fresh baseline when a PID is reused by another process', () => {
+    computeSnapshot([{ pid: 42, name: 'old', totalRxBytes: 10, totalTxBytes: 20 }], t0)
+    const snapshot = computeSnapshot([{ pid: 42, name: 'new', totalRxBytes: 1000, totalTxBytes: 2000 }], t0 + 1000)
+    expect(snapshot.processes[0].rxBps).toBeNull()
+    expect(snapshot.processes[0].txBps).toBeNull()
+  })
 })
 
 describe('getProcessNetworkUsage', () => {
@@ -154,9 +171,9 @@ describe('getProcessNetworkUsage', () => {
     })
     const snap = await getProcessNetworkUsage()
     expect(runExternalCommand).toHaveBeenCalledWith(
-      'nettop',
-      ['-P', '-x', '-J', 'bytes_in,bytes_out', '-l', '1'],
-      expect.any(Object)
+      '/usr/bin/nettop',
+      ['-P', '-x', '-n', '-J', 'bytes_in,bytes_out', '-L', '1'],
+      expect.objectContaining({ timeout: 5_000, maxBuffer: 8 * 1024 * 1024 })
     )
     expect(snap.supported).toBe(true)
     expect(snap.processes).toEqual([
@@ -178,6 +195,14 @@ describe('getProcessNetworkUsage', () => {
     resolveCommand?.({ stdout: '12:00:00.000 foo.42 10 20\n', stderr: '' })
     await expect(Promise.all([first, second])).resolves.toHaveLength(2)
     expect(runExternalCommand).toHaveBeenCalledTimes(1)
+  })
+
+  it('releases the in-flight request after a failure and can recover', async () => {
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+    vi.mocked(runExternalCommand).mockRejectedValueOnce(new Error('timeout'))
+    await expect(getProcessNetworkUsage()).rejects.toThrow('timeout')
+    vi.mocked(runExternalCommand).mockResolvedValueOnce({ stdout: 'foo.42,1,2,\n', stderr: '' })
+    expect((await getProcessNetworkUsage()).processes).toHaveLength(1)
   })
 })
 

@@ -62,7 +62,7 @@ export interface ProcessNetworkUsage {
 }
 
 export interface ProcessNetworkSnapshot {
-  supported: boolean        // false on non-macOS platforms
+  supported: boolean        // supported on macOS and Windows
   capturedAt: number        // ms since epoch
   intervalSec: number | null  // seconds since previous snapshot, or null on first call
   processes: ProcessNetworkUsage[]

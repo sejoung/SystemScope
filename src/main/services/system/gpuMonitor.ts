@@ -1,10 +1,11 @@
 import si from 'systeminformation'
 import { platform } from 'node:os'
 import type { GpuInfo } from '@shared/types'
-import { logInfo } from '@main/services/core/logging'
+import { logDebug, logInfo } from '@main/services/core/logging'
 
 type GraphicsController = Awaited<ReturnType<typeof si.graphics>>['controllers'][number]
 const GPU_CACHE_TTL = 5 * 1000
+const GPU_FETCH_TIMEOUT_MS = 5_000
 let hasLoggedWindowsGpuDiagnostics = false
 let lastGpuStats: GpuInfo | null = null
 let lastGpuFetchTime = 0
@@ -14,23 +15,41 @@ export async function getCachedGpuInfo(): Promise<GpuInfo> {
   const now = Date.now()
   if (lastGpuStats && now - lastGpuFetchTime < GPU_CACHE_TTL) return lastGpuStats
   if (pendingGpuStats) return pendingGpuStats
-  pendingGpuStats = si.graphics().then((gpu) => {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  pendingGpuStats = Promise.race([
+    si.graphics(),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('GPU collection timed out')), GPU_FETCH_TIMEOUT_MS)
+    }),
+  ]).then((gpu) => {
     const primaryGpu = pickPrimaryGpuController(gpu.controllers)
     const hasUsageData = primaryGpu ? controllerHasUsageData(primaryGpu) : false
     logWindowsGpuDiagnostics(gpu.controllers, primaryGpu)
     const nextGpuInfo: GpuInfo = primaryGpu && primaryGpu.model ? {
       available: true,
       model: primaryGpu.model,
-      usage: primaryGpu.utilizationGpu ?? null,
-      memoryTotal: primaryGpu.memoryTotal ? primaryGpu.memoryTotal * 1024 * 1024 : null,
-      memoryUsed: primaryGpu.memoryUsed ? primaryGpu.memoryUsed * 1024 * 1024 : null,
-      temperature: primaryGpu.temperatureGpu ?? null,
+      usage: validMetric(primaryGpu.utilizationGpu),
+      memoryTotal: validMetric(primaryGpu.memoryTotal) === null ? null : primaryGpu.memoryTotal! * 1024 * 1024,
+      memoryUsed: validMetric(primaryGpu.memoryUsed) === null ? null : primaryGpu.memoryUsed! * 1024 * 1024,
+      temperature: validMetric(primaryGpu.temperatureGpu),
       unavailableReason: hasUsageData ? null : detectGpuUnavailableReason(primaryGpu)
     } : { available: false, model: null, usage: null, memoryTotal: null, memoryUsed: null, temperature: null, unavailableReason: null }
     lastGpuStats = nextGpuInfo
     lastGpuFetchTime = Date.now()
     return nextGpuInfo
-  }).finally(() => { pendingGpuStats = null })
+  }).catch((error) => {
+    logDebug('system-monitor', 'GPU information is unavailable', { error })
+    const unavailable: GpuInfo = {
+      available: false, model: null, usage: null, memoryTotal: null,
+      memoryUsed: null, temperature: null, unavailableReason: 'metrics_unavailable',
+    }
+    lastGpuStats = unavailable
+    lastGpuFetchTime = Date.now()
+    return unavailable
+  }).finally(() => {
+    clearTimeout(timer)
+    pendingGpuStats = null
+  })
   return pendingGpuStats
 }
 
@@ -61,7 +80,12 @@ function scoreGpuController(controller: GraphicsController): number {
 }
 
 function controllerHasUsageData(controller: GraphicsController): boolean {
-  return controller.utilizationGpu !== null || controller.memoryTotal !== null || controller.memoryUsed !== null
+  return [controller.utilizationGpu, controller.memoryTotal, controller.memoryUsed]
+    .some((value) => validMetric(value) !== null)
+}
+
+function validMetric(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
 }
 
 function detectGpuUnavailableReason(controller: GraphicsController): GpuInfo['unavailableReason'] {
